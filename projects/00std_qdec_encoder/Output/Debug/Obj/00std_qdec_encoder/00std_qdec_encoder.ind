@@ -1,7 +1,0 @@
-"Output/Debug/Obj/00std_qdec_encoder/system_nrf52.o"
-"Output/Debug/Obj/00std_qdec_encoder/00std_qdec_encoder.o"
-"Output/Debug/Obj/00std_qdec_encoder/SEGGER_THUMB_Startup.o"
-"Output/Debug/Obj/00std_qdec_encoder/ses_startup_nrf_common.o"
-"Output/Debug/Obj/00std_qdec_encoder/ses_startup_nrf52833.o"
-"C:/Users/salvarad/ncs/v1.7.1/toolchain/segger_embedded_studio/segger-rtl/libs/libc_v7em_fpv4_sp_d16_hard_t_le_eabi_balanced.a"
-"C:/Users/salvarad/ncs/v1.7.1/toolchain/segger_embedded_studio/lib/SEGGER_crtinit_v7em_little.o"

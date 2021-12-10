@@ -12,11 +12,6 @@
  <Memory4/>
  <Project>
   <ProjectSessionItem path="dotbot-firmware"/>
-  <ProjectSessionItem path="dotbot-firmware;00std_pwm_motor"/>
-  <ProjectSessionItem path="dotbot-firmware;00std_pwm_motor;Device Files"/>
-  <ProjectSessionItem path="dotbot-firmware;00std_pwm_motor;Script Files"/>
-  <ProjectSessionItem path="dotbot-firmware;00std_pwm_motor;Source Files"/>
-  <ProjectSessionItem path="dotbot-firmware;00std_pwm_motor;System Files"/>
  </Project>
  <Register1/>
  <Register2/>
@@ -41,7 +36,9 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../nRF/Device/Include/nrf.h" selected="1" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../nRF/Device/Include/nrf.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../nRF/Device/Include/nrf52833.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="00std_motor/00std_motor.c" selected="1" top="0" codecName="Default"/>
  </Files>
- <ARMCrossStudioWindow activeProject="00std_pwm_motor" fileDialogDefaultFilter="*.c;*.cpp;*.cxx;*.cc;*.h;*.hpp;*.hxx" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/EVA/Dotbot-firmware-fresh/nRF/Device/Include" debugSearchPath="" autoConnectCapabilities="3199"/>
+ <ARMCrossStudioWindow activeProject="00std_motor" fileDialogDefaultFilter="*.c;*.cpp;*.cxx;*.cc;*.h;*.hpp;*.hxx" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/EVA/Dotbot-firmware-fresh/nRF/Device/Include" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>
