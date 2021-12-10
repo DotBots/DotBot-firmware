@@ -1,0 +1,7 @@
+"Output/Debug/Obj/00std_spi_rgb_led/system_nrf52.o"
+"Output/Debug/Obj/00std_spi_rgb_led/00std_spi_rgb_led.o"
+"Output/Debug/Obj/00std_spi_rgb_led/SEGGER_THUMB_Startup.o"
+"Output/Debug/Obj/00std_spi_rgb_led/ses_startup_nrf_common.o"
+"Output/Debug/Obj/00std_spi_rgb_led/ses_startup_nrf52833.o"
+"C:/Users/salvarad/ncs/v1.7.1/toolchain/segger_embedded_studio/segger-rtl/libs/libc_v7em_fpv4_sp_d16_hard_t_le_eabi_balanced.a"
+"C:/Users/salvarad/ncs/v1.7.1/toolchain/segger_embedded_studio/lib/SEGGER_crtinit_v7em_little.o"
