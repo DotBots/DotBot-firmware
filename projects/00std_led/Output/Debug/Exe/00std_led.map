@@ -1,0 +1,475 @@
+***********************************************************************************************
+***                                                                                         ***
+***                                    LINK INFORMATION                                     ***
+***                                                                                         ***
+***********************************************************************************************
+
+Linker version:
+
+  SEGGER ARM Linker 4.12.1 compiled Aug 11 2021 23:21:31
+  Copyright (c) 2017-2021 SEGGER Microcontroller GmbH    www.segger.com
+
+
+***********************************************************************************************
+***                                                                                         ***
+***                                     MODULE SUMMARY                                      ***
+***                                                                                         ***
+***********************************************************************************************
+
+Memory use by input file:
+
+  Object File                                       RX Code     RO Data     RW Data     ZI Data
+  ---------------------------------------------  ----------  ----------  ----------  ----------
+  00std_led.o                                           174                      32          32
+  SEGGER_THUMB_Startup.o                                 20                                    
+  SEGGER_crtinit_v7em_little.o                           98                                    
+  ses_startup_nrf52833.o                                616                                    
+  ses_startup_nrf_common.o                               52                                    
+  system_nrf52.o                                        730                       4            
+  ---------------------------------------------  ----------  ----------  ----------  ----------
+  Subtotal (6 objects)                                1 690                      36          32
+  ---------------------------------------------  ----------  ----------  ----------  ----------
+  Linker created (shared data, fills, blocks):                       76                  16 384
+  =============================================  ==========  ==========  ==========  ==========
+  Total:                                              1 690          76          36      16 416
+  =============================================  ==========  ==========  ==========  ==========
+
+Memory use by archive:
+
+Detailed memory use by linker:
+
+  Description                                       RX Code     RO Data     RW Data     ZI Data
+  ---------------------------------------------  ----------  ----------  ----------  ----------
+  Initialization table                                               76                        
+  Memory for block 'heap'                                                                 8 192
+  Memory for block 'stack'                                                                8 192
+  ---------------------------------------------  ----------  ----------  ----------  ----------
+  Subtotal (linker created):                                         76                  16 384
+  ---------------------------------------------  ----------  ----------  ----------  ----------
+  Objects (6 files)                                   1 690                      36          32
+  =============================================  ==========  ==========  ==========  ==========
+  Total:                                              1 690          76          36      16 416
+  =============================================  ==========  ==========  ==========  ==========
+
+
+***********************************************************************************************
+***                                                                                         ***
+***                                     SECTION DETAIL                                      ***
+***                                                                                         ***
+***********************************************************************************************
+
+Sections by address:
+
+  Range              Symbol or [section] Name         Size  Al  Init  Ac  Object File
+  -----------------  -------------------------  ----------  --  ----  --  -----------
+  00000000-000001ff  _vectors                          512   4  Code  RX  ses_startup_nrf52833.o
+  00000200-00000213  _start                             20   4  Code  RX  SEGGER_THUMB_Startup.o
+  00000214-0000023b  HardFault_Handler                  40   4  Code  RX  ses_startup_nrf_common.o
+  0000023c-0000023f  nRFInitialize                       4   4  Code  RX  ses_startup_nrf52833.o
+  00000240-00000409  SystemInit                        458   2  Code  RX  system_nrf52.o
+  0000040a-0000040b  NMI_Handler                         2   2  Code  RX  ses_startup_nrf52833.o
+  0000040c-0000040d  MemoryManagement_Handler            2   2  Code  RX  ses_startup_nrf52833.o
+  0000040e-0000040f  BusFault_Handler                    2   2  Code  RX  ses_startup_nrf52833.o
+  00000410-00000411  UsageFault_Handler                  2   2  Code  RX  ses_startup_nrf52833.o
+  00000412-00000413  SVC_Handler                         2   2  Code  RX  ses_startup_nrf52833.o
+  00000414-00000415  DebugMon_Handler                    2   2  Code  RX  ses_startup_nrf52833.o
+  00000416-00000417  PendSV_Handler                      2   2  Code  RX  ses_startup_nrf52833.o
+  00000418-00000419  SysTick_Handler                     2   2  Code  RX  ses_startup_nrf52833.o
+  0000041a-0000041b  POWER_CLOCK_IRQHandler              2   2  Code  RX  ses_startup_nrf52833.o
+  0000041c-0000041d  RADIO_IRQHandler                    2   2  Code  RX  ses_startup_nrf52833.o
+  0000041e-0000041f  UARTE0_UART0_IRQHandler             2   2  Code  RX  ses_startup_nrf52833.o
+  00000420-00000421  SPIM0_SPIS0_TWIM0_TWIS0_SPI0_TWI0_IRQHandler
+                                                         2   2  Code  RX  ses_startup_nrf52833.o
+  00000422-00000423  SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQHandler
+                                                         2   2  Code  RX  ses_startup_nrf52833.o
+  00000424-00000425  NFCT_IRQHandler                     2   2  Code  RX  ses_startup_nrf52833.o
+  00000426-00000427  GPIOTE_IRQHandler                   2   2  Code  RX  ses_startup_nrf52833.o
+  00000428-00000429  SAADC_IRQHandler                    2   2  Code  RX  ses_startup_nrf52833.o
+  0000042a-0000042b  TIMER0_IRQHandler                   2   2  Code  RX  ses_startup_nrf52833.o
+  0000042c-0000042d  TIMER1_IRQHandler                   2   2  Code  RX  ses_startup_nrf52833.o
+  0000042e-0000042f  TIMER2_IRQHandler                   2   2  Code  RX  ses_startup_nrf52833.o
+  00000430-00000431  RTC0_IRQHandler                     2   2  Code  RX  ses_startup_nrf52833.o
+  00000432-00000433  TEMP_IRQHandler                     2   2  Code  RX  ses_startup_nrf52833.o
+  00000434-00000435  RNG_IRQHandler                      2   2  Code  RX  ses_startup_nrf52833.o
+  00000436-00000437  ECB_IRQHandler                      2   2  Code  RX  ses_startup_nrf52833.o
+  00000438-00000439  CCM_AAR_IRQHandler                  2   2  Code  RX  ses_startup_nrf52833.o
+  0000043a-0000043b  WDT_IRQHandler                      2   2  Code  RX  ses_startup_nrf52833.o
+  0000043c-0000043d  RTC1_IRQHandler                     2   2  Code  RX  ses_startup_nrf52833.o
+  0000043e-0000043f  QDEC_IRQHandler                     2   2  Code  RX  ses_startup_nrf52833.o
+  00000440-00000441  COMP_LPCOMP_IRQHandler              2   2  Code  RX  ses_startup_nrf52833.o
+  00000442-00000443  SWI0_EGU0_IRQHandler                2   2  Code  RX  ses_startup_nrf52833.o
+  00000444-00000445  SWI1_EGU1_IRQHandler                2   2  Code  RX  ses_startup_nrf52833.o
+  00000446-00000447  SWI2_EGU2_IRQHandler                2   2  Code  RX  ses_startup_nrf52833.o
+  00000448-00000449  SWI3_EGU3_IRQHandler                2   2  Code  RX  ses_startup_nrf52833.o
+  0000044a-0000044b  SWI4_EGU4_IRQHandler                2   2  Code  RX  ses_startup_nrf52833.o
+  0000044c-0000044d  SWI5_EGU5_IRQHandler                2   2  Code  RX  ses_startup_nrf52833.o
+  0000044e-0000044f  TIMER3_IRQHandler                   2   2  Code  RX  ses_startup_nrf52833.o
+  00000450-00000451  TIMER4_IRQHandler                   2   2  Code  RX  ses_startup_nrf52833.o
+  00000452-00000453  PWM0_IRQHandler                     2   2  Code  RX  ses_startup_nrf52833.o
+  00000454-00000455  PDM_IRQHandler                      2   2  Code  RX  ses_startup_nrf52833.o
+  00000456-00000457  MWU_IRQHandler                      2   2  Code  RX  ses_startup_nrf52833.o
+  00000458-00000459  PWM1_IRQHandler                     2   2  Code  RX  ses_startup_nrf52833.o
+  0000045a-0000045b  PWM2_IRQHandler                     2   2  Code  RX  ses_startup_nrf52833.o
+  0000045c-0000045d  SPIM2_SPIS2_SPI2_IRQHandler
+                                                         2   2  Code  RX  ses_startup_nrf52833.o
+  0000045e-0000045f  RTC2_IRQHandler                     2   2  Code  RX  ses_startup_nrf52833.o
+  00000460-00000461  I2S_IRQHandler                      2   2  Code  RX  ses_startup_nrf52833.o
+  00000462-00000463  FPU_IRQHandler                      2   2  Code  RX  ses_startup_nrf52833.o
+  00000464-00000465  USBD_IRQHandler                     2   2  Code  RX  ses_startup_nrf52833.o
+  00000466-00000467  UARTE1_IRQHandler                   2   2  Code  RX  ses_startup_nrf52833.o
+  00000468-00000469  PWM3_IRQHandler                     2   2  Code  RX  ses_startup_nrf52833.o
+  0000046a-0000046b  SPIM3_IRQHandler                    2   2  Code  RX  ses_startup_nrf52833.o
+  0000046c-0000046d  Dummy_Handler                       2   2  Code  RX  ses_startup_nrf52833.o
+  0000046e-0000051b  main                              174   2  Code  RX  00std_led.o
+  0000051c-0000052f  SystemCoreClockUpdate              20   2  Code  RX  system_nrf52.o
+  00000530-00000583  nrf52_errata_36                    84   2  Code  RX  system_nrf52.o
+  00000584-000005d7  nrf52_errata_66                    84   2  Code  RX  system_nrf52.o
+  000005d8-0000062b  nrf52_errata_136                   84   2  Code  RX  system_nrf52.o
+  0000062c-00000637  reset_handler                      12   2  Code  RX  ses_startup_nrf_common.o
+  00000638-0000063b  [.init_array]                       4   4  ----  --  ses_startup_nrf_common.o
+  0000063c-00000657  __SEGGER_init_heap                 28   4  Code  RX  SEGGER_crtinit_v7em_little.o
+  00000658-00000677  __SEGGER_init_ctors                32   4  Code  RX  SEGGER_crtinit_v7em_little.o
+  00000678-0000069f  __SEGGER_init_table__              40   4  Cnst  RO  [ Linker created ]
+  000006a0-000006c3  __SEGGER_init_data__               36   4  Cnst  RO  [ Linker created ]
+  000006c4-000006d5  __SEGGER_init_zero                 18   2  Code  RX  SEGGER_crtinit_v7em_little.o
+  000006d6-000006e9  __SEGGER_init_copy                 20   2  Code  RX  SEGGER_crtinit_v7em_little.o
+  000006ea-1fffffff  ( UNUSED .=.+536869142 )   536 869 142
+                                                             -  ----  -   -
+  20000000-20000003  SystemCoreClock                     4   4  Init  RW  system_nrf52.o
+  20000004-20000023  writerBuffer                       32   1  Init  RW  00std_led.o
+  20000024-20000043  readerBuffer                       32   1  Zero  ZI  00std_led.o
+  20000044-20000047  ( UNUSED .=.+4 )                    4   -  ----  -   -
+  20000048-20002047  [.bss.block.heap]               8 192   8  None  ZI  [ Linker created ]
+  20002048-2001dfff  ( UNUSED .=.+114616 )         114 616   -  ----  -   -
+  2001e000-2001ffff  [.bss.block.stack]              8 192   8  None  ZI  [ Linker created ]
+
+
+***********************************************************************************************
+***                                                                                         ***
+***                                       SYMBOL LIST                                       ***
+***                                                                                         ***
+***********************************************************************************************
+
+Function symbols by name and then by address:
+
+  Symbol name                   Address        Size  Align  Type  Bd  Object File
+  -------------------------  ----------  ----------  -----  ----  --  -----------
+  BusFault_Handler           0x0000040F                  2  Code  Wk  ses_startup_nrf52833.o
+  CCM_AAR_IRQHandler         0x00000439                  2  Code  Wk  ses_startup_nrf52833.o
+  COMP_LPCOMP_IRQHandler     0x00000441                  2  Code  Wk  ses_startup_nrf52833.o
+  DebugMon_Handler           0x00000415                  2  Code  Wk  ses_startup_nrf52833.o
+  Dummy_Handler              0x0000046D                  2  Code  Wk  ses_startup_nrf52833.o
+  ECB_IRQHandler             0x00000437                  2  Code  Wk  ses_startup_nrf52833.o
+  FPU_IRQHandler             0x00000463                  2  Code  Wk  ses_startup_nrf52833.o
+  GPIOTE_IRQHandler          0x00000427                  2  Code  Wk  ses_startup_nrf52833.o
+  HardFault_Handler          0x00000215                  4  Code  Wk  ses_startup_nrf_common.o
+  I2S_IRQHandler             0x00000461                  2  Code  Wk  ses_startup_nrf52833.o
+  MWU_IRQHandler             0x00000457                  2  Code  Wk  ses_startup_nrf52833.o
+  MemoryManagement_Handler   0x0000040D                  2  Code  Wk  ses_startup_nrf52833.o
+  NFCT_IRQHandler            0x00000425                  2  Code  Wk  ses_startup_nrf52833.o
+  NMI_Handler                0x0000040B                  2  Code  Wk  ses_startup_nrf52833.o
+  PDM_IRQHandler             0x00000455                  2  Code  Wk  ses_startup_nrf52833.o
+  POWER_CLOCK_IRQHandler     0x0000041B                  2  Code  Wk  ses_startup_nrf52833.o
+  PWM0_IRQHandler            0x00000453                  2  Code  Wk  ses_startup_nrf52833.o
+  PWM1_IRQHandler            0x00000459                  2  Code  Wk  ses_startup_nrf52833.o
+  PWM2_IRQHandler            0x0000045B                  2  Code  Wk  ses_startup_nrf52833.o
+  PWM3_IRQHandler            0x00000469                  2  Code  Wk  ses_startup_nrf52833.o
+  PendSV_Handler             0x00000417                  2  Code  Wk  ses_startup_nrf52833.o
+  QDEC_IRQHandler            0x0000043F                  2  Code  Wk  ses_startup_nrf52833.o
+  RADIO_IRQHandler           0x0000041D                  2  Code  Wk  ses_startup_nrf52833.o
+  RNG_IRQHandler             0x00000435                  2  Code  Wk  ses_startup_nrf52833.o
+  RTC0_IRQHandler            0x00000431                  2  Code  Wk  ses_startup_nrf52833.o
+  RTC1_IRQHandler            0x0000043D                  2  Code  Wk  ses_startup_nrf52833.o
+  RTC2_IRQHandler            0x0000045F                  2  Code  Wk  ses_startup_nrf52833.o
+  Reset_Handler              0x0000062D                  2  Code  Gb  ses_startup_nrf_common.o
+  SAADC_IRQHandler           0x00000429                  2  Code  Wk  ses_startup_nrf52833.o
+  SPIM0_SPIS0_TWIM0_TWIS0_SPI0_TWI0_IRQHandler
+                             0x00000421                  2  Code  Wk  ses_startup_nrf52833.o
+  SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQHandler
+                             0x00000423                  2  Code  Wk  ses_startup_nrf52833.o
+  SPIM2_SPIS2_SPI2_IRQHandler
+                             0x0000045D                  2  Code  Wk  ses_startup_nrf52833.o
+  SPIM3_IRQHandler           0x0000046B                  2  Code  Wk  ses_startup_nrf52833.o
+  SVC_Handler                0x00000413                  2  Code  Wk  ses_startup_nrf52833.o
+  SWI0_EGU0_IRQHandler       0x00000443                  2  Code  Wk  ses_startup_nrf52833.o
+  SWI1_EGU1_IRQHandler       0x00000445                  2  Code  Wk  ses_startup_nrf52833.o
+  SWI2_EGU2_IRQHandler       0x00000447                  2  Code  Wk  ses_startup_nrf52833.o
+  SWI3_EGU3_IRQHandler       0x00000449                  2  Code  Wk  ses_startup_nrf52833.o
+  SWI4_EGU4_IRQHandler       0x0000044B                  2  Code  Wk  ses_startup_nrf52833.o
+  SWI5_EGU5_IRQHandler       0x0000044D                  2  Code  Wk  ses_startup_nrf52833.o
+  SysTick_Handler            0x00000419                  2  Code  Wk  ses_startup_nrf52833.o
+  SystemCoreClockUpdate      0x0000051D          20      2  Code  Gb  system_nrf52.o
+  SystemInit                 0x00000241         458      2  Code  Gb  system_nrf52.o
+  TEMP_IRQHandler            0x00000433                  2  Code  Wk  ses_startup_nrf52833.o
+  TIMER0_IRQHandler          0x0000042B                  2  Code  Wk  ses_startup_nrf52833.o
+  TIMER1_IRQHandler          0x0000042D                  2  Code  Wk  ses_startup_nrf52833.o
+  TIMER2_IRQHandler          0x0000042F                  2  Code  Wk  ses_startup_nrf52833.o
+  TIMER3_IRQHandler          0x0000044F                  2  Code  Wk  ses_startup_nrf52833.o
+  TIMER4_IRQHandler          0x00000451                  2  Code  Wk  ses_startup_nrf52833.o
+  UARTE0_UART0_IRQHandler    0x0000041F                  2  Code  Wk  ses_startup_nrf52833.o
+  UARTE1_IRQHandler          0x00000467                  2  Code  Wk  ses_startup_nrf52833.o
+  USBD_IRQHandler            0x00000465                  2  Code  Wk  ses_startup_nrf52833.o
+  UsageFault_Handler         0x00000411                  2  Code  Wk  ses_startup_nrf52833.o
+  WDT_IRQHandler             0x0000043B                  2  Code  Wk  ses_startup_nrf52833.o
+  __SEGGER_init_copy         0x000006D7          20      2  Code  Wk  SEGGER_crtinit_v7em_little.o
+  __SEGGER_init_ctors        0x00000659          24      4  Code  Wk  SEGGER_crtinit_v7em_little.o
+  __SEGGER_init_done         0x0000020B                  4  Code  Gb  SEGGER_THUMB_Startup.o
+  __SEGGER_init_heap         0x0000063D          20      4  Code  Wk  SEGGER_crtinit_v7em_little.o
+  __SEGGER_init_zero         0x000006C5          18      2  Code  Wk  SEGGER_crtinit_v7em_little.o
+  _start                     0x00000201          14      4  Code  Gb  SEGGER_THUMB_Startup.o
+  exit                       0x0000020F           2      4  Code  Gb  SEGGER_THUMB_Startup.o
+  main                       0x0000046F         174      2  Code  Gb  00std_led.o
+  nRFInitialize              0x0000023D                  4  Code  Gb  ses_startup_nrf52833.o
+  nrf52_errata_136           0x000005D9          84      2  Code  Lc  system_nrf52.o
+  nrf52_errata_36            0x00000531          84      2  Code  Lc  system_nrf52.o
+  nrf52_errata_66            0x00000585          84      2  Code  Lc  system_nrf52.o
+  reset_handler              0x0000062D                  2  Code  Gb  ses_startup_nrf_common.o
+
+Function symbols by address and then by name:
+
+     Address  Symbol name                      Size  Align  Type  Bd  Object File
+  ----------  -------------------------  ----------  -----  ----  --  -----------
+  0x00000201  _start                             14      4  Code  Gb  SEGGER_THUMB_Startup.o
+  0x0000020B  __SEGGER_init_done                         4  Code  Gb  SEGGER_THUMB_Startup.o
+  0x0000020F  exit                                2      4  Code  Gb  SEGGER_THUMB_Startup.o
+  0x00000215  HardFault_Handler                          4  Code  Wk  ses_startup_nrf_common.o
+  0x0000023D  nRFInitialize                              4  Code  Gb  ses_startup_nrf52833.o
+  0x00000241  SystemInit                        458      2  Code  Gb  system_nrf52.o
+  0x0000040B  NMI_Handler                                2  Code  Wk  ses_startup_nrf52833.o
+  0x0000040D  MemoryManagement_Handler                   2  Code  Wk  ses_startup_nrf52833.o
+  0x0000040F  BusFault_Handler                           2  Code  Wk  ses_startup_nrf52833.o
+  0x00000411  UsageFault_Handler                         2  Code  Wk  ses_startup_nrf52833.o
+  0x00000413  SVC_Handler                                2  Code  Wk  ses_startup_nrf52833.o
+  0x00000415  DebugMon_Handler                           2  Code  Wk  ses_startup_nrf52833.o
+  0x00000417  PendSV_Handler                             2  Code  Wk  ses_startup_nrf52833.o
+  0x00000419  SysTick_Handler                            2  Code  Wk  ses_startup_nrf52833.o
+  0x0000041B  POWER_CLOCK_IRQHandler                     2  Code  Wk  ses_startup_nrf52833.o
+  0x0000041D  RADIO_IRQHandler                           2  Code  Wk  ses_startup_nrf52833.o
+  0x0000041F  UARTE0_UART0_IRQHandler                    2  Code  Wk  ses_startup_nrf52833.o
+  0x00000421  SPIM0_SPIS0_TWIM0_TWIS0_SPI0_TWI0_IRQHandler
+                                                         2  Code  Wk  ses_startup_nrf52833.o
+  0x00000423  SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQHandler
+                                                         2  Code  Wk  ses_startup_nrf52833.o
+  0x00000425  NFCT_IRQHandler                            2  Code  Wk  ses_startup_nrf52833.o
+  0x00000427  GPIOTE_IRQHandler                          2  Code  Wk  ses_startup_nrf52833.o
+  0x00000429  SAADC_IRQHandler                           2  Code  Wk  ses_startup_nrf52833.o
+  0x0000042B  TIMER0_IRQHandler                          2  Code  Wk  ses_startup_nrf52833.o
+  0x0000042D  TIMER1_IRQHandler                          2  Code  Wk  ses_startup_nrf52833.o
+  0x0000042F  TIMER2_IRQHandler                          2  Code  Wk  ses_startup_nrf52833.o
+  0x00000431  RTC0_IRQHandler                            2  Code  Wk  ses_startup_nrf52833.o
+  0x00000433  TEMP_IRQHandler                            2  Code  Wk  ses_startup_nrf52833.o
+  0x00000435  RNG_IRQHandler                             2  Code  Wk  ses_startup_nrf52833.o
+  0x00000437  ECB_IRQHandler                             2  Code  Wk  ses_startup_nrf52833.o
+  0x00000439  CCM_AAR_IRQHandler                         2  Code  Wk  ses_startup_nrf52833.o
+  0x0000043B  WDT_IRQHandler                             2  Code  Wk  ses_startup_nrf52833.o
+  0x0000043D  RTC1_IRQHandler                            2  Code  Wk  ses_startup_nrf52833.o
+  0x0000043F  QDEC_IRQHandler                            2  Code  Wk  ses_startup_nrf52833.o
+  0x00000441  COMP_LPCOMP_IRQHandler                     2  Code  Wk  ses_startup_nrf52833.o
+  0x00000443  SWI0_EGU0_IRQHandler                       2  Code  Wk  ses_startup_nrf52833.o
+  0x00000445  SWI1_EGU1_IRQHandler                       2  Code  Wk  ses_startup_nrf52833.o
+  0x00000447  SWI2_EGU2_IRQHandler                       2  Code  Wk  ses_startup_nrf52833.o
+  0x00000449  SWI3_EGU3_IRQHandler                       2  Code  Wk  ses_startup_nrf52833.o
+  0x0000044B  SWI4_EGU4_IRQHandler                       2  Code  Wk  ses_startup_nrf52833.o
+  0x0000044D  SWI5_EGU5_IRQHandler                       2  Code  Wk  ses_startup_nrf52833.o
+  0x0000044F  TIMER3_IRQHandler                          2  Code  Wk  ses_startup_nrf52833.o
+  0x00000451  TIMER4_IRQHandler                          2  Code  Wk  ses_startup_nrf52833.o
+  0x00000453  PWM0_IRQHandler                            2  Code  Wk  ses_startup_nrf52833.o
+  0x00000455  PDM_IRQHandler                             2  Code  Wk  ses_startup_nrf52833.o
+  0x00000457  MWU_IRQHandler                             2  Code  Wk  ses_startup_nrf52833.o
+  0x00000459  PWM1_IRQHandler                            2  Code  Wk  ses_startup_nrf52833.o
+  0x0000045B  PWM2_IRQHandler                            2  Code  Wk  ses_startup_nrf52833.o
+  0x0000045D  SPIM2_SPIS2_SPI2_IRQHandler
+                                                         2  Code  Wk  ses_startup_nrf52833.o
+  0x0000045F  RTC2_IRQHandler                            2  Code  Wk  ses_startup_nrf52833.o
+  0x00000461  I2S_IRQHandler                             2  Code  Wk  ses_startup_nrf52833.o
+  0x00000463  FPU_IRQHandler                             2  Code  Wk  ses_startup_nrf52833.o
+  0x00000465  USBD_IRQHandler                            2  Code  Wk  ses_startup_nrf52833.o
+  0x00000467  UARTE1_IRQHandler                          2  Code  Wk  ses_startup_nrf52833.o
+  0x00000469  PWM3_IRQHandler                            2  Code  Wk  ses_startup_nrf52833.o
+  0x0000046B  SPIM3_IRQHandler                           2  Code  Wk  ses_startup_nrf52833.o
+  0x0000046D  Dummy_Handler                              2  Code  Wk  ses_startup_nrf52833.o
+  0x0000046F  main                              174      2  Code  Gb  00std_led.o
+  0x0000051D  SystemCoreClockUpdate              20      2  Code  Gb  system_nrf52.o
+  0x00000531  nrf52_errata_36                    84      2  Code  Lc  system_nrf52.o
+  0x00000585  nrf52_errata_66                    84      2  Code  Lc  system_nrf52.o
+  0x000005D9  nrf52_errata_136                   84      2  Code  Lc  system_nrf52.o
+  0x0000062D  Reset_Handler                              2  Code  Gb  ses_startup_nrf_common.o
+  0x0000062D  reset_handler                              2  Code  Gb  ses_startup_nrf_common.o
+  0x0000063D  __SEGGER_init_heap                 20      4  Code  Wk  SEGGER_crtinit_v7em_little.o
+  0x00000659  __SEGGER_init_ctors                24      4  Code  Wk  SEGGER_crtinit_v7em_little.o
+  0x000006C5  __SEGGER_init_zero                 18      2  Code  Wk  SEGGER_crtinit_v7em_little.o
+  0x000006D7  __SEGGER_init_copy                 20      2  Code  Wk  SEGGER_crtinit_v7em_little.o
+
+Read-write data symbols by name and then by address:
+
+  Symbol name                   Address        Size  Align  Type  Bd  Object File
+  -------------------------  ----------  ----------  -----  ----  --  -----------
+  SystemCoreClock            0x20000000           4      4  Init  Gb  system_nrf52.o
+  readerBuffer               0x20000024          32         Zero  Gb  00std_led.o
+  writerBuffer               0x20000004          32         Init  Gb  00std_led.o
+
+Read-write data symbols by address and then by name:
+
+     Address  Symbol name                      Size  Align  Type  Bd  Object File
+  ----------  -------------------------  ----------  -----  ----  --  -----------
+  0x20000000  SystemCoreClock                     4      4  Init  Gb  system_nrf52.o
+  0x20000004  writerBuffer                       32         Init  Gb  00std_led.o
+  0x20000024  readerBuffer                       32         Zero  Gb  00std_led.o
+
+Read-only data symbols by name and then by address:
+
+  Symbol name                   Address        Size  Align  Type  Bd  Object File
+  -------------------------  ----------  ----------  -----  ----  --  -----------
+  __SEGGER_init_data__       0x000006A0        [36]      4  Cnst  Lc  [ Linker created ]
+  __SEGGER_init_table__      0x00000678        [40]      4  Cnst  Lc  [ Linker created ]
+
+Read-only data symbols by address and then by name:
+
+     Address  Symbol name                      Size  Align  Type  Bd  Object File
+  ----------  -------------------------  ----------  -----  ----  --  -----------
+  0x00000678  __SEGGER_init_table__            [40]      4  Cnst  Lc  [ Linker created ]
+  0x000006A0  __SEGGER_init_data__             [36]      4  Cnst  Lc  [ Linker created ]
+
+Untyped symbols by name and then by address:
+
+  Symbol name                     Value        Size  Align  Type  Bd  Object File
+  -------------------------  ----------  ----------  -----  ----  --  -----------
+  __CODE_RAM1_segment_end__  0x00820000                     ----  Gb  [ Linker created ]
+  __CODE_RAM1_segment_size__
+                             0x00020000                     ----  Gb  [ Linker created ]
+  __CODE_RAM1_segment_start__
+                             0x00800000                     ----  Gb  [ Linker created ]
+  __CODE_RAM1_segment_used_end__
+                             0x00800000                     ----  Gb  [ Linker created ]
+  __CODE_RAM1_segment_used_size__
+                             0x00000000                     ----  Gb  [ Linker created ]
+  __CODE_RAM1_segment_used_start__
+                             0x00800000                     ----  Gb  [ Linker created ]
+  __FLASH1_segment_end__     0x00080000                     ----  Gb  [ Linker created ]
+  __FLASH1_segment_size__    0x00080000                     ----  Gb  [ Linker created ]
+  __FLASH1_segment_start__   0x00000000                     ----  Gb  [ Linker created ]
+  __FLASH1_segment_used_end__
+                             0x000006EA                     ----  Gb  [ Linker created ]
+  __FLASH1_segment_used_size__
+                             0x000006EA                     ----  Gb  [ Linker created ]
+  __FLASH1_segment_used_start__
+                             0x00000000                     ----  Gb  [ Linker created ]
+  __FLASH_segment_end__      0x00080000                     ----  Gb  [ Linker created ]
+  __FLASH_segment_size__     0x00080000                     ----  Gb  [ Linker created ]
+  __FLASH_segment_start__    0x00000000                     ----  Gb  [ Linker created ]
+  __FLASH_segment_used_end__
+                             0x000006EA                     ----  Gb  [ Linker created ]
+  __FLASH_segment_used_size__
+                             0x000006EA                     ----  Gb  [ Linker created ]
+  __FLASH_segment_used_start__
+                             0x00000000                     ----  Gb  [ Linker created ]
+  __HEAPSIZE__               0x00002000                     ----  Gb  [ Linker created ]
+  __RAM1_segment_end__       0x20020000                     ----  Gb  [ Linker created ]
+  __RAM1_segment_size__      0x00020000                     ----  Gb  [ Linker created ]
+  __RAM1_segment_start__     0x20000000                     ----  Gb  [ Linker created ]
+  __RAM1_segment_used_end__  0x20020000                     ----  Gb  [ Linker created ]
+  __RAM1_segment_used_size__
+                             0x00020000                     ----  Gb  [ Linker created ]
+  __RAM1_segment_used_start__
+                             0x20000000                     ----  Gb  [ Linker created ]
+  __RAM_segment_end__        0x20020000                     ----  Gb  [ Linker created ]
+  __RAM_segment_size__       0x00020000                     ----  Gb  [ Linker created ]
+  __RAM_segment_start__      0x20000000                     ----  Gb  [ Linker created ]
+  __RAM_segment_used_end__   0x20020000                     ----  Gb  [ Linker created ]
+  __RAM_segment_used_size__  0x00020000                     ----  Gb  [ Linker created ]
+  __RAM_segment_used_start__
+                             0x20000000                     ----  Gb  [ Linker created ]
+  __STACKSIZE_PROCESS__      0x00000000                     ----  Gb  [ Linker created ]
+  __STACKSIZE__              0x00002000                     ----  Gb  [ Linker created ]
+  __ctors_end__              0x0000063C                     ----  Gb  [ Linker created ]
+  __ctors_start__            0x00000638                     ----  Gb  [ Linker created ]
+  __heap_end__               0x20002048                     ----  Gb  [ Linker created ]
+  __heap_start__             0x20000048                     ----  Gb  [ Linker created ]
+  __stack_end__              0x20020000                     ----  Gb  [ Linker created ]
+  __thread_pointer$          0x00000000                     ----  Gb  [ Linker created ]
+  _vectors                   0x00000000       [512]      4  Code  Gb  ses_startup_nrf52833.o
+  _vectors_end               0x00000200                  4  Code  Lc  ses_startup_nrf52833.o
+  hfLoop                     0x0000021A                  4  Code  Lc  ses_startup_nrf_common.o
+
+Untyped symbols by address and then by name:
+
+       Value  Symbol name                      Size  Align  Type  Bd  Object File
+  ----------  -------------------------  ----------  -----  ----  --  -----------
+  0x00000000  __CODE_RAM1_segment_used_size__
+                                                            ----  Gb  [ Linker created ]
+  0x00000000  __FLASH1_segment_start__                      ----  Gb  [ Linker created ]
+  0x00000000  __FLASH1_segment_used_start__
+                                                            ----  Gb  [ Linker created ]
+  0x00000000  __FLASH_segment_start__                       ----  Gb  [ Linker created ]
+  0x00000000  __FLASH_segment_used_start__
+                                                            ----  Gb  [ Linker created ]
+  0x00000000  __STACKSIZE_PROCESS__                         ----  Gb  [ Linker created ]
+  0x00000000  __thread_pointer$                             ----  Gb  [ Linker created ]
+  0x00000000  _vectors                        [512]      4  Code  Gb  ses_startup_nrf52833.o
+  0x00000200  _vectors_end                               4  Code  Lc  ses_startup_nrf52833.o
+  0x0000021A  hfLoop                                     4  Code  Lc  ses_startup_nrf_common.o
+  0x00000638  __ctors_start__                               ----  Gb  [ Linker created ]
+  0x0000063C  __ctors_end__                                 ----  Gb  [ Linker created ]
+  0x000006EA  __FLASH1_segment_used_end__
+                                                            ----  Gb  [ Linker created ]
+  0x000006EA  __FLASH1_segment_used_size__
+                                                            ----  Gb  [ Linker created ]
+  0x000006EA  __FLASH_segment_used_end__
+                                                            ----  Gb  [ Linker created ]
+  0x000006EA  __FLASH_segment_used_size__
+                                                            ----  Gb  [ Linker created ]
+  0x00002000  __HEAPSIZE__                                  ----  Gb  [ Linker created ]
+  0x00002000  __STACKSIZE__                                 ----  Gb  [ Linker created ]
+  0x00020000  __CODE_RAM1_segment_size__
+                                                            ----  Gb  [ Linker created ]
+  0x00020000  __RAM1_segment_size__                         ----  Gb  [ Linker created ]
+  0x00020000  __RAM1_segment_used_size__
+                                                            ----  Gb  [ Linker created ]
+  0x00020000  __RAM_segment_size__                          ----  Gb  [ Linker created ]
+  0x00020000  __RAM_segment_used_size__                     ----  Gb  [ Linker created ]
+  0x00080000  __FLASH1_segment_end__                        ----  Gb  [ Linker created ]
+  0x00080000  __FLASH1_segment_size__                       ----  Gb  [ Linker created ]
+  0x00080000  __FLASH_segment_end__                         ----  Gb  [ Linker created ]
+  0x00080000  __FLASH_segment_size__                        ----  Gb  [ Linker created ]
+  0x00800000  __CODE_RAM1_segment_start__
+                                                            ----  Gb  [ Linker created ]
+  0x00800000  __CODE_RAM1_segment_used_end__
+                                                            ----  Gb  [ Linker created ]
+  0x00800000  __CODE_RAM1_segment_used_start__
+                                                            ----  Gb  [ Linker created ]
+  0x00820000  __CODE_RAM1_segment_end__                     ----  Gb  [ Linker created ]
+  0x20000000  __RAM1_segment_start__                        ----  Gb  [ Linker created ]
+  0x20000000  __RAM1_segment_used_start__
+                                                            ----  Gb  [ Linker created ]
+  0x20000000  __RAM_segment_start__                         ----  Gb  [ Linker created ]
+  0x20000000  __RAM_segment_used_start__
+                                                            ----  Gb  [ Linker created ]
+  0x20000048  __heap_start__                                ----  Gb  [ Linker created ]
+  0x20002048  __heap_end__                                  ----  Gb  [ Linker created ]
+  0x20020000  __RAM1_segment_end__                          ----  Gb  [ Linker created ]
+  0x20020000  __RAM1_segment_used_end__                     ----  Gb  [ Linker created ]
+  0x20020000  __RAM_segment_end__                           ----  Gb  [ Linker created ]
+  0x20020000  __RAM_segment_used_end__                      ----  Gb  [ Linker created ]
+  0x20020000  __stack_end__                                 ----  Gb  [ Linker created ]
+
+
+***********************************************************************************************
+***                                                                                         ***
+***                                      LINK SUMMARY                                       ***
+***                                                                                         ***
+***********************************************************************************************
+
+Memory breakdown:
+
+    1 690 bytes read-only  code
+       76 bytes read-only  data
+   16 452 bytes read-write data
+
+Region summary:
+
+  Name        Range                     Size                 Used               Unused       Alignment Loss
+  ----------  -----------------  -----------  -------------------  -------------------  -------------------
+  FLASH       00000000-0007ffff      524 288        1 770   0.34%      522 518  99.66%            0   0.00%
+  RAM         20000000-2001ffff      131 072       16 452  12.55%      114 620  87.45%            0   0.00%
+
+Link complete: 0 errors, 0 warnings, 0 remarks
