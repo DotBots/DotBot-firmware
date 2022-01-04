@@ -36,6 +36,12 @@ uint8_t writerBuffer[WRITERBUFFER_SIZE] = {0x00, 0x84, 0x29, 0x4A, 0x42, 0x90, 0
 *  Function description
 *   Application entry point.
 */
+
+
+void led_rgb(uint8_t r, uint8_t g, uint8_t b);
+
+
+
 int main(void)
 {
 
@@ -91,6 +97,14 @@ int main(void)
 
   // one last instruction.
   NRF_P0->DIRSET = 1 << 14;
+}
+
+
+void led_rgb(uint8_t r, uint8_t g, uint8_t b){
+
+
+
+
 }
 
 /*************************** End of file ****************************/
