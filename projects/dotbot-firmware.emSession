@@ -12,8 +12,6 @@
  <Memory4/>
  <Project>
   <ProjectSessionItem path="dotbot-firmware"/>
-  <ProjectSessionItem path="dotbot-firmware;00std_led"/>
-  <ProjectSessionItem path="dotbot-firmware;00std_led;Source Files"/>
  </Project>
  <Register1/>
  <Register2/>
@@ -26,7 +24,7 @@
   <Trace enabled="Yes"/>
  </TraceWindow>
  <Watch1>
-  <Watches active="1" update="Twice a Second"/>
+  <Watches active="1" update="Never"/>
  </Watch1>
  <Watch2>
   <Watches active="0" update="Never"/>
@@ -37,11 +35,6 @@
  <Watch4>
   <Watches active="0" update="Never"/>
  </Watch4>
- <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../nRF/Device/Include/nrf.h" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../nRF/Device/Include/nrf52833.h" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="00std_motor/00std_motor.c" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="46" y="58" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="00std_led/00std_led.c" selected="1" top="0" codecName="Default"/>
- </Files>
- <ARMCrossStudioWindow activeProject="00std_led" fileDialogDefaultFilter="*.c;*.cpp;*.cxx;*.cc;*.h;*.hpp;*.hxx" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/EVA/Dotbot-firmware-fresh/nRF/Device/Include" debugSearchPath="" autoConnectCapabilities="3711"/>
+ <Files/>
+ <ARMCrossStudioWindow activeProject="00std_led" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>
