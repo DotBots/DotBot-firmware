@@ -1,7 +1,7 @@
 #Segger Studio specific files
 *.emSession
 *.jlink
-
+*.ind
 
 # Prerequisites
 *.d
