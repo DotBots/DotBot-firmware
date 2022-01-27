@@ -1,5 +1,5 @@
 /**
- * @file rgb_led.c
+ * @file rgbled.c
  * @addtogroup BSP
  * 
  * @brief  nRF52833-specific definition of the "rgb_led" bsp module.
@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <nrf.h>
 
-#include "rgb_led.h"
+#include "rgbled.h"
 
 
 //=========================== define ==========================================
@@ -42,7 +42,7 @@ uint8_t ledBuffer[LED_BUFFER_SIZE];
  * an arbitrary serial sequence that the Driver will recognize.
  * 
  */
-void init_rgb_led(void)
+void db_rgbled_init(void)
 {
     // Configure the necessary Pins in the GPIO peripheral
     NRF_P0->DIRSET = 1 << LED_MOSI_PIN; // MOSI as Output
@@ -84,7 +84,7 @@ void init_rgb_led(void)
  * @param[in] g green value of the led color [0 - 255]
  * @param[in] b blue value of the led color [0 - 255]
  */
-void set_rgb_led(uint8_t r, uint8_t g, uint8_t b)
+void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b)
 {
 
     // Load the obligatory starting write command on to the buffer. This is required by the TLC5973 driver.

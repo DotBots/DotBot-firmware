@@ -45,7 +45,7 @@ uint16_t pwm_seq[4];
  * PWM resolution = 100 units (1us resolution)
  * 
  */
-void init_motors(void)
+void db_motors_init(void)
 {
     // Configure the PWM pins as output in the GPIO peripheral.
     NRF_P0->DIRSET = 1 << AIN1_PIN;
@@ -80,7 +80,7 @@ void init_motors(void)
     NRF_PWM0->PRESCALER = PWM_PRESCALER_PRESCALER_DIV_16;         // 1MHz clock
     NRF_PWM0->COUNTERTOP = M_TOP;                                 // 100us period for the PWM signal (10kHz)
     NRF_PWM0->MODE = (PWM_MODE_UPDOWN_Up << PWM_MODE_UPDOWN_Pos); // UP counting mode
-    NRF_PWM0->LOOP = (PWM_LOOP_CNT_Disabled << PWM_LOOP_CNT_Pos);
+    NRF_PWM0->LOOP = (PWM_LOOP_CNT_Disabled << PWM_LOOP_CNT_Pos); // Disable single sequence looping feature
 
     // Configure how many, and how the PWM dutycycles are loaded from memory
     NRF_PWM0->DECODER = (PWM_DECODER_LOAD_Individual << PWM_DECODER_LOAD_Pos) |  // Have a different duty cycle value for each channel.
@@ -116,7 +116,7 @@ void init_motors(void)
  * @param[in] l_speed speed of the left motor [-100, 100]
  * @param[in] r_speed speed of the left motor [-100, 100]
  */
-void set_motors_speed(int16_t l_speed, int16_t r_speed)
+void db_motors_setSpeed(int16_t l_speed, int16_t r_speed)
 {
 
     // Double check for out-of-bound values.
