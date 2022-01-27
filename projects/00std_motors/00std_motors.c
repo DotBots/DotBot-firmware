@@ -5,7 +5,7 @@
 **********************************************************************/
 
 /**
- * @file 00std_motor.c
+ * @file 00std_motors.c
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  * @brief This is a short example of how to interface with the motor driver in the DotBot board.
  * 
