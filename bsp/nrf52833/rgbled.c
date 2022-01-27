@@ -121,7 +121,9 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b)
                 buffer_bit--;
                 // if the next bit to write wraps over to the next byte, increment the buffer byte position.
                 if ((buffer_bit % 8) == 7)
+                {   
                     buffer_byte++;
+                }
             }
         }
         // However, if the current bit is a zero, repeat the above process but, with the 5bit encoded '0'
@@ -132,7 +134,9 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b)
                 ledBuffer[buffer_byte] |= ((LED_ZERO >> j) & 0x01) << (buffer_bit % 8);
                 buffer_bit--;
                 if ((buffer_bit % 8) == 7)
+                {    
                     buffer_byte++;
+                }
             }
         }
     }
@@ -164,7 +168,9 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b)
                 buffer_bit--;
                 // if the next bit to write wraps over to the next byte, increment the buffer byte position.
                 if ((buffer_bit % 8) == 7)
+                {
                     buffer_byte++;
+                }
             }
         }
         // However, if the current bit is a zero, repeat the above process but, with the 5bit encoded '0'
@@ -175,7 +181,9 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b)
                 ledBuffer[buffer_byte] |= ((LED_ZERO >> j) & 0x01) << (buffer_bit % 8);
                 buffer_bit--;
                 if ((buffer_bit % 8) == 7)
+                {    
                     buffer_byte++;
+                }
             }
         }
     }
@@ -206,7 +214,9 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b)
                 buffer_bit--;
                 // if the next bit to write wraps over to the next byte, increment the buffer byte position.
                 if ((buffer_bit % 8) == 7)
+                {    
                     buffer_byte++;
+                }
             }
         }
         // However, if the current bit is a zero, repeat the above process but, with the 5bit encoded '0'
@@ -217,7 +227,9 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b)
                 ledBuffer[buffer_byte] |= ((LED_ZERO >> j) & 0x01) << (buffer_bit % 8);
                 buffer_bit--;
                 if ((buffer_bit % 8) == 7)
+                {    
                     buffer_byte++;
+                }
             }
         }
     }
