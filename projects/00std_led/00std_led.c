@@ -31,6 +31,8 @@
 #define READERBUFFER_SIZE 32
 #define WRITERBUFFER_SIZE 32
 
+// Define a blocking wait function.
+#define WAIT_MS(MS) for (int i = 0; i < 3000 * MS; i++) {;}
 
 //=========================== variables =========================================
 // EasyDMA buffer declaration (preloaded with a RED led command, just as an example, it's not actually used)
@@ -93,43 +95,43 @@ int main(void)
     NRF_SPIM0->TXD.PTR = &led_cyan_buffer;
     // Execute a transfer 
     NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
-    // Wait a couple of seconds
-    for (int i = 0; i < 200000 * 15; i++);
+    // Wait a couple of seconds to appreciate the led color before changing to the next.
+    WAIT_MS(2000);
 
     // Set color of the LED to Blue
     NRF_SPIM0->TXD.PTR = &led_blue_buffer;
     NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
-    for (int i = 0; i < 200000 * 15; i++);
+    WAIT_MS(2000);
 
     // Set color of the LED to Magenta
     NRF_SPIM0->TXD.PTR = &led_magenta_buffer;
     NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
-    for (int i = 0; i < 200000 * 15; i++);
+    WAIT_MS(2000);
 
     // Set color of the LED to Red
     NRF_SPIM0->TXD.PTR = &led_red_buffer;
     NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
-    for (int i = 0; i < 200000 * 15; i++);
+    WAIT_MS(2000);
 
     // Set color of the LED to Yellow
     NRF_SPIM0->TXD.PTR = &led_yellow_buffer;
     NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
-    for (int i = 0; i < 200000 * 15; i++);
+    WAIT_MS(2000);
 
     // Set color of the LED to Green
     NRF_SPIM0->TXD.PTR = &led_green_buffer;
     NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
-    for (int i = 0; i < 200000 * 15; i++);
+    WAIT_MS(2000);
 
     // Set color of the LED to White
     NRF_SPIM0->TXD.PTR = &led_white_buffer;
     NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
-    for (int i = 0; i < 200000 * 15; i++);
+    WAIT_MS(2000);
 
     // Set color of the LED to Black
     NRF_SPIM0->TXD.PTR = &led_black_buffer;
     NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
-    for (int i = 0; i < 200000 * 15; i++);
+    WAIT_MS(2000);
   }
 
   // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
