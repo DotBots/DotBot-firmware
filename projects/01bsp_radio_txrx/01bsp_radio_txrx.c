@@ -13,6 +13,7 @@
  * if the corresponding compatible TX program is loaded into a nearby nRF52840-DK,
  * pressing the buttons in the DK should toggle ON and OFF the P0.31 pin on the DotBot (P0.31).
  * 
+ * @date 2022
  * 
  * @copyright Inria, 2022
  * 

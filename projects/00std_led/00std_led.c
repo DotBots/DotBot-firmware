@@ -11,21 +11,21 @@
  * 
  * Load this program on your board. The LEDs should start blinking different colors.
  * 
- * @version 0.1
- * @date 2022-01-06
+ * @date 2022
  * 
- * @copyright INRIA, 2022
+ * @copyright Inria, 2022
  * 
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <nrf.h>
 
-
 //=========================== defines =========================================
+
 // Pin definitions
 #define MOSI_PIN 3   ///< nRF52840 P0.3
-#define SCK_PIN 6    ///< nRF52840 P1.6 ( used because it's not an available pin in the BCM module).
+#define SCK_PIN 6    ///< nRF52840 P1.6 (used because it's not an available pin in the BCM module).
+// Note, the SPIM peripheral refuses to enable itself if the SCK pin is not defined.
 
 // EasyDMA buffer size definition
 #define READERBUFFER_SIZE 32
@@ -47,7 +47,7 @@ uint8_t led_white_buffer[WRITERBUFFER_SIZE]   = {0x00, 0x84, 0x29, 0x4a, 0x42, 0
 uint8_t led_black_buffer[WRITERBUFFER_SIZE]   = {0x00, 0x84, 0x29, 0x4a, 0x42, 0x90, 0xa4, 0x29, 0x08, 0x42, 0x10, 0x84, 0x21, 0x08, 0x42, 0x10, 0x84, 0x21, 0x08, 0x42, 0x10, 0x84, 0x21, 0x08, 0x42, 0x10, 0x84, 0x21, 0x08, 0x42, 0x10, 0x00};
 
 
-//=========================== public =========================================
+//=========================== main =========================================
 
 /**
 *  @brief The program starts executing here.
@@ -59,11 +59,9 @@ int main(void)
   NRF_P0->DIRSET = 1 << 20;  
   NRF_P0->OUTSET = 1 << 20;   
 
-  // Configure the necessary Pins in the GPIO peripheral 
+  // Configure the necessary Pins in the GPIO peripheral  (MISO and CS not needed)
   NRF_P0->DIRSET = 1 << MOSI_PIN;  // MOSI as Output
-  //NRF_P0->DIRCLR = 1 << MISO_PIN;  // MISO as Input
   NRF_P0->DIRSET = 1 << SCK_PIN;   // SCK  as Output
-  //NRF_P0->DIRSET = 1 << CS_PIN;    // CS   as Output
 
   // Define the necessary Pins in the SPIM peripheral 
   NRF_SPIM0->PSEL.MOSI =  MOSI_PIN << SPIM_PSEL_MOSI_PIN_Pos  |                           // Define pin number for MOSI pin
@@ -135,5 +133,5 @@ int main(void)
   }
 
   // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
-  NRF_P0->DIRSET = 1 << 14;
+  NOP();
 }

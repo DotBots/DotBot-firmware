@@ -12,6 +12,8 @@
  * Load this program on your board. The right wheel should spin forwards and then backward.
  * Afterwards the left wheel also turns forward and then backward.
  * 
+ * @date 2022
+ * 
  * @copyright Inria, 2022
  * 
  */
@@ -42,5 +44,5 @@ int main(void)
   }
 
   // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
-
+  NOP();
 }

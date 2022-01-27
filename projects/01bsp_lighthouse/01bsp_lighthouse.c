@@ -11,6 +11,7 @@
  * 
  * Load this program on your board. LED should blink blue when it receives a valid lighthouse 2 signal.
  * 
+ * @date 2022
  * 
  * @copyright Inria, 2022
  * 

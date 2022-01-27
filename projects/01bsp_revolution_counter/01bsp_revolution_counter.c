@@ -11,6 +11,7 @@
  * 
  * Load this program on your board. The LEDs should start blinking blue as the wheels are being turned.
  * 
+ * @date 2022
  * 
  * @copyright Inria, 2022
  * 
