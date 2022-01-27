@@ -5,7 +5,7 @@
 **********************************************************************/
 
 /**
- * @file 01bsp_led.c
+ * @file 01bsp_rgbled.c
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  * @brief This is a short example of how to interface with the RGB LED in the DotBot board.
  * 
