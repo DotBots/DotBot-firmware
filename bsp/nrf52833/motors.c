@@ -163,4 +163,7 @@ void db_motors_setSpeed(int16_t l_speed, int16_t r_speed)
         pwm_seq[2] = 0 | 1 << 15;
         pwm_seq[3] = r_speed | 1 << 15;
     }
+
+    // Update PWM values
+    NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
 }
