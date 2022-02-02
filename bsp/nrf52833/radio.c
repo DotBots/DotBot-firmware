@@ -38,7 +38,7 @@
  * @param[in] packet Pointer to a uint_8 array of size 32 where the packet will be located.
  * 
  */
-void gw_radio_tx_init(uint8_t freq, uint8_t log_addr, uint8_t *packet)
+void db_radio_tx_init(uint8_t freq, uint8_t log_addr, uint8_t *packet)
 {
     NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_0dBm << RADIO_TXPOWER_TXPOWER_Pos); // 0dBm == 1mW Power output
     NRF_RADIO->FREQUENCY = freq;                                                     // frequency bin 7, 2407MHz
@@ -103,7 +103,7 @@ void gw_radio_tx_init(uint8_t freq, uint8_t log_addr, uint8_t *packet)
  * @param[in] packet Pointer to a uint_8 array of size 32 where the packet will be located.
  * 
  */
-void gw_radio_rx_init(uint8_t freq, uint8_t log_addr, uint8_t packet[32])
+void db_radio_rx_init(uint8_t freq, uint8_t log_addr, uint8_t packet[32])
 {
     NRF_RADIO->FREQUENCY = freq;                                          // frequency bin 7, 2407MHz
     NRF_RADIO->MODE = (RADIO_MODE_MODE_Nrf_1Mbit << RADIO_MODE_MODE_Pos); // Use Nordic proprietary 1Mbit/s protocol
@@ -164,7 +164,7 @@ void gw_radio_rx_init(uint8_t freq, uint8_t log_addr, uint8_t packet[32])
  * 
  * @param[in] freq Frequency of the radio [0, 100]
  */
-void gw_radio_set_frequency(uint8_t freq)
+void db_radio_set_frequency(uint8_t freq)
 {
     NRF_RADIO->FREQUENCY = freq; // frequency bin 7, 2407MHz
 }
@@ -176,7 +176,7 @@ void gw_radio_set_frequency(uint8_t freq)
  * 
  * @param[in] log_addr Logical addres that the radio will use. [0, 7]
  */
-void gw_radio_set_logical_address(uint8_t log_addr)
+void db_radio_set_logical_address(uint8_t log_addr)
 {
     NRF_RADIO->RXADDRESSES = (1UL << log_addr); // Receive from this address
     NRF_RADIO->TXADDRESS = log_addr;            // Transmit to this address
@@ -189,7 +189,7 @@ void gw_radio_set_logical_address(uint8_t log_addr)
  * and sends it through the radio.
  * 
  */
-void gw_radio_send_packet(void)
+void db_radio_send_packet(void)
 {
     NRF_RADIO->TASKS_TXEN = RADIO_TASKS_TXEN_TASKS_TXEN_Trigger; // Enable the Radio and let the shortcuts deal with all the 
                                                                  // steps to send the packet and disable the radio
@@ -200,7 +200,7 @@ void gw_radio_send_packet(void)
  * 
  * 
  */
-void gw_radio_rx_enable(void)
+void db_radio_rx_enable(void)
 {
     NRF_RADIO->TASKS_RXEN = 1UL;
 }
@@ -210,7 +210,7 @@ void gw_radio_rx_enable(void)
  * 
  * 
  */
-void gw_radio_rx_disable(void)
+void db_radio_rx_disable(void)
 {
     NRF_RADIO->TASKS_DISABLE = RADIO_TASKS_DISABLE_TASKS_DISABLE_Trigger;
 }
