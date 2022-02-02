@@ -1,0 +1,49 @@
+/*********************************************************************
+*                                                                    * 
+*                               DotBot                               *
+*                                                                    *
+**********************************************************************/
+
+/**
+ * @file 01bsp_rgbled.c
+ * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
+ * @brief This is the main DotBot app.
+ * 
+ * Load this program on your board. Now the DotBot can be remote controlled 
+ * from a nearby nRF52840-DK. THe buttons of the DK serving as Forward, 
+ * Right, Left and Back buttons.
+ * 
+ * @date 2022
+ * 
+ * @copyright Inria, 2022
+ * 
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <nrf.h>
+
+
+//=========================== defines =========================================
+
+
+//=========================== variables =========================================
+
+
+//=========================== main =========================================
+
+/**
+*  @brief The program starts executing here.
+*/
+int main(void)
+{
+
+ 
+
+  while (1)
+  {
+
+  }
+
+  // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
+  __NOP();
+}
