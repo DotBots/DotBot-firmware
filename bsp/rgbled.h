@@ -1,8 +1,8 @@
-#ifndef __RGB_LEDS_H
-#define __RGB_LEDS_H
+#ifndef __RGBLEDS_H
+#define __RGBLEDS_H
 
 /**
- * @file rgb_led.h
+ * @file rgbled.h
  * @addtogroup BSP
  * 
  * @brief  Cross-platform declaration "leds" bsp module.
@@ -18,8 +18,8 @@
 
 
 //=========================== prototypes ======================================
-void init_rgb_led(void);
-void set_rgb_led(uint8_t r, uint8_t g, uint8_t b);
+void db_rgbled_init(void);
+void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b);
 
 
 #endif

@@ -5,11 +5,12 @@
 **********************************************************************/
 
 /**
- * @file 01bsp_revolution_counter.c
+ * @file 01bsp_motors.c
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
- * @brief This is a short example of how to interface with the Wheel revolution counter in the DotBot board.
+ * @brief This is a short example of how to interface with the motor driver in the DotBot board.
  * 
- * Load this program on your board. The LEDs should start blinking blue as the wheels are being turned.
+ * Load this program on your board. The right wheel should spin forwards and then backward.
+ * Afterwards the left wheel also turns forward and then backward.
  * 
  * @date 2022
  * 
@@ -20,9 +21,12 @@
 #include <stdlib.h>
 #include <nrf.h>
 
+
 //=========================== defines =========================================
 
+
 //=========================== variables =========================================
+
 
 //=========================== main =========================================
 
@@ -32,8 +36,11 @@
 int main(void)
 {
 
+ 
+
   while (1)
   {
+
   }
 
   // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.

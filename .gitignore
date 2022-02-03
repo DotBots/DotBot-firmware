@@ -3,6 +3,9 @@
 *.jlink
 *.ind
 
+# Visual Studio specific files
+.vscode/
+
 # Prerequisites
 *.d
 

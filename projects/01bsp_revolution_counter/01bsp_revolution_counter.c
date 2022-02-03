@@ -20,9 +20,12 @@
 #include <stdlib.h>
 #include <nrf.h>
 
+
 //=========================== defines =========================================
 
+
 //=========================== variables =========================================
+
 
 //=========================== main =========================================
 
@@ -32,8 +35,11 @@
 int main(void)
 {
 
+ 
+
   while (1)
   {
+
   }
 
   // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.

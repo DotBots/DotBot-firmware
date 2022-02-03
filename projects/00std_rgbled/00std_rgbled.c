@@ -11,32 +11,38 @@
  * 
  * Load this program on your board. The LEDs should start blinking different colors.
  * 
- * @version 0.1
- * @date 2022-01-06
+ * @date 2022
  * 
- * @copyright INRIA, 2022
+ * @copyright Inria, 2022
  * 
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <nrf.h>
 
-
 //=========================== defines =========================================
+
 // Pin definitions
 #define MOSI_PIN 3   ///< nRF52840 P0.3
-#define SCK_PIN 6    ///< nRF52840 P1.6 ( used because it's not an available pin in the BCM module).
+#define SCK_PIN 6    ///< nRF52840 P1.6 (used because it's not an available pin in the BCM module).
+// Note, the SPIM peripheral refuses to enable itself if the SCK pin is not defined.
 
 // EasyDMA buffer size definition
 #define READERBUFFER_SIZE 32
 #define WRITERBUFFER_SIZE 32
 
+// Define a blocking wait function.
+#define WAIT_MS(MS) for (int i = 0; i < 3000 * MS; i++) {;}
 
 //=========================== variables =========================================
-// EasyDMA buffer declaration (preloaded with a RED led command, just as an example, it's not actually used)
+// EasyDMA READ buffer declaration (the read buffer is not actually required for the code to work. 4
+// But is left as an example of how to configure an EasyDMA READ buffer.)
 uint8_t readerBuffer[READERBUFFER_SIZE];
-// uint8_t writerBuffer[WRITERBUFFER_SIZE] = {0x00, 0x84, 0x29, 0x4A, 0x42, 0x90, 0xA4, 0x29, 0x08, 0x42, 0x10, 0x84, 0x21, 0x08, 0x42, 0x10, 0xA5, 0x29, 0x4A, 0x52, 0x94, 0xA5, 0x29, 0x48, 0x42, 0x10, 0x84, 0x21, 0x08, 0x42, 0x10, 0x00};
 
+// Various EasyDMA WRITE buffers preloaded with the dataframes required for displaying different colors on the LED.
+// When these dataframes are shifted out (MSB first) to the LED driver at 500Kbits/s.
+// the LED driver recognizes them as one-wire commands for the pre-specified colors.
+// And turns ON the RGB LED accordingly.
 uint8_t led_cyan_buffer[WRITERBUFFER_SIZE]    = {0x00, 0x84, 0x29, 0x4a, 0x42, 0x90, 0xa4, 0x29, 0x08, 0x42, 0x94, 0x84, 0x29, 0x08, 0x42, 0x10, 0x84, 0x21, 0x08, 0x42, 0x10, 0x84, 0x21, 0x08, 0x42, 0x94, 0x84, 0x29, 0x08, 0x42, 0x10, 0x00};
 uint8_t led_blue_buffer[WRITERBUFFER_SIZE]    = {0x00, 0x84, 0x29, 0x4a, 0x42, 0x90, 0xa4, 0x29, 0x08, 0x52, 0x90, 0x85, 0x21, 0x08, 0x42, 0x10, 0x84, 0x21, 0x08, 0x42, 0x10, 0x84, 0x21, 0x08, 0x42, 0x10, 0x84, 0x21, 0x08, 0x42, 0x10, 0x00};
 uint8_t led_magenta_buffer[WRITERBUFFER_SIZE] = {0x00, 0x84, 0x29, 0x4a, 0x42, 0x90, 0xa4, 0x29, 0x08, 0x42, 0x94, 0x84, 0x29, 0x08, 0x42, 0x10, 0x84, 0x29, 0x48, 0x42, 0x90, 0x84, 0x21, 0x08, 0x42, 0x10, 0x84, 0x21, 0x08, 0x42, 0x10, 0x00};
@@ -46,8 +52,7 @@ uint8_t led_green_buffer[WRITERBUFFER_SIZE]   = {0x00, 0x84, 0x29, 0x4a, 0x42, 0
 uint8_t led_white_buffer[WRITERBUFFER_SIZE]   = {0x00, 0x84, 0x29, 0x4a, 0x42, 0x90, 0xa4, 0x29, 0x08, 0x42, 0x94, 0x84, 0x29, 0x08, 0x42, 0x10, 0x84, 0x29, 0x48, 0x42, 0x90, 0x84, 0x21, 0x08, 0x42, 0x94, 0x84, 0x29, 0x08, 0x42, 0x10, 0x00};
 uint8_t led_black_buffer[WRITERBUFFER_SIZE]   = {0x00, 0x84, 0x29, 0x4a, 0x42, 0x90, 0xa4, 0x29, 0x08, 0x42, 0x10, 0x84, 0x21, 0x08, 0x42, 0x10, 0x84, 0x21, 0x08, 0x42, 0x10, 0x84, 0x21, 0x08, 0x42, 0x10, 0x84, 0x21, 0x08, 0x42, 0x10, 0x00};
 
-
-//=========================== public =========================================
+//=========================== main =========================================
 
 /**
 *  @brief The program starts executing here.
@@ -59,11 +64,9 @@ int main(void)
   NRF_P0->DIRSET = 1 << 20;  
   NRF_P0->OUTSET = 1 << 20;   
 
-  // Configure the necessary Pins in the GPIO peripheral 
+  // Configure the necessary Pins in the GPIO peripheral  (MISO and CS not needed)
   NRF_P0->DIRSET = 1 << MOSI_PIN;  // MOSI as Output
-  //NRF_P0->DIRCLR = 1 << MISO_PIN;  // MISO as Input
   NRF_P0->DIRSET = 1 << SCK_PIN;   // SCK  as Output
-  //NRF_P0->DIRSET = 1 << CS_PIN;    // CS   as Output
 
   // Define the necessary Pins in the SPIM peripheral 
   NRF_SPIM0->PSEL.MOSI =  MOSI_PIN << SPIM_PSEL_MOSI_PIN_Pos  |                           // Define pin number for MOSI pin
@@ -84,7 +87,6 @@ int main(void)
   NRF_SPIM0->RXD.PTR    = &readerBuffer;                  // Set the input buffer pointer.
   // Configure the WRITER channel
   NRF_SPIM0->TXD.MAXCNT = WRITERBUFFER_SIZE;              // Set the size of the output buffer.
-  // NRF_SPIM0->TXD.PTR    = &writerBuffer;                  // Set the output buffer pointer.
 
   // Enable the SPIM pripheral 
   NRF_SPIM0->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
@@ -95,45 +97,45 @@ int main(void)
     NRF_SPIM0->TXD.PTR = &led_cyan_buffer;
     // Execute a transfer 
     NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
-    // Wait a couple of seconds
-    for (int i = 0; i < 200000 * 15; i++);
+    // Wait a couple of seconds to appreciate the led color before changing to the next.
+    WAIT_MS(2000);
 
     // Set color of the LED to Blue
     NRF_SPIM0->TXD.PTR = &led_blue_buffer;
     NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
-    for (int i = 0; i < 200000 * 15; i++);
+    WAIT_MS(2000);
 
     // Set color of the LED to Magenta
     NRF_SPIM0->TXD.PTR = &led_magenta_buffer;
     NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
-    for (int i = 0; i < 200000 * 15; i++);
+    WAIT_MS(2000);
 
     // Set color of the LED to Red
     NRF_SPIM0->TXD.PTR = &led_red_buffer;
     NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
-    for (int i = 0; i < 200000 * 15; i++);
+    WAIT_MS(2000);
 
     // Set color of the LED to Yellow
     NRF_SPIM0->TXD.PTR = &led_yellow_buffer;
     NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
-    for (int i = 0; i < 200000 * 15; i++);
+    WAIT_MS(2000);
 
     // Set color of the LED to Green
     NRF_SPIM0->TXD.PTR = &led_green_buffer;
     NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
-    for (int i = 0; i < 200000 * 15; i++);
+    WAIT_MS(2000);
 
     // Set color of the LED to White
     NRF_SPIM0->TXD.PTR = &led_white_buffer;
     NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
-    for (int i = 0; i < 200000 * 15; i++);
+    WAIT_MS(2000);
 
     // Set color of the LED to Black
     NRF_SPIM0->TXD.PTR = &led_black_buffer;
     NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
-    for (int i = 0; i < 200000 * 15; i++);
+    WAIT_MS(2000);
   }
 
   // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
-  NRF_P0->DIRSET = 1 << 14;
+  __NOP();
 }

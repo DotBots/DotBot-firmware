@@ -5,15 +5,14 @@
 **********************************************************************/
 
 /**
- * @file 00std_motor.c
+ * @file 00std_motors.c
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  * @brief This is a short example of how to interface with the motor driver in the DotBot board.
  * 
  * Load this program on your board. The right wheel should spin forwards and then backward.
  * Afterwards the left wheel also turns forward and then backward.
  * 
- * @version 0.1
- * @date 2022-01-26
+ * @date 2022
  * 
  * @copyright INRIA, 2022
  * 
@@ -38,12 +37,15 @@
 // Max value of the PWM counter register.
 #define M_TOP 100 
 
+// Define a blocking wait function.
+#define WAIT_MS(MS) for (int i = 0; i < 3000 * MS; i++) {;}
+
 //=========================== variables =========================================
 // Variable that stores the PWM duty cycle for all four PWM channels
 uint16_t pwm_seq[4];
 
 
-//=========================== public =========================================
+//=========================== main =========================================
 
 /**
 *  @brief The program starts executing here.
@@ -116,79 +118,79 @@ int main(void)
 
   while (1)
   {
-  // Right motor forward
-  pwm_seq[0] = 0  | 1 << 15;
-  pwm_seq[1] = 0  | 1 << 15;
-  pwm_seq[2] = 60 | 1 << 15;
-  pwm_seq[3] = 0  | 1 << 15;
-  // Update PWM values
-  NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
-  for (int i = 0; i < 200000 * 30; i++);  // wait 2 sec
+    // Right motor forward
+    pwm_seq[0] = 0  | 1 << 15;
+    pwm_seq[1] = 0  | 1 << 15;
+    pwm_seq[2] = 60 | 1 << 15;
+    pwm_seq[3] = 0  | 1 << 15;
+    // Update PWM values
+    NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
+    WAIT_MS(2000);  // wait 2 sec
 
-   // Turnoff motor for a bit
-  pwm_seq[0] = 0  | 1 << 15;
-  pwm_seq[1] = 0  | 1 << 15;
-  pwm_seq[2] = 0  | 1 << 15;
-  pwm_seq[3] = 0  | 1 << 15;
-  // Update PWM values
-  NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
-  for (int i = 0; i < 200000 * 15; i++);  // wait 1 sec
+      // Turnoff motor for a bit
+    pwm_seq[0] = 0  | 1 << 15;
+    pwm_seq[1] = 0  | 1 << 15;
+    pwm_seq[2] = 0  | 1 << 15;
+    pwm_seq[3] = 0  | 1 << 15;
+    // Update PWM values
+    NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
+    WAIT_MS(1000);  // wait 1 sec
 
-   // Right motor backward
-  pwm_seq[0] = 0  | 1 << 15;
-  pwm_seq[1] = 0  | 1 << 15;
-  pwm_seq[2] = 0  | 1 << 15;
-  pwm_seq[3] = 60 | 1 << 15;
-  // Update PWM values
-  NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
-  for (int i = 0; i < 200000 * 30; i++);  // wait 2 sec
+      // Right motor backward
+    pwm_seq[0] = 0  | 1 << 15;
+    pwm_seq[1] = 0  | 1 << 15;
+    pwm_seq[2] = 0  | 1 << 15;
+    pwm_seq[3] = 60 | 1 << 15;
+    // Update PWM values
+    NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
+    WAIT_MS(2000);  // wait 2 sec
 
-   // Turnoff motor for a bit
-  pwm_seq[0] = 0  | 1 << 15;
-  pwm_seq[1] = 0  | 1 << 15;
-  pwm_seq[2] = 0  | 1 << 15;
-  pwm_seq[3] = 0  | 1 << 15;
-  // Update PWM values
-  NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
-  for (int i = 0; i < 200000 * 15; i++);  // wait 1 sec
+      // Turnoff motor for a bit
+    pwm_seq[0] = 0  | 1 << 15;
+    pwm_seq[1] = 0  | 1 << 15;
+    pwm_seq[2] = 0  | 1 << 15;
+    pwm_seq[3] = 0  | 1 << 15;
+    // Update PWM values
+    NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
+    WAIT_MS(1000);  // wait 1 sec
 
-   // Left motor forward
-  pwm_seq[0] = 60 | 1 << 15;
-  pwm_seq[1] = 0  | 1 << 15;
-  pwm_seq[2] = 0  | 1 << 15;
-  pwm_seq[3] = 0  | 1 << 15;
-  // Update PWM values
-  NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
-  for (int i = 0; i < 200000 * 30; i++);  // wait 2 sec
+      // Left motor forward
+    pwm_seq[0] = 60 | 1 << 15;
+    pwm_seq[1] = 0  | 1 << 15;
+    pwm_seq[2] = 0  | 1 << 15;
+    pwm_seq[3] = 0  | 1 << 15;
+    // Update PWM values
+    NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
+    WAIT_MS(2000);  // wait 2 sec
 
-   // Turnoff motor for a bit
-  pwm_seq[0] = 0  | 1 << 15;
-  pwm_seq[1] = 0  | 1 << 15;
-  pwm_seq[2] = 0  | 1 << 15;
-  pwm_seq[3] = 0  | 1 << 15;
-  // Update PWM values
-  NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
-  for (int i = 0; i < 200000 * 15; i++);  // wait 1 sec
+      // Turnoff motor for a bit
+    pwm_seq[0] = 0  | 1 << 15;
+    pwm_seq[1] = 0  | 1 << 15;
+    pwm_seq[2] = 0  | 1 << 15;
+    pwm_seq[3] = 0  | 1 << 15;
+    // Update PWM values
+    NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
+    WAIT_MS(1000);  // wait 1 sec
 
-   // Left motor backward
-  pwm_seq[0] = 0  | 1 << 15;
-  pwm_seq[1] = 60 | 1 << 15;
-  pwm_seq[2] = 0  | 1 << 15;
-  pwm_seq[3] = 0  | 1 << 15;
-  // Update PWM values
-  NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
-  for (int i = 0; i < 200000 * 30; i++);  // wait 2 sec
-  
-  // Turnoff motor for a bit
-  pwm_seq[0] = 0  | 1 << 15;
-  pwm_seq[1] = 0  | 1 << 15;
-  pwm_seq[2] = 0  | 1 << 15;
-  pwm_seq[3] = 0  | 1 << 15;
-  // Update PWM values
-  NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
-  for (int i = 0; i < 200000 * 15; i++);  // wait 1 sec
+      // Left motor backward
+    pwm_seq[0] = 0  | 1 << 15;
+    pwm_seq[1] = 60 | 1 << 15;
+    pwm_seq[2] = 0  | 1 << 15;
+    pwm_seq[3] = 0  | 1 << 15;
+    // Update PWM values
+    NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
+    WAIT_MS(2000);  // wait 2 sec
+
+    // Turnoff motor for a bit
+    pwm_seq[0] = 0  | 1 << 15;
+    pwm_seq[1] = 0  | 1 << 15;
+    pwm_seq[2] = 0  | 1 << 15;
+    pwm_seq[3] = 0  | 1 << 15;
+    // Update PWM values
+    NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
+    WAIT_MS(1000);  // wait 1 sec
   }
 
   // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
-  NRF_P0->DIRSET = 1 << 14;
+  __NOP();
 }

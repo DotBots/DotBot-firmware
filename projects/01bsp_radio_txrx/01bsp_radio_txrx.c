@@ -5,11 +5,13 @@
 **********************************************************************/
 
 /**
- * @file 01bsp_revolution_counter.c
+ * @file 01bsp_radio_txrx.c
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
- * @brief This is a short example of how to interface with the Wheel revolution counter in the DotBot board.
+ * @brief This is a short example of how to interface with the onboard Radio in the DotBot board.
  * 
- * Load this program on your board. The LEDs should start blinking blue as the wheels are being turned.
+ * This program is the RX part.
+ * if the corresponding compatible TX program is loaded into a nearby nRF52840-DK,
+ * pressing the buttons in the DK should toggle ON and OFF the P0.31 pin on the DotBot (P0.31).
  * 
  * @date 2022
  * 
@@ -20,9 +22,12 @@
 #include <stdlib.h>
 #include <nrf.h>
 
+
 //=========================== defines =========================================
 
+
 //=========================== variables =========================================
+
 
 //=========================== main =========================================
 
@@ -32,8 +37,11 @@
 int main(void)
 {
 
+ 
+
   while (1)
   {
+
   }
 
   // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
