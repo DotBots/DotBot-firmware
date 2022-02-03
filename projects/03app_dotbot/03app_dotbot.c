@@ -1,11 +1,5 @@
-/*********************************************************************
-*                                                                    * 
-*                               DotBot                               *
-*                                                                    *
-**********************************************************************/
-
 /**
- * @file 01bsp_rgbled.c
+ * @file 03app_dotbot.c
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  * @brief This is the main DotBot app.
  * 

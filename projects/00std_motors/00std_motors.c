@@ -1,9 +1,3 @@
-/*********************************************************************
-*                                                                    * 
-*                               DotBot                               *
-*                                                                    *
-**********************************************************************/
-
 /**
  * @file 00std_motors.c
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
@@ -12,7 +6,6 @@
  * Load this program on your board. The right wheel should spin forwards and then backward.
  * Afterwards the left wheel also turns forward and then backward.
  * 
- * @date 2022
  * 
  * @copyright Inria, 2022
  * 

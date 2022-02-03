@@ -1,9 +1,3 @@
-/*********************************************************************
-*                                                                    * 
-*                       DotBot-Gateway                               *
-*                                                                    *
-**********************************************************************/
-
 /**
  * @file 00std_radio_rx.c
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
@@ -15,7 +9,6 @@
  * Pressing any of the 4 buttons on the Transmitting DK, will toggle ON and OFF the corresponding LED
  * in the receiving DK.
  * 
- * @date 2022
  * 
  * @copyright Inria, 2022
  * 

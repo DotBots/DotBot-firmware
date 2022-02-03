@@ -1,9 +1,3 @@
-/*********************************************************************
-*                                                                    * 
-*                               DotBot                               *
-*                                                                    *
-**********************************************************************/
-
 /**
  * @file 01bsp_lighthouse.c
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>

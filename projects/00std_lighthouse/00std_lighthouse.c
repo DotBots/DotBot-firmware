@@ -1,9 +1,3 @@
-/*********************************************************************
-*                                                                    * 
-*                               DotBot                               *
-*                                                                    *
-**********************************************************************/
-
 /**
  * @file 00std_lighthouse.c
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
@@ -11,7 +5,6 @@
  * 
  * Load this program on your board. LED should blink blue when it receives a valid lighthouse 2 signal.
  * 
- * @date 2022
  * 
  * @copyright Inria, 2022
  * 
