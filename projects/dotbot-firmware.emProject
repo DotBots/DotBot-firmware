@@ -807,4 +807,5 @@
       </file>
     </folder>
   </project>
+  <configuration Name="Common" linker_output_format="hex" />
 </solution>
