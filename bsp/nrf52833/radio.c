@@ -15,6 +15,7 @@
 #include "radio.h"
 
 //=========================== defines =========================================
+
 // Simple function that blocks and wait while a flag sets.
 #define WAIT_FOR(FLAG) while (FLAG == 0) {__NOP();}                  
 

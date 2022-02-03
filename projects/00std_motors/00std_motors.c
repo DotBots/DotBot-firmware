@@ -14,8 +14,8 @@
 #include <stdlib.h>
 #include <nrf.h>
 
-
 //=========================== defines =========================================
+
 // Pin definitions
 // motors driver pins
 #define AIN1_PIN	2UL
@@ -34,9 +34,9 @@
 #define WAIT_MS(MS) for (int i = 0; i < 3000 * MS; i++) {;}
 
 //=========================== variables =========================================
+
 // Variable that stores the PWM duty cycle for all four PWM channels
 uint16_t pwm_seq[4];
-
 
 //=========================== main =========================================
 

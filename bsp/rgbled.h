@@ -16,8 +16,8 @@
 #include <stdlib.h>
 #include <nrf.h>
 
-
 //=========================== prototypes ======================================
+
 void db_rgbled_init(void);
 void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b);
 

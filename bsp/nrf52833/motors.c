@@ -14,8 +14,8 @@
 
 #include "motors.h"
 
-
 //=========================== defines =========================================
+
 // Motor driver pin definition
 #define AIN1_PIN 2UL
 #define AIN1_PORT 0UL
@@ -30,6 +30,7 @@
 #define M_TOP 100
 
 //=========================== variables =========================================
+
 // Variable that stores the PWM duty cycle for all four PWM channels
 uint16_t pwm_seq[4];
 

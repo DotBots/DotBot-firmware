@@ -29,6 +29,7 @@
 #define WAIT_MS(MS) for (int i = 0; i < 3000 * MS; i++) {;}
 
 //=========================== variables =========================================
+
 // EasyDMA READ buffer declaration (the read buffer is not actually required for the code to work. 4
 // But is left as an example of how to configure an EasyDMA READ buffer.)
 uint8_t readerBuffer[READERBUFFER_SIZE];

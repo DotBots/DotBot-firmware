@@ -14,8 +14,8 @@
 
 #include "rgbled.h"
 
-
 //=========================== define ==========================================
+
 // Pin definitions
 #define LED_MOSI_PIN 3 ///< nRF52840 P0.3
 #define LED_SCK_PIN 6  ///< nRF52840 P1.6 ( used because it's not an available pin in the BCM module).
@@ -28,10 +28,9 @@
 #define LED_ZERO 0b00010000
 
 //=========================== variables =======================================
+
 // EasyDMA buffer declaration for the RGB LED.
 uint8_t ledBuffer[LED_BUFFER_SIZE];
-
-
 
 //=========================== public ==========================================
 

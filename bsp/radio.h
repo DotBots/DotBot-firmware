@@ -19,6 +19,7 @@
 //=========================== prototypes ======================================
 
 //=========================== public ======================================
+
 void db_radio_tx_init(uint8_t freq, uint8_t log_addr, uint8_t *packet);
 void db_radio_rx_init(uint8_t freq, uint8_t log_addr, uint8_t *packet);
 

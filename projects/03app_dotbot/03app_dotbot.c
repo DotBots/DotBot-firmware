@@ -19,12 +19,14 @@
 #include <motors.h>
 
 //=========================== defines =========================================
+
 // Useful Macro functions
 #define WAIT_MS(MS) for (int i = 0; i < 3000 * MS; i++) {__NOP();}   // Define a simple blocking wait milisecond function.
 
 #define NUMBER_OF_BYTES_IN_PACKET 32
 
 //=========================== variables =========================================
+
 static uint8_t packet[NUMBER_OF_BYTES_IN_PACKET]; // variable that stores the radio packet that arrives.
 
 //=========================== main =========================================

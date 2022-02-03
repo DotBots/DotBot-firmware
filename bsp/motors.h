@@ -16,10 +16,10 @@
 #include <stdlib.h>
 #include <nrf.h>
 
-
 //=========================== prototypes ======================================
 
 //=========================== public ======================================
+
 void db_motors_init(void);
 void db_motors_setSpeed(int16_t l_speed, int16_t r_speed);
 
