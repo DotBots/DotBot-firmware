@@ -11,7 +11,6 @@
  * 
  * Load this program on your board. The LEDs should start blinking different colors.
  * 
- * @date 2022
  * 
  * @copyright Inria, 2022
  * 

@@ -9,7 +9,7 @@
  * 
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  * 
- * @copyright INRIA, 2022
+ * @copyright Inria, 2022
  */
 
 #include <stdio.h>

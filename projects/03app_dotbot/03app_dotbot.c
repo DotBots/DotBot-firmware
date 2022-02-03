@@ -13,7 +13,6 @@
  * from a nearby nRF52840-DK. THe buttons of the DK serving as Forward, 
  * Right, Left and Back buttons.
  * 
- * @date 2022
  * 
  * @copyright Inria, 2022
  * 
