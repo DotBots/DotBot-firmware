@@ -16,9 +16,6 @@
 
 //=========================== defines =========================================
 
-// Simple function that blocks and wait while a flag sets.
-#define WAIT_FOR(FLAG) while (FLAG == 0) {__NOP();}                  
-
 #define MAX_NUMBER_OF_BYTES_IN_PACKET 32
 
 //=========================== variables =========================================
@@ -83,9 +80,9 @@ void db_radio_tx_init(uint8_t freq, uint8_t log_addr, uint8_t *packet)
                         (RADIO_SHORTS_END_DISABLE_Enabled << RADIO_SHORTS_END_DISABLE_Pos);  //FIXME: this short does not work, radio is not disabled upon "END" of transmission
 
     // Configure the external High-frequency Clock. (Needed for correct operation)
-    NRF_CLOCK->EVENTS_HFCLKSTARTED = 0x00;    // Clear the flag
-    NRF_CLOCK->TASKS_HFCLKSTART = 0x01;       // Start the clock
-    WAIT_FOR(NRF_CLOCK->EVENTS_HFCLKSTARTED); // Wait for the clock to actually start.
+    NRF_CLOCK->EVENTS_HFCLKSTARTED = 0x00;           // Clear the flag
+    NRF_CLOCK->TASKS_HFCLKSTART    = 0x01;           // Start the clock
+    while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) {;}  // Wait for the clock to actually start.
 }
 
 /**
@@ -150,9 +147,9 @@ void db_radio_rx_init(uint8_t freq, uint8_t log_addr, uint8_t packet[32])
     NRF_RADIO->PACKETPTR = (uint32_t)packet;
 
     // // Configure the external High-frequency Clock. (Needed for correct operation)
-    NRF_CLOCK->EVENTS_HFCLKSTARTED = 0x00;    // Clear the flag
-    NRF_CLOCK->TASKS_HFCLKSTART = 0x01;       // Start the clock
-    WAIT_FOR(NRF_CLOCK->EVENTS_HFCLKSTARTED); // Wait for the clock to actually start.
+    NRF_CLOCK->EVENTS_HFCLKSTARTED = 0x00;           // Clear the flag
+    NRF_CLOCK->TASKS_HFCLKSTART    = 0x01;           // Start the clock
+    while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) {;}  // Wait for the clock to actually start.
 
     // Enable the Radio
     NRF_RADIO->TASKS_RXEN = RADIO_TASKS_RXEN_TASKS_RXEN_Trigger;

@@ -21,7 +21,6 @@
 
 // Useful Macro functions
 #define WAIT_MS(MS) for (int i = 0; i < 3000 * MS; i++) {__NOP();}   // Define a simple blocking wait milisecond function.
-#define WAIT_FOR(FLAG) while (FLAG == 0) {__NOP();}                  // Simple function that blocks and wait while a flag sets.
 
 #define NUMBER_OF_BYTES_IN_PACKET 32
 
@@ -90,9 +89,9 @@ int main(void)
   NRF_RADIO->PACKETPTR = (uint32_t)&packet;
 
   // // Configure the external High-frequency Clock. (Needed for correct operation)
-  NRF_CLOCK->EVENTS_HFCLKSTARTED = 0x00;    // Clear the flag
-  NRF_CLOCK->TASKS_HFCLKSTART = 0x01;       // Start the clock
-  WAIT_FOR(NRF_CLOCK->EVENTS_HFCLKSTARTED); // Wait for the clock to actually start.
+  NRF_CLOCK->EVENTS_HFCLKSTARTED = 0x00;           // Clear the flag
+  NRF_CLOCK->TASKS_HFCLKSTART    = 0x01;           // Start the clock
+  while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) {;}  // Wait for the clock to actually start.
 
   // Enable the Radio
   NRF_RADIO->TASKS_RXEN = RADIO_TASKS_RXEN_TASKS_RXEN_Trigger;
