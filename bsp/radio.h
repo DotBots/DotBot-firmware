@@ -4,17 +4,17 @@
 /**
  * @file radio.h
  * @addtogroup BSP
- * 
+ *
  * @brief  Cross-platform declaration "radio" bsp module.
- * 
+ *
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
- * 
+ *
  * @copyright Inria, 2022
  */
 
+#include <nrf.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <nrf.h>
 
 //=========================== prototypes ======================================
 
@@ -30,6 +30,5 @@ void db_radio_send_packet(void);
 
 void db_radio_rx_enable(void);
 void db_radio_rx_disable(void);
-
 
 #endif

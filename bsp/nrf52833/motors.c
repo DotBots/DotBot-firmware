@@ -17,13 +17,13 @@
 //=========================== defines =========================================
 
 // Motor driver pin definition
-#define AIN1_PIN 2UL
+#define AIN1_PIN  2UL
 #define AIN1_PORT 0UL
-#define AIN2_PIN 28UL
+#define AIN2_PIN  28UL
 #define AIN2_PORT 0UL
-#define BIN1_PIN 9UL
+#define BIN1_PIN  9UL
 #define BIN1_PORT 1UL
-#define BIN2_PIN 11UL
+#define BIN2_PIN  11UL
 #define BIN2_PORT 0UL
 
 // Max value of the PWM counter register.
@@ -46,8 +46,8 @@ uint16_t pwm_seq[4];
  * PWM resolution = 100 units (1us resolution)
  * 
  */
-void db_motors_init(void)
-{
+void db_motors_init(void) {
+
     // Configure the PWM pins as output in the GPIO peripheral.
     NRF_P0->DIRSET = 1 << AIN1_PIN;
     NRF_P0->DIRSET = 1 << AIN2_PIN;
@@ -117,8 +117,7 @@ void db_motors_init(void)
  * @param[in] l_speed speed of the left motor [-100, 100]
  * @param[in] r_speed speed of the left motor [-100, 100]
  */
-void db_motors_setSpeed(int16_t l_speed, int16_t r_speed)
-{
+void db_motors_setSpeed(int16_t l_speed, int16_t r_speed) {
 
     // Double check for out-of-bound values.
     if (l_speed > 100) l_speed = 100;

@@ -4,17 +4,17 @@
 /**
  * @file rgbled.h
  * @addtogroup BSP
- * 
+ *
  * @brief  Cross-platform declaration "leds" bsp module.
- * 
+ *
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
- * 
+ *
  * @copyright Inria, 2022
  */
 
+#include <nrf.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <nrf.h>
 
 //=========================== prototypes ======================================
 
