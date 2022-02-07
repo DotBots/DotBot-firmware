@@ -19,8 +19,8 @@
 
 //=========================== defines =========================================
 
-// Useful Macro functions
-#define WAIT_MS(MS) for (int i = 0; i < 3000 * MS; i++) {__NOP();}   // Define a simple blocking wait milisecond function.
+// Define a blocking wait function.
+#define WAIT_A_BIT(PAUSE) for (int i = 0; i < 3000 * PAUSE; i++) {;}    ///< The 3000 magic number, approximates to about 1ms per 1 unit of PAUSE.
 
 #define NUMBER_OF_BYTES_IN_PACKET 32
 
@@ -117,7 +117,7 @@ int main(void) {
             // Renable the radio to receive further packages.
             NRF_RADIO->TASKS_RXEN = 1UL;
         }
-        WAIT_MS(10);
+        WAIT_A_BIT(10);
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.

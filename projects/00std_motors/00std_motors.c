@@ -31,7 +31,7 @@
 #define M_TOP 100 
 
 // Define a blocking wait function.
-#define WAIT_MS(MS) for (int i = 0; i < 3000 * MS; i++) {;}
+#define WAIT_A_BIT(PAUSE) for (int i = 0; i < 3000 * PAUSE; i++) {;}    ///< The 3000 magic number, approximates to about 1ms per 1 unit of PAUSE.
 
 //=========================== variables =========================================
 
@@ -116,7 +116,7 @@ int main(void) {
         pwm_seq[3] = 0 | 1 << 15;
         // Update PWM values
         NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
-        WAIT_MS(2000); // wait 2 sec
+        WAIT_A_BIT(2000); // wait 2 sec
 
         // Turnoff motor for a bit
         pwm_seq[0] = 0 | 1 << 15;
@@ -125,7 +125,7 @@ int main(void) {
         pwm_seq[3] = 0 | 1 << 15;
         // Update PWM values
         NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
-        WAIT_MS(1000); // wait 1 sec
+        WAIT_A_BIT(1000); // wait 1 sec
 
         // Right motor backward
         pwm_seq[0] = 0 | 1 << 15;
@@ -134,7 +134,7 @@ int main(void) {
         pwm_seq[3] = 60 | 1 << 15;
         // Update PWM values
         NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
-        WAIT_MS(2000); // wait 2 sec
+        WAIT_A_BIT(2000); // wait 2 sec
 
         // Turnoff motor for a bit
         pwm_seq[0] = 0 | 1 << 15;
@@ -143,7 +143,7 @@ int main(void) {
         pwm_seq[3] = 0 | 1 << 15;
         // Update PWM values
         NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
-        WAIT_MS(1000); // wait 1 sec
+        WAIT_A_BIT(1000); // wait 1 sec
 
         // Left motor forward
         pwm_seq[0] = 60 | 1 << 15;
@@ -152,7 +152,7 @@ int main(void) {
         pwm_seq[3] = 0 | 1 << 15;
         // Update PWM values
         NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
-        WAIT_MS(2000); // wait 2 sec
+        WAIT_A_BIT(2000); // wait 2 sec
 
         // Turnoff motor for a bit
         pwm_seq[0] = 0 | 1 << 15;
@@ -161,7 +161,7 @@ int main(void) {
         pwm_seq[3] = 0 | 1 << 15;
         // Update PWM values
         NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
-        WAIT_MS(1000); // wait 1 sec
+        WAIT_A_BIT(1000); // wait 1 sec
 
         // Left motor backward
         pwm_seq[0] = 0 | 1 << 15;
@@ -170,7 +170,7 @@ int main(void) {
         pwm_seq[3] = 0 | 1 << 15;
         // Update PWM values
         NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
-        WAIT_MS(2000); // wait 2 sec
+        WAIT_A_BIT(2000); // wait 2 sec
 
         // Turnoff motor for a bit
         pwm_seq[0] = 0 | 1 << 15;
@@ -179,7 +179,7 @@ int main(void) {
         pwm_seq[3] = 0 | 1 << 15;
         // Update PWM values
         NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
-        WAIT_MS(1000); // wait 1 sec
+        WAIT_A_BIT(1000); // wait 1 sec
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
