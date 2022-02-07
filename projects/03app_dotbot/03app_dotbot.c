@@ -17,6 +17,7 @@
 // Inlcude BSP packages
 #include <radio.h>
 #include <motors.h>
+#include <board.h>
 
 //=========================== defines =========================================
 
@@ -37,8 +38,7 @@ static uint8_t packet[NUMBER_OF_BYTES_IN_PACKET]; // variable that stores the ra
 int main(void) {
 
     // Turn ON the DotBot board regulator
-    NRF_P0->DIRSET = 1 << 20;
-    NRF_P0->OUTSET = 1 << 20;
+    db_board_init();
 
     // Configure Radio as a receiver
     db_radio_rx_init(7, 0, packet);
