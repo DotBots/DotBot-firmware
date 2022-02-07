@@ -127,12 +127,7 @@ void db_motors_setSpeed(int16_t l_speed, int16_t r_speed) {
     if (r_speed < -100) r_speed = -100;
 
     // Left motor processing
-    if (l_speed == 0) // stop motor if the input value is a zero.
-    {
-        pwm_seq[0] = 0 | 1 << 15;
-        pwm_seq[1] = 0 | 1 << 15;
-    }
-    if (l_speed > 0) // Negative values turn the motor backward.
+    if (l_speed >= 0) // Positive values turn the motor forward.
     {
         pwm_seq[0] = l_speed | 1 << 15;
         pwm_seq[1] = 0 | 1 << 15;
@@ -146,12 +141,7 @@ void db_motors_setSpeed(int16_t l_speed, int16_t r_speed) {
     }
 
     // Right motor processing
-    if (r_speed == 0) // stop motor if the input value is a zero.
-    {
-        pwm_seq[2] = 0 | 1 << 15;
-        pwm_seq[3] = 0 | 1 << 15;
-    }
-    if (r_speed > 0) // Negative values turn the motor backward.
+    if (r_speed >= 0) // Positive values turn the motor forward.
     {
         pwm_seq[2] = r_speed | 1 << 15;
         pwm_seq[3] = 0 | 1 << 15;
