@@ -30,7 +30,11 @@
 //=========================== variables =======================================
 
 // EasyDMA buffer declaration for the RGB LED.
-uint8_t ledBuffer[LED_BUFFER_SIZE];
+typedef struct {
+    uint8_t ledBuffer[LED_BUFFER_SIZE];
+} rgbled_vars_t;
+
+static rgbled_vars_t rgbled_vars;
 
 //=========================== public ==========================================
 
@@ -62,7 +66,7 @@ void db_rgbled_init(void) {
 
     // Configure the WRITER EasyDMA channel
     NRF_SPIM0->TXD.MAXCNT = LED_BUFFER_SIZE; // Set the size of the output buffer.
-    NRF_SPIM0->TXD.PTR = &ledBuffer;         // Set the output buffer pointer.
+    NRF_SPIM0->TXD.PTR = &rgbled_vars.ledBuffer;         // Set the output buffer pointer.
 
     // Enable the SPIM pripheral
     NRF_SPIM0->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
@@ -84,15 +88,15 @@ void db_rgbled_init(void) {
 void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b) {
 
     // Load the obligatory starting write command on to the buffer. This is required by the TLC5973 driver.
-    ledBuffer[0] = 0x00;
-    ledBuffer[1] = 0x84;
-    ledBuffer[2] = 0x29;
-    ledBuffer[3] = 0x4A;
-    ledBuffer[4] = 0x42;
-    ledBuffer[5] = 0x90;
-    ledBuffer[6] = 0xA4;
-    ledBuffer[7] = 0x29;
-    ledBuffer[8] = 0x00;
+    rgbled_vars.ledBuffer[0] = 0x00;
+    rgbled_vars.ledBuffer[1] = 0x84;
+    rgbled_vars.ledBuffer[2] = 0x29;
+    rgbled_vars.ledBuffer[3] = 0x4A;
+    rgbled_vars.ledBuffer[4] = 0x42;
+    rgbled_vars.ledBuffer[5] = 0x90;
+    rgbled_vars.ledBuffer[6] = 0xA4;
+    rgbled_vars.ledBuffer[7] = 0x29;
+    rgbled_vars.ledBuffer[8] = 0x00;
 
     // ********** Load the Blue value into the buffer ************
     // Define the starting position of the blue color in the buffer.
@@ -110,7 +114,7 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b) {
             // iterate over all the bits in the 5bit encoded '1'.
             for (int j = 4; j >= 0; j--) {
                 // Extract a single (j) bit from the '1' code, left shift it to the corect position, and write into the buffer.
-                ledBuffer[buffer_byte] |= ((LED_ONE >> j) & 0x01) << (buffer_bit % 8);
+                rgbled_vars.ledBuffer[buffer_byte] |= ((LED_ONE >> j) & 0x01) << (buffer_bit % 8);
                 // move the buffer bit position we are writting to, a single bit to the right.
                 buffer_bit--;
                 // if the next bit to write wraps over to the next byte, increment the buffer byte position.
@@ -122,7 +126,7 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b) {
         // However, if the current bit is a zero, repeat the above process but, with the 5bit encoded '0'
         else {
             for (int j = 4; j >= 0; j--) {
-                ledBuffer[buffer_byte] |= ((LED_ZERO >> j) & 0x01) << (buffer_bit % 8);
+                rgbled_vars.ledBuffer[buffer_byte] |= ((LED_ZERO >> j) & 0x01) << (buffer_bit % 8);
                 buffer_bit--;
                 if ((buffer_bit % 8) == 7) {
                     buffer_byte++;
@@ -131,9 +135,9 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b) {
         }
     }
     // fill the remaining 4 bytes of the 1-wire command with encoded zeros
-    ledBuffer[13] |= 0x08;
-    ledBuffer[14] = 0x42;
-    ledBuffer[15] = 0x10;
+    rgbled_vars.ledBuffer[13] |= 0x08;
+    rgbled_vars.ledBuffer[14] = 0x42;
+    rgbled_vars.ledBuffer[15] = 0x10;
 
     // ********** Load the Red value into the buffer ************
     // Define the starting position of the blue color in the buffer.
@@ -149,7 +153,7 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b) {
             // iterate over all the bits in the 5bit encoded '1'.
             for (int j = 4; j >= 0; j--) {
                 // Extract a single (j) bit from the '1' code, left shift it to the corect position, and write into the buffer.
-                ledBuffer[buffer_byte] |= ((LED_ONE >> j) & 0x01) << (buffer_bit % 8);
+                rgbled_vars.ledBuffer[buffer_byte] |= ((LED_ONE >> j) & 0x01) << (buffer_bit % 8);
                 // move the buffer bit position we are writting to, a single bit to the right.
                 buffer_bit--;
                 // if the next bit to write wraps over to the next byte, increment the buffer byte position.
@@ -161,7 +165,7 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b) {
         // However, if the current bit is a zero, repeat the above process but, with the 5bit encoded '0'
         else {
             for (int j = 4; j >= 0; j--) {
-                ledBuffer[buffer_byte] |= ((LED_ZERO >> j) & 0x01) << (buffer_bit % 8);
+                rgbled_vars.ledBuffer[buffer_byte] |= ((LED_ZERO >> j) & 0x01) << (buffer_bit % 8);
                 buffer_bit--;
                 if ((buffer_bit % 8) == 7) {
                     buffer_byte++;
@@ -170,8 +174,8 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b) {
         }
     }
     // fill the remaining 4 bytes of the 1-wire command with encoded zeros
-    ledBuffer[21] = 0x84;
-    ledBuffer[22] = 0x21;
+    rgbled_vars.ledBuffer[21] = 0x84;
+    rgbled_vars.ledBuffer[22] = 0x21;
 
     // ********** Load the green into the buffer ************
     // Define the starting position of the blue color in the buffer.
@@ -187,7 +191,7 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b) {
             // iterate over all the bits in the 5bit encoded '1'.
             for (int j = 4; j >= 0; j--) {
                 // Extract a single (j) bit from the '1' code, right left it to the corect position, and write into the buffer.
-                ledBuffer[buffer_byte] |= ((LED_ONE >> j) & 0x01) << (buffer_bit % 8);
+                rgbled_vars.ledBuffer[buffer_byte] |= ((LED_ONE >> j) & 0x01) << (buffer_bit % 8);
                 // move the buffer bit position we are writting to, a single bit to the right.
                 buffer_bit--;
                 // if the next bit to write wraps over to the next byte, increment the buffer byte position.
@@ -199,7 +203,7 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b) {
         // However, if the current bit is a zero, repeat the above process but, with the 5bit encoded '0'
         else {
             for (int j = 4; j >= 0; j--) {
-                ledBuffer[buffer_byte] |= ((LED_ZERO >> j) & 0x01) << (buffer_bit % 8);
+                rgbled_vars.ledBuffer[buffer_byte] |= ((LED_ZERO >> j) & 0x01) << (buffer_bit % 8);
                 buffer_bit--;
                 if ((buffer_bit % 8) == 7) {
                     buffer_byte++;
@@ -209,9 +213,9 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b) {
     }
 
     // fill the remaining 4 bytes of the 1-wire command with encoded zeros
-    ledBuffer[28] |= 0x08;
-    ledBuffer[29] = 0x42;
-    ledBuffer[30] = 0x10;
+    rgbled_vars.ledBuffer[28] |= 0x08;
+    rgbled_vars.ledBuffer[29] = 0x42;
+    rgbled_vars.ledBuffer[30] = 0x10;
 
     // Finally, execute the SPI transfer
     NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;

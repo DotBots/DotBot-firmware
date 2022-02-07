@@ -32,7 +32,12 @@
 //=========================== variables =========================================
 
 // Variable that stores the PWM duty cycle for all four PWM channels
-uint16_t pwm_seq[4];
+
+typedef struct {
+    uint16_t pwm_seq[4];
+} motors_vars_t;
+
+static motors_vars_t motors_vars;
 
 //=========================== public ==========================================
 
@@ -88,8 +93,8 @@ void db_motors_init(void) {
                         (PWM_DECODER_MODE_RefreshCount << PWM_DECODER_MODE_Pos); // Reload the duty cycle values after every period, no delay
 
     // Configure the EasyDMA variables for loading the duty cycle values.
-    NRF_PWM0->SEQ[0].PTR = ((uint32_t)(pwm_seq) << PWM_SEQ_PTR_PTR_Pos);
-    NRF_PWM0->SEQ[0].CNT = ((sizeof(pwm_seq) / sizeof(uint16_t)) << PWM_SEQ_CNT_CNT_Pos);
+    NRF_PWM0->SEQ[0].PTR = ((uint32_t)(motors_vars.pwm_seq) << PWM_SEQ_PTR_PTR_Pos);
+    NRF_PWM0->SEQ[0].CNT = ((sizeof(motors_vars.pwm_seq) / sizeof(uint16_t)) << PWM_SEQ_CNT_CNT_Pos);
 
     NRF_PWM0->SEQ[0].REFRESH = 0UL;
     NRF_PWM0->SEQ[0].ENDDELAY = 0UL;
@@ -100,10 +105,10 @@ void db_motors_init(void) {
     // For safety, initialize all PWMs to zero.
     // Assigning values must go between 0 and M_TOP (100). the "| 1 <<15" is to set the polarity of the pwm waveform,
     // This way a value of 30 means the waveform is High 30% of the time, and the idle value of the PWM channels is 0v.
-    pwm_seq[0] = 0 | 1 << 15;
-    pwm_seq[1] = 0 | 1 << 15;
-    pwm_seq[2] = 0 | 1 << 15;
-    pwm_seq[3] = 0 | 1 << 15;
+    motors_vars.pwm_seq[0] = 0 | 1 << 15;
+    motors_vars.pwm_seq[1] = 0 | 1 << 15;
+    motors_vars.pwm_seq[2] = 0 | 1 << 15;
+    motors_vars.pwm_seq[3] = 0 | 1 << 15;
 }
 
 /**
@@ -129,29 +134,29 @@ void db_motors_setSpeed(int16_t l_speed, int16_t r_speed) {
     // Left motor processing
     if (l_speed >= 0) // Positive values turn the motor forward.
     {
-        pwm_seq[0] = l_speed | 1 << 15;
-        pwm_seq[1] = 0 | 1 << 15;
+        motors_vars.pwm_seq[0] = l_speed | 1 << 15;
+        motors_vars.pwm_seq[1] = 0 | 1 << 15;
     }
     if (l_speed < 0) // Negative values turn the motor backward.
     {
         l_speed *= -1; // remove the negative before loading into memory
 
-        pwm_seq[0] = 0 | 1 << 15;
-        pwm_seq[1] = l_speed | 1 << 15;
+        motors_vars.pwm_seq[0] = 0 | 1 << 15;
+        motors_vars.pwm_seq[1] = l_speed | 1 << 15;
     }
 
     // Right motor processing
     if (r_speed >= 0) // Positive values turn the motor forward.
     {
-        pwm_seq[2] = r_speed | 1 << 15;
-        pwm_seq[3] = 0 | 1 << 15;
+        motors_vars.pwm_seq[2] = r_speed | 1 << 15;
+        motors_vars.pwm_seq[3] = 0 | 1 << 15;
     }
     if (r_speed < 0) // Negative values turn the motor backward.
     {
         r_speed *= -1; // remove the negative before loading into memory
 
-        pwm_seq[2] = 0 | 1 << 15;
-        pwm_seq[3] = r_speed | 1 << 15;
+        motors_vars.pwm_seq[2] = 0 | 1 << 15;
+        motors_vars.pwm_seq[3] = r_speed | 1 << 15;
     }
 
     // Update PWM values
