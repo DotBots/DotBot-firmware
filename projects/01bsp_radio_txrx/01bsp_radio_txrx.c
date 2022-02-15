@@ -32,21 +32,26 @@ void radio_callback(uint8_t *packet, uint8_t length);
 */
 int main(void)
 {
-  //=========================== Configure GPIO =========================================
 
-  // Set the test pin (P0.31) as an output
-  NRF_P0->PIN_CNF[31] = (GPIO_PIN_CNF_DIR_Output << GPIO_PIN_CNF_DIR_Pos) |  // Set Pin as output
-                        (GPIO_PIN_CNF_DRIVE_S0S1 << GPIO_PIN_CNF_DRIVE_Pos); // Activate high current gpio mode.
+    // Turn ON the DotBot board regulator
+    NRF_P0->DIRSET = 1 << 20;
+    NRF_P0->OUTSET = 1 << 20;
 
-  //=========================== Configure Radio =========================================
+    //=========================== Configure GPIO =========================================
 
-  db_radio_init(&radio_callback);   // Set the callback function.
-  db_radio_set_frequency(8);        // Set the RX frquency to 2408 MHz.
-  db_radio_rx_enable();             // Start receiving packets.
+    // Set the test pin (P0.31) as an output
+    NRF_P0->PIN_CNF[31] = (GPIO_PIN_CNF_DIR_Output << GPIO_PIN_CNF_DIR_Pos) |  // Set Pin as output
+                          (GPIO_PIN_CNF_DRIVE_S0S1 << GPIO_PIN_CNF_DRIVE_Pos); // Activate high current gpio mode.
 
-while (1) {
-  
-  __WFE();                          // Enter a low power state while waiting.                  
+    //=========================== Configure Radio =========================================
+
+    db_radio_init(&radio_callback); // Set the callback function.
+    db_radio_set_frequency(8);      // Set the RX frquency to 2408 MHz.
+    db_radio_rx_enable();           // Start receiving packets.
+
+    while (1) {
+
+        __WFE(); // Enter a low power state while waiting.                  
   }
 
   // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
@@ -66,14 +71,14 @@ while (1) {
  */
 void radio_callback(uint8_t *packet, uint8_t length) {
 
-  // Check the arriving packet for any pressed button.
-  if (packet[0] == 0x01 || packet[1] == 0x01 || packet[2] == 0x01 || packet[3] == 0x01) {
+    // Check the arriving packet for any pressed button.
+    if (packet[0] == 0x01 || packet[1] == 0x01 || packet[2] == 0x01 || packet[3] == 0x01) {
 
-  NRF_P0->OUTSET = 1 << GPIO_OUTSET_PIN31_Pos;  // if any button is pressed, set the pin HIGH.
-  }
+        NRF_P0->OUTSET = 1 << GPIO_OUTSET_PIN31_Pos; // if any button is pressed, set the pin HIGH.
+    }
 
-  else {
+    else {
 
-  NRF_P0->OUTCLR = 1 << GPIO_OUTCLR_PIN31_Pos;  // No buttons pressed, set the pin LOW.
-  }
+      NRF_P0->OUTCLR = 1 << GPIO_OUTCLR_PIN31_Pos;  // No buttons pressed, set the pin LOW.
+    }
 }
