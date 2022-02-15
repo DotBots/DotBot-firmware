@@ -49,7 +49,7 @@ void db_board_setReg_ON(void) {
  * @brief Turn OFF the on-board regulator.
  *
  */
-void db_board_setReg_ON(void) {
+void db_board_setReg_OFF(void) {
 
     // Turn OFF the DotBot board regulator
     NRF_P0->OUTCLR = 1 << 20; // set pin LOW
