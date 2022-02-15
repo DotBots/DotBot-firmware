@@ -40,9 +40,9 @@ int main(void)
 
   //=========================== Configure Radio =========================================
 
-  gw_radio_init(&radio_callback);   // Set the callback function.
-  gw_radio_set_frequency(8);        // Set the RX frquency to 2408 MHz.
-  gw_radio_rx_enable();             // Start receiving packets.
+  db_radio_init(&radio_callback);   // Set the callback function.
+  db_radio_set_frequency(8);        // Set the RX frquency to 2408 MHz.
+  db_radio_rx_enable();             // Start receiving packets.
 
 while (1) {
   

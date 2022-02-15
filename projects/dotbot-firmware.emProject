@@ -652,6 +652,7 @@
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01bsp_radio_txrx.c" />
+      <file file_name="../../bsp/nrf52833/radio.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
