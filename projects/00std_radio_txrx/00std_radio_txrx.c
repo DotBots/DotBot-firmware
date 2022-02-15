@@ -1,5 +1,5 @@
 /**
- * @file 00std_radio_rx.c
+ * @file 00std_radio_txrx.c
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  * @brief This is a short example of how to implement radio control of the DotBot board from an external nRF52840-DK.
  * 
