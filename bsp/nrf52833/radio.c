@@ -20,16 +20,21 @@
 #define NUMBER_OF_BYTES_IN_PACKET 32
 #define RADIO_INTERRUPT_PRIORITY  1
 
-// On-air radio addresses, they are completely arbitrary numbers.
+// On-air radio addresses, these are completely arbitrary numbers.
 #define RADIO_BASE_ADDRESS_0 0x12345678UL 
 #define RADIO_BASE_ADDRESS_1 0xFEDCBA98UL
 
 //=========================== variables =========================================
 
-static uint8_t packet[NUMBER_OF_BYTES_IN_PACKET];    // Variable that stores the radio packets that arrives and the radio packets that are about to be sent.
-static uint8_t rx_buffer[NUMBER_OF_BYTES_IN_PACKET]; // Intermediate variable to store an arriving packet before sending it to the callback function.
+typedef struct {
+    uint8_t packet[NUMBER_OF_BYTES_IN_PACKET];      // Variable that stores the radio packets that arrives and the radio packets that are about to be sent.
+    uint8_t rx_buffer[NUMBER_OF_BYTES_IN_PACKET];   // Intermediate variable to store an arriving packet before sending it to the callback function.
 
-void (*RADIO_callback)(uint8_t*, uint8_t) = NULL;    // Function pointer, stores the callback to use in the RADIO_Irq handler.
+    void (*RADIO_callback)(uint8_t *, uint8_t);     // Function pointer, stores the callback to use in the RADIO_Irq handler.
+} radio_vars_t;
+
+static radio_vars_t radio_vars;
+
 //=========================== public ==========================================
 
 /**
@@ -43,22 +48,21 @@ void (*RADIO_callback)(uint8_t*, uint8_t) = NULL;    // Function pointer, stores
  */
 void db_radio_init(void (*callback)(uint8_t *, uint8_t)) {
 
+    // General configuration of the radio.
     NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_0dBm << RADIO_TXPOWER_TXPOWER_Pos); // 0dBm == 1mW Power output
     NRF_RADIO->MODE = (RADIO_MODE_MODE_Ble_1Mbit << RADIO_MODE_MODE_Pos);           // Use BLE 1Mbit/s protocol
+    
+    NRF_RADIO->PCNF1 = (NUMBER_OF_BYTES_IN_PACKET << RADIO_PCNF1_MAXLEN_Pos)  |     // The Payload maximum size is 32 bytes
+                       (NUMBER_OF_BYTES_IN_PACKET << RADIO_PCNF1_STATLEN_Pos) |     // Since the LENGHT field is not set, this specifies the lenght of the payload
+                       (4UL << RADIO_PCNF1_BALEN_Pos)                         |     // The base address is 4 Bytes long
+                       (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos)  |     // Make the on air packet be little endian (this enables some useful features)
+                       (RADIO_PCNF1_WHITEEN_Disabled << RADIO_PCNF1_WHITEEN_Pos);   // Disable the package whitening feature.
 
+    // Configuring the on-air radio address
     NRF_RADIO->BASE0 = RADIO_BASE_ADDRESS_0; // base address for prefix 0
-
     NRF_RADIO->BASE1 = RADIO_BASE_ADDRESS_1; // base address for prefix 1-7
-
-    NRF_RADIO->TXADDRESS = 0UL; // set device address 0 to use when transmitting (must match RXADDRESSES)
-
+    NRF_RADIO->TXADDRESS = 0UL;              // set device address 0 to use when transmitting (must match RXADDRESSES)
     NRF_RADIO->RXADDRESSES = (RADIO_RXADDRESSES_ADDR0_Enabled << RADIO_RXADDRESSES_ADDR0_Pos); // receive from address 0 (must match TXADDRESSES)
-
-    NRF_RADIO->PCNF1 = (NUMBER_OF_BYTES_IN_PACKET << RADIO_PCNF1_MAXLEN_Pos) |    // The Payload maximum size is 32 bytes
-                       (NUMBER_OF_BYTES_IN_PACKET << RADIO_PCNF1_STATLEN_Pos) |   // Since the LENGHT field is not set, this specifies the lenght of the payload
-                       (4UL << RADIO_PCNF1_BALEN_Pos) |                           // The base address is 4 Bytes long
-                       (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |    // Make the on air packet be little endian (this enables some useful features)
-                       (RADIO_PCNF1_WHITEEN_Disabled << RADIO_PCNF1_WHITEEN_Pos); // Disable the package whitening feature.
 
     // CRC Config
     NRF_RADIO->CRCCNF = (RADIO_CRCCNF_LEN_Two << RADIO_CRCCNF_LEN_Pos); // Checksum uses 2 bytes, and is enabled.
@@ -66,7 +70,7 @@ void db_radio_init(void (*callback)(uint8_t *, uint8_t)) {
     NRF_RADIO->CRCPOLY = 0x11021UL;                                     // CRC poly: x^16 + x^12^x^5 + 1
 
     // pointer to packet payload
-    NRF_RADIO->PACKETPTR = (uint32_t)packet;
+    NRF_RADIO->PACKETPTR = (uint32_t)radio_vars.packet;
 
     // Configure the external High-frequency Clock. (Needed for correct operation)
     NRF_CLOCK->EVENTS_HFCLKSTARTED = 0x00;    // Clear the flag
@@ -74,11 +78,10 @@ void db_radio_init(void (*callback)(uint8_t *, uint8_t)) {
     while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) {;} // Wait for the clock to actually start.
 
     // Assign the callback function that will be called when a radio packet is received.
-    RADIO_callback = callback;
+    radio_vars.RADIO_callback = callback;
 
     // Configure the Interruptions
-    NVIC_DisableIRQ(RADIO_IRQn); // Disable interruptions while configuring
-
+    NVIC_DisableIRQ(RADIO_IRQn);                                                // Disable interruptions while configuring
     NRF_RADIO->INTENSET = RADIO_INTENSET_END_Enabled << RADIO_INTENSET_END_Pos; // Enable interruption for when a packet arrives
     NVIC_SetPriority(RADIO_IRQn, RADIO_INTERRUPT_PRIORITY);                     // Set priority for Radio interrupts to 1
     NVIC_ClearPendingIRQ(RADIO_IRQn);                                           // Clear the flag for any pending radio interrupt
@@ -112,7 +115,7 @@ void db_radio_set_frequency(uint8_t freq) {
 void db_radio_tx(uint8_t *tx_buffer, uint8_t length) {
 
     // Load the tx_buffer into memory.
-    memcpy(packet, tx_buffer, length);
+    memcpy(radio_vars.packet, tx_buffer, length);
 
     // Configure the Short to expedite the packet transmission
     NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Enabled << RADIO_SHORTS_READY_START_Pos) | // yeet the packet as soon as the radio is ready - slow startup transmitters are for nerds, scumdog for l4f3
@@ -125,7 +128,7 @@ void db_radio_tx(uint8_t *tx_buffer, uint8_t length) {
     while (NRF_RADIO->EVENTS_DISABLED == 0) {;} // Wait for the radio to actually send the package.
 
     // Clear the packet.
-    memset(packet, 0, NUMBER_OF_BYTES_IN_PACKET);
+    memset(radio_vars.packet, 0, NUMBER_OF_BYTES_IN_PACKET);
 }
 
 /**
@@ -185,14 +188,14 @@ void RADIO_IRQHandler(void) {
         NRF_RADIO->EVENTS_END = 0;
 
         // Copy packet into the buffer, before sending it to the callback.
-        memcpy(rx_buffer, packet, NUMBER_OF_BYTES_IN_PACKET);
+        memcpy(radio_vars.rx_buffer, radio_vars.packet, NUMBER_OF_BYTES_IN_PACKET);
 
 
         // Call callback defined by user.
-        (*RADIO_callback)(rx_buffer, NUMBER_OF_BYTES_IN_PACKET);
+        (*radio_vars.RADIO_callback)(radio_vars.rx_buffer, NUMBER_OF_BYTES_IN_PACKET);
 
 
         // Clear the rx_buffer.
-        memset(rx_buffer, 0, NUMBER_OF_BYTES_IN_PACKET);
+        memset(radio_vars.rx_buffer, 0, NUMBER_OF_BYTES_IN_PACKET);
     }
 }
