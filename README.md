@@ -41,7 +41,7 @@ You should end up with 2 files named `DotBot-firmware-fresh_REL-XYZ.hex` and `Ga
   - A USB drive called  __JLINK__ should appear on your computer. 
 
 <p align="center">
-  <img src="static/JLINK_folder.png" width="40%" height="40%" alt="JLINK drive folder"/>
+  <img src="static/JLINK_folder.png" width="60%" height="60%" alt="JLINK drive folder"/>
 </p>
 
 3. Drag-&-Drop the Gateway firmware executable `Gateway-firmware-fresh_REL-XYZ.hex` into the JLINK folder to program the development board.
