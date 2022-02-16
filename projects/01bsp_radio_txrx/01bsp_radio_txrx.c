@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 // Inlcude BSP packages
+#include <board.h>
 #include <radio.h>
 
 //=========================== defines =========================================
@@ -34,8 +35,7 @@ int main(void)
 {
 
     // Turn ON the DotBot board regulator
-    NRF_P0->DIRSET = 1 << 20;
-    NRF_P0->OUTSET = 1 << 20;
+    db_board_init();
 
     //=========================== Configure GPIO =========================================
 
