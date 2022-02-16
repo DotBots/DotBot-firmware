@@ -2,7 +2,7 @@
 
 
 <p align="center">
-  <img src="./../../static/03app_dotbot.gif" alt="dotbot app demo"/>
+  <img src="static/03app_dotbot.gif" alt="dotbot app demo"/>
 </p>
 
 This repository contains the source code for the DotBot's firmware.
@@ -35,13 +35,13 @@ You should end up with 2 files named `DotBot-firmware-fresh_REL-XYZ.hex` and `Ga
 2. Connect the nRF52840-DK to your computer through the micro USB cable
 
 <p align="center">
-  <img src="./../../static/nRF-DK_connected.jpg" alt="nRF DK connected to a computer with a micro USB cable"/>
+  <img src="static/nRF-DK_connected.jpg" width="40%" height="40%" alt="nRF DK connected to a computer with a micro USB cable"/>
 </p>
   
   - A USB drive called  __JLINK__ should appear on your computer. 
 
 <p align="center">
-  <img src="./../../static/JLINK_folder.png" alt="JLINK drive folder"/>
+  <img src="static/JLINK_folder.png" width="40%" height="40%" alt="JLINK drive folder"/>
 </p>
 
 3. Drag-&-Drop the Gateway firmware executable `Gateway-firmware-fresh_REL-XYZ.hex` into the JLINK folder to program the development board.
@@ -50,7 +50,7 @@ You should end up with 2 files named `DotBot-firmware-fresh_REL-XYZ.hex` and `Ga
   - Make sure the DotBot is turned ON and has full batteries installed.
 
 <p align="center">
-  <img src="./../../static/dotbot_and_dk_connected.jpg" alt="DotBot connected to the nrF-DK through the 10pin IDC cable."/>
+  <img src="static/dotbot_and_dk_connected.jpg" width="40%" height="40%" alt="DotBot connected to the nrF-DK through the 10pin IDC cable."/>
 </p>
 
 5. Drag-&-Drop the DotBot firmware executable `DotBot-firmware-fresh_REL-XYZ.hex` into the JLINK folder to program the DotBot.
@@ -61,7 +61,7 @@ You should end up with 2 files named `DotBot-firmware-fresh_REL-XYZ.hex` and `Ga
 ### Controlling the DotBot
 
 <p align="center">
-  <img src="./../../static/03app_dotbot.gif" alt="dotbot app demo"/>
+  <img src="static/03app_dotbot.gif" alt="dotbot app demo"/>
 </p>
 
 
