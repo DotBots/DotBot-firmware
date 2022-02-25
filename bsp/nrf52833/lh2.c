@@ -120,6 +120,12 @@ uint8_t stored_buff_2[128];
 uint8_t stored_buff_3[128];
 uint8_t stored_buff_4[128];
 
+// please show me my variables?
+volatile uint64_t temp1;
+volatile uint64_t temp2;
+volatile uint64_t temp3;
+volatile uint64_t temp4;
+
 // other variables
 bool ready = false;
 bool buffers_ready = false;
@@ -144,6 +150,10 @@ void lh2_init(void)
                           1 << SPIM_PSEL_SCK_PORT_Pos |                                 // Define pin port for SCK pin
                           SPIM_PSEL_SCK_CONNECT_Connected << SPIM_PSEL_SCK_CONNECT_Pos; // Enable the SCK pin
 
+    NRF_SPIM3->PSEL.MOSI = (4UL) << SPIM_PSEL_MOSI_PIN_Pos  |
+                            1 << SPIM_PSEL_MOSI_PORT_Pos    |
+                            SPIM_PSEL_MOSI_CONNECT_Connected << SPIM_PSEL_MOSI_CONNECT_Pos;
+
     // Configure the SPIM peripheral
     NRF_SPIM3->FREQUENCY = SPIM_FREQUENCY_FREQUENCY_M32;                     // Set SPI frequency to 32MHz
     NRF_SPIM3->CONFIG = SPIM_CONFIG_ORDER_MsbFirst << SPIM_CONFIG_ORDER_Pos; // Set MsB out first
@@ -158,15 +168,16 @@ void lh2_init(void)
 
     // Enable the SPIM pripheral
     NRF_SPIM3->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
-
+    
     // Configure the Interruptions
     NVIC_DisableIRQ(SPIM3_IRQn);                                                // Disable interruptions while configuring
-    NRF_SPIM3->INTENSET = SPIM_INTENSET_ENDTX_Enabled << SPIM_INTENSET_ENDTX_Pos; // Enable interruption for when a packet arrives
+    
+    NRF_SPIM3->INTENSET = SPIM_INTENSET_END_Enabled << SPIM_INTENSET_END_Pos; // Enable interruption for when a packet arrives
     NVIC_SetPriority(SPIM3_IRQn, SPIM3_INTERRUPT_PRIORITY);                     // Set priority for Radio interrupts to 1
     NVIC_ClearPendingIRQ(SPIM3_IRQn);
     // Enable SPIM interruptions
     NVIC_EnableIRQ(SPIM3_IRQn);
-
+    
     // Empty the receive buffer
     memset(m_rx_buf, 0, m_length);
     // Reset the Transfer Counter
@@ -190,6 +201,11 @@ bool get_black_magic(void)
 
         buffers_ready = false;
 
+        LH2_bits_sweep_1 = 0;
+        LH2_bits_sweep_2 = 0;
+        LH2_bits_sweep_3 = 0;
+        LH2_bits_sweep_4 = 0;
+
         // perform the demodulation + poly search on the received packets
         // convert the SPI reading to bits via zero-crossing counter demodulation and differential/biphasic manchester decoding
         LH2_bits_sweep_1 = LH2_demodulate_light(stored_buff_1);
@@ -207,6 +223,11 @@ bool get_black_magic(void)
         temp2 = LH2_selected_poly_2;
         temp3 = LH2_bit_offset_1;
         temp4 = LH2_bit_offset_2;
+
+        memset(stored_buff_1,0,sizeof(stored_buff_1));
+        memset(stored_buff_2,0,sizeof(stored_buff_2));
+        memset(stored_buff_3,0,sizeof(stored_buff_3));
+        memset(stored_buff_4,0,sizeof(stored_buff_4));
 
         if ((LH2_selected_poly_1 == LH2_POLYNOMIAL_ERROR_INDICATOR) |
             (LH2_selected_poly_2 == LH2_POLYNOMIAL_ERROR_INDICATOR) |
@@ -458,6 +479,7 @@ uint64_t LH2_demodulate_light(uint8_t* sample_buffer) { // bad input variable na
     //TODO: make it a void and have chips be a modified pointer thingie
     //FIXME: there is an edge case where I throw away an initial "1" and do not count it in the bit-shift offset, resulting in an incorrect error of 1 in the LFSR location
     uint8_t chip_index;
+    uint8_t local_buffer[128];
     uint8_t zccs_1[128];
     uint8_t chips1[128]; // TODO: give this a better name.
     uint8_t temp_byte_N; // TODO: bad variable name "temp byte"
@@ -465,26 +487,29 @@ uint64_t LH2_demodulate_light(uint8_t* sample_buffer) { // bad input variable na
 
     // initialize loop variables
     uint8_t ii = 0x00;
-    volatile int jj = 0;
-    volatile int kk = 0;
-    volatile uint64_t gg = 0;
+    int jj = 0;
+    int kk = 0;
+    uint64_t gg = 0;
 
     // initialize temporary "ones counter" variable that counts consecutive ones
-    volatile int ones_counter=0;
+    int ones_counter=0;
 
     // initialize result:
-    volatile uint64_t chipsH1=0;
+    uint64_t chipsH1=0;
 
     // FIND ZERO CROSSINGS
     chip_index = 0;
     zccs_1[chip_index] = 0x01;
+
+    memcpy(local_buffer, sample_buffer, 128);
+
     // for loop over bytes of the SPI buffer (jj), nested with a for loop over bits in each byte (ii)
-    for(jj=0;jj<127;jj++) {
+    for(jj=0;jj<128;jj++) {
         // edge case - check if last bit (LSB) of previous byte is the same as first bit (MSB) of current byte
         // if it is not, increment chip_index and reset count
         if (jj != 0) {
-            temp_byte_M = (sample_buffer[jj-1])&(0x01); // previous byte's LSB
-            temp_byte_N = (sample_buffer[jj]>>7)&(0x01); // current byte's MSB
+            temp_byte_M = (local_buffer[jj-1])&(0x01); // previous byte's LSB
+            temp_byte_N = (local_buffer[jj]>>7)&(0x01); // current byte's MSB
             if (temp_byte_M != temp_byte_N) {
                 chip_index++;
                 zccs_1[chip_index] = 1;
@@ -495,8 +520,8 @@ uint64_t LH2_demodulate_light(uint8_t* sample_buffer) { // bad input variable na
         }
         // look at one byte at a time
         for(ii=7;ii>0;ii--){
-            temp_byte_M = ((sample_buffer[jj])>>(ii))&(0x01); // bit shift by ii and mask
-            temp_byte_N = ((sample_buffer[jj])>>(ii-1))&(0x01); // bit shift by ii-1 and mask
+            temp_byte_M = ((local_buffer[jj])>>(ii))&(0x01); // bit shift by ii and mask
+            temp_byte_N = ((local_buffer[jj])>>(ii-1))&(0x01); // bit shift by ii-1 and mask
             if(temp_byte_M == temp_byte_N) {
                 zccs_1[chip_index] += 1;
             }
@@ -520,6 +545,8 @@ uint64_t LH2_demodulate_light(uint8_t* sample_buffer) { // bad input variable na
             chips1[jj] = FUZZY_CHIP; // fuzzy
         }
     }
+    // final bit is bugged, make it fuzzy:
+    //chips1[127] = 0xFF;
 
     // DEMODULATION:
     // basic principles, in descending order of importance:
@@ -540,7 +567,7 @@ uint64_t LH2_demodulate_light(uint8_t* sample_buffer) { // bad input variable na
     kk = 0;
     ones_counter=0;
     jj = 0;
-    for (jj=0;jj<127;) { // TODO: 128 is such an easy magic number to get rid of...
+    for (jj=0;jj<128;) { // TODO: 128 is such an easy magic number to get rid of...
         gg = 0; // TODO: this is not used here?
         if(chips1[jj]==0x00) { // zero, keep going, reset state
             jj++;
@@ -632,7 +659,7 @@ uint64_t LH2_demodulate_light(uint8_t* sample_buffer) { // bad input variable na
         }
     }
     // finish up demodulation, pick off straggling fuzzies and odd runs of 1s
-    for (jj=0;jj<127;) {
+    for (jj=0;jj<128;) {
         if(chips1[jj]==0x00) {                 // zero, keep going, reset state
             if (ones_counter%2==1) {           // implies an odd # of 1s
                 chips1[jj-ones_counter-1] = 1; // change the bit before the run of 1s to a 1 to make it even
@@ -1373,14 +1400,16 @@ void SPIM3_IRQHandler(void)
     ready = false;
     TRANSFER_COUNTER++;
 
+    volatile int lp = 0; // temporary loop variable to go through each byte of the SPI buffer
+
+
      // Check if the interrupt was caused by a fully send package
-    if (NRF_SPIM3->EVENTS_ENDTX) {
+    if (NRF_SPIM3->EVENTS_END) {
 
         // Clear the Interrupt flag
-        NRF_SPIM3->EVENTS_ENDTX = 0; 
+        NRF_SPIM3->EVENTS_END = 0; 
 
         // load global SPI buffer (m_rx_buf) into four local arrays (stored_buff_1 ... stored_buff_4)
-        volatile int lp = 0; // temporary loop variable to go through each byte of the SPI buffer
         if (TRANSFER_COUNTER==1) {
             for (lp=0;lp<m_length;lp++) {
                 stored_buff_1[lp] = m_rx_buf[lp];
