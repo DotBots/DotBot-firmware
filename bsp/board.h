@@ -20,7 +20,7 @@
 
 //=========================== public ======================================
 
-void db_board_innit(void);
+void db_board_init(void);
 void db_board_setReg_ON(void);
 void db_board_setReg_OFF(void);
 
