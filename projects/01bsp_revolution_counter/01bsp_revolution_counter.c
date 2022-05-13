@@ -12,6 +12,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "board.h"
+#include "revolution_counter.h"
+
+
 //=========================== defines =========================================
 
 //=========================== variables =========================================
@@ -22,8 +26,20 @@
  *  @brief The program starts executing here.
  */
 int main(void) {
+    db_board_init();
+    db_revolution_counter_init();
+    db_board_encoder_timers_start();
 
+    float left_speed, right_speed = 0.0;
+    uint32_t left_rpm, right_rpm = 0;
     while (1) {
+      uint32_t wait = 0x00ffffff;
+      while (wait--) {}
+      //left_speed = db_board_get_left_speed();
+      //left_rpm = db_board_get_left_rpm();
+      right_speed = db_board_get_right_speed();
+      //right_rpm = db_board_get_right_rpm();
+      __NOP();
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
