@@ -1,0 +1,16 @@
+name: CI 
+
+on:
+  push:
+    branches: master 
+
+  pull_request:
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout out repo
+        uses: actions/checkout@v2
+      - name: Build projects
+        run: make
