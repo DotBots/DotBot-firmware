@@ -78,7 +78,7 @@ int main(void) {
     // Configure the EasyDMA channel
     // Configuring the READER channel
     NRF_SPIM0->RXD.MAXCNT = READERBUFFER_SIZE; // Set the size of the input buffer.
-    NRF_SPIM0->RXD.PTR = &readerBuffer;        // Set the input buffer pointer.
+    NRF_SPIM0->RXD.PTR = (volatile uint32_t)&readerBuffer;        // Set the input buffer pointer.
     // Configure the WRITER channel
     NRF_SPIM0->TXD.MAXCNT = WRITERBUFFER_SIZE; // Set the size of the output buffer.
 
@@ -87,44 +87,44 @@ int main(void) {
 
     while (1) {
         // Set color of the LED to Cyan
-        NRF_SPIM0->TXD.PTR = &led_cyan_buffer;
+        NRF_SPIM0->TXD.PTR = (volatile uint32_t)&led_cyan_buffer;
         // Execute a transfer
         NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
         // Wait a couple of seconds to appreciate the led color before changing to the next.
         WAIT_A_BIT(2000);
 
         // Set color of the LED to Blue
-        NRF_SPIM0->TXD.PTR = &led_blue_buffer;
+        NRF_SPIM0->TXD.PTR = (volatile uint32_t)&led_blue_buffer;
         NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
         WAIT_A_BIT(2000);
 
         // Set color of the LED to Magenta
-        NRF_SPIM0->TXD.PTR = &led_magenta_buffer;
+        NRF_SPIM0->TXD.PTR = (volatile uint32_t)&led_magenta_buffer;
         NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
         WAIT_A_BIT(2000);
 
         // Set color of the LED to Red
-        NRF_SPIM0->TXD.PTR = &led_red_buffer;
+        NRF_SPIM0->TXD.PTR = (volatile uint32_t)&led_red_buffer;
         NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
         WAIT_A_BIT(2000);
 
         // Set color of the LED to Yellow
-        NRF_SPIM0->TXD.PTR = &led_yellow_buffer;
+        NRF_SPIM0->TXD.PTR = (volatile uint32_t)&led_yellow_buffer;
         NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
         WAIT_A_BIT(2000);
 
         // Set color of the LED to Green
-        NRF_SPIM0->TXD.PTR = &led_green_buffer;
+        NRF_SPIM0->TXD.PTR = (volatile uint32_t)&led_green_buffer;
         NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
         WAIT_A_BIT(2000);
 
         // Set color of the LED to White
-        NRF_SPIM0->TXD.PTR = &led_white_buffer;
+        NRF_SPIM0->TXD.PTR = (volatile uint32_t)&led_white_buffer;
         NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
         WAIT_A_BIT(2000);
 
         // Set color of the LED to Black
-        NRF_SPIM0->TXD.PTR = &led_black_buffer;
+        NRF_SPIM0->TXD.PTR = (volatile uint32_t)&led_black_buffer;
         NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
         WAIT_A_BIT(2000);
     }
