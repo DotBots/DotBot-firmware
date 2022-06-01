@@ -28,6 +28,15 @@
 #define TIMEOUT_RTC_ISR       (RTC1_IRQHandler)
 #endif
 
+typedef struct __attribute__((packed)) {
+    uint16_t left_x;
+    uint16_t left_y;
+    uint16_t right_x;
+    uint16_t right_y;
+} joystick_command_t;
+
+static joystick_command_t *command;
+
 //=========================== variables =========================================
 
 //=========================== main =========================================
@@ -35,7 +44,11 @@
 static void radio_callback(uint8_t *pkt, uint8_t len) {
     TIMEOUT_RTC->TASKS_CLEAR = 1; /* Clear RTC counter */
 
-    /* TODO: parse received packet and update the motors' speeds */
+    /* parse received packet and update the motors' speeds */
+    command = (joystick_command_t *)pkt;
+    int16_t left = (200 * (command->left_y / 4096)) - 100;
+    int16_t right = (200 * (command->right_y / 4096)) - 100;
+    db_motors_setSpeed(left, right);
 }
 
 static void db_timeout_rtc_init(void) {
