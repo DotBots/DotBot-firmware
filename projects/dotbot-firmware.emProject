@@ -1191,7 +1191,7 @@
     </folder>
   </project>
   <configuration Name="Common" linker_output_format="hex" />
-  <project Name="03app_dotbot_remote_control">
+  <project Name="03app_dotbot_joystick">
     <configuration
       CMSIS_CORE="Yes"
       LIBRARY_IO_TYPE="RTT"
@@ -1225,7 +1225,7 @@
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       package_dependencies="CMSIS-CORE_V5"
-      project_directory="03app_dotbot_remote_control"
+      project_directory="03app_dotbot_joystick"
       project_type="Executable"
       target_reset_script="Reset();"
       target_script_file="$(ProjectDir)/nRF_Target.js"
@@ -1252,10 +1252,10 @@
       </file>
     </folder>
     <folder Name="Source Files">
-      <file file_name="03app_dotbot_remote_control.c" />
       <file file_name="../../bsp/nrf52833/board.c" />
       <file file_name="../../bsp/nrf52833/radio.c" />
       <file file_name="../../bsp/nrf52833/motors.c" />
+      <file file_name="03app_dotbot_joystick.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />

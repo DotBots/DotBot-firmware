@@ -1,7 +1,7 @@
 /**
  * @file 03app_dotbot_remote_control.c
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- * @brief This is an application for controlling a single dotbot remotely using radio.
+ * @brief This application is used to control a single dotbot remotely with a joystick using radio.
  *
  * @copyright Inria, 2022
  *
