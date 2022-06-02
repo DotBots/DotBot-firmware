@@ -132,25 +132,31 @@ void db_revolution_counter_init(void) {
     /* Enable PPI channels */
     NRF_PPI->CHENSET = (1 << ME_RIGHT_PPI_CHAN) | (1 << ME_LEFT_PPI_CHAN);
 
-    /* Configure RTC with 10ms fire event delay */
-    ME_RTC->PRESCALER = 327;
+    /* Configure RTC with 125ms fire event delay */
+    ME_RTC->TASKS_STOP = 1;
+    ME_RTC->TASKS_CLEAR = 1;
+    ME_RTC->PRESCALER = (uint32_t)((1 << 15) - 1);
     ME_RTC->INTENSET = RTC_INTENSET_TICK_Enabled;
+    ME_RTC->EVTENSET = RTC_EVTENSET_TICK_Enabled;
     NVIC_EnableIRQ(ME_RTC_IRQ);
     /* Start RTC */
     ME_RTC->TASKS_START = 1;
 }
 
+static void update_counters(void) {
+    previous_left_counts = last_left_counts;
+    previous_right_counts = last_right_counts;
+    ME_LEFT_TIMER->TASKS_CAPTURE[0] = 1;
+    ME_RIGHT_TIMER->TASKS_CAPTURE[0] = 1;
+    last_left_counts = ME_LEFT_TIMER->CC[0];
+    last_right_counts = ME_RIGHT_TIMER->CC[0];
+}
 
 void ME_RTC_ISR(void) {
-    if (ME_RTC->EVENTS_TICK == 1) {
+    if (ME_RTC->EVENTS_TICK) {
         NVIC_ClearPendingIRQ(ME_RTC_IRQ);
         ME_RTC->EVENTS_TICK = 0;
-        ME_LEFT_TIMER->TASKS_CAPTURE[0] = 1;
-        ME_RIGHT_TIMER->TASKS_CAPTURE[0] = 1;
-        previous_left_counts = last_left_counts;
-        previous_right_counts = last_right_counts;
-        last_left_counts = ME_LEFT_TIMER->CC[0];
-        last_right_counts = ME_RIGHT_TIMER->CC[0];
+        update_counters();
     }
 }
 

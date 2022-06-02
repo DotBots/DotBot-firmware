@@ -33,12 +33,12 @@ int main(void) {
     float left_speed, right_speed = 0.0;
     uint32_t left_rpm, right_rpm = 0;
     while (1) {
-      uint32_t wait = 0x00ffffff;
+      uint32_t wait = 0x00fffff;
       while (wait--) {}
-      //left_speed = db_board_get_left_speed();
-      //left_rpm = db_board_get_left_rpm();
+      left_speed = db_board_get_left_speed();
+      left_rpm = db_board_get_left_rpm();
       right_speed = db_board_get_right_speed();
-      //right_rpm = db_board_get_right_rpm();
+      right_rpm = db_board_get_right_rpm();
       __NOP();
     }
 
