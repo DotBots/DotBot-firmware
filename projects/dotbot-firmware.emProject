@@ -733,6 +733,7 @@
       <file file_name="01bsp_revolution_counter.c" />
       <file file_name="../../bsp/nrf52833/revolution_counter.c" />
       <file file_name="../../bsp/nrf52833/board.c" />
+      <file file_name="../../bsp/nrf52833/motors.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />

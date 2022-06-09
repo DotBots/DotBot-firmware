@@ -60,17 +60,27 @@
 #define ME_RTC_ISR            (RTC0_IRQHandler)
 #endif
 
-/*
+/**
+ * Helper macro to compute speed in cm/s
+ *
  * number of cycles captured within last 10ms (one rotation is 3.77mm distance of the wheel)
- * so speed = (3.7 * 0.001 * cycles / (10 * 0.01) m/s
+ * so speed = 3.7 * cycles cm/s
  */
-#define ME_CYCLES_TO_SPEED(cycles)  (3.77 * 0.01 * cycles)
+#define ME_CYCLES_TO_SPEED(cycles)  (uint32_t)(37.7 * cycles / 8)
 
-/*
- * 1 cycle corresponds to one rotation, so convert to the number of minutes, given the timer frequency
+/**
+ * Helper macro to compute rotation per minute
+ *
+ * 1 cycle corresponds to one rotation, so convert to the number of minutes, given the RTC frequency of 125ms
  */
-#define ME_CYCLES_TO_RPM(cycles)    (600 * cycles)
+#define ME_CYCLES_TO_RPM(cycles)    (60 * 8 * cycles)
 
+/**
+ * Helper macro to compute rotation per second
+ *
+ * 1 cycle corresponds to one rotation, so convert to the number of seconds, given the RTC frequency of 125ms
+ */
+#define ME_CYCLES_TO_RPS(cycles)    (8 * cycles)
 
 //=========================== variables =========================================
 
@@ -133,11 +143,17 @@ void db_revolution_counter_init(void) {
     NRF_PPI->CHENSET = (1 << ME_RIGHT_PPI_CHAN) | (1 << ME_LEFT_PPI_CHAN);
 
     /* Configure RTC with 125ms fire event delay */
+    NRF_CLOCK->LFCLKSRC = CLOCK_LFCLKSRC_SRC_Xtal << CLOCK_LFCLKSRC_SRC_Pos;
+    NRF_CLOCK->TASKS_LFCLKSTART = 1;
+    while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0);
+    NRF_CLOCK->EVENTS_LFCLKSTARTED = 0;
+
     ME_RTC->TASKS_STOP = 1;
     ME_RTC->TASKS_CLEAR = 1;
-    ME_RTC->PRESCALER = (uint32_t)((1 << 15) - 1);
-    ME_RTC->INTENSET = RTC_INTENSET_TICK_Enabled;
-    ME_RTC->EVTENSET = RTC_EVTENSET_TICK_Enabled;
+    ME_RTC->PRESCALER = (1 << 12) - 1;
+    ME_RTC->CC[0] = 1;
+    ME_RTC->EVTENSET = RTC_EVTENSET_COMPARE0_Enabled << RTC_EVTENSET_COMPARE0_Pos;
+    ME_RTC->INTENSET = RTC_INTENSET_COMPARE0_Enabled << RTC_INTENSET_COMPARE0_Pos;
     NVIC_EnableIRQ(ME_RTC_IRQ);
     /* Start RTC */
     ME_RTC->TASKS_START = 1;
@@ -153,10 +169,11 @@ static void update_counters(void) {
 }
 
 void ME_RTC_ISR(void) {
-    if (ME_RTC->EVENTS_TICK) {
+    if (ME_RTC->EVENTS_COMPARE[0] == 1) {
         NVIC_ClearPendingIRQ(ME_RTC_IRQ);
-        ME_RTC->EVENTS_TICK = 0;
+        ME_RTC->EVENTS_COMPARE[0] = 0;
         update_counters();
+        ME_RTC->TASKS_CLEAR = 1;
     }
 }
 
@@ -192,10 +209,18 @@ uint32_t db_board_get_right_rpm(void) {
     return ME_CYCLES_TO_RPM(_db_right_cycles());
 }
 
-float db_board_get_left_speed(void) {
-    return ME_CYCLES_TO_SPEED(_db_left_cycles()); /* m/s */
+uint32_t db_board_get_left_rps(void) {
+    return ME_CYCLES_TO_RPS(_db_left_cycles());
 }
 
-float db_board_get_right_speed(void) {
-    return ME_CYCLES_TO_SPEED(_db_right_cycles()); /* m/s */
+uint32_t db_board_get_right_rps(void) {
+    return ME_CYCLES_TO_RPS(_db_right_cycles());
+}
+
+uint32_t db_board_get_left_speed(void) {
+    return ME_CYCLES_TO_SPEED(_db_left_cycles()); /* cm/s */
+}
+
+uint32_t db_board_get_right_speed(void) {
+    return ME_CYCLES_TO_SPEED(_db_right_cycles()); /* cm/s */
 }
