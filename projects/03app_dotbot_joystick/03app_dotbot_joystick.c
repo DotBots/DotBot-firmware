@@ -56,10 +56,15 @@ static joystick_command_t *command;
 static void radio_callback(uint8_t *pkt, uint8_t len) {
     TIMEOUT_RTC->TASKS_CLEAR = 1; /* Clear RTC counter */
     /* parse received packet and update the motors' speeds */
-    switch (pkt[0]) {
+    if (pkt[0] != 0) {
+        /* Only version 0 is supported */
+        return;
+    }
+
+    switch (pkt[1]) {
         case MOVE_RAW:
         {
-            joystick_command_t *command = (joystick_command_t *)&pkt[1];
+            joystick_command_t *command = (joystick_command_t *)&pkt[2];
             int16_t left = (int16_t)(100 * ((float)command->left_y / INT8_MAX));
             int16_t right = (int16_t)(100 * ((float)command->right_y / INT8_MAX));
             db_motors_setSpeed(left, right);
@@ -67,7 +72,7 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             break;
         case RGB_LED:
         {
-            rgbled_command_t *command = (rgbled_command_t *)&pkt[1];
+            rgbled_command_t *command = (rgbled_command_t *)&pkt[2];
             printf("%d-%d-%d\n", command->r, command->g, command->b
             );
             db_rgbled_set(command->r, command->g, command->b);
