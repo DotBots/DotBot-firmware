@@ -18,5 +18,10 @@
  
  //=========================== public ======================================
  
- 
+void us_init(void (*callback)(uint32_t), NRF_TIMER_Type *us_on, NRF_TIMER_Type *us_read);
+void us_on_set_trigger(double duration_ms, double period_ms);
+void us_start(void);
+
+
+
  #endif
