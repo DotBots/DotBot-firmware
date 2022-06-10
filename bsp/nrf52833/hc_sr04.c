@@ -19,7 +19,7 @@
 
 //=========================== define ==========================================
 
-//GPIOTE for turning ON US sensor and receiving the range measurement 
+// GPIOTE for turning ON US sensor and receiving the range measurement 
 #define US_ON_PORT       1UL        // output port number
 #define US_ON_PIN        10UL       // output pin number
 #define US_READ_PORT     1UL        
@@ -29,17 +29,22 @@
 #define US_READ_CH_LoToHi       1UL
 #define US_READ_CH_HiToLo       2UL
 
+// Defines for setting up the trigger pulse width and frequency
+#define PULSE_DURATION_MS       0.01
+#define PULSE_OFFSET_MS         250
+
 //=========================== prototypes =======================================
 
 void us_gpio(void);
 void us_timers(void);
+void us_on_set_trigger(double duration_ms, double offset_ms);
 
 //=========================== variables =======================================
 
 typedef struct {
 
     void (*us_callback)(uint32_t);     // Function pointer, stores the callback to use in the GPIOTE_IRQn handler.
-    void (*timer_callback)(void);  // Function pointer, stores the callback to use in the GPIOTE_IRQn handler.
+    void (*timer_callback)(void);      // Function pointer, stores the callback to use in the GPIOTE_IRQn handler.
     
     NRF_TIMER_Type *us_on_timer;       // Pointer to the TIMER structure used for triggering US sensor
     NRF_TIMER_Type *us_read_timer;     // Pointer to the TIMER structure used for reading the range on the US sensor
@@ -75,6 +80,9 @@ void us_init(void (*callback_us)(uint32_t), void (*callback_timer)(void), NRF_TI
 
     // initialize timers for US on and US read
     us_timers();
+
+    // initial timer settings for the trigger pulse 
+    us_on_set_trigger(PULSE_DURATION_MS, PULSE_OFFSET_MS);
 
 }
 
@@ -130,6 +138,9 @@ void us_timers(void) {
 
 }
 
+/**
+ * @brief This function is public and it sets the compare registers for US trigger timer
+ */
 void us_on_set_trigger(double duration_ms, double offset_ms) {
 
     // Set compare values for US on
@@ -158,6 +169,9 @@ void us_on_set_trigger(double duration_ms, double offset_ms) {
 
 }
 
+/**
+ * @brief This function is public and it sets the PPI channels to allow the US trigger and US echo. Ranging starts by calling this function
+ */
 void us_start(void) {
     
     // get endpoint addresses
@@ -199,6 +213,9 @@ void us_start(void) {
                                
 }
 
+/**
+ * @brief This function is public and it enables HFCLK
+ */
 void hfclk_init(void) {
     
     // Configure the external High-frequency Clock. (Needed for correct operation)
@@ -211,7 +228,7 @@ void hfclk_init(void) {
 //=========================== interrupt handlers ==============================
 
 /**
- * @brief Function for reading ranging value from the sensor 
+ * @brief ISR for reading ranging value from the sensor. It captures the value of the Timer1 (pulse width) and calls the callback for US reading
  * 
  */
 void GPIOTE_IRQHandler(void){
@@ -229,8 +246,8 @@ void GPIOTE_IRQHandler(void){
     }
 }
 
-/*
-* ISR for TIMER0 which is in charge of controling the US sensor trigger pin
+/**
+* brief ISR for TIMER0 which is in charge of controling the US sensor trigger pin
 */
 void TIMER0_IRQHandler(void){
 
