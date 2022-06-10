@@ -53,7 +53,7 @@ int main(void) {
     us_start();
     
     // start high frequency clock needed for PPI
-    hfclk_init(void)
+    hfclk_init();
 
     while (1) {
         
@@ -69,7 +69,7 @@ int main(void) {
 
 /**
  *  @brief This is a callback for US reading.
- *         The code ends up here every time a new measurement is taken. The new measurement is stored in variable us_reading 
+ *         The code ends up here every time a new measurement is taken. The new measurement is stored in us_reading argument
  */
 void us_callback(uint32_t us_reading) {
 
