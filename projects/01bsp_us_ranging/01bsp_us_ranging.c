@@ -18,16 +18,17 @@
 
 //=========================== prototypes =========================================
 
-void us_callback(uint32_t us_reading);
-void timer_callback(void);
+void us_callback(uint32_t us_reading);     // callback for the US echo measurement
+void timer_callback(void);                 // callback for timer0 after pulse_offset_ms + pulse_duration_ms
 
 //=========================== variables =========================================
 
-NRF_TIMER_Type *timer0;
-NRF_TIMER_Type *timer1;
 
-double          pulse_duration_ms;
-volatile double pulse_offset_ms;
+NRF_TIMER_Type *timer0;                   // variable for passing the Timer for sensor trigger 
+NRF_TIMER_Type *timer1;                   // variable for passing the Timer for sensor echo measurement
+
+double          pulse_duration_ms;        // variable to store trigger pulse duration 
+volatile double pulse_offset_ms;          // variable to store the time before the trigger pulse  
 
 //=========================== main =========================================
 
@@ -50,7 +51,9 @@ int main(void) {
 
     // start ranging
     us_start();
-
+    
+    // start high frequency clock needed for PPI
+    hfclk_init(void)
 
     while (1) {
         
@@ -64,13 +67,21 @@ int main(void) {
     __NOP();
 }
 
-
+/**
+ *  @brief This is a callback for US reading.
+ *         The code ends up here every time a new measurement is taken. The new measurement is stored in variable us_reading 
+ */
 void us_callback(uint32_t us_reading) {
 
     __NOP();
 
 }
 
+/**
+ *  @brief This is a callback for the US trigger timer.
+ *         The code ends up here every pulse_offset_ms + pulse_duration_ms times.
+ *         We could change the pulse_offset_ms here by writting a new value to timer0->CC[0] and timer0->CC[1]
+ */
 void timer_callback(void) {
 
     __NOP();

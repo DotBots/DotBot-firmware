@@ -80,7 +80,7 @@ void us_init(void (*callback_us)(uint32_t), void (*callback_timer)(void), NRF_TI
 
  
 /**
- * @brief Function for initializing GPIOTE.
+ * @brief Function for initializing GPIOTE for US trigger and US echo signals.
  */
 
 void us_gpio(void) {
@@ -116,7 +116,7 @@ void us_gpio(void) {
 }
 
 /**
- * @brief 
+ * @brief This function is private and it sets up the Bitmode and Prescaler for US trigger and US echo timers
  */
 void us_timers(void) {
 
@@ -195,14 +195,18 @@ void us_start(void) {
                        (PPI_CHENSET_CH1_Enabled << PPI_CHENSET_CH1_Pos) |
                        (PPI_CHENSET_CH2_Enabled << PPI_CHENSET_CH2_Pos) |
                        (PPI_CHENSET_CH3_Enabled << PPI_CHENSET_CH3_Pos);
+
+                               
+}
+
+void hfclk_init(void) {
     
-    // TODO delete HFCL after
     // Configure the external High-frequency Clock. (Needed for correct operation)
     NRF_CLOCK->EVENTS_HFCLKSTARTED = 0x00;    // Clear the flag
     NRF_CLOCK->TASKS_HFCLKSTART    = 0x01;    // Start the clock
     while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) {;} // Wait for the clock to actually start.
-}
 
+}
 
 //=========================== interrupt handlers ==============================
 
