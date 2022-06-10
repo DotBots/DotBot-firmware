@@ -26,9 +26,7 @@ void timer_callback(void);                 // callback for timer0 after pulse_of
 
 NRF_TIMER_Type *timer0;                   // variable for passing the Timer for sensor trigger 
 NRF_TIMER_Type *timer1;                   // variable for passing the Timer for sensor echo measurement
-
-double          pulse_duration_ms;        // variable to store trigger pulse duration 
-volatile double pulse_offset_ms;          // variable to store the time before the trigger pulse  
+ 
 
 //=========================== main =========================================
 
@@ -37,16 +35,12 @@ volatile double pulse_offset_ms;          // variable to store the time before t
  */
 int main(void) {
 
-
     timer0 = NRF_TIMER0;
     timer1 = NRF_TIMER1;
 
     // initilize the US sensor, set callback and chose the timers
     us_init(&us_callback, &timer_callback, timer0, timer1);
    
-    // set compare values for the US on timer
-    us_on_set_trigger(pulse_duration_ms, pulse_offset_ms);
-
     // start ranging
     us_start();
     
