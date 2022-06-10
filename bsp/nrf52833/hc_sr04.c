@@ -55,7 +55,7 @@ static us_vars_t us_vars;
  
  
 /**
- * @brief Function for initializing GPIOTE.
+ * @brief Function for initializing variables and calling private functions for using the hc_sr04 US sensor
  */
 void us_init(void (*callback_us)(uint32_t), void (*callback_timer)(void), NRF_TIMER_Type *us_on, NRF_TIMER_Type *us_read) {
     
@@ -77,6 +77,11 @@ void us_init(void (*callback_us)(uint32_t), void (*callback_timer)(void), NRF_TI
     us_timers();
 
 }
+
+ 
+/**
+ * @brief Function for initializing GPIOTE.
+ */
 
 void us_gpio(void) {
 
