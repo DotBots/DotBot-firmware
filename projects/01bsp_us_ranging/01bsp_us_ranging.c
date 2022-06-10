@@ -11,16 +11,23 @@
 #include <stdlib.h>
 
 #include "board.h"
-#include "us_ranging.h"
+#include "hc_sr04.h"
 
 
 //=========================== defines =========================================
 
-//=========================== variables =========================================
-
 //=========================== prototypes =========================================
 
 void us_callback(uint32_t us_reading);
+void timer_callback(void);
+
+//=========================== variables =========================================
+
+NRF_TIMER_Type *timer0;
+NRF_TIMER_Type *timer1;
+
+double          pulse_duration_ms;
+volatile double pulse_offset_ms;
 
 //=========================== main =========================================
 
@@ -29,24 +36,17 @@ void us_callback(uint32_t us_reading);
  */
 int main(void) {
 
-    NRF_TIMER_Type *timer1;
-    NRF_TIMER_Type *timer2;
-
-    double pulse_duration_ms;
-    double pulse_period_ms;
-
     pulse_duration_ms  = 0.01;
-    pulse_period_ms    = 250;
+    pulse_offset_ms    = 250;
 
-    timer1 = NRF_TIMER2;
-    timer2 = NRF_TIMER3;
-
+    timer0 = NRF_TIMER0;
+    timer1 = NRF_TIMER1;
 
     // initilize the US sensor, set callback and chose the timers
-    us_init(&us_callback, timer1, timer2);
+    us_init(&us_callback, &timer_callback, timer0, timer1);
    
     // set compare values for the US on timer
-    us_on_set_trigger(pulse_duration_ms, pulse_period_ms);
+    us_on_set_trigger(pulse_duration_ms, pulse_offset_ms);
 
     // start ranging
     us_start();
@@ -67,12 +67,15 @@ int main(void) {
 
 void us_callback(uint32_t us_reading) {
 
-
     __NOP();
 
 }
 
+void timer_callback(void) {
 
+    __NOP();
+
+}
     
 
 
