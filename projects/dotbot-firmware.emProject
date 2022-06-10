@@ -877,7 +877,7 @@
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01bsp_us_ranging.c" />
       <file file_name="../../bsp/nrf52833/board.c" />
-      <file file_name="../../bsp/nrf52833/us_ranging.c" />
+      <file file_name="../../bsp/nrf52833/hc_sr04.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />

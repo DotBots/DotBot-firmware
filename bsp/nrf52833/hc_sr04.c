@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "us_ranging.h"
+#include "hc_sr04.h"
 
 //=========================== define ==========================================
 
@@ -29,23 +29,17 @@
 #define US_READ_CH_LoToHi       1UL
 #define US_READ_CH_HiToLo       2UL
 
-// Defines for activation pulse for turning ON US sensor
-#define PULSE_DURATION_MS 0.01   //value in ms
-#define TIMER_OFFSET_MS   0.20  //value in ms
-#define PULSE_PERIOD_MS   250   //value in ms
-
-
 //=========================== prototypes =======================================
 
 void us_gpio(void);
 void us_timers(void);
-void us_ppi_setup(void);
 
 //=========================== variables =======================================
 
 typedef struct {
 
-    void (*us_callback)(uint32_t);     // Function pointer, stores the callback to use in the RADIO_Irq handler.
+    void (*us_callback)(uint32_t);     // Function pointer, stores the callback to use in the GPIOTE_IRQn handler.
+    void (*timer_callback)(void);  // Function pointer, stores the callback to use in the GPIOTE_IRQn handler.
     
     NRF_TIMER_Type *us_on_timer;       // Pointer to the TIMER structure used for triggering US sensor
     NRF_TIMER_Type *us_read_timer;     // Pointer to the TIMER structure used for reading the range on the US sensor
@@ -63,11 +57,14 @@ static us_vars_t us_vars;
 /**
  * @brief Function for initializing GPIOTE.
  */
-void us_init(void (*callback)(uint32_t), NRF_TIMER_Type *us_on, NRF_TIMER_Type *us_read) {
+void us_init(void (*callback_us)(uint32_t), void (*callback_timer)(void), NRF_TIMER_Type *us_on, NRF_TIMER_Type *us_read) {
     
     
-    // Assign the callback function that will be called when a radio packet is received.
-    us_vars.us_callback = callback;
+    // Assign the callback function that will be called when ranging is performed.
+    us_vars.us_callback = callback_us;
+
+    // Assign the callback function that will be called when compare 0 is reached.
+    us_vars.timer_callback = callback_timer;
 
     // Assign the Timers for turning ON the US sensor and for US sensor readings
     us_vars.us_on_timer   = us_on;
@@ -79,10 +76,6 @@ void us_init(void (*callback)(uint32_t), NRF_TIMER_Type *us_on, NRF_TIMER_Type *
     // initialize timers for US on and US read
     us_timers();
 
-    // setup ppi to start the ranging sequence of US sensor
-    us_start();
-
-
 }
 
 void us_gpio(void) {
@@ -92,7 +85,7 @@ void us_gpio(void) {
                                             (US_ON_PIN                     << GPIOTE_CONFIG_PSEL_Pos)     |
                                             (US_ON_PORT                    << GPIOTE_CONFIG_PORT_Pos)     |
                                             (GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos) |
-                                            (GPIOTE_CONFIG_OUTINIT_High    << GPIOTE_CONFIG_OUTINIT_Pos);
+                                            (GPIOTE_CONFIG_OUTINIT_Low     << GPIOTE_CONFIG_OUTINIT_Pos);
    
     // configure the US_READ as input PIN detecting low to high edge of the signal
     NRF_GPIOTE->CONFIG[US_READ_CH_LoToHi] = (GPIOTE_CONFIG_MODE_Event        << GPIOTE_CONFIG_MODE_Pos)     |
@@ -132,29 +125,30 @@ void us_timers(void) {
 
 }
 
-void us_on_set_trigger(double duration_ms, double period_ms) {
+void us_on_set_trigger(double duration_ms, double offset_ms) {
 
     // Set compare values for US on
-    us_vars.us_on_timer->CC[0]   = duration_ms * 1000;  // first compare register for setting the offset and start of the pulse
-    us_vars.us_on_timer->CC[1]   = period_ms   * 1000;  // second compare for pulse duration
+    us_vars.us_on_timer->CC[0]   = offset_ms                   * 1000;  // first compare register for setting the offset and start of the pulse
+    us_vars.us_on_timer->CC[1]   = (offset_ms + duration_ms)   * 1000;  // second compare for pulse duration
 
 
-    // set Timer to clear after pulse period
+    // set Timer to clear after the trigger pulse 
     us_vars.us_on_timer->SHORTS  = (TIMER_SHORTS_COMPARE1_CLEAR_Enabled << TIMER_SHORTS_COMPARE1_CLEAR_Pos);
 
     // Configure the Interruptions
-    NVIC_DisableIRQ(TIMER2_IRQn); 
+    NVIC_DisableIRQ(TIMER0_IRQn); 
 
-    us_vars.us_on_timer->INTENSET = (TIMER_INTENSET_COMPARE0_Enabled << TIMER_INTENSET_COMPARE0_Pos) | 
-                                    (TIMER_INTENSET_COMPARE1_Enabled << TIMER_INTENSET_COMPARE1_Pos);
+    // enable interrupts on Compare 1
+    us_vars.us_on_timer->INTENSET = (TIMER_INTENSET_COMPARE1_Enabled << TIMER_INTENSET_COMPARE1_Pos);
 
     //NVIC_SetPriority(TIMER2_IRQn, TIMER2_INT_PRIORITY);
     
-    NVIC_ClearPendingIRQ(TIMER2_IRQn);    // Clear the flag for any pending radio interrupt
+    NVIC_ClearPendingIRQ(TIMER0_IRQn);    // Clear the flag for any pending radio interrupt
 
     // enable interupts
-    //NVIC_EnableIRQ(TIMER2_IRQn);
-
+    NVIC_EnableIRQ(TIMER0_IRQn);
+    
+    // start the US trigger timer
     us_vars.us_on_timer->TASKS_START = (TIMER_TASKS_START_TASKS_START_Trigger << TIMER_TASKS_START_TASKS_START_Pos);
 
 }
@@ -196,9 +190,8 @@ void us_start(void) {
                        (PPI_CHENSET_CH1_Enabled << PPI_CHENSET_CH1_Pos) |
                        (PPI_CHENSET_CH2_Enabled << PPI_CHENSET_CH2_Pos) |
                        (PPI_CHENSET_CH3_Enabled << PPI_CHENSET_CH3_Pos);
-
     
-    // TODO delete HFLC after
+    // TODO delete HFCL after
     // Configure the external High-frequency Clock. (Needed for correct operation)
     NRF_CLOCK->EVENTS_HFCLKSTARTED = 0x00;    // Clear the flag
     NRF_CLOCK->TASKS_HFCLKSTART    = 0x01;    // Start the clock
@@ -228,14 +221,18 @@ void GPIOTE_IRQHandler(void){
 }
 
 /*
-* ISR for TIMER0 - Pulse duration
+* ISR for TIMER0 which is in charge of controling the US sensor trigger pin
 */
 void TIMER0_IRQHandler(void){
 
-    if((NRF_TIMER0->EVENTS_COMPARE[0] != 0) && ((NRF_TIMER0->INTENSET & TIMER_INTENSET_COMPARE0_Msk) != 0))
+    if((NRF_TIMER0->EVENTS_COMPARE[1] != 0) && ((NRF_TIMER0->INTENSET & TIMER_INTENSET_COMPARE1_Msk) != 0))
     {   
-        NRF_TIMER0->EVENTS_COMPARE[0] = 0; //Clear compare register 0 event	 
+        NRF_TIMER0->EVENTS_COMPARE[1] = 0; //Clear compare register 0 event	 
+        
+        // Call callback defined by user.
+        (*us_vars.timer_callback)();
         
     }
 
 }
+
