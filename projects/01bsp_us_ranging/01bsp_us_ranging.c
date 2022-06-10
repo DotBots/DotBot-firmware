@@ -37,8 +37,6 @@ volatile double pulse_offset_ms;          // variable to store the time before t
  */
 int main(void) {
 
-    pulse_duration_ms  = 0.01;
-    pulse_offset_ms    = 250;
 
     timer0 = NRF_TIMER0;
     timer1 = NRF_TIMER1;
