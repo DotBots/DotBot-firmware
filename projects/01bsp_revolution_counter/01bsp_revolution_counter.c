@@ -13,7 +13,6 @@
 #include <stdlib.h>
 
 #include "board.h"
-#include "motors.h"
 #include "revolution_counter.h"
 
 
@@ -29,10 +28,8 @@
 int main(void) {
     puts("Revolution counter application");
     db_board_init();
-    db_motors_init();
     db_revolution_counter_init();
     db_board_encoder_timers_start();
-    //db_motors_setSpeed(50, 50);
 
     uint32_t left_speed, right_speed, left_rpm, right_rpm, left_rps, right_rps = 0;
     while (1) {
