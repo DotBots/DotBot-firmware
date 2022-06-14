@@ -18,14 +18,27 @@
 
 //=========================== public ======================================
 
+/**
+ * Structure containing different values computed by the rpm driver
+ */
+typedef struct {
+    uint32_t rpm;               /**<  Rotation per minute */
+    uint32_t rps;               /**<  Rotation per second */
+    uint32_t speed;             /**<  Speed in cm/s */
+} rpm_side_values_t;
+
+/**
+ * Structure containing different rpm value of each motor (left and right)
+ */
+typedef struct {
+    rpm_side_values_t left;     /**< rpm values of the left motor */
+    rpm_side_values_t right;    /**< rpm values of the right motor*/
+} rpm_values_t;
+/**
+ * Initialize the rpm driver
+ */
 void db_rpm_init(void);
-void db_rpm_encoder_timers_start(void);
-void db_rpm_encoder_timers_stop(void);
-uint32_t db_rpm_get_left_speed(void);
-uint32_t db_rpm_get_right_speed(void);
-uint32_t db_rpm_get_left_rpm(void);
-uint32_t db_rpm_get_right_rpm(void);
-uint32_t db_rpm_get_left_rps(void);
-uint32_t db_rpm_get_right_rps(void);
+
+void db_rpm_get_values(rpm_values_t *values);
 
 #endif

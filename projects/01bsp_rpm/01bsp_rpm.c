@@ -29,27 +29,22 @@ int main(void) {
     puts("RPM application");
     db_board_init();
     db_rpm_init();
-    db_rpm_encoder_timers_start();
 
     while (1) {
-        uint32_t left_speed     = db_rpm_get_left_speed();
-        uint32_t left_rpm       = db_rpm_get_left_rpm();
-        uint32_t left_rps       = db_rpm_get_left_rps();
-        uint32_t right_speed    = db_rpm_get_right_speed();
-        uint32_t right_rpm      = db_rpm_get_right_rpm();
-        uint32_t right_rps      = db_rpm_get_right_rps();
-        uint32_t wait           = 0x00fffff;
+        uint32_t wait       = 0x00fffff;
+        rpm_values_t values = { 0 };
+        db_rpm_get_values(&values);
         printf(
             "Left  - speed: %i, RPM: %i, RPS: %i\n",
-            left_speed,
-            left_rpm,
-            left_rps
+            values.left.speed,
+            values.left.rpm,
+            values.left.rps
         );
         printf(
             "Right - speed: %i, RPM: %i, RPS: %i\n",
-            right_speed,
-            right_rpm,
-            right_rps
+            values.right.speed,
+            values.right.rpm,
+            values.right.rps
         );
         while (wait--);
     }

@@ -92,6 +92,31 @@ static uint32_t previous_left_counts = 0;
 static uint32_t last_right_counts = 0;
 static uint32_t previous_right_counts = 0;
 
+//=========================== private ==========================================
+
+/**
+ * Compute the number of the left encoder cycles during the last 125ms time
+ * frame. The function takes into account timer overflows.
+ */
+static inline uint32_t _db_rpm_left_cycles(void) {
+    if (last_left_counts < previous_left_counts) {
+        return UINT32_MAX - previous_left_counts + last_left_counts;
+    }
+    return last_left_counts - previous_left_counts;
+}
+
+/**
+ * Compute the number of the right encoder cycles during the last 125ms time
+ * frame. The function takes into account timer overflows.
+ */
+static inline uint32_t _db_rpm_right_cycles(void) {
+    if (last_right_counts < previous_right_counts) {
+        return UINT32_MAX - previous_right_counts + last_right_counts;
+    }
+    return last_right_counts - previous_right_counts;
+}
+
+
 //=========================== public ==========================================
 
 /**
@@ -138,7 +163,7 @@ void db_rpm_init(void) {
     NRF_PPI->CH[RPM_RIGHT_PPI_CHAN].EEP = (uint32_t)&NRF_GPIOTE->EVENTS_IN[RPM_RIGHT_GPIOTE_CHAN];
     NRF_PPI->CH[RPM_RIGHT_PPI_CHAN].TEP = (uint32_t)&RPM_RIGHT_TIMER->TASKS_COUNT;
 
-    //Enable PPI channels
+    // Enable PPI channels
     NRF_PPI->CHENSET = (1 << RPM_RIGHT_PPI_CHAN) | (1 << RPM_LEFT_PPI_CHAN);
 
     // Configure RTC with 125ms fire event delay
@@ -156,6 +181,10 @@ void db_rpm_init(void) {
     NVIC_EnableIRQ(RPM_RTC_IRQ);
     // Start RTC
     RPM_RTC->TASKS_START = 1;
+
+    // Start timers used as counters
+    RPM_LEFT_TIMER->TASKS_START = 1;
+    RPM_RIGHT_TIMER->TASKS_START = 1;
 }
 
 static void update_counters(void) {
@@ -176,50 +205,15 @@ void RPM_RTC_ISR(void) {
     }
 }
 
-static inline uint32_t _db_rpm_left_cycles(void) {
-    if (last_left_counts < previous_left_counts) {
-        return UINT32_MAX - previous_left_counts + last_left_counts;
-    }
-    return last_left_counts - previous_left_counts;
-}
+void db_rpm_get_values(rpm_values_t *values) {
+    uint32_t left       = _db_rpm_left_cycles();
+    uint32_t right      = _db_rpm_right_cycles();
 
-static inline uint32_t _db_rpm_right_cycles(void) {
-    if (last_right_counts < previous_right_counts) {
-        return UINT32_MAX - previous_right_counts + last_right_counts;
-    }
-    return last_right_counts - previous_right_counts;
-}
+    values->left.rpm    = RPM_CYCLES_TO_RPM(left);
+    values->left.rps    = RPM_CYCLES_TO_RPS(left);
+    values->left.speed  = RPM_CYCLES_TO_SPEED(left);
 
-void db_rpm_encoder_timers_start(void) {
-    RPM_LEFT_TIMER->TASKS_START = 1;
-    RPM_RIGHT_TIMER->TASKS_START = 1;
-}
-
-void db_rpm_encoder_timers_stop(void) {
-    RPM_LEFT_TIMER->TASKS_STOP = 1;
-    RPM_RIGHT_TIMER->TASKS_STOP = 1;
-}
-
-uint32_t db_rpm_get_left_rpm(void) {
-    return RPM_CYCLES_TO_RPM(_db_rpm_left_cycles());
-}
-
-uint32_t db_rpm_get_right_rpm(void) {
-    return RPM_CYCLES_TO_RPM(_db_rpm_right_cycles());
-}
-
-uint32_t db_rpm_get_left_rps(void) {
-    return RPM_CYCLES_TO_RPS(_db_rpm_left_cycles());
-}
-
-uint32_t db_rpm_get_right_rps(void) {
-    return RPM_CYCLES_TO_RPS(_db_rpm_right_cycles());
-}
-
-uint32_t db_rpm_get_left_speed(void) {
-    return RPM_CYCLES_TO_SPEED(_db_rpm_left_cycles());   // cm/s
-}
-
-uint32_t db_rpm_get_right_speed(void) {
-    return RPM_CYCLES_TO_SPEED(_db_rpm_right_cycles());  // cm/s
+    values->right.rpm   = RPM_CYCLES_TO_RPM(right);
+    values->right.rps   = RPM_CYCLES_TO_RPS(right);
+    values->right.speed = RPM_CYCLES_TO_SPEED(right);
 }
