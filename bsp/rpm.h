@@ -18,7 +18,7 @@
 
 //=========================== public ======================================
 
-void db_revolution_counter_init();
+void db_revolution_counter_init(void);
 void db_board_encoder_timers_start(void);
 void db_board_encoder_timers_stop(void);
 uint32_t db_board_get_left_speed(void);
