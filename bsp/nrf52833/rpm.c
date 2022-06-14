@@ -202,12 +202,17 @@ void db_rpm_init(void) {
 }
 
 static void update_counters(void) {
-    _rpm_vars.previous_left_counts = _rpm_vars.last_left_counts;
-    _rpm_vars.previous_right_counts = _rpm_vars.last_right_counts;
-    RPM_LEFT_TIMER->TASKS_CAPTURE[0] = 1;
-    RPM_RIGHT_TIMER->TASKS_CAPTURE[0] = 1;
-    _rpm_vars.last_left_counts = RPM_LEFT_TIMER->CC[0];
-    _rpm_vars.last_right_counts = RPM_RIGHT_TIMER->CC[0];
+    // Copy the last counts from previous time frame in the corresponding variables
+    _rpm_vars.previous_left_counts      = _rpm_vars.last_left_counts;
+    _rpm_vars.previous_right_counts     = _rpm_vars.last_right_counts;
+
+    // Move current timers count to CC registers
+    RPM_LEFT_TIMER->TASKS_CAPTURE[0]    = 1;
+    RPM_RIGHT_TIMER->TASKS_CAPTURE[0]   = 1;
+
+    // Update last counts variables with the value in CC
+    _rpm_vars.last_left_counts          = RPM_LEFT_TIMER->CC[0];
+    _rpm_vars.last_right_counts         = RPM_RIGHT_TIMER->CC[0];
 }
 
 void RPM_RTC_ISR(void) {
