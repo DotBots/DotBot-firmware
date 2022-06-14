@@ -26,18 +26,18 @@
  *  @brief The program starts executing here.
  */
 int main(void) {
-    puts("Revolution counter application");
+    puts("RPM application");
     db_board_init();
-    db_revolution_counter_init();
-    db_board_encoder_timers_start();
+    db_rpm_init();
+    db_rpm_encoder_timers_start();
 
     while (1) {
-        uint32_t left_speed     = db_board_get_left_speed();
-        uint32_t left_rpm       = db_board_get_left_rpm();
-        uint32_t left_rps       = db_board_get_left_rps();
-        uint32_t right_speed    = db_board_get_right_speed();
-        uint32_t right_rpm      = db_board_get_right_rpm();
-        uint32_t right_rps      = db_board_get_right_rps();
+        uint32_t left_speed     = db_rpm_get_left_speed();
+        uint32_t left_rpm       = db_rpm_get_left_rpm();
+        uint32_t left_rps       = db_rpm_get_left_rps();
+        uint32_t right_speed    = db_rpm_get_right_speed();
+        uint32_t right_rpm      = db_rpm_get_right_rpm();
+        uint32_t right_rps      = db_rpm_get_right_rps();
         uint32_t wait           = 0x00fffff;
         printf(
             "Left  - speed: %i, RPM: %i, RPS: %i\n",

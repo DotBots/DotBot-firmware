@@ -104,7 +104,7 @@ static uint32_t previous_right_counts = 0;
  * the timer CC register and clearing the timer count. Computations are done with the `ME_TICK_TO_*`
  * constants.
  */
-void db_revolution_counter_init(void) {
+void db_rpm_init(void) {
     /* Configure pin connected to left magnetic encoder sensor, input pullup */
     NRF_P0->PIN_CNF[ME_LEFT_PIN] |= (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos);
     NRF_P0->PIN_CNF[ME_LEFT_PIN] &= ~(1UL << GPIO_PIN_CNF_INPUT_Pos);
@@ -177,50 +177,50 @@ void ME_RTC_ISR(void) {
     }
 }
 
-static inline uint32_t _db_left_cycles(void) {
+static inline uint32_t _db_rpm_left_cycles(void) {
     if (last_left_counts < previous_left_counts) {
         return UINT32_MAX - previous_left_counts + last_left_counts;
     }
     return last_left_counts - previous_left_counts;
 }
 
-static inline uint32_t _db_right_cycles(void) {
+static inline uint32_t _db_rpm_right_cycles(void) {
     if (last_right_counts < previous_right_counts) {
         return UINT32_MAX - previous_right_counts + last_right_counts;
     }
     return last_right_counts - previous_right_counts;
 }
 
-void db_board_encoder_timers_start(void) {
+void db_rpm_encoder_timers_start(void) {
     ME_LEFT_TIMER->TASKS_START = 1;
     ME_RIGHT_TIMER->TASKS_START = 1;
 }
 
-void db_board_encoder_timers_stop(void) {
+void db_rpm_encoder_timers_stop(void) {
     ME_LEFT_TIMER->TASKS_STOP = 1;
     ME_RIGHT_TIMER->TASKS_STOP = 1;
 }
 
-uint32_t db_board_get_left_rpm(void) {
-    return ME_CYCLES_TO_RPM(_db_left_cycles());
+uint32_t db_rpm_get_left_rpm(void) {
+    return ME_CYCLES_TO_RPM(_db_rpm_left_cycles());
 }
 
-uint32_t db_board_get_right_rpm(void) {
-    return ME_CYCLES_TO_RPM(_db_right_cycles());
+uint32_t db_rpm_get_right_rpm(void) {
+    return ME_CYCLES_TO_RPM(_db_rpm_right_cycles());
 }
 
-uint32_t db_board_get_left_rps(void) {
-    return ME_CYCLES_TO_RPS(_db_left_cycles());
+uint32_t db_rpm_get_left_rps(void) {
+    return ME_CYCLES_TO_RPS(_db_rpm_left_cycles());
 }
 
-uint32_t db_board_get_right_rps(void) {
-    return ME_CYCLES_TO_RPS(_db_right_cycles());
+uint32_t db_rpm_get_right_rps(void) {
+    return ME_CYCLES_TO_RPS(_db_rpm_right_cycles());
 }
 
-uint32_t db_board_get_left_speed(void) {
-    return ME_CYCLES_TO_SPEED(_db_left_cycles()); /* cm/s */
+uint32_t db_rpm_get_left_speed(void) {
+    return ME_CYCLES_TO_SPEED(_db_rpm_left_cycles()); /* cm/s */
 }
 
-uint32_t db_board_get_right_speed(void) {
-    return ME_CYCLES_TO_SPEED(_db_right_cycles()); /* cm/s */
+uint32_t db_rpm_get_right_speed(void) {
+    return ME_CYCLES_TO_SPEED(_db_rpm_right_cycles()); /* cm/s */
 }
