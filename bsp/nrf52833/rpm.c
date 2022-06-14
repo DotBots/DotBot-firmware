@@ -16,47 +16,55 @@
 //=========================== defines =========================================
 
 #ifndef RPM_LEFT_PIN
-#define RPM_LEFT_PIN            (17)
+#define RPM_LEFT_PIN            (17)                /**< Number of the pin connected to the left magnetic encoder */
+#endif
+
+#ifndef RPM_LEFT_PORT
+#define RPM_LEFT_PORT           (NRF_P0)            /**< Port of the pin connected to the left magnetic encoder */
 #endif
 
 #ifndef RPM_LEFT_TIMER
-#define RPM_LEFT_TIMER          (NRF_TIMER0)
+#define RPM_LEFT_TIMER          (NRF_TIMER0)        /**< Timer peripheral used to count left cycles */
 #endif
 
 #ifndef RPM_LEFT_PPI_CHAN
-#define RPM_LEFT_PPI_CHAN       (0)
+#define RPM_LEFT_PPI_CHAN       (0)                 /**< PPI channel used between left side timer and gpio */
 #endif
 
 #ifndef RPM_LEFT_GPIOTE_CHAN
-#define RPM_LEFT_GPIOTE_CHAN    (0)
+#define RPM_LEFT_GPIOTE_CHAN    (0)                 /**< GPIOTE channel used for left side gpio event */
 #endif
 
 #ifndef RPM_RIGHT_PIN
-#define RPM_RIGHT_PIN           (15)
+#define RPM_RIGHT_PIN           (15)                /**< Number of the pin connected to the right magnetic encoder */
+#endif
+
+#ifndef RPM_RIGHT_PORT
+#define RPM_RIGHT_PORT          (NRF_P0)            /**< Port of the pin connected to the right magnetic encoder */
 #endif
 
 #ifndef RPM_RIGHT_TIMER
-#define RPM_RIGHT_TIMER         (NRF_TIMER1)
+#define RPM_RIGHT_TIMER         (NRF_TIMER1)        /**< Timer peripheral used to count right cycles */
 #endif
 
 #ifndef RPM_RIGHT_PPI_CHAN
-#define RPM_RIGHT_PPI_CHAN      (1)
+#define RPM_RIGHT_PPI_CHAN      (1)                 /**< PPI channel used between right side timer and gpio */
 #endif
 
 #ifndef RPM_RIGHT_GPIOTE_CHAN
-#define RPM_RIGHT_GPIOTE_CHAN   (1)
+#define RPM_RIGHT_GPIOTE_CHAN   (1)                 /**< GPIOTE channel used for right side gpio event */
 #endif
 
 #ifndef RPM_RTC
-#define RPM_RTC                 (NRF_RTC0)
+#define RPM_RTC                 (NRF_RTC0)          /**< RTC peripheral used to sample cycle counts */
 #endif
 
 #ifndef RPM_RTC_IRQ
-#define RPM_RTC_IRQ             (RTC0_IRQn)
+#define RPM_RTC_IRQ             (RTC0_IRQn)         /**< IRQ corresponding to the RTC used */
 #endif
 
 #ifndef RPM_RTC_ISR
-#define RPM_RTC_ISR             (RTC0_IRQHandler)
+#define RPM_RTC_ISR             (RTC0_IRQHandler)   /**< ISR function handler corresponding to the RTC used */
 #endif
 
 /**
@@ -136,15 +144,15 @@ static inline uint32_t _db_rpm_right_cycles(void) {
  */
 void db_rpm_init(void) {
     // Configure pin connected to left magnetic encoder sensor, input pullup
-    NRF_P0->PIN_CNF[RPM_LEFT_PIN]               |= (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos);
-    NRF_P0->PIN_CNF[RPM_LEFT_PIN]               &= ~(1UL << GPIO_PIN_CNF_INPUT_Pos);
+    RPM_LEFT_PORT->PIN_CNF[RPM_LEFT_PIN]        |= (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos);
+    RPM_LEFT_PORT->PIN_CNF[RPM_LEFT_PIN]        &= ~(1UL << GPIO_PIN_CNF_INPUT_Pos);
     NRF_GPIOTE->CONFIG[RPM_LEFT_GPIOTE_CHAN]     = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) | \
                                                     (RPM_LEFT_PIN << GPIOTE_CONFIG_PSEL_Pos) | \
                                                     (GPIOTE_CONFIG_POLARITY_LoToHi << GPIOTE_CONFIG_POLARITY_Pos);
 
     // Configure pin connected to right magnetic encoder sensor, input pullup
-    NRF_P0->PIN_CNF[RPM_RIGHT_PIN]              |= (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos);
-    NRF_P0->PIN_CNF[RPM_RIGHT_PIN]              &= ~(1UL << GPIO_PIN_CNF_INPUT_Pos);
+    RPM_RIGHT_PORT->PIN_CNF[RPM_RIGHT_PIN]      |= (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos);
+    RPM_RIGHT_PORT->PIN_CNF[RPM_RIGHT_PIN]      &= ~(1UL << GPIO_PIN_CNF_INPUT_Pos);
     NRF_GPIOTE->CONFIG[RPM_RIGHT_GPIOTE_CHAN]    = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) | \
                                                     (RPM_RIGHT_PIN << GPIOTE_CONFIG_PSEL_Pos) | \
                                                     (GPIOTE_CONFIG_POLARITY_LoToHi  << GPIOTE_CONFIG_POLARITY_Pos);
