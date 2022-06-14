@@ -63,8 +63,7 @@
 /**
  * Helper macro to compute speed in cm/s
  *
- * number of cycles captured within last 10ms (one rotation is 3.77mm distance of the wheel)
- * so speed = 3.7 * cycles cm/s
+ * computed from the number of cycles measured within the last 125ms (one rotation is 3.77mm distance of the wheel)
  */
 #define RPM_CYCLES_TO_SPEED(cycles)     (uint32_t)(37.7 * cycles / 8)
 
