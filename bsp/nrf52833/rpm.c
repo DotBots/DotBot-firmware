@@ -80,16 +80,23 @@
  */
 #define RPM_CYCLES_TO_RPS(cycles)       (8 * cycles)
 
+/**
+ * Helper struct used to store internal state variables
+ */
+typedef struct {
+    uint32_t last_left_counts;
+    uint32_t previous_left_counts;
+    uint32_t last_right_counts;
+    uint32_t previous_right_counts;
+} rpm_vars_t;
+
 //=========================== variables =========================================
 
 /*
- * Global variables used to store cycle counts at the beginning and at the end of
- * an RTC timeframe, for each side
+ * Global variable used to store cycle counts at the beginning and at the end of
+ * an RTC timeframe (125ms), for each side
  */
-static uint32_t last_left_counts = 0;
-static uint32_t previous_left_counts = 0;
-static uint32_t last_right_counts = 0;
-static uint32_t previous_right_counts = 0;
+static rpm_vars_t _rpm_vars;
 
 //=========================== private ==========================================
 
@@ -98,10 +105,10 @@ static uint32_t previous_right_counts = 0;
  * frame. The function takes into account timer overflows.
  */
 static inline uint32_t _db_rpm_left_cycles(void) {
-    if (last_left_counts < previous_left_counts) {
-        return UINT32_MAX - previous_left_counts + last_left_counts;
+    if (_rpm_vars.last_left_counts < _rpm_vars.previous_left_counts) {
+        return UINT32_MAX - _rpm_vars.previous_left_counts + _rpm_vars.last_left_counts;
     }
-    return last_left_counts - previous_left_counts;
+    return _rpm_vars.last_left_counts - _rpm_vars.previous_left_counts;
 }
 
 /**
@@ -109,10 +116,10 @@ static inline uint32_t _db_rpm_left_cycles(void) {
  * frame. The function takes into account timer overflows.
  */
 static inline uint32_t _db_rpm_right_cycles(void) {
-    if (last_right_counts < previous_right_counts) {
-        return UINT32_MAX - previous_right_counts + last_right_counts;
+    if (_rpm_vars.last_right_counts < _rpm_vars.previous_right_counts) {
+        return UINT32_MAX - _rpm_vars.previous_right_counts + _rpm_vars.last_right_counts;
     }
-    return last_right_counts - previous_right_counts;
+    return _rpm_vars.last_right_counts - _rpm_vars.previous_right_counts;
 }
 
 
@@ -187,12 +194,12 @@ void db_rpm_init(void) {
 }
 
 static void update_counters(void) {
-    previous_left_counts = last_left_counts;
-    previous_right_counts = last_right_counts;
+    _rpm_vars.previous_left_counts = _rpm_vars.last_left_counts;
+    _rpm_vars.previous_right_counts = _rpm_vars.last_right_counts;
     RPM_LEFT_TIMER->TASKS_CAPTURE[0] = 1;
     RPM_RIGHT_TIMER->TASKS_CAPTURE[0] = 1;
-    last_left_counts = RPM_LEFT_TIMER->CC[0];
-    last_right_counts = RPM_RIGHT_TIMER->CC[0];
+    _rpm_vars.last_left_counts = RPM_LEFT_TIMER->CC[0];
+    _rpm_vars.last_right_counts = RPM_RIGHT_TIMER->CC[0];
 }
 
 void RPM_RTC_ISR(void) {
