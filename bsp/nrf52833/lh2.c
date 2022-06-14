@@ -160,11 +160,11 @@ void lh2_init(void)
 
     // Configure the EasyDMA channel
     // Configuring the READER channel
-    NRF_SPIM3->RXD.MAXCNT   = m_length;          // Set the size of the input buffer.
-    NRF_SPIM3->RXD.PTR      = m_rx_buf;          // Set the input buffer pointer.
+    NRF_SPIM3->RXD.MAXCNT   = m_length;             // Set the size of the input buffer.
+    NRF_SPIM3->RXD.PTR      = (uint32_t)m_rx_buf;   // Set the input buffer pointer.
     // Configure the WRITER channel
-    NRF_SPIM3->TXD.MAXCNT   = m_length;           // Set the size of the output buffer.
-    NRF_SPIM3->TXD.PTR      = m_tx_buf;           // Set the output buffer pointer.
+    NRF_SPIM3->TXD.MAXCNT   = m_length;             // Set the size of the output buffer.
+    NRF_SPIM3->TXD.PTR      = (uint32_t)m_tx_buf;   // Set the output buffer pointer.
 
     // Enable the SPIM pripheral
     NRF_SPIM3->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
