@@ -66,8 +66,8 @@ void db_rgbled_init(void) {
     NRF_SPIM0->CONFIG = SPIM_CONFIG_ORDER_MsbFirst << SPIM_CONFIG_ORDER_Pos; // Set MsB out first
 
     // Configure the WRITER EasyDMA channel
-    NRF_SPIM0->TXD.MAXCNT = LED_BUFFER_SIZE; // Set the size of the output buffer.
-    NRF_SPIM0->TXD.PTR = (uint32_t)&rgbled_vars.ledBuffer;         // Set the output buffer pointer.
+    NRF_SPIM0->TXD.MAXCNT = LED_BUFFER_SIZE;                // Set the size of the output buffer.
+    NRF_SPIM0->TXD.PTR = (uint32_t)&rgbled_vars.ledBuffer;  // Set the output buffer pointer.
 
     // Enable the SPIM pripheral
     NRF_SPIM0->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
