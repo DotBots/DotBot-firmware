@@ -1,8 +1,8 @@
 /**
- * @file board.c
+ * @file rpm.c
  * @addtogroup BSP
  *
- * @brief  nRF52833-specific definition of the "board" bsp module.
+ * @brief  nRF52833-specific definition of the "rpm" bsp module.
  *
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
  *
@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <nrf.h>
 
-#include "revolution_counter.h"
+#include "rpm.h"
 
 //=========================== defines =========================================
 

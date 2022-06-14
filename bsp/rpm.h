@@ -1,11 +1,11 @@
-#ifndef __REVOLUTION_COUNTER_H
-#define __REVOLUTION_COUNTER_H
+#ifndef __RPM_H
+#define __RPM_H
 
 /**
- * @file revolution_counter.h
+ * @file rpm.h
  * @addtogroup BSP
  *
- * @brief  Cross-platform declaration "revolution counter" bsp module.
+ * @brief  Cross-platform declaration "rpm" bsp module.
  *
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
  *

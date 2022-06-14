@@ -1,5 +1,5 @@
 /**
- * @file 01bsp_revolution_counter.c
+ * @file 01bsp_rpm.c
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  * @brief This is a short example of how to interface with the Wheel revolution counter in the DotBot board.
  *
@@ -13,7 +13,7 @@
 #include <stdlib.h>
 
 #include "board.h"
-#include "revolution_counter.h"
+#include "rpm.h"
 
 
 //=========================== defines =========================================
