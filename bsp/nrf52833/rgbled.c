@@ -11,6 +11,7 @@
 #include <nrf.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "rgbled.h"
 
@@ -86,6 +87,9 @@ void db_rgbled_init(void) {
  * @param[in] b blue value of the led color [0 - 255]
  */
 void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b) {
+
+    // Make sure we update a cleared buffer
+    memset(rgbled_vars.ledBuffer, 0, LED_BUFFER_SIZE);
 
     // Load the obligatory starting write command on to the buffer. This is required by the TLC5973 driver.
     rgbled_vars.ledBuffer[0] = 0x00;
