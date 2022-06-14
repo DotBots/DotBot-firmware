@@ -198,7 +198,6 @@ static void update_counters(void) {
 
 void RPM_RTC_ISR(void) {
     if (RPM_RTC->EVENTS_COMPARE[0] == 1) {
-        NVIC_ClearPendingIRQ(RPM_RTC_IRQ);
         RPM_RTC->EVENTS_COMPARE[0] = 0;
         update_counters();
         RPM_RTC->TASKS_CLEAR = 1;
