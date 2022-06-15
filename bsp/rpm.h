@@ -14,9 +14,7 @@
 
 #include <stdint.h>
 
-//=========================== prototypes ======================================
-
-//=========================== public ======================================
+//=========================== defines ==========================================
 
 /**
  * Structure containing different values computed by the rpm driver
@@ -34,11 +32,19 @@ typedef struct {
     rpm_side_values_t left;     /**< rpm values of the left motor */
     rpm_side_values_t right;    /**< rpm values of the right motor*/
 } rpm_values_t;
+
+//=========================== prototypes =======================================
+
 /**
  * Initialize the rpm driver
  */
 void db_rpm_init(void);
 
+/**
+ * Get values (rpm, rps, speed) measured by the rpm driver
+ *
+ * @param[out] values   A pointer to the struct handling all values
+ */
 void db_rpm_get_values(rpm_values_t *values);
 
 #endif

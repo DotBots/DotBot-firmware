@@ -8,12 +8,13 @@
  *
  * @copyright Inria, 2022
  */
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <nrf.h>
 #include "rpm.h"
 
-//=========================== defines =========================================
+//=========================== defines ==========================================
 
 #ifndef RPM_LEFT_PIN
 #define RPM_LEFT_PIN            (17)                /**< Number of the pin connected to the left magnetic encoder */
@@ -98,7 +99,7 @@ typedef struct {
     uint32_t previous_right_counts;
 } rpm_vars_t;
 
-//=========================== variables =========================================
+//=========================== variables ========================================
 
 /*
  * Global variable used to store cycle counts at the beginning and at the end of
@@ -106,32 +107,21 @@ typedef struct {
  */
 static rpm_vars_t _rpm_vars;
 
-//=========================== private ==========================================
+//=========================== prototypes =======================================
 
 /**
  * Compute the number of the left encoder cycles during the last 125ms time
  * frame. The function takes into account timer overflows.
  */
-static inline uint32_t _db_rpm_left_cycles(void) {
-    if (_rpm_vars.last_left_counts < _rpm_vars.previous_left_counts) {
-        return UINT32_MAX - _rpm_vars.previous_left_counts + _rpm_vars.last_left_counts;
-    }
-    return _rpm_vars.last_left_counts - _rpm_vars.previous_left_counts;
-}
+static uint32_t _db_rpm_left_cycles(void);
 
 /**
  * Compute the number of the right encoder cycles during the last 125ms time
  * frame. The function takes into account timer overflows.
  */
-static inline uint32_t _db_rpm_right_cycles(void) {
-    if (_rpm_vars.last_right_counts < _rpm_vars.previous_right_counts) {
-        return UINT32_MAX - _rpm_vars.previous_right_counts + _rpm_vars.last_right_counts;
-    }
-    return _rpm_vars.last_right_counts - _rpm_vars.previous_right_counts;
-}
+static uint32_t _db_rpm_right_cycles(void);
 
-
-//=========================== public ==========================================
+//=========================== public ===========================================
 
 /**
  * @brief Initalize the revolution counter driver
@@ -234,4 +224,20 @@ void db_rpm_get_values(rpm_values_t *values) {
     values->right.rpm   = RPM_CYCLES_TO_RPM(right);
     values->right.rps   = RPM_CYCLES_TO_RPS(right);
     values->right.speed = RPM_CYCLES_TO_SPEED(right);
+}
+
+//=========================== private ==========================================
+
+static uint32_t _db_rpm_left_cycles(void) {
+    if (_rpm_vars.last_left_counts < _rpm_vars.previous_left_counts) {
+        return UINT32_MAX - _rpm_vars.previous_left_counts + _rpm_vars.last_left_counts;
+    }
+    return _rpm_vars.last_left_counts - _rpm_vars.previous_left_counts;
+}
+
+static uint32_t _db_rpm_right_cycles(void) {
+    if (_rpm_vars.last_right_counts < _rpm_vars.previous_right_counts) {
+        return UINT32_MAX - _rpm_vars.previous_right_counts + _rpm_vars.last_right_counts;
+    }
+    return _rpm_vars.last_right_counts - _rpm_vars.previous_right_counts;
 }
