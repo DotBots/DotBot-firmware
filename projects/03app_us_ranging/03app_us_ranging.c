@@ -16,22 +16,48 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "board.h"
+// uncoment the board.h when porting this code to DotBot
+//#include "board.h"
 #include "hc_sr04.h"
+#include "radio.h"
 
 
 //=========================== defines =========================================
 
+/**
+ * Struct used to store internal variables
+ */
+typedef struct {
+    NRF_TIMER_Type *timer0;                   // variable for passing the Timer for sensor trigger 
+    NRF_TIMER_Type *timer1;                   // variable for passing the Timer for sensor echo measurement
+} us_ranging_vars_t;
+
 //=========================== prototypes =========================================
 
-void us_callback(uint32_t us_reading);     // callback for the US echo measurement
-void timer_callback(void);                 // callback for timer0 after pulse_offset_ms + pulse_duration_ms
+/**
+ * callback for the US echo measurement
+ */
+void us_callback(uint32_t us_reading);     
+
+/**
+ * callback for timer0 after pulse_offset_ms + pulse_duration_ms
+ */
+void timer_callback(void);                 
+
+/**
+ * callback for the radio, called when Rx event
+ */
+void radio_callback(uint8_t *packet, uint8_t length);
+
+/**
+ * A function to setup the radio for the application needs. This function should be called after db_radio_init 
+ */
+void us_radio_setup(void);
 
 //=========================== variables =========================================
 
 
-NRF_TIMER_Type *timer0;                   // variable for passing the Timer for sensor trigger 
-NRF_TIMER_Type *timer1;                   // variable for passing the Timer for sensor echo measurement
+static us_ranging_vars_t us_ranging_vars;
  
 
 //=========================== main =========================================
@@ -41,20 +67,26 @@ NRF_TIMER_Type *timer1;                   // variable for passing the Timer for 
  */
 int main(void) {
 
-    timer0 = NRF_TIMER0;
-    timer1 = NRF_TIMER1;
+    us_ranging_vars.timer0 = NRF_TIMER0;
+    us_ranging_vars.timer1 = NRF_TIMER1;
 
     // uncomment if using this code on DotBot Turn ON the DotBot board regulator
     //db_board_init();
 
+    // Initialize Radio 
+    db_radio_init(&radio_callback); // Set the callback function.
+
     // initilize the US sensor, set callback and chose the timers
-    us_init(&us_callback, &timer_callback, timer0, timer1);
-   
+    us_init(&us_callback, &timer_callback, us_ranging_vars.timer0, us_ranging_vars.timer1);
+
+    // Configure the radio for US ranging
+    us_radio_setup();
+
     // start ranging
     us_start();
-    
-    // start high frequency clock needed for PPI
-    hfclk_init();
+  
+    // THIS IS ALREADY ENABLED IN db_radio_init - start high frequency clock needed for PPI
+    //hfclk_init();
 
     while (1) {
         
@@ -89,5 +121,29 @@ void timer_callback(void) {
 
 }
     
+/**
+ *  @brief This is a callback for the radio Rx event.
+ *         The code ends up here every time a radio packet is received.
+ *         Here we setup the new values for the compare ragisters in order to change the offset of the US trigger timer.
+ *         From here the PPI for US ranging starts every time a packet is received.
+ */
+void radio_callback(uint8_t *packet, uint8_t length) {
 
+    //TODO
+    // stop ranging
+    //us_stop();
 
+    // start ranging
+    //us_start();
+        
+}
+
+/**
+ *  @brief A function to setup the radio for the application needs. This function should be called after db_radio_init 
+ */
+void us_radio_setup(void) {
+
+    db_radio_set_frequency(8);      // Set the RX frequency to 2408 MHz.
+    db_radio_rx_enable();           // Start receiving packets.
+
+}
