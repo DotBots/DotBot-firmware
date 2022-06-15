@@ -214,6 +214,78 @@ void hc_sr04_timers(void) {
     NVIC_ClearPendingIRQ(TIMER0_IRQn);    // Clear the flag for any pending radio interrupt
     // enable interupts
     NVIC_EnableIRQ(TIMER0_IRQn);
+    
+    // start the US trigger timer
+    us_vars.us_on_timer->TASKS_START = (TIMER_TASKS_START_TASKS_START_Trigger << TIMER_TASKS_START_TASKS_START_Pos);
+
+}
+
+/**
+ * @brief This function is public and it sets the PPI channels to allow the US trigger and US echo. Ranging starts by calling this function
+ */
+void us_start(void) {
+    
+    // get endpoint addresses
+    uint32_t us_power_task_addr              = (uint32_t)&NRF_GPIOTE->TASKS_OUT[US_ON_CH];
+
+    uint32_t us_read_event_low_high_addr     = (uint32_t)&NRF_GPIOTE->EVENTS_IN[US_READ_CH_LoToHi];
+    uint32_t us_read_event_high_low_addr     = (uint32_t)&NRF_GPIOTE->EVENTS_IN[US_READ_CH_HiToLo];
+
+    uint32_t timer3_task_start_addr         = (uint32_t)&us_vars.us_read_timer->TASKS_START;
+    uint32_t timer3_task_clear_addr         = (uint32_t)&us_vars.us_read_timer->TASKS_CLEAR;
+    uint32_t timer3_task_stop_addr          = (uint32_t)&us_vars.us_read_timer->TASKS_STOP;
+    uint32_t timer3_task_capture_addr       = (uint32_t)&us_vars.us_read_timer->TASKS_CAPTURE[0];
+    
+    uint32_t timer2_events_compare_0_addr   = (uint32_t)&us_vars.us_on_timer->EVENTS_COMPARE[0];
+    uint32_t timer2_events_compare_1_addr   = (uint32_t)&us_vars.us_on_timer->EVENTS_COMPARE[1];
+
+
+    // set endpoints
+    NRF_PPI->CH[0].EEP       = timer2_events_compare_0_addr;
+    NRF_PPI->CH[0].TEP       = us_power_task_addr;
+
+    NRF_PPI->CH[1].EEP       = timer2_events_compare_1_addr;
+    NRF_PPI->CH[1].TEP       = us_power_task_addr;
+
+    NRF_PPI->CH[2].EEP       = us_read_event_low_high_addr;
+    NRF_PPI->CH[2].TEP       = timer3_task_clear_addr;
+    NRF_PPI->FORK[2].TEP     = timer3_task_start_addr;
+
+    NRF_PPI->CH[3].EEP       = us_read_event_high_low_addr;
+    NRF_PPI->CH[3].TEP       = timer3_task_capture_addr;
+    NRF_PPI->FORK[3].TEP     = timer3_task_stop_addr;
+
+    // enable channels
+    NRF_PPI->CHENSET = (PPI_CHENSET_CH0_Enabled << PPI_CHENSET_CH0_Pos) | 
+                       (PPI_CHENSET_CH1_Enabled << PPI_CHENSET_CH1_Pos) |
+                       (PPI_CHENSET_CH2_Enabled << PPI_CHENSET_CH2_Pos) |
+                       (PPI_CHENSET_CH3_Enabled << PPI_CHENSET_CH3_Pos);
+                                                      
+}
+
+/**
+ * @brief This function is public and it disables the PPI channels to stop the US trigger and ranging.
+ */
+void us_stop(void) {
+
+    // disable PPI channels for US ranging
+    NRF_PPI->CHENCLR = (PPI_CHENCLR_CH0_Enabled << PPI_CHENSET_CH0_Pos) | 
+                       (PPI_CHENCLR_CH1_Enabled << PPI_CHENSET_CH1_Pos) |
+                       (PPI_CHENCLR_CH2_Enabled << PPI_CHENSET_CH2_Pos) |
+                       (PPI_CHENCLR_CH3_Enabled << PPI_CHENSET_CH3_Pos);
+
+}
+
+/**
+ * @brief This function is public and it enables HFCLK
+ */
+void hfclk_init(void) {
+    
+    // Configure the external High-frequency Clock. (Needed for correct operation)
+    NRF_CLOCK->EVENTS_HFCLKSTARTED = 0x00;    // Clear the flag
+    NRF_CLOCK->TASKS_HFCLKSTART    = 0x01;    // Start the clock
+    while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) {;} // Wait for the clock to actually start.
+
 }
 
 //=========================== interrupt handlers ==============================
