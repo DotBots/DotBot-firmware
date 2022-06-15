@@ -205,14 +205,6 @@ static void update_counters(void) {
     _rpm_vars.last_right_counts         = RPM_RIGHT_TIMER->CC[0];
 }
 
-void RPM_RTC_ISR(void) {
-    if (RPM_RTC->EVENTS_COMPARE[0] == 1) {
-        RPM_RTC->EVENTS_COMPARE[0] = 0;
-        update_counters();
-        RPM_RTC->TASKS_CLEAR = 1;
-    }
-}
-
 void db_rpm_get_values(rpm_values_t *values) {
     uint32_t left       = _db_rpm_left_cycles();
     uint32_t right      = _db_rpm_right_cycles();
@@ -240,4 +232,14 @@ static uint32_t _db_rpm_right_cycles(void) {
         return UINT32_MAX - _rpm_vars.previous_right_counts + _rpm_vars.last_right_counts;
     }
     return _rpm_vars.last_right_counts - _rpm_vars.previous_right_counts;
+}
+
+//=========================== interrupts =======================================
+
+void RPM_RTC_ISR(void) {
+    if (RPM_RTC->EVENTS_COMPARE[0] == 1) {
+        RPM_RTC->EVENTS_COMPARE[0] = 0;
+        update_counters();
+        RPM_RTC->TASKS_CLEAR = 1;
+    }
 }
