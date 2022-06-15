@@ -31,7 +31,23 @@
 
 // Defines for setting up the trigger pulse width and frequency
 #define PULSE_DURATION_MS       0.01
-#define PULSE_OFFSET_MS         250
+#define PULSE_OFFSET_MS         200
+
+#ifndef US_GPIOTE_IRQ
+#define US_GPIOTE_IRQ             (GPIOTE_IRQn)         /**< IRQ corresponding to the Timer used */
+#endif
+
+#ifndef US_GPIOTE_ISR
+#define US_GPIOTE_ISR             (GPIOTE_IRQHandler)   /**< ISR function handler corresponding to the Timer used */
+#endif
+
+#ifndef US_TIMER_IRQ
+#define US_TIMER_IRQ             (TIMER0_IRQn)         /**< IRQ corresponding to the Timer used */
+#endif
+
+#ifndef US_TIMER_ISR
+#define US_TIMER_ISR             (TIMER0_IRQHandler)   /**< ISR function handler corresponding to the Timer used */
+#endif
 
 //=========================== prototypes =======================================
 
@@ -113,14 +129,14 @@ void us_gpio(void) {
                                             (GPIOTE_CONFIG_POLARITY_HiToLo   << GPIOTE_CONFIG_POLARITY_Pos);
      
     // Configure the Interruptions
-    NVIC_DisableIRQ(GPIOTE_IRQn); 
+    NVIC_DisableIRQ(US_GPIOTE_IRQ); 
 
     // Enable interrupt for the HiToLo edge of the input
     NRF_GPIOTE->INTENSET = (GPIOTE_INTENSET_IN2_Set << GPIOTE_INTENSET_IN2_Pos); 
 
-    NVIC_ClearPendingIRQ(GPIOTE_IRQn);    // Clear the flag for any pending radio interrupt
+    NVIC_ClearPendingIRQ(US_GPIOTE_IRQ);    // Clear the flag for any pending radio interrupt
  
-    NVIC_EnableIRQ(GPIOTE_IRQn);
+    NVIC_EnableIRQ(US_GPIOTE_IRQ);
 }
 
 /**
@@ -139,7 +155,7 @@ void us_timers(void) {
 }
 
 /**
- * @brief This function is public and it sets the compare registers for US trigger timer
+ * @brief This function is private and it sets the compare registers for US trigger timer
  */
 void us_on_set_trigger(double duration_ms, double offset_ms) {
 
@@ -231,7 +247,7 @@ void hfclk_init(void) {
  * @brief ISR for reading ranging value from the sensor. It captures the value of the Timer1 (pulse width) and calls the callback for US reading
  * 
  */
-void GPIOTE_IRQHandler(void){
+void US_GPIOTE_ISR(void){
   
     if(NRF_GPIOTE->EVENTS_IN[US_READ_CH_HiToLo] != 0)
     {
@@ -249,7 +265,7 @@ void GPIOTE_IRQHandler(void){
 /**
 * brief ISR for TIMER0 which is in charge of controling the US sensor trigger pin
 */
-void TIMER0_IRQHandler(void){
+void US_TIMER_ISR(void){
 
     if((NRF_TIMER0->EVENTS_COMPARE[1] != 0) && ((NRF_TIMER0->INTENSET & TIMER_INTENSET_COMPARE1_Msk) != 0))
     {   
