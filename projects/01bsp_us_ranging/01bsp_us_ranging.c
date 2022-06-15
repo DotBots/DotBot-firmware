@@ -1,7 +1,9 @@
 /**
  * @file 01bsp_us_ranging.c
  * @author Trifun Savic <trifun.savic@inria.fr>
+ *
  * @brief This is a short example of how to do Ultrasound ranging with HC-SR04 sensor on the DotBot board.
+ * This code currently works on nRF52840. To use the code on DotBot you need to define different GPIO for US sensor ON and READ pin (trigger and echo) in hc_sr04.c
  *
  * @copyright Inria, 2022
  *
@@ -37,6 +39,9 @@ int main(void) {
 
     timer0 = NRF_TIMER0;
     timer1 = NRF_TIMER1;
+
+    // uncomment if using this code on DotBot Turn ON the DotBot board regulator
+    //db_board_init();
 
     // initilize the US sensor, set callback and chose the timers
     us_init(&us_callback, &timer_callback, timer0, timer1);
