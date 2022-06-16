@@ -14,14 +14,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 // Inlcude BSP packages
-#include <board.h>
-#include <motors.h>
+#include "board.h"
+#include "motors.h"
+#include "timer.h"
 
 
 //=========================== defines =========================================
-
-// Define a blocking wait function.
-#define WAIT_A_BIT(PAUSE) for (int i = 0; i < 3000 * PAUSE; i++) {;}    ///< The 3000 magic number, approximates to about 1ms per 1 unit of PAUSE.
 
 //=========================== variables =========================================
 
@@ -35,33 +33,36 @@ int main(void) {
     // Turn ON the DotBot board regulator
     db_board_init();
 
+    // Initialize the timer
+    db_timer_init();
+
     // Configure Motors
     db_motors_init();
 
     while (1) {
         // Right motor forward
         db_motors_set_speed(0, 60);
-        WAIT_A_BIT(2000);            // wait ~2 sec
-        db_motors_set_speed(0, 0);   // Turn off motor
-        WAIT_A_BIT(1000);            // wait ~1 sec
+        db_timer_delay_s(2);        // wait 2 sec
+        db_motors_set_speed(0, 0);  // Turn off motor
+        db_timer_delay_s(1);        // wait 1 sec
 
         // Right motor backward
         db_motors_set_speed(0, -60);
-        WAIT_A_BIT(2000);           // wait ~2 sec
+        db_timer_delay_s(2);        // wait 2 sec
         db_motors_set_speed(0, 0);  // Turn off motor
-        WAIT_A_BIT(1000);           // wait ~1 sec
+        db_timer_delay_s(1);        // wait 1 sec
 
         // Left motor forward
         db_motors_set_speed(60, 0);
-        WAIT_A_BIT(2000);           // wait ~2 sec
+        db_timer_delay_s(2);        // wait 2 sec
         db_motors_set_speed(0, 0);  // Turn off motor
-        WAIT_A_BIT(1000);           // wait ~1 sec
+        db_timer_delay_s(1);        // wait 1 sec
 
         // Left motor backward
         db_motors_set_speed(-60, 0);
-        WAIT_A_BIT(2000);           // wait ~2 sec
+        db_timer_delay_s(2);        // wait 2 sec
         db_motors_set_speed(0, 0);  // Turn off motor
-        WAIT_A_BIT(1000);           // wait ~1 sec
+        db_timer_delay_s(1);        // wait 1 sec
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
