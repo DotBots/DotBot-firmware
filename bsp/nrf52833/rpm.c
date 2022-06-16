@@ -16,57 +16,16 @@
 
 //=========================== defines ==========================================
 
-#ifndef RPM_LEFT_PIN
 #define RPM_LEFT_PIN            (17)                /**< Number of the pin connected to the left magnetic encoder */
-#endif
-
-#ifndef RPM_LEFT_PORT
 #define RPM_LEFT_PORT           (NRF_P0)            /**< Port of the pin connected to the left magnetic encoder */
-#endif
-
-#ifndef RPM_LEFT_TIMER
 #define RPM_LEFT_TIMER          (NRF_TIMER0)        /**< Timer peripheral used to count left cycles */
-#endif
-
-#ifndef RPM_LEFT_PPI_CHAN
 #define RPM_LEFT_PPI_CHAN       (0)                 /**< PPI channel used between left side timer and gpio */
-#endif
-
-#ifndef RPM_LEFT_GPIOTE_CHAN
 #define RPM_LEFT_GPIOTE_CHAN    (0)                 /**< GPIOTE channel used for left side gpio event */
-#endif
-
-#ifndef RPM_RIGHT_PIN
 #define RPM_RIGHT_PIN           (15)                /**< Number of the pin connected to the right magnetic encoder */
-#endif
-
-#ifndef RPM_RIGHT_PORT
 #define RPM_RIGHT_PORT          (NRF_P0)            /**< Port of the pin connected to the right magnetic encoder */
-#endif
-
-#ifndef RPM_RIGHT_TIMER
 #define RPM_RIGHT_TIMER         (NRF_TIMER1)        /**< Timer peripheral used to count right cycles */
-#endif
-
-#ifndef RPM_RIGHT_PPI_CHAN
 #define RPM_RIGHT_PPI_CHAN      (1)                 /**< PPI channel used between right side timer and gpio */
-#endif
-
-#ifndef RPM_RIGHT_GPIOTE_CHAN
 #define RPM_RIGHT_GPIOTE_CHAN   (1)                 /**< GPIOTE channel used for right side gpio event */
-#endif
-
-#ifndef RPM_RTC
-#define RPM_RTC                 (NRF_RTC0)          /**< RTC peripheral used to sample cycle counts */
-#endif
-
-#ifndef RPM_RTC_IRQ
-#define RPM_RTC_IRQ             (RTC0_IRQn)         /**< IRQ corresponding to the RTC used */
-#endif
-
-#ifndef RPM_RTC_ISR
-#define RPM_RTC_ISR             (RTC0_IRQHandler)   /**< ISR function handler corresponding to the RTC used */
-#endif
 
 /**
  * Helper macro to compute speed in cm/s
@@ -176,19 +135,19 @@ void db_rpm_init(void) {
     while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0);
     NRF_CLOCK->EVENTS_LFCLKSTARTED  = 0;
 
-    RPM_RTC->TASKS_STOP             = 1;
-    RPM_RTC->TASKS_CLEAR            = 1;
-    RPM_RTC->PRESCALER              = (1 << 12) - 1;
-    RPM_RTC->CC[0]                  = 1;
-    RPM_RTC->EVTENSET               = (RTC_EVTENSET_COMPARE0_Enabled << RTC_EVTENSET_COMPARE0_Pos);
-    RPM_RTC->INTENSET               = (RTC_INTENSET_COMPARE0_Enabled << RTC_INTENSET_COMPARE0_Pos);
-    NVIC_EnableIRQ(RPM_RTC_IRQ);
+    NRF_RTC0->TASKS_STOP            = 1;
+    NRF_RTC0->TASKS_CLEAR           = 1;
+    NRF_RTC0->PRESCALER             = (1 << 12) - 1;
+    NRF_RTC0->CC[0]                 = 1;
+    NRF_RTC0->EVTENSET              = (RTC_EVTENSET_COMPARE0_Enabled << RTC_EVTENSET_COMPARE0_Pos);
+    NRF_RTC0->INTENSET              = (RTC_INTENSET_COMPARE0_Enabled << RTC_INTENSET_COMPARE0_Pos);
+    NVIC_EnableIRQ(RTC0_IRQn);
     // Start RTC
-    RPM_RTC->TASKS_START = 1;
+    NRF_RTC0->TASKS_START = 1;
 
     // Start timers used as counters
-    RPM_LEFT_TIMER->TASKS_START = 1;
-    RPM_RIGHT_TIMER->TASKS_START = 1;
+    RPM_LEFT_TIMER->TASKS_START     = 1;
+    RPM_RIGHT_TIMER->TASKS_START    = 1;
 }
 
 static void update_counters(void) {
@@ -236,10 +195,10 @@ static uint32_t _db_rpm_right_cycles(void) {
 
 //=========================== interrupts =======================================
 
-void RPM_RTC_ISR(void) {
-    if (RPM_RTC->EVENTS_COMPARE[0] == 1) {
-        RPM_RTC->EVENTS_COMPARE[0] = 0;
+void RTC0_IRQHandler(void) {
+    if (NRF_RTC0->EVENTS_COMPARE[0] == 1) {
+        NRF_RTC0->EVENTS_COMPARE[0] = 0;
         update_counters();
-        RPM_RTC->TASKS_CLEAR = 1;
+        NRF_RTC0->TASKS_CLEAR = 1;
     }
 }
