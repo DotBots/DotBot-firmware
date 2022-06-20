@@ -9,7 +9,7 @@
 #include <nrf.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+// Include BSP headers
 #include "board.h"
 #include "motors.h"
 #include "radio.h"
@@ -17,17 +17,9 @@
 
 //=========================== defines =========================================
 
-#ifndef TIMEOUT_RTC
 #define TIMEOUT_RTC           (NRF_RTC1)
-#endif
-
-#ifndef TIMEOUT_RTC_IRQ
 #define TIMEOUT_RTC_IRQ       (RTC1_IRQn)
-#endif
-
-#ifndef TIMEOUT_RTC_ISR
 #define TIMEOUT_RTC_ISR       (RTC1_IRQHandler)
-#endif
 
 typedef enum {
     MOVE_RAW = 0,
@@ -47,20 +39,16 @@ typedef struct __attribute__((packed)) {
     uint8_t b;
 } rgbled_command_t;
 
-static joystick_command_t *command;
-
-//=========================== variables =========================================
-
 //=========================== main =========================================
 
 static void radio_callback(uint8_t *pkt, uint8_t len) {
-    TIMEOUT_RTC->TASKS_CLEAR = 1; /* Clear RTC counter */
-    /* parse received packet and update the motors' speeds */
+    TIMEOUT_RTC->TASKS_CLEAR = 1;   // Clear RTC counter
     if (pkt[0] != 0) {
-        /* Only version 0 is supported */
+        // Only version 0 is supported
         return;
     }
 
+    // parse received packet and update the motors' speeds
     switch (pkt[1]) {
         case MOVE_RAW:
         {
@@ -82,14 +70,14 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
 }
 
 static void db_timeout_rtc_init(void) {
-    TIMEOUT_RTC->TASKS_STOP = 1;
-    TIMEOUT_RTC->TASKS_CLEAR = 1;
-    /* Configure RTC with 125ms delay between ticks */
-    TIMEOUT_RTC->PRESCALER = (uint32_t)((1 << 12) - 1);
-    TIMEOUT_RTC->INTENSET = RTC_INTENSET_TICK_Enabled;
-    TIMEOUT_RTC->EVTENSET = RTC_EVTENSET_TICK_Enabled;
+    TIMEOUT_RTC->TASKS_STOP     = 1;
+    TIMEOUT_RTC->TASKS_CLEAR    = 1;
+    // Configure RTC with 125ms delay between ticks
+    TIMEOUT_RTC->PRESCALER  = (uint32_t)((1 << 12) - 1);
+    TIMEOUT_RTC->INTENSET   = RTC_INTENSET_TICK_Enabled;
+    TIMEOUT_RTC->EVTENSET   = RTC_EVTENSET_TICK_Enabled;
     NVIC_EnableIRQ(TIMEOUT_RTC_IRQ);
-    /* Start RTC */
+    // Start RTC
     TIMEOUT_RTC->TASKS_START = 1;
 }
 
@@ -97,7 +85,7 @@ void TIMEOUT_RTC_ISR(void) {
     NVIC_ClearPendingIRQ(TIMEOUT_RTC_IRQ);
     if (TIMEOUT_RTC->EVENTS_TICK) {
         TIMEOUT_RTC->EVENTS_TICK = 0;
-        /* Stop the motors if the RTC fires a compare events, e.g. when no packet was received during 100ms */
+        // Stop the motors if the RTC fires a compare events, e.g. when no packet was received during 100ms
         db_motors_setSpeed(0, 0);
     }
 }
