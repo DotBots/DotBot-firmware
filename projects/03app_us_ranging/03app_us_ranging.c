@@ -15,6 +15,7 @@
 #include <nrf.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 // uncoment the board.h when porting this code to DotBot
 //#include "board.h"
@@ -74,13 +75,17 @@ int main(void) {
     //db_board_init();
 
     // Initialize Radio 
-    db_radio_init(&radio_callback); // Set the callback function.
+    //db_radio_init(&radio_callback); // Set the callback function.
+    
+    
+    db_lr_radio_init(&radio_callback);
+
+    db_radio_set_frequency(8);      // Set the RX frequency to 2408 MHz.
+    db_radio_rx_enable();           // Start receiving packets.
+
 
     // initilize the US sensor, set callback and chose the timers
     us_init(&us_callback, &timer_callback, us_ranging_vars.timer0, us_ranging_vars.timer1);
-
-    // Configure the radio for US ranging
-    us_radio_setup();
 
     // start ranging
     us_start();
@@ -135,15 +140,7 @@ void radio_callback(uint8_t *packet, uint8_t length) {
 
     // start ranging
     //us_start();
-        
+    __NOP();
+            
 }
 
-/**
- *  @brief A function to setup the radio for the application needs. This function should be called after db_radio_init 
- */
-void us_radio_setup(void) {
-
-    db_radio_set_frequency(8);      // Set the RX frequency to 2408 MHz.
-    db_radio_rx_enable();           // Start receiving packets.
-
-}
