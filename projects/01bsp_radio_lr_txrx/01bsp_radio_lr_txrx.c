@@ -19,9 +19,6 @@
 
 //=========================== defines =========================================
 
-// Define a blocking wait function.
-#define WAIT_A_BIT(PAUSE) for (int i = 0; i < 3000 * PAUSE; i++) {;}    ///< The 3000 magic number, approximates to about 1ms per 1 unit of PAUSE.
-
 #define NUMBER_OF_BYTES_IN_PACKET 32
 
 //=========================== variables =========================================
@@ -54,14 +51,15 @@ int main(void) {
     db_radio_rx_enable();           // Start receiving packets.
 
     while (1) {
-        
-        //WAIT_A_BIT(100)
+            
+        __WFE();      
+        __SEV();
+        __WFE();
+                  
+    } 
 
-        __WFE(); // Enter a low power state while waiting.                  
-  }
-
-  // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
-  __NOP();
+    // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
+    __NOP();
 }
 
 //=========================== functions =========================================
@@ -79,12 +77,9 @@ void radio_callback(uint8_t *packet, uint8_t length) {
 
     // Check the arriving packet for any pressed button.
     if (packet[0] == 0x01 || packet[1] == 0x01 || packet[2] == 0x01 || packet[3] == 0x01) {
-
         NRF_P0->OUTSET = 1 << GPIO_OUTSET_PIN31_Pos; // if any button is pressed, set the pin HIGH.
     }
-
     else {
-
-      NRF_P0->OUTCLR = 1 << GPIO_OUTCLR_PIN31_Pos;  // No buttons pressed, set the pin LOW.
+        NRF_P0->OUTCLR = 1 << GPIO_OUTCLR_PIN31_Pos;  // No buttons pressed, set the pin LOW.
     }
 }
