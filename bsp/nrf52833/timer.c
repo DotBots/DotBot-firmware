@@ -9,6 +9,7 @@
  * @copyright Inria, 2022
  */
 #include <nrf.h>
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include "timer.h"
@@ -73,6 +74,8 @@ void db_timer_init(void) {
  * @param[in] cb        callback function
  */
 void db_timer_set_periodic(uint8_t channel, uint32_t ms, timer_cb_t cb) {
+    assert(channel >= 0 && channel < 3);    // Make sure the required channel is correct
+
     _timer_vars.timer_callback[channel].period_ticks    = _ms_to_ticks(ms);
     _timer_vars.timer_callback[channel].callback        = cb;
     TIMER_RTC->EVTENSET = (1 << (RTC_EVTENSET_COMPARE0_Pos + channel));
@@ -81,16 +84,30 @@ void db_timer_set_periodic(uint8_t channel, uint32_t ms, timer_cb_t cb) {
 }
 
 /**
+ * @brief Add a delay in ticks (1 tick ~ 30us)
+ *
+ * @param[in] ticks delay in ticks
+ */
+void db_timer_delay_ticks(uint32_t ticks) {
+    TIMER_RTC->CC[3] = TIMER_RTC->COUNTER + ticks;
+    _timer_vars.waiting = true;
+    while (_timer_vars.waiting) {
+        // Let's go to sleep
+        // See https://devzone.nordicsemi.com/f/nordic-q-a/49010/methods-to-put-the-nrf52-to-sleep-in-a-spinlock-loop
+        // for details
+        __WFE();
+        __SEV();
+        __WFE();
+    }
+}
+
+/**
  * @brief Add a delay in milliseconds
  *
  * @param[in] ms    delay in milliseconds
  */
 void db_timer_delay_ms(uint32_t ms) {
-    TIMER_RTC->CC[3] = TIMER_RTC->COUNTER + _ms_to_ticks(ms);
-    _timer_vars.waiting = true;
-    while (_timer_vars.waiting) {
-        __WFE();    // Let's go to sleep
-    }
+    db_timer_delay_ticks(_ms_to_ticks(ms));
 }
 
 /**
@@ -99,7 +116,7 @@ void db_timer_delay_ms(uint32_t ms) {
  * @param[in] s delay in seconds
  */
 void db_timer_delay_s(uint32_t s) {
-    db_timer_delay_ms(s * 1000);
+    db_timer_delay_ticks(s * 32768);
 }
 
 //=========================== private ==========================================
