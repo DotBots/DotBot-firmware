@@ -13,7 +13,8 @@
 #include <nrf.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <lh2.h>
+#include "board.h"
+#include "lh2.h"
 
 //=========================== defines =========================================
 
@@ -27,9 +28,8 @@ uint32_t * current_loc_p;
  *  @brief The program starts executing here.
  */
 int main(void) {
-
-    // Turn ON the flag
-    NRF_P0->DIRSET = 1 << 20;
+    // Initialize the board core features (voltage regulator)
+    db_board_init();
 
     // Initialize the LH2
     lh2_init();
