@@ -32,7 +32,6 @@ typedef struct {
 
 //=========================== prototypes =======================================
 
-static uint32_t _ticks_to_ms(uint32_t ticks);
 static uint32_t _ms_to_ticks(uint32_t ms);
 
 //=========================== variables ========================================
@@ -64,13 +63,6 @@ void db_timer_init(void) {
 
     // Start the timer
     TIMER_RTC->TASKS_START = 1;
-}
-
-/**
- * @brief Return the number of ms elapsed since the timer started
- */
-uint32_t db_timer_now(void) {
-    return _ticks_to_ms(TIMER_RTC->COUNTER);
 }
 
 /**
@@ -112,12 +104,11 @@ void db_timer_delay_s(uint32_t s) {
 
 //=========================== private ==========================================
 
-static uint32_t _ticks_to_ms(uint32_t ticks) {
-    return ticks / 33;
-}
-
 static uint32_t _ms_to_ticks(uint32_t ms) {
-    return ms * 33;
+    // Return an estimation of the number of ticks matching the
+    // required number of milliseconds. The estimation should be just above to
+    // avoid firing the timer in advance.
+    return (ms * 33) - (uint32_t)(ms * (float)(33 - (32768.0 / 1000)));
 }
 
 //=========================== interrupt ========================================

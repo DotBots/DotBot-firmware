@@ -27,7 +27,7 @@ static uint8_t _color_idx = 0;
 //=========================== main =========================================
 
 static void message_callback(void) {
-    printf("%u - Hello from callback\n", db_timer_now());
+    printf("Hello from callback\n");
 }
 
 static void led_callback(void) {
@@ -50,9 +50,9 @@ int main(void) {
     db_timer_set_periodic(0, 2000, &message_callback);
     db_timer_set_periodic(1, 500, &led_callback);
     while (1) {
-        printf("%u - Hello dotbot\n", db_timer_now());
+        printf("Hello dotbot\n");
         db_timer_delay_ms(500);
-        printf("%u - Hello dotbot again\n", db_timer_now());
+        printf("Hello dotbot again\n");
         db_timer_delay_s(1);
     }
 
