@@ -86,7 +86,7 @@ void db_radio_init(void (*callback)(uint8_t *, uint8_t)) {
 void db_radio_init_lr(void (*callback)(uint8_t *, uint8_t)) {
 
      // General configuration of the radio.
-    NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_Pos8dBm << RADIO_TXPOWER_TXPOWER_Pos); // 0dBm == 1mW Power output
+    NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_Pos8dBm << RADIO_TXPOWER_TXPOWER_Pos); // 8dBm Power output
 
     NRF_RADIO->MODE  = (RADIO_MODE_MODE_Ble_LR125Kbit << RADIO_MODE_MODE_Pos);       // Use Long Range 125 kbps modulation
     
@@ -110,8 +110,6 @@ void db_radio_init_lr(void (*callback)(uint8_t *, uint8_t)) {
 
     NRF_RADIO->RXADDRESSES = RADIO_RXADDRESSES_ADDR0_Enabled << RADIO_RXADDRESSES_ADDR0_Pos;
     NRF_RADIO->TXADDRESS   = (0 << RADIO_TXADDRESS_TXADDRESS_Pos) & RADIO_TXADDRESS_TXADDRESS_Msk;
-
-    //NRF_RADIO->DACNF = 0UL << 0;
 
     // Initialize Common Radio Configuration
     radio_init_common(callback);
@@ -204,8 +202,7 @@ void db_radio_rx_disable(void) {
  */
 void radio_init_common(void (*callback)(uint8_t *, uint8_t)) {
     
-        
-    //// CRC Config
+    // CRC Config
     NRF_RADIO->CRCCNF  =  (RADIO_CRCCNF_LEN_Two         << RADIO_CRCCNF_LEN_Pos);        // Checksum uses 2 bytes, and is enabled.
     NRF_RADIO->CRCINIT =  0xFFFFUL;                                                      // initial value
     NRF_RADIO->CRCPOLY =  0x11021UL;                                                     // CRC poly: x^16 + x^12^x^5 + 1
@@ -228,7 +225,6 @@ void radio_init_common(void (*callback)(uint8_t *, uint8_t)) {
     NVIC_ClearPendingIRQ(RADIO_IRQn);                                           // Clear the flag for any pending radio interrupt
 
 }
-
 
 //=========================== interrupt handlers ==============================
 
@@ -261,5 +257,4 @@ void RADIO_IRQHandler(void) {
         // Clear the rx_buffer.
         memset(radio_vars.rx_buffer, 0, NUMBER_OF_BYTES_IN_PACKET);
     }
-
 }
