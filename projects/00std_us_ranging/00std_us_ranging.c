@@ -20,8 +20,11 @@
  *  @brief The program starts executing here.
  */
 int main(void) {
-
+    
     while (1) {
+        __WFE();      
+        __SEV();
+        __WFE();
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
