@@ -26,6 +26,8 @@ typedef void(*timer_callback_t)(void);
  
 void hc_sr04_init(us_callback_t us_callback, timer_callback_t timer_callback, NRF_TIMER_Type *us_on, NRF_TIMER_Type *us_read);
 void hc_sr04_start(void);
+void hc_sr04_stop(void);
+void hc_sr04_on_set_trigger(double duration_ms, double offset_ms);
 
 void hfclk_init(void);
 
