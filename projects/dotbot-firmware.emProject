@@ -822,6 +822,7 @@
       <file file_name="../../bsp/nrf52833/timer.c" />
       <file file_name="../../bsp/nrf52833/rgbled.c" />
       <file file_name="../../bsp/nrf52833/board.c" />
+      <file file_name="../../bsp/nrf52833/clock.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
