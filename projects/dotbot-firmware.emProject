@@ -25,6 +25,62 @@
     <file file_name="board.c" />
     <file file_name="../board.h" />
   </project>
+  <project Name="00lib_dotbot_lh2">
+    <configuration
+      LIBRARY_IO_TYPE="RTT"
+      Name="Common"
+      arm_architecture="v7EM"
+      arm_core_type="Cortex-M4"
+      c_preprocessor_definitions="ARM_MATH_CM4;NRF52833_XXAA;__nRF_FAMILY"
+      c_user_include_directories="$(ProjectDir)/..;$(ProjectDir)/../../nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
+      package_dependencies="CMSIS-CORE_V5"
+      project_directory="../bsp/nrf52833"
+      project_type="Library" />
+    <file file_name="lh2.c" />
+    <file file_name="../lh2.h" />
+  </project>
+  <project Name="00lib_dotbot_motors">
+    <configuration
+      LIBRARY_IO_TYPE="RTT"
+      Name="Common"
+      arm_architecture="v7EM"
+      arm_core_type="Cortex-M4"
+      c_preprocessor_definitions="ARM_MATH_CM4;NRF52833_XXAA;__nRF_FAMILY"
+      c_user_include_directories="$(ProjectDir)/..;$(ProjectDir)/../../nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
+      package_dependencies="CMSIS-CORE_V5"
+      project_directory="../bsp/nrf52833"
+      project_type="Library" />
+    <file file_name="motors.c" />
+    <file file_name="../motors.h" />
+  </project>
+  <project Name="00lib_dotbot_radio">
+    <configuration
+      LIBRARY_IO_TYPE="RTT"
+      Name="Common"
+      arm_architecture="v7EM"
+      arm_core_type="Cortex-M4"
+      c_preprocessor_definitions="ARM_MATH_CM4;NRF52833_XXAA;__nRF_FAMILY"
+      c_user_include_directories="$(ProjectDir)/..;$(ProjectDir)/../../nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
+      package_dependencies="CMSIS-CORE_V5"
+      project_directory="../bsp/nrf52833"
+      project_type="Library" />
+    <file file_name="radio.c" />
+    <file file_name="../radio.h" />
+  </project>
+  <project Name="00lib_dotbot_rgbled">
+    <configuration
+      LIBRARY_IO_TYPE="RTT"
+      Name="Common"
+      arm_architecture="v7EM"
+      arm_core_type="Cortex-M4"
+      c_preprocessor_definitions="ARM_MATH_CM4;NRF52833_XXAA;__nRF_FAMILY"
+      c_user_include_directories="$(ProjectDir)/..;$(ProjectDir)/../../nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
+      package_dependencies="CMSIS-CORE_V5"
+      project_directory="../bsp/nrf52833"
+      project_type="Library" />
+    <file file_name="rgbled.c" />
+    <file file_name="../rgbled.h" />
+  </project>
   <project Name="00std_motors">
     <configuration
       CMSIS_CORE="Yes"
