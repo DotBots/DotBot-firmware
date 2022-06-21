@@ -9,7 +9,6 @@
  * @copyright Inria, 2022
  */
  
-
 #include <nrf.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,11 +18,11 @@
 
 //=========================== define ==========================================
 
-// GPIOTE for turning ON US sensor and receiving the range measurement 
-#define US_ON_PORT       1UL        // output port number
-#define US_ON_PIN        10UL       // output pin number
-#define US_READ_PORT     1UL        
-#define US_READ_PIN      6UL
+// GPIOTE for turning ON US sensor and READING the range measurement 
+#define US_ON_PORT              1UL        // output port number
+#define US_ON_PIN               10UL       // output pin number
+#define US_READ_PORT            1UL        
+#define US_READ_PIN             6UL
 
 #define US_ON_CH                0UL
 #define US_READ_CH_LoToHi       1UL
@@ -43,21 +42,19 @@ void hc_sr04_on_set_trigger(double duration_ms, double offset_ms);
 
 typedef struct {
 
-    us_callback_t     us_callback;     // Function pointer, stores the callback to use in the GPIOTE_IRQn handler.
-    timer_callback_t  timer_callback;  // Function pointer, stores the callback to use in the GPIOTE_IRQn handler. 
-    
-    NRF_TIMER_Type *us_on_timer;       // Pointer to the TIMER structure used for triggering US sensor
-    NRF_TIMER_Type *us_read_timer;     // Pointer to the TIMER structure used for reading the range on the US sensor
+    us_callback_t     us_callback;        // Function pointer, stores the callback to use in the GPIOTE_IRQn handler.
+    timer_callback_t  timer_callback;     // Function pointer, stores the callback to use in the GPIOTE_IRQn handler. 
+   
+    NRF_TIMER_Type    *us_on_timer;       // Pointer to the TIMER structure used for triggering US sensor
+    NRF_TIMER_Type    *us_read_timer;     // Pointer to the TIMER structure used for reading the range on the US sensor
 
-    volatile uint32_t us_reading;      // Variable to store pulse duration of the US echo pin
+    volatile uint32_t us_reading;         // Variable to store pulse duration of the US echo pin
 
 } us_vars_t;
 
 static us_vars_t us_vars;
 
-
 //=========================== public ==========================================
- 
  
 /**
  * @brief Function for initializing variables and calling private functions for using the hc_sr04 US sensor
