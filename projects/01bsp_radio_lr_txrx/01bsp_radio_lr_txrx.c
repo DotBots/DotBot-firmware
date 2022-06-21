@@ -1,7 +1,7 @@
 /**
- * @file 01bsp_lr_txrx.c
+ * @file 01bsp_radio_lr_txrx.c
  * @author Trifun savic <trifun.savic@inria.fr>
- * @brief This is a short example of how to interface with the Long Range radio.
+ * @brief This is a short example of how to interface with the Long Range BLE radio.
  *
  *
  *
