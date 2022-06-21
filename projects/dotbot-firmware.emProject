@@ -16,7 +16,11 @@
       LIBRARY_IO_TYPE="RTT"
       Name="Common"
       arm_architecture="v7EM"
+      arm_compiler_variant="SEGGER"
       arm_core_type="Cortex-M4"
+      arm_endian="Little"
+      arm_fp_abi="Hard"
+      arm_fpu_type="FPv4-SP-D16"
       c_preprocessor_definitions="ARM_MATH_CM4;NRF52833_XXAA;__nRF_FAMILY"
       c_user_include_directories="$(ProjectDir)/..;$(ProjectDir)/../../nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
       package_dependencies="CMSIS-CORE_V5"
@@ -30,7 +34,11 @@
       LIBRARY_IO_TYPE="RTT"
       Name="Common"
       arm_architecture="v7EM"
+      arm_compiler_variant="SEGGER"
       arm_core_type="Cortex-M4"
+      arm_endian="Little"
+      arm_fp_abi="Hard"
+      arm_fpu_type="FPv4-SP-D16"
       c_preprocessor_definitions="ARM_MATH_CM4;NRF52833_XXAA;__nRF_FAMILY"
       c_user_include_directories="$(ProjectDir)/..;$(ProjectDir)/../../nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
       package_dependencies="CMSIS-CORE_V5"
@@ -44,7 +52,11 @@
       LIBRARY_IO_TYPE="RTT"
       Name="Common"
       arm_architecture="v7EM"
+      arm_compiler_variant="SEGGER"
       arm_core_type="Cortex-M4"
+      arm_endian="Little"
+      arm_fp_abi="Hard"
+      arm_fpu_type="FPv4-SP-D16"
       c_preprocessor_definitions="ARM_MATH_CM4;NRF52833_XXAA;__nRF_FAMILY"
       c_user_include_directories="$(ProjectDir)/..;$(ProjectDir)/../../nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
       package_dependencies="CMSIS-CORE_V5"
@@ -53,12 +65,16 @@
     <file file_name="motors.c" />
     <file file_name="../motors.h" />
   </project>
-  <project Name="00lib_dotbot_radio">
+  <project Name="00lib_radio">
     <configuration
       LIBRARY_IO_TYPE="RTT"
       Name="Common"
       arm_architecture="v7EM"
+      arm_compiler_variant="SEGGER"
       arm_core_type="Cortex-M4"
+      arm_endian="Little"
+      arm_fp_abi="Hard"
+      arm_fpu_type="FPv4-SP-D16"
       c_preprocessor_definitions="ARM_MATH_CM4;NRF52833_XXAA;__nRF_FAMILY"
       c_user_include_directories="$(ProjectDir)/..;$(ProjectDir)/../../nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
       package_dependencies="CMSIS-CORE_V5"
@@ -72,7 +88,11 @@
       LIBRARY_IO_TYPE="RTT"
       Name="Common"
       arm_architecture="v7EM"
+      arm_compiler_variant="SEGGER"
       arm_core_type="Cortex-M4"
+      arm_endian="Little"
+      arm_fp_abi="Hard"
+      arm_fpu_type="FPv4-SP-D16"
       c_preprocessor_definitions="ARM_MATH_CM4;NRF52833_XXAA;__nRF_FAMILY"
       c_user_include_directories="$(ProjectDir)/..;$(ProjectDir)/../../nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
       package_dependencies="CMSIS-CORE_V5"
@@ -80,6 +100,24 @@
       project_type="Library" />
     <file file_name="rgbled.c" />
     <file file_name="../rgbled.h" />
+  </project>
+  <project Name="00lib_dotbot_rpm">
+    <configuration
+      LIBRARY_IO_TYPE="RTT"
+      Name="Common"
+      arm_architecture="v7EM"
+      arm_compiler_variant="SEGGER"
+      arm_core_type="Cortex-M4"
+      arm_endian="Little"
+      arm_fp_abi="Hard"
+      arm_fpu_type="FPv4-SP-D16"
+      c_preprocessor_definitions="ARM_MATH_CM4;NRF52833_XXAA;__nRF_FAMILY"
+      c_user_include_directories="$(ProjectDir)/..;$(ProjectDir)/../../nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
+      package_dependencies="CMSIS-CORE_V5"
+      project_directory="../bsp/nrf52833"
+      project_type="Library" />
+    <file file_name="rpm.c" />
+    <file file_name="../rpm.h" />
   </project>
   <project Name="00std_motors">
     <configuration
@@ -476,7 +514,7 @@
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       package_dependencies="CMSIS-CORE_V5"
-      project_dependencies="00lib_dotbot_board"
+      project_dependencies="00lib_dotbot_board;00lib_dotbot_rgbled"
       project_directory="01bsp_rgbled"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -506,7 +544,6 @@
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01bsp_rgbled.c" />
-      <file file_name="../../bsp/nrf52833/rgbled.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
@@ -550,7 +587,7 @@
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       package_dependencies="CMSIS-CORE_V5"
-      project_dependencies="00lib_dotbot_board"
+      project_dependencies="00lib_dotbot_board;00lib_dotbot_lh2"
       project_directory="01bsp_lighthouse"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -580,7 +617,6 @@
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01bsp_lighthouse.c" />
-      <file file_name="../../bsp/nrf52833/lh2.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
@@ -699,7 +735,7 @@
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       package_dependencies="CMSIS-CORE_V5"
-      project_dependencies="00lib_dotbot_board"
+      project_dependencies="00lib_dotbot_board;00lib_dotbot_motors"
       project_directory="01bsp_motors"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -730,7 +766,6 @@
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01bsp_motors.c" />
-      <file file_name="../../bsp/nrf52833/motors.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
@@ -774,7 +809,7 @@
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       package_dependencies="CMSIS-CORE_V5"
-      project_dependencies="00lib_dotbot_board"
+      project_dependencies="00lib_dotbot_board;00lib_radio"
       project_directory="01bsp_radio_txrx"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -804,7 +839,6 @@
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01bsp_radio_txrx.c" />
-      <file file_name="../../bsp/nrf52833/radio.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
@@ -848,6 +882,7 @@
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       package_dependencies="CMSIS-CORE_V5"
+      project_dependencies="00lib_dotbot_board;00lib_dotbot_rpm"
       project_directory="01bsp_rpm"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -876,9 +911,7 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="../../bsp/nrf52833/board.c" />
       <file file_name="01bsp_rpm.c" />
-      <file file_name="../../bsp/nrf52833/rpm.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
@@ -887,6 +920,7 @@
         <configuration Name="Common" file_type="Assembly" />
       </file>
     </folder>
+    <configuration Name="Debug" project_dependencies="00lib_dotbot_rpm" />
   </project>
   <project Name="03app_dotbot">
     <configuration
@@ -922,7 +956,7 @@
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       package_dependencies="CMSIS-CORE_V5"
-      project_dependencies="00lib_dotbot_board"
+      project_dependencies="00lib_dotbot_board;00lib_dotbot_motors;00lib_radio"
       project_directory="03app_dotbot"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -952,8 +986,6 @@
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="03app_dotbot.c" />
-      <file file_name="../../bsp/nrf52833/motors.c" />
-      <file file_name="../../bsp/nrf52833/radio.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
