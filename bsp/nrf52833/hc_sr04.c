@@ -133,7 +133,7 @@ void hc_sr04_stop(void) {
 }
 
 /**
- * @brief This function is private and it sets the compare registers for US trigger timer
+ * @brief This function is public and it sets the compare registers for US trigger timer
  */
 void hc_sr04_on_set_trigger(double duration_ms, double offset_ms) {
 
@@ -249,4 +249,3 @@ void TIMER0_IRQHandler(void){
         (*us_vars.timer_callback)();      
     }
 }
-
