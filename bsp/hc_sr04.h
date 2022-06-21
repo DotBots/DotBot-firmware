@@ -16,10 +16,17 @@
 #include <stdio.h>
 #include <stdlib.h>
  
- //=========================== public ======================================
+
+//=========================== defines ======================================
+
+typedef void(*us_callback_t)(uint32_t);
+typedef void(*timer_callback_t)(void);
+
+//=========================== public ======================================
  
-void us_init(void (*callback_us)(uint32_t), void (*callback_timer)(void), NRF_TIMER_Type *us_on, NRF_TIMER_Type *us_read);
-void us_start(void);
+void hc_sr04_init(us_callback_t us_callback, timer_callback_t timer_callback, NRF_TIMER_Type *us_on, NRF_TIMER_Type *us_read);
+void hc_sr04_start(void);
+
 void hfclk_init(void);
 
 #endif

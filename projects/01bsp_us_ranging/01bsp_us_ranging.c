@@ -44,10 +44,10 @@ int main(void) {
     //db_board_init();
 
     // initilize the US sensor, set callback and chose the timers
-    us_init(&us_callback, &timer_callback, timer0, timer1);
+    hc_sr04_init(&us_callback, &timer_callback, timer0, timer1);
    
     // start ranging
-    us_start();
+    hc_sr04_start();
     
     // start high frequency clock needed for PPI
     hfclk_init();
