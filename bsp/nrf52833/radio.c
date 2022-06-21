@@ -24,7 +24,7 @@
 #define RADIO_BASE_ADDRESS_0 0x12345678UL 
 #define RADIO_BASE_ADDRESS_1 0xFEDCBA98UL
 
-//=========================== variables =========================================
+//=========================== variables ========================================
 
 typedef struct {
     uint8_t packet[NUMBER_OF_BYTES_IN_PACKET];      // Variable that stores the radio packets that arrives and the radio packets that are about to be sent.
@@ -36,7 +36,7 @@ typedef struct {
 static radio_vars_t radio_vars;
 
 
-//=========================== private ==========================================
+//========================== prototypes ========================================
 
 static void radio_init_common(void (*callback)(uint8_t *, uint8_t));
 
@@ -91,20 +91,20 @@ void db_radio_init_lr(void (*callback)(uint8_t *, uint8_t)) {
     NRF_RADIO->MODE  = (RADIO_MODE_MODE_Ble_LR125Kbit << RADIO_MODE_MODE_Pos);       // Use Long Range 125 kbps modulation
     
     // Coded PHY (Long range)
-    NRF_RADIO->PCNF0 =  (0                               << RADIO_PCNF0_S1LEN_Pos)   |
+    NRF_RADIO->PCNF0 =  (0                              << RADIO_PCNF0_S1LEN_Pos)    |
                         (1                              << RADIO_PCNF0_S0LEN_Pos)    |
                         (8                              << RADIO_PCNF0_LFLEN_Pos)    |
                         (3                              << RADIO_PCNF0_TERMLEN_Pos)  |
                         (2                              << RADIO_PCNF0_CILEN_Pos)    |
                         (RADIO_PCNF0_PLEN_LongRange     << RADIO_PCNF0_PLEN_Pos);
 
-    NRF_RADIO->PCNF1 =  (RADIO_PCNF1_WHITEEN_Disabled    << RADIO_PCNF1_WHITEEN_Pos) |
+    NRF_RADIO->PCNF1 =  (RADIO_PCNF1_WHITEEN_Disabled   << RADIO_PCNF1_WHITEEN_Pos)  |
                         (RADIO_PCNF1_ENDIAN_Little      << RADIO_PCNF1_ENDIAN_Pos)   |
                         (3                              << RADIO_PCNF1_BALEN_Pos)    |
                         (0                              << RADIO_PCNF1_STATLEN_Pos)  |
                         (NUMBER_OF_BYTES_IN_PACKET      << RADIO_PCNF1_MAXLEN_Pos);
 
-    //// Configuring the on-air radio address
+    // Configuring the on-air radio address
     NRF_RADIO->BASE0    = RADIO_BASE_ADDRESS_0; // base address for prefix 0
     NRF_RADIO->BASE1    = RADIO_BASE_ADDRESS_1; // base address for prefix 1-7
 
@@ -197,8 +197,12 @@ void db_radio_rx_disable(void) {
     NVIC_DisableIRQ(RADIO_IRQn);
 }
 
+//=========================== private ==========================================
+
+
 /**
- * @brief This function is public and it enables HFCLK
+ * @brief This function is private and it sets the common configurations for the radio
+ *
  */
 void radio_init_common(void (*callback)(uint8_t *, uint8_t)) {
     
