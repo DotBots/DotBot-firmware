@@ -31,6 +31,8 @@
 // Defines for setting up the trigger pulse width and frequency
 #define PULSE_DURATION_MS       0.01
 #define PULSE_OFFSET_MS         200
+#define TIMER0_INT_PRIORITY     2
+
 
 //=========================== prototypes =======================================
 
@@ -60,7 +62,6 @@ static us_vars_t us_vars;
  * @brief Function for initializing variables and calling private functions for using the hc_sr04 US sensor
  */
 void hc_sr04_init(us_callback_t us_callback, timer_callback_t timer_callback, NRF_TIMER_Type *us_on, NRF_TIMER_Type *us_read) {
-    
     
     // Assign the callback function that will be called when ranging is performed.
     us_vars.us_callback = us_callback;
@@ -102,7 +103,6 @@ void hc_sr04_start(void) {
     uint32_t timer2_events_compare_0_addr   = (uint32_t)&us_vars.us_on_timer->EVENTS_COMPARE[0];
     uint32_t timer2_events_compare_1_addr   = (uint32_t)&us_vars.us_on_timer->EVENTS_COMPARE[1];
 
-
     // set endpoints
     NRF_PPI->CH[0].EEP       = timer2_events_compare_0_addr;
     NRF_PPI->CH[0].TEP       = us_power_task_addr;
@@ -122,7 +122,11 @@ void hc_sr04_start(void) {
     NRF_PPI->CHENSET = (PPI_CHENSET_CH0_Enabled << PPI_CHENSET_CH0_Pos) | 
                        (PPI_CHENSET_CH1_Enabled << PPI_CHENSET_CH1_Pos) |
                        (PPI_CHENSET_CH2_Enabled << PPI_CHENSET_CH2_Pos) |
-                       (PPI_CHENSET_CH3_Enabled << PPI_CHENSET_CH3_Pos);                             
+                       (PPI_CHENSET_CH3_Enabled << PPI_CHENSET_CH3_Pos);                                      
+        
+    /* Start the US trigger timer. 
+       From here the PPI chain for US ranging starts */
+    us_vars.us_on_timer->TASKS_START = (TIMER_TASKS_START_TASKS_START_Trigger << TIMER_TASKS_START_TASKS_START_Pos);              
 }
 
 /**
@@ -142,14 +146,13 @@ void hfclk_init(void) {
 /**
  * @brief Function for initializing GPIOTE for US trigger and US echo signals.
  */
-
 void hc_sr04_gpio(void) {
 
     //configure US_ON as an output PIN which toggles 
-    NRF_GPIOTE->CONFIG[US_ON_CH]          = (GPIOTE_CONFIG_MODE_Task       << GPIOTE_CONFIG_MODE_Pos)     |
-                                            (US_ON_PIN                     << GPIOTE_CONFIG_PSEL_Pos)     |
-                                            (US_ON_PORT                    << GPIOTE_CONFIG_PORT_Pos)     |
-                                            (GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos) |
+    NRF_GPIOTE->CONFIG[US_ON_CH]          = (GPIOTE_CONFIG_MODE_Task       << GPIOTE_CONFIG_MODE_Pos)       |
+                                            (US_ON_PIN                     << GPIOTE_CONFIG_PSEL_Pos)       |
+                                            (US_ON_PORT                    << GPIOTE_CONFIG_PORT_Pos)       |
+                                            (GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos)   |
                                             (GPIOTE_CONFIG_OUTINIT_Low     << GPIOTE_CONFIG_OUTINIT_Pos);
    
     // configure the US_READ as input PIN detecting low to high edge of the signal
@@ -171,8 +174,8 @@ void hc_sr04_gpio(void) {
     NRF_GPIOTE->INTENSET = (GPIOTE_INTENSET_IN2_Set << GPIOTE_INTENSET_IN2_Pos); 
 
     NVIC_ClearPendingIRQ(GPIOTE_IRQn);    // Clear the flag for any pending radio interrupt
- 
     NVIC_EnableIRQ(GPIOTE_IRQn);
+
 }
 
 /**
@@ -199,7 +202,6 @@ void hc_sr04_on_set_trigger(double duration_ms, double offset_ms) {
     us_vars.us_on_timer->CC[0]   = offset_ms                   * 1000;  // first compare register for setting the offset and start of the pulse
     us_vars.us_on_timer->CC[1]   = (offset_ms + duration_ms)   * 1000;  // second compare for pulse duration
 
-
     // set Timer to clear after the trigger pulse 
     us_vars.us_on_timer->SHORTS  = (TIMER_SHORTS_COMPARE1_CLEAR_Enabled << TIMER_SHORTS_COMPARE1_CLEAR_Pos);
 
@@ -209,15 +211,12 @@ void hc_sr04_on_set_trigger(double duration_ms, double offset_ms) {
     // enable interrupts on Compare 1
     us_vars.us_on_timer->INTENSET = (TIMER_INTENSET_COMPARE1_Enabled << TIMER_INTENSET_COMPARE1_Pos);
 
-    //NVIC_SetPriority(TIMER2_IRQn, TIMER2_INT_PRIORITY);
+    NVIC_SetPriority(TIMER0_IRQn, TIMER0_INT_PRIORITY);
     
     NVIC_ClearPendingIRQ(TIMER0_IRQn);    // Clear the flag for any pending radio interrupt
 
     // enable interupts
     NVIC_EnableIRQ(TIMER0_IRQn);
-    
-    // start the US trigger timer
-    us_vars.us_on_timer->TASKS_START = (TIMER_TASKS_START_TASKS_START_Trigger << TIMER_TASKS_START_TASKS_START_Pos);
 
 }
 
@@ -238,7 +237,6 @@ void GPIOTE_IRQHandler(void){
 
         // Call callback defined by user.
         (*us_vars.us_callback)(us_vars.us_reading);
-
     }
 }
 
@@ -252,9 +250,7 @@ void TIMER0_IRQHandler(void){
         NRF_TIMER0->EVENTS_COMPARE[1] = 0; //Clear compare register 0 event	 
         
         // Call callback defined by user.
-        (*us_vars.timer_callback)();
-        
+        (*us_vars.timer_callback)();      
     }
-
 }
 
