@@ -141,6 +141,7 @@ int main(void) {
         }
 
         //TODO disable int
+        //__disable_irq();
         // handle and clear the event flags       
         switch(app_vars.state) {
             /* 
@@ -158,38 +159,38 @@ int main(void) {
              * ranging of all robots at the same time
              * with given offset
              */
-            case RANGE_ALL:
-                switch (app_vars.flag) {                   
-                    case APP_FLAG_RADIO_RX:                   // check if the Robot received a packet from the Gateway
-                        if (app_vars.radio_mode == RADIO_Rx) {                     
-                            db_radio_rx_disable();            // Disable the radio                        
-                            app_vars.radio_mode = RADIO_Idle; // Set the radio mode to Idle
-                        }                        
-                    break;
-                    case APP_FLAG_US_DONE:                                          // check if we have a new US reading 
-                        //TODO START RTC
-                        app_vars.radio_mode = RADIO_Tx;                             // set the Radio mode to Tx
-                        
-                        hc_sr04_stop();                                             // stop the ranging we already have a measurement
-                        
-                        db_radio_tx(app_vars.packet_tx, NUMBER_OF_BYTES_IN_PACKET); // send the US reading with ROBOT ID to Gateway                        
-                        memset(app_vars.packet_tx, 0, sizeof(app_vars.packet_tx));  // clear the buffer
+            case RANGE_ALL:                   
+                // check if a Robot has received a packet from the Gateway                                                         
+                if((app_vars.flag & APP_FLAG_RADIO_RX) && (app_vars.radio_mode == RADIO_Rx)) {
+                    db_radio_rx_disable();               // Disable the radio                        
+                    app_vars.radio_mode = RADIO_Idle;    // Set the radio mode to Idle 
+                    app_vars.flag &= ~APP_FLAG_RADIO_RX; // Clear the flag                    
+                }
+                // check if we have a new US reading 
+                if(app_vars.flag & APP_FLAG_US_DONE) {     
+                    //TODO START RTC
+                    app_vars.radio_mode = RADIO_Tx;                             // set the Radio mode to Tx
+                    
+                    hc_sr04_stop();                                             // stop the ranging we already have a measurement
+                    
+                    db_radio_tx(app_vars.packet_tx, NUMBER_OF_BYTES_IN_PACKET); // send the US reading with ROBOT ID to Gateway                        
+                    memset(app_vars.packet_tx, 0, sizeof(app_vars.packet_tx));  // clear the buffer
 
-                        db_radio_rx_enable();                                       // enable the Radio packet reception
-                        app_vars.radio_mode = RADIO_Rx;                             // set the Radio mode to Rx
+                    db_radio_rx_enable();                                       // enable the Radio packet reception
+                    app_vars.radio_mode = RADIO_Rx;                             // set the Radio mode to Rx
+                    app_vars.flag &= ~APP_FLAG_US_DONE;                         // Clear the flag  
 
-                    break;
-                    case APP_FLAG_RTC:                                              // ready to send a packet with US measurement 
-                        if (app_vars.radio_mode == RADIO_Tx) {
-                            //db_radio_tx(app_vars.packet_tx, NUMBER_OF_BYTES_IN_PACKET);
-                            app_vars.radio_mode = RADIO_Rx;
-                            //TODO
-                        }
-                    break;
-                    default:
-                    break;
-                } 
-                //TODO
+                }
+                // ready to send a packet with US measurement 
+                if((app_vars.flag & APP_FLAG_RTC) && (app_vars.radio_mode == RADIO_Tx)) {           
+                    
+                    //db_radio_tx(app_vars.packet_tx, NUMBER_OF_BYTES_IN_PACKET);
+                    app_vars.radio_mode = RADIO_Rx;
+                    app_vars.flag      &= ~APP_FLAG_RTC;                        // Clear the flag
+                    //TODO
+                    
+                }
+
             break; // RANGE ALL case break
             /* 
              * RANGE_PAIR is the mode of the app where the gateway allows the 
@@ -203,10 +204,9 @@ int main(void) {
                 // stop ranging
                 hc_sr04_stop();
             break;       
-        }
-        // clear flag
-        app_vars.flag = 0x00;     
+        }     
         //TODO enable int
+        //__enable_irq();
     }
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
     __NOP();
@@ -228,7 +228,7 @@ void radio_callback(uint8_t *packet, uint8_t length) {
     if((app_vars.radio_mode == RADIO_Rx) && (packet[0] == GATEWAY_ID)) {
 
         // set the flag for the packet reception
-        app_vars.flag = APP_FLAG_RADIO_RX;   
+        app_vars.flag |= APP_FLAG_RADIO_RX;   
         
         // check the mode of operation sent by the Gateway
         switch (packet[1]) {
@@ -247,6 +247,7 @@ void radio_callback(uint8_t *packet, uint8_t length) {
         }
         
         if (app_vars.state == RANGE_ALL) {
+            app_vars.trigger_offset_ms = 0;
 
             app_vars.trigger_offset_ms  = packet[2] ;
             app_vars.trigger_offset_ms |= packet[3] << 8;
@@ -271,7 +272,7 @@ void radio_callback(uint8_t *packet, uint8_t length) {
 void us_callback(uint32_t us_reading) {
 
     // set the flag indicating that we got a new US measurement
-    app_vars.flag = APP_FLAG_US_DONE; 
+    app_vars.flag |= APP_FLAG_US_DONE; 
     
     // prepare the packet to send to a gateway
     app_vars.packet_tx[0] = ROBOT_ID;
