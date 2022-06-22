@@ -28,8 +28,9 @@
 #define US_READ_CH_LoToHi       1UL
 #define US_READ_CH_HiToLo       2UL
 
-// Timer0 interrupt prioprity
-#define TIMER0_INT_PRIORITY     2
+// Interrupt prioprity
+#define GPIOTE_INT_PRIORITY     2
+#define TIMER0_INT_PRIORITY     3
 
 //=========================== prototypes =======================================
 
@@ -123,7 +124,8 @@ void hc_sr04_start(void) {
  */
 void hc_sr04_stop(void) {
     // Stop the US ON timer
-    us_vars.us_on_timer->TASKS_STOP = (TIMER_TASKS_STOP_TASKS_STOP_Trigger << TIMER_TASKS_STOP_TASKS_STOP_Pos);
+    us_vars.us_on_timer->TASKS_CLEAR = (TIMER_TASKS_CLEAR_TASKS_CLEAR_Trigger << TIMER_TASKS_CLEAR_TASKS_CLEAR_Pos);
+    us_vars.us_on_timer->TASKS_STOP  = (TIMER_TASKS_STOP_TASKS_STOP_Trigger  << TIMER_TASKS_STOP_TASKS_STOP_Pos);
 
     // disable PPI channels for US ranging
     NRF_PPI->CHENCLR = (PPI_CHENCLR_CH0_Enabled << PPI_CHENSET_CH0_Pos) | 
@@ -184,6 +186,7 @@ void hc_sr04_gpio(void) {
     // Enable interrupt for the HiToLo edge of the input
     NRF_GPIOTE->INTENSET = (GPIOTE_INTENSET_IN2_Set << GPIOTE_INTENSET_IN2_Pos); 
 
+    NVIC_SetPriority(GPIOTE_IRQn, GPIOTE_INT_PRIORITY);
     NVIC_ClearPendingIRQ(GPIOTE_IRQn);    // Clear the flag for any pending radio interrupt
     NVIC_EnableIRQ(GPIOTE_IRQn);
 }
