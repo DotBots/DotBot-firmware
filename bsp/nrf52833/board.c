@@ -39,7 +39,7 @@ void db_board_init(void) {
  * @brief Turn ON the on-board regulator.  
  *
  */
-void db_board_setReg_ON(void) {
+void db_board_regulator_on(void) {
 
     // Turn ON the DotBot board regulator
     NRF_P0->OUTSET = 1 << 20; // set pin HIGH
@@ -49,7 +49,7 @@ void db_board_setReg_ON(void) {
  * @brief Turn OFF the on-board regulator.
  *
  */
-void db_board_setReg_OFF(void) {
+void db_board_regulator_off(void) {
 
     // Turn OFF the DotBot board regulator
     NRF_P0->OUTCLR = 1 << 20; // set pin LOW
