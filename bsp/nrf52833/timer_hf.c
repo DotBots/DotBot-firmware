@@ -23,13 +23,14 @@
 #define TIMER_HF_CB_CHANS   (5)                 /**< Number of channels that can be used for periodic callbacks */
 
 typedef struct {
-    uint32_t period_us;
-    timer_hf_cb_t callback;
+    uint32_t        period_us;
+    bool            one_shot;
+    timer_hf_cb_t   callback;
 } timer_callback_t;
 
 typedef struct {
-    timer_callback_t timer_callback[TIMER_HF_CB_CHANS];
-    bool waiting;
+    timer_callback_t    timer_callback[TIMER_HF_CB_CHANS];
+    bool                waiting;
 } timer_vars_t;
 
 //=========================== variables ========================================
@@ -71,10 +72,52 @@ void db_timer_hf_set_periodic(uint8_t channel, uint32_t us, timer_hf_cb_t cb) {
     assert(cb); // Make sure the callback function is valid
 
     _timer_vars.timer_callback[channel].period_us    = us;
+    _timer_vars.timer_callback[channel].one_shot     = false;
     _timer_vars.timer_callback[channel].callback     = cb;
     TIMER_HF->INTENSET = (1 << (TIMER_INTENSET_COMPARE0_Pos + channel));
     TIMER_HF->TASKS_CAPTURE[channel] = 1;
     TIMER_HF->CC[channel] += _timer_vars.timer_callback[channel].period_us;
+}
+
+/**
+ * @brief Set a callback to be called after an amount of microseconds
+ *
+ * @param[in] channel   TIMER channel used
+ * @param[in] us        delay in microseconds
+ * @param[in] cb        callback function
+ */
+void db_timer_hf_set_callback_us(uint8_t channel, uint32_t us, timer_hf_cb_t cb) {
+    assert(channel >= 0 && channel < TIMER_HF_CB_CHANS);  // Make sure the required channel is correct
+    assert(cb); // Make sure the callback function is valid
+
+    _timer_vars.timer_callback[channel].period_us    = us;
+    _timer_vars.timer_callback[channel].one_shot     = true;
+    _timer_vars.timer_callback[channel].callback     = cb;
+    TIMER_HF->INTENSET = (1 << (TIMER_INTENSET_COMPARE0_Pos + channel));
+    TIMER_HF->TASKS_CAPTURE[channel] = 1;
+    TIMER_HF->CC[channel] += _timer_vars.timer_callback[channel].period_us;
+}
+
+/**
+ * @brief Set a callback to be called after an amount of milliseconds
+ *
+ * @param[in] channel   TIMER channel used
+ * @param[in] ms        delay in milliseconds
+ * @param[in] cb        callback function
+ */
+void db_timer_hf_set_callback_ms(uint8_t channel, uint32_t ms, timer_hf_cb_t cb) {
+    db_timer_hf_set_callback_us(channel, ms * 1000UL, cb);
+}
+
+/**
+ * @brief Set a callback to be called after an amount of seconds
+ *
+ * @param[in] channel   TIMER channel used
+ * @param[in] s         delay in seconds
+ * @param[in] cb        callback function
+ */
+void db_timer_hf_set_callback_s(uint8_t channel, uint32_t s, timer_hf_cb_t cb) {
+    db_timer_hf_set_callback_us(channel, s * 1000UL * 1000UL, cb);
 }
 
 /**
@@ -123,7 +166,12 @@ void TIMER_HF_ISR(void) {
     for (uint8_t channel = 0; channel < TIMER_HF_CB_CHANS; ++channel) {
         if (TIMER_HF->EVENTS_COMPARE[channel] == 1) {
             TIMER_HF->EVENTS_COMPARE[channel] = 0;
-            TIMER_HF->CC[channel] += _timer_vars.timer_callback[channel].period_us;
+            if (_timer_vars.timer_callback[channel].one_shot) {
+                TIMER_HF->INTENCLR = (1 << (TIMER_INTENCLR_COMPARE0_Pos + channel));
+            }
+            else {
+                TIMER_HF->CC[channel] += _timer_vars.timer_callback[channel].period_us;
+            }
             if (_timer_vars.timer_callback[channel].callback) {
                 _timer_vars.timer_callback[channel].callback();
             }
