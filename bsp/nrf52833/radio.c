@@ -15,7 +15,7 @@
 
 #include "radio.h"
 
-//=========================== defines =========================================
+//=========================== defines ==========================================
 
 #define NUMBER_OF_BYTES_IN_PACKET       32
 #define RADIO_INTERRUPT_PRIORITY        1
@@ -231,7 +231,7 @@ void radio_init_common(radio_cb_t callback) {
 
 }
 
-//=========================== interrupt handlers ==============================
+//=========================== interrupt handlers ===============================
 
 /**
  * @brief Interruption handler for the Radio.
