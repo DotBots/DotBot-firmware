@@ -16,11 +16,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-//=========================== public ======================================
+//=========================== defines ==========================================
 
-void db_radio_init(void (*callback)(uint8_t *, uint8_t));
+typedef void (*radio_cb_t)(uint8_t *packet, uint8_t length);    /**< Function pointer to the callback function called on packet receive */
 
-void db_radio_init_lr(void (*callback)(uint8_t *, uint8_t));
+//=========================== public ===========================================
+
+void db_radio_init(radio_cb_t callback);
+
+void db_radio_init_lr(radio_cb_t callback);
 
 void db_radio_set_frequency(uint8_t freq);
 
