@@ -23,13 +23,14 @@
 #define TIMER_RTC_CB_CHANS  (3)                 /**< Number of channels that can be used for periodic callbacks */
 
 typedef struct {
-    uint32_t period_ticks;
-    timer_cb_t callback;
+    uint32_t    period_ticks;
+    bool        one_shot;
+    timer_cb_t  callback;
 } timer_callback_t;
 
 typedef struct {
-    timer_callback_t timer_callback[TIMER_RTC_CB_CHANS];
-    bool waiting;
+    timer_callback_t    timer_callback[TIMER_RTC_CB_CHANS];
+    bool                waiting;
 } timer_vars_t;
 
 //=========================== prototypes =======================================
@@ -73,12 +74,55 @@ void db_timer_init(void) {
  */
 void db_timer_set_periodic(uint8_t channel, uint32_t ms, timer_cb_t cb) {
     assert(channel >= 0 && channel < TIMER_RTC_CB_CHANS);  // Make sure the required channel is correct
+    assert(cb); // Make sure the callback function is valid
 
     _timer_vars.timer_callback[channel].period_ticks    = _ms_to_ticks(ms);
+    _timer_vars.timer_callback[channel].one_shot        = false;
     _timer_vars.timer_callback[channel].callback        = cb;
     TIMER_RTC->EVTENSET = (1 << (RTC_EVTENSET_COMPARE0_Pos + channel));
     TIMER_RTC->INTENSET = (1 << (RTC_INTENSET_COMPARE0_Pos + channel));
     TIMER_RTC->CC[channel] = TIMER_RTC->COUNTER + _timer_vars.timer_callback[channel].period_ticks;
+}
+
+/**
+ * @brief Set a callback to be called after an amount of ticks (1 tick ~= 30us)
+ *
+ * @param[in] channel   RTC channel used
+ * @param[in] ticks     delay in ticks
+ * @param[in] cb        callback function
+ */
+void db_timer_set_callback_ticks(uint8_t channel, uint32_t ticks, timer_cb_t cb) {
+    assert(channel >= 0 && channel < TIMER_RTC_CB_CHANS);  // Make sure the required channel is correct
+    assert(cb); // Make sure the callback function is valid
+
+    _timer_vars.timer_callback[channel].period_ticks    = ticks;
+    _timer_vars.timer_callback[channel].one_shot        = true;
+    _timer_vars.timer_callback[channel].callback        = cb;
+    TIMER_RTC->EVTENSET = (1 << (RTC_EVTENSET_COMPARE0_Pos + channel));
+    TIMER_RTC->INTENSET = (1 << (RTC_INTENSET_COMPARE0_Pos + channel));
+    TIMER_RTC->CC[channel] = TIMER_RTC->COUNTER + _timer_vars.timer_callback[channel].period_ticks;
+}
+
+/**
+ * @brief Set a callback to be called after an amount of milliseconds
+ *
+ * @param[in] channel   RTC channel used
+ * @param[in] ms        delay in milliseconds
+ * @param[in] cb        callback function
+ */
+void db_timer_set_callback_ms(uint8_t channel, uint32_t ms, timer_cb_t cb) {
+    db_timer_set_callback_ticks(channel, _ms_to_ticks(ms), cb);
+}
+
+/**
+ * @brief Set a callback to be called after an amount of seconds
+ *
+ * @param[in] channel   RTC channel used
+ * @param[in] s         delay in seconds
+ * @param[in] cb        callback function
+ */
+void db_timer_set_callback_s(uint8_t channel, uint32_t s, timer_cb_t cb) {
+    db_timer_set_callback_ticks(channel, s * 32768, cb);
 }
 
 /**
@@ -138,7 +182,13 @@ void TIMER_RTC_ISR(void) {
     for (uint8_t channel = 0; channel < TIMER_RTC_CB_CHANS; ++channel) {
         if (TIMER_RTC->EVENTS_COMPARE[channel] == 1) {
             TIMER_RTC->EVENTS_COMPARE[channel] = 0;
-            TIMER_RTC->CC[channel] += _timer_vars.timer_callback[channel].period_ticks;
+            if (_timer_vars.timer_callback[channel].one_shot) {
+                TIMER_RTC->EVTENCLR = (1 << (RTC_EVTENCLR_COMPARE0_Pos + channel));
+                TIMER_RTC->INTENCLR = (1 << (RTC_INTENCLR_COMPARE0_Pos + channel));
+            }
+            else {
+                TIMER_RTC->CC[channel] += _timer_vars.timer_callback[channel].period_ticks;
+            }
             if (_timer_vars.timer_callback[channel].callback) {
                 _timer_vars.timer_callback[channel].callback();
             }

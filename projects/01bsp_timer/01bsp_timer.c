@@ -30,6 +30,10 @@ static void message_callback(void) {
     printf("Hello from callback\n");
 }
 
+static void message_one_shot_callback(void) {
+    printf("Hello from one shot callback\n");
+}
+
 static void led_callback(void) {
     _color_idx = (_color_idx + 1) % 2;
     if (_color_idx) {
@@ -49,6 +53,7 @@ int main(void) {
     db_timer_init();
     db_timer_set_periodic(0, 2000, &message_callback);
     db_timer_set_periodic(1, 500, &led_callback);
+    db_timer_set_callback_ms(2, 1000, &message_one_shot_callback);
     while (1) {
         printf("Hello dotbot\n");
         db_timer_delay_ms(500);
