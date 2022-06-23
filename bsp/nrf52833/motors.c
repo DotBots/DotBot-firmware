@@ -122,7 +122,7 @@ void db_motors_init(void) {
  * @param[in] l_speed speed of the left motor [-100, 100]
  * @param[in] r_speed speed of the left motor [-100, 100]
  */
-void db_motors_setSpeed(int16_t l_speed, int16_t r_speed) {
+void db_motors_set_speed(int16_t l_speed, int16_t r_speed) {
 
     // Double check for out-of-bound values.
     if (l_speed > 100) l_speed = 100;
