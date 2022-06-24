@@ -40,27 +40,27 @@ int main(void) {
 
     while (1) {
         // Right motor forward
-        db_motors_setSpeed(0, 60);
+        db_motors_set_speed(0, 60);
         WAIT_A_BIT(2000);            // wait ~2 sec
-        db_motors_setSpeed(0, 0);   // Turn off motor
+        db_motors_set_speed(0, 0);   // Turn off motor
         WAIT_A_BIT(1000);            // wait ~1 sec
 
         // Right motor backward
-        db_motors_setSpeed(0, -60);
+        db_motors_set_speed(0, -60);
         WAIT_A_BIT(2000);           // wait ~2 sec
-        db_motors_setSpeed(0, 0);   // Turn off motor
+        db_motors_set_speed(0, 0);  // Turn off motor
         WAIT_A_BIT(1000);           // wait ~1 sec
 
         // Left motor forward
-        db_motors_setSpeed(60, 0);
+        db_motors_set_speed(60, 0);
         WAIT_A_BIT(2000);           // wait ~2 sec
-        db_motors_setSpeed(0, 0);   // Turn off motor
+        db_motors_set_speed(0, 0);  // Turn off motor
         WAIT_A_BIT(1000);           // wait ~1 sec
 
         // Left motor backward
-        db_motors_setSpeed(-60, 0);
+        db_motors_set_speed(-60, 0);
         WAIT_A_BIT(2000);           // wait ~2 sec
-        db_motors_setSpeed(0, 0);   // Turn off motor
+        db_motors_set_speed(0, 0);  // Turn off motor
         WAIT_A_BIT(1000);           // wait ~1 sec
     }
 

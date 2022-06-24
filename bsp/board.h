@@ -19,7 +19,7 @@
 //=========================== defines ==========================================
 
 /**
- * Enable a pin as output, must be called before using the other macros below
+ * Enable a pin as output, must be called once before using the other macros below
  */
 #define DB_PIN_ENABLE(port, pin)    NRF_P##port->DIRSET = (1 << pin)
 #define DB_PIN_ON(port, pin)        NRF_P##port->OUTSET = (1 << pin)    /**< Turn on the pin */
@@ -29,7 +29,7 @@
 //=========================== public ===========================================
 
 void db_board_init(void);
-void db_board_setReg_ON(void);
-void db_board_setReg_OFF(void);
+void db_board_regulator_on(void);
+void db_board_regulator_off(void);
 
 #endif

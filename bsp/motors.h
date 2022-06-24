@@ -21,6 +21,6 @@
 //=========================== public ======================================
 
 void db_motors_init(void);
-void db_motors_setSpeed(int16_t l_speed, int16_t r_speed);
+void db_motors_set_speed(int16_t l_speed, int16_t r_speed);
 
 #endif
