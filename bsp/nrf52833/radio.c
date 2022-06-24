@@ -15,7 +15,7 @@
 
 #include "radio.h"
 
-//=========================== defines =========================================
+//=========================== defines ==========================================
 
 #define NUMBER_OF_BYTES_IN_PACKET       32
 #define RADIO_INTERRUPT_PRIORITY        1
@@ -30,7 +30,7 @@ typedef struct {
     uint8_t packet[NUMBER_OF_BYTES_IN_PACKET];      // Variable that stores the radio packets that arrives and the radio packets that are about to be sent.
     uint8_t rx_buffer[NUMBER_OF_BYTES_IN_PACKET];   // Intermediate variable to store an arriving packet before sending it to the callback function.
 
-    void (*RADIO_callback)(uint8_t *, uint8_t);     // Function pointer, stores the callback to use in the RADIO_Irq handler.
+    radio_cb_t callback;                            // Function pointer, stores the callback to use in the RADIO_Irq handler.
 } radio_vars_t;
 
 static radio_vars_t radio_vars;
@@ -38,9 +38,9 @@ static radio_vars_t radio_vars;
 
 //========================== prototypes ========================================
 
-static void radio_init_common(void (*callback)(uint8_t *, uint8_t));
+static void radio_init_common(radio_cb_t callback);
 
-//=========================== public ==========================================
+//=========================== public ===========================================
 
 /**
  * @brief Initializes the RADIO peripheral. 
@@ -51,7 +51,7 @@ static void radio_init_common(void (*callback)(uint8_t *, uint8_t));
  * @param[in] callback pointer to a function that will be called each time a packet is received.
  *
  */
-void db_radio_init(void (*callback)(uint8_t *, uint8_t)) {
+void db_radio_init(radio_cb_t callback) {
 
     // General configuration of the radio.
     NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_0dBm << RADIO_TXPOWER_TXPOWER_Pos);    // 0dBm == 1mW Power output
@@ -83,7 +83,7 @@ void db_radio_init(void (*callback)(uint8_t *, uint8_t)) {
  * @param[in] callback pointer to a function that will be called each time a packet is received.
  *
  */
-void db_radio_init_lr(void (*callback)(uint8_t *, uint8_t)) {
+void db_radio_init_lr(radio_cb_t callback) {
 
      // General configuration of the radio.
     NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_Pos8dBm << RADIO_TXPOWER_TXPOWER_Pos); // 8dBm Power output
@@ -203,8 +203,9 @@ void db_radio_rx_disable(void) {
 /**
  * @brief This function is private and it sets the common configurations for the radio
  *
+ * @param[in] callback pointer to a function that will be called each time a packet is received.
  */
-void radio_init_common(void (*callback)(uint8_t *, uint8_t)) {
+void radio_init_common(radio_cb_t callback) {
     
     // CRC Config
     NRF_RADIO->CRCCNF  =  (RADIO_CRCCNF_LEN_Two         << RADIO_CRCCNF_LEN_Pos);        // Checksum uses 2 bytes, and is enabled.
@@ -215,7 +216,7 @@ void radio_init_common(void (*callback)(uint8_t *, uint8_t)) {
     NRF_RADIO->PACKETPTR = (uint32_t)radio_vars.packet;
 
     // Assign the callback function that will be called when a radio packet is received.
-    radio_vars.RADIO_callback = callback;
+    radio_vars.callback = callback;
 
     // Configure the external High-frequency Clock. (Needed for correct operation)
     NRF_CLOCK->EVENTS_HFCLKSTARTED = 0x00;    // Clear the flag
@@ -230,7 +231,7 @@ void radio_init_common(void (*callback)(uint8_t *, uint8_t)) {
 
 }
 
-//=========================== interrupt handlers ==============================
+//=========================== interrupt handlers ===============================
 
 /**
  * @brief Interruption handler for the Radio.
@@ -255,7 +256,7 @@ void RADIO_IRQHandler(void) {
 
 
         // Call callback defined by user.
-        (*radio_vars.RADIO_callback)(radio_vars.rx_buffer, NUMBER_OF_BYTES_IN_PACKET);
+        radio_vars.callback(radio_vars.rx_buffer, NUMBER_OF_BYTES_IN_PACKET);
 
 
         // Clear the rx_buffer.
