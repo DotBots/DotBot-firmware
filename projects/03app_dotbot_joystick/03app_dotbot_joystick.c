@@ -38,7 +38,7 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             move_raw_command_t *command = (move_raw_command_t *)&pkt[2];
             int16_t left = (int16_t)(100 * ((float)command->left_y / INT8_MAX));
             int16_t right = (int16_t)(100 * ((float)command->right_y / INT8_MAX));
-            db_motors_setSpeed(left, right);
+            db_motors_set_speed(left, right);
         }
             break;
         case DB_COMMAND_RGB_LED:
@@ -69,7 +69,7 @@ void TIMEOUT_RTC_ISR(void) {
     if (TIMEOUT_RTC->EVENTS_TICK) {
         TIMEOUT_RTC->EVENTS_TICK = 0;
         // Stop the motors if the RTC fires a compare events, e.g. when no packet was received during 100ms
-        db_motors_setSpeed(0, 0);
+        db_motors_set_speed(0, 0);
     }
 }
 
