@@ -1255,7 +1255,7 @@
       <file file_name="../../bsp/nrf52833/board.c" />
       <file file_name="../../bsp/nrf52833/radio.c" />
       <file file_name="../../bsp/nrf52833/motors.c" />
-      <file file_name="03app_dotbot_joystick.c"/>
+      <file file_name="03app_dotbot_joystick.c" />
       <file file_name="../../bsp/nrf52833/rgbled.c" />
     </folder>
     <folder Name="System Files">

@@ -11,6 +11,7 @@
 #include <stdlib.h>
 // Include BSP headers
 #include "board.h"
+#include "command.h"
 #include "motors.h"
 #include "radio.h"
 #include "rgbled.h"
@@ -21,44 +22,26 @@
 #define TIMEOUT_RTC_IRQ       (RTC1_IRQn)
 #define TIMEOUT_RTC_ISR       (RTC1_IRQHandler)
 
-typedef enum {
-    MOVE_RAW = 0,
-    RGB_LED = 2,
-} joystick_command_type_t;
-
-typedef struct __attribute__((packed)) {
-    int8_t left_x;
-    int8_t left_y;
-    int8_t right_x;
-    int8_t right_y;
-} joystick_command_t;
-
-typedef struct __attribute__((packed)) {
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
-} rgbled_command_t;
-
 //=========================== main =========================================
 
 static void radio_callback(uint8_t *pkt, uint8_t len) {
     TIMEOUT_RTC->TASKS_CLEAR = 1;   // Clear RTC counter
-    if (pkt[0] != 0) {
-        // Only version 0 is supported
+    // Check version is supported
+    if (pkt[0] != DB_COMMAND_VERSION) {
         return;
     }
 
     // parse received packet and update the motors' speeds
     switch (pkt[1]) {
-        case MOVE_RAW:
+        case DB_COMMAND_MOVE_RAW:
         {
-            joystick_command_t *command = (joystick_command_t *)&pkt[2];
+            move_raw_command_t *command = (move_raw_command_t *)&pkt[2];
             int16_t left = (int16_t)(100 * ((float)command->left_y / INT8_MAX));
             int16_t right = (int16_t)(100 * ((float)command->right_y / INT8_MAX));
             db_motors_setSpeed(left, right);
         }
             break;
-        case RGB_LED:
+        case DB_COMMAND_RGB_LED:
         {
             rgbled_command_t *command = (rgbled_command_t *)&pkt[2];
             printf("%d-%d-%d\n", command->r, command->g, command->b
