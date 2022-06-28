@@ -56,6 +56,14 @@
     <file file_name="motors.c" />
     <file file_name="../motors.h" />
   </project>
+  <project Name="00lib_i2c">
+    <configuration
+      Name="Common"
+      project_directory="../bsp/nrf52833"
+      project_type="Library" />
+    <file file_name="i2c.c" />
+    <file file_name="../i2c.h" />
+  </project>
   <project Name="00lib_radio">
     <configuration
       Name="Common"

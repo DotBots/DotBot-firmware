@@ -15,30 +15,38 @@
 #include <stdio.h>
 #include <string.h>
 #include <nrf.h>
+#include "gpio.h"
 #include "i2c.h"
 
 //=========================== defines ==========================================
 
-#define DB_TWIM             (NRF_TWIM1)
-#define DB_TWIM_SCL_PIN     (8)
-#define DB_TWIM_SCL_PORT    (0)
-#define DB_TWIM_SDA_PIN     (16)
-#define DB_TWIM_SDA_PORT    (0)
-#define DB_TWIM_FREQ        (TWIM_FREQUENCY_FREQUENCY_K400)
+#define DB_TWIM             (NRF_TWIM1)     ///< TWI peripheral used
+#define DB_TWIM_TX_BUF_SIZE (256U)          ///< TX buffer used to send bytes
+
+typedef struct {
+    uint8_t buffer[DB_TWIM_TX_BUF_SIZE];    ///< Internal buffer used to send bytes on I2C bus
+    bool running;                           ///< Whether bytes are being sent on the I2C bus
+} i2c_tx_vars_t;
 
 //=========================== prototypes =======================================
 
-void _wait(void);
+void _wait_for_transfer(void);
 
-static uint8_t tx_buf[256];
-static bool tx_running = false;
+//=========================== variables ========================================
+
+static i2c_tx_vars_t _i2c_tx_vars;
 
 //=========================== public ===========================================
 
 /**
- * @brief Initialize the I2C peripheral.
+ * @brief Initialize the I2C peripheral
+ *
+ * @param[in] scl       pointer to struct that handles the SCL pin
+ * @param[in] sda       pointer to struct that handles the SDA pin
+ * @param[in] speed     speed used on the I2C bus
  */
-void db_i2c_init(void) {
+void db_i2c_init(const gpio_t *scl, const gpio_t *sda, const i2c_speed_t speed) {
+    _i2c_tx_vars.running = false;
     // Clear pending errors
     DB_TWIM->EVENTS_ERROR = 0;
     DB_TWIM->ERRORSRC = 0;
@@ -46,21 +54,21 @@ void db_i2c_init(void) {
     DB_TWIM->ENABLE = TWIM_ENABLE_ENABLE_Disabled;
 
     // Configure TWIM pins
-    NRF_P0->PIN_CNF[DB_TWIM_SCL_PIN] |= (GPIO_PIN_CNF_PULL_Pullup   << GPIO_PIN_CNF_PULL_Pos) |
-                                        (GPIO_PIN_CNF_DRIVE_S0D1    << GPIO_PIN_CNF_DRIVE_Pos);
-    NRF_P0->PIN_CNF[DB_TWIM_SDA_PIN] |= (GPIO_PIN_CNF_PULL_Pullup   << GPIO_PIN_CNF_PULL_Pos) |
-                                        (GPIO_PIN_CNF_DRIVE_S0D1    << GPIO_PIN_CNF_DRIVE_Pos);
+    NRF_P0->PIN_CNF[scl->pin] |=    (GPIO_PIN_CNF_PULL_Pullup   << GPIO_PIN_CNF_PULL_Pos) |
+                                    (GPIO_PIN_CNF_DRIVE_S0D1    << GPIO_PIN_CNF_DRIVE_Pos);
+    NRF_P0->PIN_CNF[sda->pin] |=    (GPIO_PIN_CNF_PULL_Pullup   << GPIO_PIN_CNF_PULL_Pos) |
+                                    (GPIO_PIN_CNF_DRIVE_S0D1    << GPIO_PIN_CNF_DRIVE_Pos);
 
     // Configure TWIM
-    DB_TWIM->PSEL.SCL   =   (DB_TWIM_SCL_PORT                   << TWIM_PSEL_SCL_PORT_Pos)  |
-                            (DB_TWIM_SCL_PIN                    << TWIM_PSEL_SCL_PIN_Pos)   |
+    DB_TWIM->PSEL.SCL   =   (scl->port                          << TWIM_PSEL_SCL_PORT_Pos)  |
+                            (scl->pin                           << TWIM_PSEL_SCL_PIN_Pos)   |
                             (TWIM_PSEL_SCL_CONNECT_Connected    << TWIM_PSEL_SCL_CONNECT_Pos);
-    DB_TWIM->PSEL.SDA   =   (DB_TWIM_SDA_PORT                   << TWIM_PSEL_SDA_PORT_Pos)  |
-                            (DB_TWIM_SDA_PIN                    << TWIM_PSEL_SDA_PIN_Pos)   |
+    DB_TWIM->PSEL.SDA   =   (sda->port                          << TWIM_PSEL_SDA_PORT_Pos)  |
+                            (sda->pin                           << TWIM_PSEL_SDA_PIN_Pos)   |
                             (TWIM_PSEL_SDA_CONNECT_Connected    << TWIM_PSEL_SDA_CONNECT_Pos);
 
     // Set frequency
-    DB_TWIM->FREQUENCY  =   DB_TWIM_FREQ;
+    DB_TWIM->FREQUENCY  =   speed;
 
     NVIC_EnableIRQ(SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQn);
     NVIC_ClearPendingIRQ(SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQn);
@@ -69,21 +77,26 @@ void db_i2c_init(void) {
 }
 
 /**
- * @brief Begin transmission on I2C.
+ * @brief Begin transmission on I2C
  */
 void db_i2c_begin(void) {
     DB_TWIM->ENABLE = (TWIM_ENABLE_ENABLE_Enabled << TWIM_ENABLE_ENABLE_Pos);
 }
 
 /**
- * @brief End transmission on I2C.
+ * @brief End transmission on I2C
  */
 void db_i2c_end(void) {
     DB_TWIM->ENABLE = (TWIM_ENABLE_ENABLE_Disabled << TWIM_ENABLE_ENABLE_Pos);
 }
 
 /**
- * @brief Read bytes from register.
+ * @brief Read bytes from one register
+ *
+ * @param[in]   addr    Address of the device on the I2C bus
+ * @param[in]   reg     Address of the register to read
+ * @param[out]  data    Pointer to the output byte array
+ * @param[in]   len     Length of the bytes to read
  */
 void db_i2c_read_regs(uint8_t addr, uint8_t reg, void *data, size_t len) {
     DB_TWIM->ADDRESS        = addr;
@@ -93,44 +106,52 @@ void db_i2c_read_regs(uint8_t addr, uint8_t reg, void *data, size_t len) {
     DB_TWIM->RXD.MAXCNT     = (uint8_t)len;
     DB_TWIM->SHORTS         = (1 << TWIM_SHORTS_LASTTX_STARTRX_Pos) | (1 << TWIM_SHORTS_LASTRX_STOP_Pos);
     DB_TWIM->TASKS_STARTTX  = 1;
-    _wait();
+    _wait_for_transfer();
 }
 
 /**
- * @brief Write bytes to register.
+ * @brief Write bytes to register
+ *
+ * @param[in]   addr    Address of the device on the I2C bus
+ * @param[in]   reg     Address of the register to write
+ * @param[out]  data    Pointer to the input byte array
+ * @param[in]   len     Length of the bytes to write
  */
 void db_i2c_write_regs(uint8_t addr, uint8_t reg, const void *data, size_t len) {
-    tx_buf[0] = reg;
-    memcpy(&tx_buf[1], data, len);
+    // concatenate register address and input data in a single TX buffer
+    _i2c_tx_vars.buffer[0] = reg;
+    memcpy(&_i2c_tx_vars.buffer[1], data, len);
 
     // Send the content to write to the register
     DB_TWIM->ADDRESS        = addr;
-    DB_TWIM->TXD.PTR        = (uint32_t)tx_buf;
+    DB_TWIM->TXD.PTR        = (uint32_t)_i2c_tx_vars.buffer;
     DB_TWIM->TXD.MAXCNT     = (uint8_t)len + 1;
     DB_TWIM->SHORTS         = (1 << TWIM_SHORTS_LASTTX_STOP_Pos);
     DB_TWIM->TASKS_STARTTX  = 1;
-    _wait();
+    _wait_for_transfer();
 }
 
-//=========================== defines ==========================================
+//=========================== private ==========================================
 
-void _wait(void) {
+void _wait_for_transfer(void) {
     DB_TWIM->INTENSET = TWIM_INTEN_STOPPED_Msk | TWIM_INTEN_ERROR_Msk;
-    tx_running = true;
-    while (tx_running) {
-        __WFE();
+    _i2c_tx_vars.running = true;
+    while (_i2c_tx_vars.running) {
+        __WFI();
     }
 }
+
+//=========================== interrupt ========================================
 
 void SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQHandler(void) {
     if (DB_TWIM->EVENTS_STOPPED) {
         DB_TWIM->EVENTS_STOPPED = 0;
-        tx_running = false;
+        _i2c_tx_vars.running = false;
     }
 
     if (DB_TWIM->EVENTS_ERROR) {
         DB_TWIM->EVENTS_ERROR = 0;
-        tx_running = false;
+        _i2c_tx_vars.running = false;
         if (DB_TWIM->ERRORSRC & TWIM_ERRORSRC_ANACK_Msk) {
             DB_TWIM->ERRORSRC = TWIM_ERRORSRC_ANACK_Msk;
             puts("NACK on address byte");
