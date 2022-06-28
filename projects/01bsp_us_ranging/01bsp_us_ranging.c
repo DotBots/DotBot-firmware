@@ -57,6 +57,9 @@ int main(void) {
     
     // start high frequency clock needed for PPI
     hfclk_init();
+
+    // set ppi channels
+    hc_sr04_ppi_setup();
      
     // start ranging
     hc_sr04_start();

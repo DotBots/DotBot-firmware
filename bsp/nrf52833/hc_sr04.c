@@ -77,7 +77,7 @@ void hc_sr04_init(us_callback_t us_callback, timer_callback_t timer_callback, NR
 /**
  * @brief This function is public and it sets the PPI channels to allow the US trigger and US echo. Ranging starts by calling this function
  */
-void hc_sr04_start(void) {  
+void hc_sr04_ppi_setup(void) {  
     // get endpoint addresses
     uint32_t us_power_task_addr             = (uint32_t)&NRF_GPIOTE->TASKS_OUT[US_ON_CH];
 
@@ -112,16 +112,24 @@ void hc_sr04_start(void) {
                        (PPI_CHENSET_CH1_Enabled << PPI_CHENSET_CH1_Pos) |
                        (PPI_CHENSET_CH2_Enabled << PPI_CHENSET_CH2_Pos) |
                        (PPI_CHENSET_CH3_Enabled << PPI_CHENSET_CH3_Pos);                                      
-        
+                     
+}
+
+void hc_sr04_start(void) {
+    
+    // Clear timer
+    us_vars.us_on_timer->TASKS_CLEAR = (TIMER_TASKS_CLEAR_TASKS_CLEAR_Trigger << TIMER_TASKS_CLEAR_TASKS_CLEAR_Pos);
     /* Start the US trigger timer. 
        From here the PPI chain for US ranging starts */
-    us_vars.us_on_timer->TASKS_START = (TIMER_TASKS_START_TASKS_START_Trigger << TIMER_TASKS_START_TASKS_START_Pos);              
+    us_vars.us_on_timer->TASKS_START = (TIMER_TASKS_START_TASKS_START_Trigger << TIMER_TASKS_START_TASKS_START_Pos);
+
 }
 
 /**
  * @brief This function is public and it disables the PPI channels to stop the US trigger and ranging.
  */
 void hc_sr04_stop(void) {
+
     // Stop the US ON timer
     us_vars.us_on_timer->TASKS_STOP = (TIMER_TASKS_STOP_TASKS_STOP_Trigger << TIMER_TASKS_STOP_TASKS_STOP_Pos);
 
