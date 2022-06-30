@@ -38,6 +38,7 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             move_raw_command_t *command = (move_raw_command_t *)&pkt[2];
             int16_t left = (int16_t)(100 * ((float)command->left_y / INT8_MAX));
             int16_t right = (int16_t)(100 * ((float)command->right_y / INT8_MAX));
+            printf("Move: %i-%i\n", left, right);
             db_motors_set_speed(left, right);
         }
             break;
