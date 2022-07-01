@@ -61,6 +61,14 @@ void db_timer_hf_init(void) {
 }
 
 /**
+ * @brief Return the current timer time in microseconds
+ */
+uint32_t db_timer_hf_now(void) {
+    TIMER_HF->TASKS_CAPTURE[5] = 1;
+    return TIMER_HF->CC[5];
+}
+
+/**
  * @brief Set a callback to be called periodically using the high frequency timer
  *
  * @param[in] channel   TIMER channel used

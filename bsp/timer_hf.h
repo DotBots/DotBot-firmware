@@ -21,6 +21,7 @@ typedef void(*timer_hf_cb_t)(void);
 //=========================== prototypes =======================================
 
 void db_timer_hf_init(void);
+uint32_t db_timer_hf_now(void);
 void db_timer_hf_set_periodic(uint8_t channel, uint32_t us, timer_hf_cb_t cb);
 void db_timer_hf_set_callback_us(uint8_t channel, uint32_t us, timer_hf_cb_t cb);
 void db_timer_hf_set_callback_ms(uint8_t channel, uint32_t ms, timer_hf_cb_t cb);
