@@ -2,7 +2,7 @@
 
 SEGGER_DIR ?= /opt/segger
 BUILD_CONFIG ?= Debug
-PROJECTS ?= $(shell git grep -h "project Name" projects/dotbot-firmware.emProject | sed -e s/"<project Name=\"/"/ | sed -e s/\"\>// | sed -e s/^[[:space:]]*//)
+PROJECTS ?= $(shell git grep -h "project Name" projects/dotbot-firmware.emProject | sed -e s/"<project Name=\"/"/ | sed -e s/\"\>// | sed -e s/^[[:space:]]*// | sort)
 .PHONY: $(PROJECTS)
 
 all: $(PROJECTS)
