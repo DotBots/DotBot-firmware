@@ -40,6 +40,24 @@
     <file file_name="board.c" />
     <file file_name="../board.h" />
   </project>
+  <project Name="00lib_dotbot_command">
+    <configuration
+      LIBRARY_IO_TYPE="RTT"
+      Name="Common"
+      arm_architecture="v7EM"
+      arm_compiler_variant="SEGGER"
+      arm_core_type="Cortex-M4"
+      arm_endian="Little"
+      arm_fp_abi="Hard"
+      arm_fpu_type="FPv4-SP-D16"
+      c_preprocessor_definitions="ARM_MATH_CM4;NRF52833_XXAA;__nRF_FAMILY"
+      c_user_include_directories="$(ProjectDir)/..;$(ProjectDir)/../../nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
+      package_dependencies="CMSIS-CORE_V5"
+      project_directory="../bsp/nrf52833"
+      project_type="Library" />
+    <file file_name="command.c" />
+    <file file_name="../command.h" />
+  </project>
   <project Name="00lib_dotbot_lh2">
     <configuration
       Name="Common"
