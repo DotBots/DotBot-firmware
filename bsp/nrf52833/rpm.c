@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <nrf.h>
 #include "rpm.h"
+#include "timer.h"
 
 //=========================== defines ==========================================
 
@@ -26,27 +27,28 @@
 #define RPM_RIGHT_TIMER         (NRF_TIMER1)        /**< Timer peripheral used to count right cycles */
 #define RPM_RIGHT_PPI_CHAN      (1)                 /**< PPI channel used between right side timer and gpio */
 #define RPM_RIGHT_GPIOTE_CHAN   (1)                 /**< GPIOTE channel used for right side gpio event */
+#define RPM_UPDATE_PERIOD_MS    (50)                /**< Counters update period in ms */
 
 /**
  * Helper macro to compute speed in cm/s
  *
  * computed from the number of cycles measured within the last 125ms (one rotation is 3.77mm distance of the wheel)
  */
-#define RPM_CYCLES_TO_SPEED(cycles)     (uint32_t)(37.7 * cycles / 8)
+#define RPM_CYCLES_TO_SPEED(cycles)     (uint32_t)(37.7 * cycles * RPM_UPDATE_PERIOD_MS / 1000)
 
 /**
  * Helper macro to compute rotation per minute
  *
  * 1 cycle corresponds to one rotation, so convert to the number of minutes, given the RTC frequency of 125ms
  */
-#define RPM_CYCLES_TO_RPM(cycles)       (60 * 8 * cycles)
+#define RPM_CYCLES_TO_RPM(cycles)       (60 * 1000 * cycles / RPM_UPDATE_PERIOD_MS)
 
 /**
  * Helper macro to compute rotation per second
  *
  * 1 cycle corresponds to one rotation, so convert to the number of seconds, given the RTC frequency of 125ms
  */
-#define RPM_CYCLES_TO_RPS(cycles)       (8 * cycles)
+#define RPM_CYCLES_TO_RPS(cycles)       (cycles * 1000 / RPM_UPDATE_PERIOD_MS)
 
 /**
  * Helper struct used to store internal state variables
@@ -79,6 +81,8 @@ static uint32_t _db_rpm_left_cycles(void);
  * frame. The function takes into account timer overflows.
  */
 static uint32_t _db_rpm_right_cycles(void);
+
+static void update_counters(void);
 
 //=========================== public ===========================================
 
@@ -129,21 +133,9 @@ void db_rpm_init(void) {
     // Enable PPI channels
     NRF_PPI->CHENSET = (1 << RPM_RIGHT_PPI_CHAN) | (1 << RPM_LEFT_PPI_CHAN);
 
-    // Configure RTC with 125ms fire event delay
-    NRF_CLOCK->LFCLKSRC             = (CLOCK_LFCLKSRC_SRC_Xtal << CLOCK_LFCLKSRC_SRC_Pos);
-    NRF_CLOCK->TASKS_LFCLKSTART     = 1;
-    while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0);
-    NRF_CLOCK->EVENTS_LFCLKSTARTED  = 0;
-
-    NRF_RTC0->TASKS_STOP            = 1;
-    NRF_RTC0->TASKS_CLEAR           = 1;
-    NRF_RTC0->PRESCALER             = (1 << 12) - 1;
-    NRF_RTC0->CC[0]                 = 1;
-    NRF_RTC0->EVTENSET              = (RTC_EVTENSET_COMPARE0_Enabled << RTC_EVTENSET_COMPARE0_Pos);
-    NRF_RTC0->INTENSET              = (RTC_INTENSET_COMPARE0_Enabled << RTC_INTENSET_COMPARE0_Pos);
-    NVIC_EnableIRQ(RTC0_IRQn);
-    // Start RTC
-    NRF_RTC0->TASKS_START = 1;
+    // Configure RTC timer period used to update counters
+    db_timer_init();
+    db_timer_set_periodic(0, RPM_UPDATE_PERIOD_MS, &update_counters);
 
     // Start timers used as counters
     RPM_LEFT_TIMER->TASKS_START     = 1;
@@ -191,14 +183,4 @@ static uint32_t _db_rpm_right_cycles(void) {
         return UINT32_MAX - _rpm_vars.previous_right_counts + _rpm_vars.last_right_counts;
     }
     return _rpm_vars.last_right_counts - _rpm_vars.previous_right_counts;
-}
-
-//=========================== interrupts =======================================
-
-void RTC0_IRQHandler(void) {
-    if (NRF_RTC0->EVENTS_COMPARE[0] == 1) {
-        NRF_RTC0->EVENTS_COMPARE[0] = 0;
-        update_counters();
-        NRF_RTC0->TASKS_CLEAR = 1;
-    }
 }

@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include "board.h"
 #include "rpm.h"
+#include "timer.h"
 
 
 //=========================== defines =========================================
@@ -30,7 +31,6 @@ int main(void) {
     db_rpm_init();
 
     while (1) {
-        uint32_t wait       = 0x00fffff;
         rpm_values_t values = { 0 };
         db_rpm_get_values(&values);
         printf(
@@ -45,7 +45,7 @@ int main(void) {
             values.right.rpm,
             values.right.rps
         );
-        while (wait--);
+        db_timer_delay_ms(500);
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
