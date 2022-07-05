@@ -85,6 +85,7 @@
   <project Name="00lib_dotbot_rpm">
     <configuration
       Name="Common"
+      project_dependencies="00lib_timer"
       project_directory="../bsp/nrf52833"
       project_type="Library" />
     <file file_name="rpm.c" />
