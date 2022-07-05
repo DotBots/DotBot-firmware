@@ -33,7 +33,7 @@ typedef struct {
     radio_cb_t callback;                            // Function pointer, stores the callback to use in the RADIO_Irq handler.
 } radio_vars_t;
 
-static radio_vars_t radio_vars;
+static radio_vars_t radio_vars = { 0 };
 
 
 //========================== prototypes ========================================
@@ -251,15 +251,17 @@ void RADIO_IRQHandler(void) {
         // Clear the Interrupt flag
         NRF_RADIO->EVENTS_END = 0;
 
-        // Copy packet into the buffer, before sending it to the callback.
-        memcpy(radio_vars.rx_buffer, radio_vars.packet, NUMBER_OF_BYTES_IN_PACKET);
+        if (radio_vars.callback) {
+            // Copy packet into the buffer, before sending it to the callback.
+            memcpy(radio_vars.rx_buffer, radio_vars.packet, NUMBER_OF_BYTES_IN_PACKET);
 
 
-        // Call callback defined by user.
-        radio_vars.callback(radio_vars.rx_buffer, NUMBER_OF_BYTES_IN_PACKET);
+            // Call callback defined by user.
+            radio_vars.callback(radio_vars.rx_buffer, NUMBER_OF_BYTES_IN_PACKET);
 
 
-        // Clear the rx_buffer.
-        memset(radio_vars.rx_buffer, 0, NUMBER_OF_BYTES_IN_PACKET);
+            // Clear the rx_buffer.
+            memset(radio_vars.rx_buffer, 0, NUMBER_OF_BYTES_IN_PACKET);
+        }
     }
 }
