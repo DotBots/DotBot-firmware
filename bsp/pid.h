@@ -36,7 +36,6 @@ typedef struct {
 typedef struct {
     float output_sum;                   /**< Cumulative output values (used to keep history in integration component) */
     float last_input;                   /**< Input used in previous iteration (used by the derivative component) */
-    uint32_t last_time;                 /**< Last iteration time */
 } pid_state_t;
 
 typedef struct {

@@ -13,7 +13,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "pid.h"
-#include "timer_hf.h"
 
 void db_pid_init(pid_t *pid, float input, float target,
                     float kp, float ki, float kd,
@@ -26,7 +25,6 @@ void db_pid_init(pid_t *pid, float input, float target,
     pid->target = target;
     pid->sample_time = sample_time;
     pid->state.last_input = input;
-    pid->state.last_time = db_timer_hf_now() / 1000;    // time in milliseconds
     pid->mode = mode;
     db_pid_set_output_limits(pid, output_min, output_max);
     pid_parameters_t parameters = {.kp = kp, .ki = ki, .kd = kd};
@@ -39,33 +37,28 @@ void db_pid_update(pid_t *pid) {
         return;
     }
 
-    uint32_t now = db_timer_hf_now() / 1000;    // time in milliseconds
-    uint32_t time_change = now - pid->state.last_time;
-    if (time_change >= pid->sample_time) {
-        float error = pid->target - pid->input;
-        pid->state.output_sum += pid->parameters.ki * error;
-        if (pid->state.output_sum > pid->output_max) {
-            pid->state.output_sum = pid->output_max;
-        }
-        else if (pid->state.output_sum < pid->output_min) {
-            pid->state.output_sum = pid->output_min;
-        }
-
-        float d_input = pid->input - pid->state.last_input;
-
-        // PID output computation
-        float result = pid->parameters.kp * error + pid->state.output_sum - pid->parameters.kd * d_input;
-        if (result > pid->output_max) {
-            result = pid->output_max;
-        }
-        else if (result < pid->output_min) {
-            result = pid->output_min;
-        }
-
-        pid->state.last_input = pid->input;
-        pid->state.last_time = now;
-        pid->output = result;
+    float error = pid->target - pid->input;
+    pid->state.output_sum += pid->parameters.ki * error;
+    if (pid->state.output_sum > pid->output_max) {
+        pid->state.output_sum = pid->output_max;
     }
+    else if (pid->state.output_sum < pid->output_min) {
+        pid->state.output_sum = pid->output_min;
+    }
+
+    float d_input = pid->input - pid->state.last_input;
+
+    // PID output computation
+    float result = pid->parameters.kp * error + pid->state.output_sum - pid->parameters.kd * d_input;
+    if (result > pid->output_max) {
+        result = pid->output_max;
+    }
+    else if (result < pid->output_min) {
+        result = pid->output_min;
+    }
+
+    pid->state.last_input = pid->input;
+    pid->output = result;
 }
 
 void db_pid_set_parameters(pid_t *pid, const pid_parameters_t *parameters) {

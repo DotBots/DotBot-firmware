@@ -104,6 +104,7 @@
       c_preprocessor_definitions="ARM_MATH_CM4;NRF52833_XXAA;__nRF_FAMILY"
       c_user_include_directories="$(ProjectDir)/..;$(ProjectDir)/../../nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
       package_dependencies="CMSIS-CORE_V5"
+      project_dependencies=""
       project_directory="../bsp/nrf52833"
       project_type="Library" />
     <file file_name="pid.c" />
