@@ -34,12 +34,12 @@ int main(void) {
         db_rpm_get_values(&values);
         printf(
             "Left  - speed: %i, RPM: %i, RPS: %i\n",
-            values.left.speed,
+            (int)values.left.speed,
             values.left.rpm,
             values.left.rps);
         printf(
             "Right - speed: %i, RPM: %i, RPS: %i\n",
-            values.right.speed,
+            (int)values.right.speed,
             values.right.rpm,
             values.right.rps);
         db_timer_delay_ms(500);
