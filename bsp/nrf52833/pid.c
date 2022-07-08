@@ -16,15 +16,15 @@
 
 void db_pid_init(pid_t *pid, float input, float target,
                     float kp, float ki, float kd,
-                    uint32_t sample_time, float output_min, float output_max,
+                    float output_min, float output_max,
                     pid_mode_t mode, pid_direction_t direction) {
     assert(target >= output_min);
     assert(target <= output_max);
 
     pid->input = input;
     pid->target = target;
-    pid->sample_time = sample_time;
     pid->state.last_input = input;
+    pid->state.output_sum = 0;
     pid->mode = mode;
     db_pid_set_output_limits(pid, output_min, output_max);
     pid_parameters_t parameters = {.kp = kp, .ki = ki, .kd = kd};
@@ -45,11 +45,10 @@ void db_pid_update(pid_t *pid) {
     else if (pid->state.output_sum < pid->output_min) {
         pid->state.output_sum = pid->output_min;
     }
-
     float d_input = pid->input - pid->state.last_input;
 
     // PID output computation
-    float result = pid->parameters.kp * error + pid->state.output_sum - pid->parameters.kd * d_input;
+    float result = pid->parameters.kp * error + pid->state.output_sum + pid->parameters.kd * d_input;
     if (result > pid->output_max) {
         result = pid->output_max;
     }
@@ -65,24 +64,14 @@ void db_pid_set_parameters(pid_t *pid, const pid_parameters_t *parameters) {
     if (parameters->kp < 0 || parameters->ki < 0|| parameters->kd < 0) {
         return;
     }
-    float sample_time_s = (float)pid->sample_time / 1000;
     pid->parameters.kp = parameters->kp;
-    pid->parameters.ki = parameters->ki * sample_time_s;
-    pid->parameters.kd = parameters->kd / sample_time_s;
-
+    pid->parameters.ki = parameters->ki;
+    pid->parameters.kd = parameters->kd;
     if (pid->direction == DB_PID_DIRECTION_REVERSED) {
         pid->parameters.kp = (0 - pid->parameters.kp);
         pid->parameters.ki = (0 - pid->parameters.ki);
         pid->parameters.kd = (0 - pid->parameters.kd);
     }
-}
-
-void db_pid_set_sample_time(pid_t *pid, uint32_t sample_time) {
-    assert(pid->sample_time != 0 && sample_time != 0);
-    float ratio = (float)sample_time / pid->sample_time;
-    pid->parameters.ki *= ratio;
-    pid->parameters.kd /= ratio;
-    pid->sample_time = sample_time;
 }
 
 void db_pid_set_output_limits(pid_t *pid, float output_min, float output_max) {
@@ -115,7 +104,7 @@ void db_pid_set_mode(pid_t *pid, pid_mode_t mode) {
     if (mode == DB_PID_MODE_AUTO) {
         db_pid_init(pid, pid->input, pid->target,
                     pid->parameters.kp, pid->parameters.ki, pid->parameters.kd,
-                    pid->sample_time, pid->output_min, pid->output_max,
+                    pid->output_min, pid->output_max,
                     pid->mode, pid->direction);
     }
 }

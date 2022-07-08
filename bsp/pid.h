@@ -48,18 +48,16 @@ typedef struct {
     float target;                       /**< Current target */
     float output_min;                   /**< Minimal value allowed for output */
     float output_max;                   /**< Maximal value allowed for output */
-    uint32_t sample_time;               /**< Sample time in milliseconds */
 } pid_t;
 
 //=========================== prototypes =======================================
 
 void db_pid_init(pid_t *pid, float input, float target,
                 float kp, float ki, float kd,
-                uint32_t sample_time, float output_min, float output_max,
+                float output_min, float output_max,
                 pid_mode_t mode, pid_direction_t direction);
 void db_pid_update(pid_t *pid);
 void db_pid_set_parameters(pid_t *pid, const pid_parameters_t *parameters);
-void db_pid_set_sample_time(pid_t *pid, uint32_t sample_time);
 void db_pid_set_output_limits(pid_t *pid, float output_min, float output_max);
 void db_pid_set_mode(pid_t *pid, pid_mode_t mode);
 void db_pid_set_direction(pid_t *pid, pid_direction_t direction);
