@@ -55,8 +55,6 @@ static uart_ctx_t _uart_ctx;        // Variable handling the UART context
 
 //=========================== callbacks ========================================
 
-void radio_callback(uint8_t *packet, uint8_t length) {}
-
 static void uart_callback(uint8_t data) {
     switch (_uart_ctx.state) {
         case UART_STATE_IDLE:
@@ -138,7 +136,7 @@ int main(void) {
     NRF_P0->DIRSET = 1 << 13;
     NRF_P0->OUTCLR = 1 << 13;
     // Configure Radio as transmitter
-    db_radio_init(&radio_callback); // Set the callback function.
+    db_radio_init(NULL); // Set the callback function.
     db_radio_set_frequency(8);      // Set the radio frequency to 2408 MHz.
     db_uart_init(&uart_callback);
 
