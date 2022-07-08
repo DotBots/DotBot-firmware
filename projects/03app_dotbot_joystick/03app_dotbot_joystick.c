@@ -15,17 +15,18 @@
 #include "motors.h"
 #include "radio.h"
 #include "rgbled.h"
+#include "timer_hf.h"
 
 //=========================== defines =========================================
 
-#define TIMEOUT_RTC           (NRF_RTC1)
-#define TIMEOUT_RTC_IRQ       (RTC1_IRQn)
-#define TIMEOUT_RTC_ISR       (RTC1_IRQHandler)
+#define MAX_RECEIVE_DELAY_US    (100 * 1000)
+
+static uint32_t _last_packet_received = 0;
 
 //=========================== main =========================================
 
 static void radio_callback(uint8_t *pkt, uint8_t len) {
-    TIMEOUT_RTC->TASKS_CLEAR = 1;   // Clear RTC counter
+    _last_packet_received = db_timer_hf_now();
     // Check version is supported
     if (pkt[0] != DB_COMMAND_VERSION) {
         return;
@@ -53,24 +54,11 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
     }
 }
 
-static void db_timeout_rtc_init(void) {
-    TIMEOUT_RTC->TASKS_STOP     = 1;
-    TIMEOUT_RTC->TASKS_CLEAR    = 1;
-    // Configure RTC with 125ms delay between ticks
-    TIMEOUT_RTC->PRESCALER  = (uint32_t)((1 << 12) - 1);
-    TIMEOUT_RTC->INTENSET   = RTC_INTENSET_TICK_Enabled;
-    TIMEOUT_RTC->EVTENSET   = RTC_EVTENSET_TICK_Enabled;
-    NVIC_EnableIRQ(TIMEOUT_RTC_IRQ);
-    // Start RTC
-    TIMEOUT_RTC->TASKS_START = 1;
-}
-
-void TIMEOUT_RTC_ISR(void) {
-    NVIC_ClearPendingIRQ(TIMEOUT_RTC_IRQ);
-    if (TIMEOUT_RTC->EVENTS_TICK) {
-        TIMEOUT_RTC->EVENTS_TICK = 0;
-        // Stop the motors if the RTC fires a compare events, e.g. when no packet was received during 100ms
+static void timeout_check(void) {
+    uint32_t now = db_timer_hf_now();
+    if (now > _last_packet_received + MAX_RECEIVE_DELAY_US) {
         db_motors_set_speed(0, 0);
+        puts("stopping motors");
     }
 }
 
@@ -85,7 +73,8 @@ int main(void) {
     db_radio_init(&radio_callback);
     db_radio_set_frequency(8);      // Set the RX frequency to 2408 MHz.
     db_radio_rx_enable();           // Start receiving packets.
-    db_timeout_rtc_init();          // Start timeout RTC used to check packet reception
+    db_timer_hf_init();
+    db_timer_hf_set_periodic(0, MAX_RECEIVE_DELAY_US, &timeout_check);
 
     while (1) {
         __WFE(); // Enter a low power state while waiting.
