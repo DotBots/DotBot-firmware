@@ -12,9 +12,19 @@
 #include <stdbool.h>
 #include "clock.h"
 
+//=========================== defines ==========================================
+
+typedef struct {
+    bool hf_enabled;    /**< Checks whether high frequency clock is running */
+    bool lf_enabled;    /**< Checks whether low frequency clock is running */
+} clock_state_t;
+
 //=========================== variables ========================================
 
-static bool _hfclock_enabled = false;
+static clock_state_t _clock_state = {
+    .hf_enabled = false,
+    .lf_enabled = false
+};
 
 //=========================== public ===========================================
 
@@ -22,7 +32,7 @@ static bool _hfclock_enabled = false;
  * @brief Initialize and start the High Frequency clock.
  */
 void db_hfclk_init(void) {
-    if (_hfclock_enabled) {
+    if (_clock_state.hf_enabled) {
         // Do nothing if already running
         return;
     }
@@ -30,27 +40,14 @@ void db_hfclk_init(void) {
     NRF_CLOCK->EVENTS_HFCLKSTARTED  = 0x00;
     NRF_CLOCK->TASKS_HFCLKSTART     = 0x01;
     while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0);
-    _hfclock_enabled = true;
-}
-
-/**
- * @brief Stop the High Frequency clock.
- */
-void db_hfclk_deinit(void) {
-    if (!_hfclock_enabled) {
-        // Do nothing if already running
-        return;
-    }
-
-    NRF_CLOCK->TASKS_HFCLKSTOP = 1;
-    _hfclock_enabled = false;
+    _clock_state.hf_enabled = true;
 }
 
 /**
  * @brief Initialize and start the Low Frequency clock.
  */
 void db_lfclk_init(void) {
-    if (NRF_CLOCK->LFCLKSTAT & CLOCK_LFCLKSTAT_STATE_Msk) {
+    if (_clock_state.lf_enabled) {
         // Do nothing if already running
         return;
     }
@@ -59,16 +56,5 @@ void db_lfclk_init(void) {
     NRF_CLOCK->LFCLKSRC             = (CLOCK_LFCLKSRC_SRC_Xtal << CLOCK_LFCLKSRC_SRC_Pos);
     NRF_CLOCK->TASKS_LFCLKSTART     = 1;
     while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0);
-}
-
-/**
- * @brief Stop the Low Frequency clock.
- */
-void db_lfclk_deinit(void) {
-    if (!(NRF_CLOCK->LFCLKSTAT & CLOCK_LFCLKSTAT_STATE_Msk)) {
-        // Do nothing if not running
-        return;
-    }
-
-    NRF_CLOCK->TASKS_LFCLKSTOP = 1;
+    _clock_state.lf_enabled = true;
 }

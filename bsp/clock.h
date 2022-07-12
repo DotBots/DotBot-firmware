@@ -13,8 +13,6 @@
  */
 
 void db_hfclk_init(void);
-void db_hfclk_deinit(void);
 void db_lfclk_init(void);
-void db_lfclk_deinit(void);
 
 #endif
