@@ -51,9 +51,9 @@ int main(void) {
     db_board_init();
     db_rgbled_init();
     db_timer_init();
-    db_timer_set_periodic(0, 2000, &message_callback);
-    db_timer_set_periodic(1, 500, &led_callback);
-    db_timer_set_callback_ms(2, 1000, &message_one_shot_callback);
+    db_timer_set_periodic_ms(0, 2000, &message_callback);
+    db_timer_set_periodic_ms(1, 500, &led_callback);
+    db_timer_set_oneshot_ms(2, 1000, &message_one_shot_callback);
     while (1) {
         printf("Hello dotbot\n");
         db_timer_delay_ms(500);
