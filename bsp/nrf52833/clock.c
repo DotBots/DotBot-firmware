@@ -15,8 +15,8 @@
 //=========================== defines ==========================================
 
 typedef struct {
-    bool hf_enabled;    /**< Checks whether high frequency clock is running */
-    bool lf_enabled;    /**< Checks whether low frequency clock is running */
+    bool hf_enabled;    ///< Checks whether high frequency clock is running
+    bool lf_enabled;    ///< Checks whether low frequency clock is running
 } clock_state_t;
 
 //=========================== variables ========================================
