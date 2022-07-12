@@ -135,7 +135,7 @@ void db_rpm_init(void) {
 
     // Configure RTC timer period used to update counters
     db_timer_init();
-    db_timer_set_periodic(0, RPM_UPDATE_PERIOD_MS, &update_counters);
+    db_timer_set_periodic_ms(0, RPM_UPDATE_PERIOD_MS, &update_counters);
 
     // Start timers used as counters
     RPM_LEFT_TIMER->TASKS_START     = 1;
