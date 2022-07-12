@@ -51,9 +51,9 @@ int main(void) {
     db_board_init();
     db_rgbled_init();
     db_timer_hf_init();
-    db_timer_hf_set_periodic(0, 2000000, &message_callback);
-    db_timer_hf_set_periodic(1, 500000, &led_callback);
-    db_timer_hf_set_callback_ms(2, 1000, &message_one_shot_callback);
+    db_timer_hf_set_periodic_us(0, 2000000, &message_callback);
+    db_timer_hf_set_periodic_us(1, 500000, &led_callback);
+    db_timer_hf_set_oneshot_ms(2, 1000, &message_one_shot_callback);
     while (1) {
         printf("Hello dotbot\n");
         db_timer_hf_delay_ms(500);
