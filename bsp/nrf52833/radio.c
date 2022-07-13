@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "clock.h"
 #include "radio.h"
 
 //=========================== defines ==========================================
@@ -219,10 +220,8 @@ void radio_init_common(radio_cb_t callback) {
     radio_vars.callback = callback;
 
     // Configure the external High-frequency Clock. (Needed for correct operation)
-    NRF_CLOCK->EVENTS_HFCLKSTARTED = 0x00;    // Clear the flag
-    NRF_CLOCK->TASKS_HFCLKSTART    = 0x01;    // Start the clock
-    while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) {;} // Wait for the clock to actually start.
-   
+    db_hfclk_init();
+
     // Configure the Interruptions
     NVIC_DisableIRQ(RADIO_IRQn);                                                // Disable interruptions while configuring
     NRF_RADIO->INTENSET = RADIO_INTENSET_END_Enabled << RADIO_INTENSET_END_Pos; // Enable interruption for when a packet arrives

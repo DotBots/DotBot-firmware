@@ -14,11 +14,9 @@
 #include <stdlib.h>
 #include "board.h"
 #include "rgbled.h"
+#include "timer.h"
 
 //=========================== defines =========================================
-
-// Define a blocking wait function.
-#define WAIT_A_BIT(PAUSE) for (int i = 0; i < 3000 * PAUSE; i++) {;}    ///< The 3000 magic number, approximates to about 1ms per 1 unit of PAUSE.
 
 //=========================== variables =========================================
 
@@ -29,22 +27,23 @@
  */
 int main(void) {
     db_board_init();
+    db_timer_init();
     db_rgbled_init();
 
     /* Change RGB colors in a loop */
     while (1) {
         db_rgbled_set(255, 0, 0);
-        WAIT_A_BIT(2000);
+        db_timer_delay_s(2);
         db_rgbled_set(0, 255, 0);
-        WAIT_A_BIT(2000);
+        db_timer_delay_s(2);
         db_rgbled_set(0, 0, 255);
-        WAIT_A_BIT(2000);
+        db_timer_delay_s(2);
         db_rgbled_set(255, 255, 0);
-        WAIT_A_BIT(2000);
+        db_timer_delay_s(2);
         db_rgbled_set(0, 255, 255);
-        WAIT_A_BIT(2000);
+        db_timer_delay_s(2);
         db_rgbled_set(255, 0, 255);
-        WAIT_A_BIT(2000);
+        db_timer_delay_s(2);
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
