@@ -12,6 +12,7 @@
       arm_fpu_type="FPv4-SP-D16"
       c_preprocessor_definitions="ARM_MATH_CM4;NRF52833_XXAA;__nRF_FAMILY;CONFIG_NFCT_PINS_AS_GPIOS"
       c_user_include_directories="$(SolutionDir)/../bsp;$(SolutionDir)/../drv;$(ProjectDir)/../../nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include" />
+      package_dependencies="CMSIS-CORE_V5"
   <configuration
     Name="Debug"
     c_preprocessor_definitions="DEBUG"
@@ -26,8 +27,6 @@
   <project Name="00lib_dotbot_board">
     <configuration
       Name="Common"
-      c_user_include_directories="$(ProjectDir)/.."
-      package_dependencies="CMSIS-CORE_V5"
       project_directory="../bsp/nrf52833"
       project_type="Library" />
     <file file_name="board.c" />
@@ -36,8 +35,6 @@
   <project Name="00lib_dotbot_lh2">
     <configuration
       Name="Common"
-      c_user_include_directories="$(ProjectDir)/.."
-      package_dependencies="CMSIS-CORE_V5"
       project_directory="../bsp/nrf52833"
       project_type="Library" />
     <file file_name="lh2.c" />
@@ -46,8 +43,6 @@
   <project Name="00lib_dotbot_motors">
     <configuration
       Name="Common"
-      c_user_include_directories="$(ProjectDir)/.."
-      package_dependencies="CMSIS-CORE_V5"
       project_directory="../bsp/nrf52833"
       project_type="Library" />
     <file file_name="motors.c" />
@@ -56,8 +51,6 @@
   <project Name="00lib_radio">
     <configuration
       Name="Common"
-      c_user_include_directories="$(ProjectDir)/.."
-      package_dependencies="CMSIS-CORE_V5"
       project_directory="../bsp/nrf52833"
       project_type="Library" />
     <file file_name="radio.c" />
@@ -66,8 +59,6 @@
   <project Name="00lib_dotbot_rgbled">
     <configuration
       Name="Common"
-      c_user_include_directories="$(ProjectDir)/.."
-      package_dependencies="CMSIS-CORE_V5"
       project_directory="../bsp/nrf52833"
       project_type="Library" />
     <file file_name="rgbled.c" />
@@ -76,8 +67,6 @@
   <project Name="00lib_dotbot_rpm">
     <configuration
       Name="Common"
-      c_user_include_directories="$(ProjectDir)/.."
-      package_dependencies="CMSIS-CORE_V5"
       project_directory="../bsp/nrf52833"
       project_type="Library" />
     <file file_name="rpm.c" />
@@ -106,7 +95,6 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      package_dependencies="CMSIS-CORE_V5"
       project_directory="00std_motors"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -169,7 +157,6 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      package_dependencies="CMSIS-CORE_V5"
       project_directory="00std_revolution_counter"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -231,7 +218,6 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      package_dependencies="CMSIS-CORE_V5"
       project_directory="00std_radio_txrx"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -293,7 +279,6 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      package_dependencies="CMSIS-CORE_V5"
       project_directory="00std_rgbled"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -355,7 +340,6 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      package_dependencies="CMSIS-CORE_V5"
       project_directory="00std_lighthouse"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -417,7 +401,6 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      package_dependencies="CMSIS-CORE_V5"
       project_dependencies="00lib_dotbot_board;00lib_dotbot_rgbled"
       project_directory="01bsp_rgbled"
       project_type="Executable"
@@ -480,7 +463,6 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      package_dependencies="CMSIS-CORE_V5"
       project_dependencies="00lib_dotbot_board;00lib_dotbot_lh2"
       project_directory="01bsp_lighthouse"
       project_type="Executable"
@@ -544,7 +526,6 @@
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       linker_section_placements_segments="FLASH1 RX 0x00000000 0x00080000;RAM1 RWX 0x20000000 0x00020000"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      package_dependencies="CMSIS-CORE_V5"
       project_dependencies="00lib_dotbot_board;00lib_radio"
       project_directory="01bsp_radio_lr_txrx"
       project_type="Executable"
@@ -607,7 +588,6 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      package_dependencies="CMSIS-CORE_V5"
       project_dependencies="00lib_dotbot_board;00lib_dotbot_motors"
       project_directory="01bsp_motors"
       project_type="Executable"
@@ -671,7 +651,6 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      package_dependencies="CMSIS-CORE_V5"
       project_dependencies="00lib_dotbot_board;00lib_radio"
       project_directory="01bsp_radio_txrx"
       project_type="Executable"
@@ -734,7 +713,6 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      package_dependencies="CMSIS-CORE_V5"
       project_dependencies="00lib_dotbot_board;00lib_dotbot_rpm"
       project_directory="01bsp_rpm"
       project_type="Executable"
@@ -798,7 +776,6 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      package_dependencies="CMSIS-CORE_V5"
       project_dependencies="00lib_dotbot_board;00lib_dotbot_motors;00lib_radio"
       project_directory="03app_dotbot"
       project_type="Executable"
