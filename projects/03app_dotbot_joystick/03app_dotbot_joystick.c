@@ -74,7 +74,7 @@ int main(void) {
     db_radio_set_frequency(8);      // Set the RX frequency to 2408 MHz.
     db_radio_rx_enable();           // Start receiving packets.
     db_timer_hf_init();
-    db_timer_hf_set_periodic(0, MAX_RECEIVE_DELAY_US, &timeout_check);
+    db_timer_hf_set_periodic_us(0, MAX_RECEIVE_DELAY_US, &timeout_check);
 
     while (1) {
         __WFE(); // Enter a low power state while waiting.
