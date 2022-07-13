@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - develop
+    tags: '*'
 
   pull_request:
 
@@ -16,3 +17,16 @@ jobs:
         uses: actions/checkout@v2
       - name: Build projects
         run: make
+      - name: Build projects for release
+        if: >-
+          github.event_name == 'push' &&
+          startsWith(github.event.ref, 'refs/tags')
+        run: BUILD_CONFIG=Release make
+      - name: Release
+        uses: ncipollo/release-action@v1
+        if: >-
+          github.event_name == 'push' &&
+          startsWith(github.event.ref, 'refs/tags')
+        with:
+          artifacts: "projects/03app_dotbot/Output/Release/Exe/03app_dotbot.elf"
+          token: ${{ secrets.RELEASE_TOKEN }}
