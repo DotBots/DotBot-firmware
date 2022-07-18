@@ -19,25 +19,22 @@
 
 //=========================== defines ==========================================
 
-#define DB_UARTE_RX_PIN     (8)
-#define DB_UARTE_RX_PORT    (0)
-#define DB_UARTE_TX_PIN     (6)
-#define DB_UARTE_TX_PORT    (0)
+#define DB_UART_MAX_BYTES   (32U)   ///< Max bytes in UART receive buffer
 
 typedef enum {
-    UART_STATE_IDLE = 0,            /**< The UART is ready to start receiving messages */
-    UART_STATE_RECEIVING,           /**< The UART is receiving messages */
+    UART_STATE_IDLE = 0,            ///< The UART is ready to start receiving messages
+    UART_STATE_RECEIVING,           ///< The UART is receiving messages
 } uart_state_t;
 
 typedef struct {
-    uint8_t buffer[DB_UART_MAX_BYTES];  /**< Buffer where message received on UART is stored */
-    uint8_t pos;                        /**< Current position in the UART buffer */
+    uint8_t buffer[DB_UART_MAX_BYTES];  ///< Buffer where message received on UART is stored
+    uint8_t pos;                        ///< Current position in the UART buffer
 } uart_message_t;
 
 typedef struct {
-    uart_message_t message;         /**< Structure that handles the UART message */
-    uart_state_t state;             /**< Internal state of the UART (idle or receiving) */
-    uint8_t expected_length;        /**< Expected length of message to receive */
+    uart_message_t message;         ///< Structure that handles the UART message
+    uart_state_t state;             ///< Internal state of the UART (idle or receiving)
+    uint8_t expected_length;        ///< Expected length of message to receive
 } uart_ctx_t;
 
 //=========================== variables ========================================
@@ -86,7 +83,7 @@ int main(void) {
     // Initialize the uart context
     _uart_ctx.expected_length = 0;
     _uart_ctx.state = UART_STATE_IDLE;
-    db_uart_init(&_rx_pin, &_tx_pin, 115200, &uart_callback);
+    db_uart_init(&_rx_pin, &_tx_pin, &uart_callback);
 
     while (1) {
        __WFE();
