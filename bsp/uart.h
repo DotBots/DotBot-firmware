@@ -18,13 +18,25 @@
 
 //=========================== defines ==========================================
 
-#define DB_UART_MAX_BYTES   (32)
-
-typedef void(*uart_rx_cb_t)(uint8_t data);
+typedef void(*uart_rx_cb_t)(uint8_t data);  ///< Callback function prototype, it is called on each byte received
 
 //=========================== public ===========================================
 
-void db_uart_init(const gpio_t *rx_pin, const gpio_t *tx_pin, uint32_t baudrate, uart_rx_cb_t callback);
+/**
+ * @brief Initialize the UART interface
+ *
+ * @param[in] rx_pin    pointer to RX pin
+ * @param[in] tx_pin    pointer to TX pin
+ * @param[in] callback  callback function called on each received byte
+ */
+void db_uart_init(const gpio_t *rx_pin, const gpio_t *tx_pin, uart_rx_cb_t callback);
+
+/**
+ * @brief Write bytes to the UART
+ *
+ * @param[in] buffer    pointer to the buffer to write to UART
+ * @param[in] length    number of bytes of the buffer to write
+ */
 void db_uart_write(uint8_t *buffer, size_t length);
 
 #endif
