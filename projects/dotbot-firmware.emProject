@@ -100,13 +100,13 @@
     <file file_name="timer_hf.c" />
     <file file_name="../timer_hf.h" />
   </project>
-  <project Name="00drv_dotbot_command">
+  <project Name="00drv_dotbot_protocol">
     <configuration
       Name="Common"
-      project_directory="../drv/command"
+      project_directory="../drv/protocol"
       project_type="Library" />
-    <file file_name="command.c" />
-    <file file_name="../command.h" />
+    <file file_name="protocol.c" />
+    <file file_name="../protocol.h" />
   </project>
   <project Name="00std_motors">
     <configuration
