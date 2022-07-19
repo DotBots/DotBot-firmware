@@ -23,7 +23,7 @@ typedef struct {
 
 static clock_state_t _clock_state = {
     .hf_enabled = false,
-    .lf_enabled = false
+    .lf_enabled = false,
 };
 
 //=========================== public ===========================================
@@ -39,7 +39,7 @@ void db_hfclk_init(void) {
 
     NRF_CLOCK->EVENTS_HFCLKSTARTED  = 0x00;
     NRF_CLOCK->TASKS_HFCLKSTART     = 0x01;
-    while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0);
+    while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) {}
     _clock_state.hf_enabled = true;
 }
 
@@ -55,6 +55,6 @@ void db_lfclk_init(void) {
     NRF_CLOCK->EVENTS_LFCLKSTARTED  = 0;
     NRF_CLOCK->LFCLKSRC             = (CLOCK_LFCLKSRC_SRC_Xtal << CLOCK_LFCLKSRC_SRC_Pos);
     NRF_CLOCK->TASKS_LFCLKSTART     = 1;
-    while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0);
+    while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0) {}
     _clock_state.lf_enabled = true;
 }
