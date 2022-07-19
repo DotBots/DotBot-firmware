@@ -17,14 +17,14 @@
 //=========================== define ==========================================
 
 // Pin definitions
-#define LED_MOSI_PIN 3 ///< nRF52840 P0.3
-#define LED_SCK_PIN 6  ///< nRF52840 P1.6 ( used because it's not an available pin in the BCM module).
+#define LED_MOSI_PIN 3  ///< nRF52840 P0.3
+#define LED_SCK_PIN  6  ///< nRF52840 P1.6 ( used because it's not an available pin in the BCM module).
 
 // EasyDMA buffer size definition
 #define LED_BUFFER_SIZE 32
 
 // Define the ONE and ZERO enconding for the led one-wire protocol
-#define LED_ONE 0b00010100
+#define LED_ONE  0b00010100
 #define LED_ZERO 0b00010000
 
 //=========================== variables =======================================
@@ -48,31 +48,31 @@ static rgbled_vars_t rgbled_vars;
 void db_rgbled_init(void) {
 
     // Configure the necessary Pins in the GPIO peripheral
-    NRF_P0->DIRSET = 1 << LED_MOSI_PIN; // MOSI as Output
-    NRF_P0->DIRSET = 1 << LED_SCK_PIN;  // SCK  as Output
+    NRF_P0->DIRSET = 1 << LED_MOSI_PIN;  // MOSI as Output
+    NRF_P0->DIRSET = 1 << LED_SCK_PIN;   // SCK  as Output
 
     // Define the necessary Pins in the SPIM peripheral
-    NRF_SPIM0->PSEL.MOSI = LED_MOSI_PIN << SPIM_PSEL_MOSI_PIN_Pos |                        // Define pin number for MOSI pin
-                           0 << SPIM_PSEL_MOSI_PORT_Pos |                                  // Define pin port for MOSI pin
-                           SPIM_PSEL_MOSI_CONNECT_Connected << SPIM_PSEL_MOSI_CONNECT_Pos; // Enable the MOSI pin
+    NRF_SPIM0->PSEL.MOSI = LED_MOSI_PIN << SPIM_PSEL_MOSI_PIN_Pos |                         // Define pin number for MOSI pin
+                           0 << SPIM_PSEL_MOSI_PORT_Pos |                                   // Define pin port for MOSI pin
+                           SPIM_PSEL_MOSI_CONNECT_Connected << SPIM_PSEL_MOSI_CONNECT_Pos;  // Enable the MOSI pin
 
-    NRF_SPIM0->PSEL.SCK = LED_SCK_PIN << SPIM_PSEL_SCK_PIN_Pos |                        // Define pin number for SCK pin
-                          1 << SPIM_PSEL_SCK_PORT_Pos |                                 // Define pin port for SCK pin
-                          SPIM_PSEL_SCK_CONNECT_Connected << SPIM_PSEL_SCK_CONNECT_Pos; // Enable the SCK pin
+    NRF_SPIM0->PSEL.SCK = LED_SCK_PIN << SPIM_PSEL_SCK_PIN_Pos |                         // Define pin number for SCK pin
+                          1 << SPIM_PSEL_SCK_PORT_Pos |                                  // Define pin port for SCK pin
+                          SPIM_PSEL_SCK_CONNECT_Connected << SPIM_PSEL_SCK_CONNECT_Pos;  // Enable the SCK pin
 
     // Configure the SPIM peripheral
-    NRF_SPIM0->FREQUENCY = SPIM_FREQUENCY_FREQUENCY_K500;                    // Set SPI frequency to 500Khz
-    NRF_SPIM0->CONFIG = SPIM_CONFIG_ORDER_MsbFirst << SPIM_CONFIG_ORDER_Pos; // Set MsB out first
+    NRF_SPIM0->FREQUENCY = SPIM_FREQUENCY_FREQUENCY_K500;                        // Set SPI frequency to 500Khz
+    NRF_SPIM0->CONFIG    = SPIM_CONFIG_ORDER_MsbFirst << SPIM_CONFIG_ORDER_Pos;  // Set MsB out first
 
     // Configure the WRITER EasyDMA channel
-    NRF_SPIM0->TXD.MAXCNT = LED_BUFFER_SIZE;                // Set the size of the output buffer.
-    NRF_SPIM0->TXD.PTR = (uint32_t)&rgbled_vars.ledBuffer;  // Set the output buffer pointer.
+    NRF_SPIM0->TXD.MAXCNT = LED_BUFFER_SIZE;                   // Set the size of the output buffer.
+    NRF_SPIM0->TXD.PTR    = (uint32_t)&rgbled_vars.ledBuffer;  // Set the output buffer pointer.
 
     // Enable the SPIM pripheral
     NRF_SPIM0->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
 
     // Execute a transfer
-    NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos; // trigger the SPI transfer
+    NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;  // trigger the SPI transfer
 }
 
 /**
@@ -104,7 +104,7 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b) {
     // ********** Load the Blue value into the buffer ************
     // Define the starting position of the blue color in the buffer.
     int buffer_byte = 8;
-    int buffer_bit = 59;
+    int buffer_bit  = 59;
 
     // Iterate over all the bits of the blue color. (decreasing order, we write MSB first.)
     for (int i = 7; i >= 0; i--) {
@@ -145,7 +145,7 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b) {
     // ********** Load the Red value into the buffer ************
     // Define the starting position of the blue color in the buffer.
     buffer_byte = 16;
-    buffer_bit = 63;
+    buffer_bit  = 63;
 
     // Iterate over all the bits of the red color. (decreasing order, we write MSB first.)
     for (int i = 7; i >= 0; i--) {
@@ -183,7 +183,7 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b) {
     // ********** Load the green into the buffer ************
     // Define the starting position of the blue color in the buffer.
     buffer_byte = 23;
-    buffer_bit = 59;
+    buffer_bit  = 59;
 
     // Iterate over all the bits of the green color. (decreasing order, we write MSB first.)
     for (int i = 7; i >= 0; i--) {

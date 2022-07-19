@@ -15,7 +15,6 @@
 #include "rpm.h"
 #include "timer.h"
 
-
 //=========================== defines =========================================
 
 //=========================== variables =========================================
@@ -37,14 +36,12 @@ int main(void) {
             "Left  - speed: %i, RPM: %i, RPS: %i\n",
             values.left.speed,
             values.left.rpm,
-            values.left.rps
-        );
+            values.left.rps);
         printf(
             "Right - speed: %i, RPM: %i, RPS: %i\n",
             values.right.speed,
             values.right.rpm,
-            values.right.rps
-        );
+            values.right.rps);
         db_timer_delay_ms(500);
     }
 

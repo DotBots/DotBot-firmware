@@ -18,20 +18,20 @@
 
 //=========================== define ===========================================
 
-#define TIMER_HF            (NRF_TIMER4)        ///< Backend TIMER peripheral used by the timer
-#define TIMER_HF_IRQ        (TIMER4_IRQn)       ///< IRQ corresponding to the TIMER used
-#define TIMER_HF_ISR        (TIMER4_IRQHandler) ///< ISR function handler corresponding to the TIMER used
-#define TIMER_HF_CB_CHANS   (TIMER4_CC_NUM - 1) ///< Number of channels that can be used for periodic callbacks
+#define TIMER_HF          (NRF_TIMER4)         ///< Backend TIMER peripheral used by the timer
+#define TIMER_HF_IRQ      (TIMER4_IRQn)        ///< IRQ corresponding to the TIMER used
+#define TIMER_HF_ISR      (TIMER4_IRQHandler)  ///< ISR function handler corresponding to the TIMER used
+#define TIMER_HF_CB_CHANS (TIMER4_CC_NUM - 1)  ///< Number of channels that can be used for periodic callbacks
 
 typedef struct {
-    uint32_t        period_us;                  ///< Period in ticks between each callback
-    bool            one_shot;                   ///< Whether this is a one shot callback
-    timer_hf_cb_t   callback;                   ///< Pointer to the callback function
+    uint32_t period_us;      ///< Period in ticks between each callback
+    bool one_shot;           ///< Whether this is a one shot callback
+    timer_hf_cb_t callback;  ///< Pointer to the callback function
 } timer_hf_callback_t;
 
 typedef struct {
     timer_hf_callback_t timer_callback[TIMER_HF_CB_CHANS];  ///< List of timer callback structs
-    bool                running;                            ///< Whether the delay timer is running
+    bool running;                                           ///< Whether the delay timer is running
 } timer_hf_vars_t;
 
 //=========================== variables ========================================
@@ -51,10 +51,10 @@ void db_timer_hf_init(void) {
     db_hfclk_init();
 
     // Configure the timer
-    TIMER_HF->TASKS_CLEAR   = 1;
-    TIMER_HF->PRESCALER     = 4;    // Run TIMER at 1MHz
-    TIMER_HF->BITMODE       = (TIMER_BITMODE_BITMODE_32Bit << TIMER_BITMODE_BITMODE_Pos);
-    TIMER_HF->INTENSET      = (TIMER_INTENSET_COMPARE5_Enabled << TIMER_INTENSET_COMPARE5_Pos);
+    TIMER_HF->TASKS_CLEAR = 1;
+    TIMER_HF->PRESCALER   = 4;  // Run TIMER at 1MHz
+    TIMER_HF->BITMODE     = (TIMER_BITMODE_BITMODE_32Bit << TIMER_BITMODE_BITMODE_Pos);
+    TIMER_HF->INTENSET    = (TIMER_INTENSET_COMPARE5_Enabled << TIMER_INTENSET_COMPARE5_Pos);
     NVIC_EnableIRQ(TIMER_HF_IRQ);
 
     // Start the timer
@@ -78,13 +78,13 @@ uint32_t db_timer_hf_now(void) {
  */
 void db_timer_hf_set_periodic_us(uint8_t channel, uint32_t us, timer_hf_cb_t cb) {
     assert(channel >= 0 && channel < TIMER_HF_CB_CHANS);  // Make sure the required channel is correct
-    assert(cb); // Make sure the callback function is valid
+    assert(cb);                                           // Make sure the callback function is valid
 
-    _timer_hf_vars.timer_callback[channel].period_us    = us;
-    _timer_hf_vars.timer_callback[channel].one_shot     = false;
-    _timer_hf_vars.timer_callback[channel].callback     = cb;
-    TIMER_HF->INTENSET = (1 << (TIMER_INTENSET_COMPARE0_Pos + channel));
-    TIMER_HF->TASKS_CAPTURE[channel] = 1;
+    _timer_hf_vars.timer_callback[channel].period_us = us;
+    _timer_hf_vars.timer_callback[channel].one_shot  = false;
+    _timer_hf_vars.timer_callback[channel].callback  = cb;
+    TIMER_HF->INTENSET                               = (1 << (TIMER_INTENSET_COMPARE0_Pos + channel));
+    TIMER_HF->TASKS_CAPTURE[channel]                 = 1;
     TIMER_HF->CC[channel] += _timer_hf_vars.timer_callback[channel].period_us;
 }
 
@@ -97,13 +97,13 @@ void db_timer_hf_set_periodic_us(uint8_t channel, uint32_t us, timer_hf_cb_t cb)
  */
 void db_timer_hf_set_oneshot_us(uint8_t channel, uint32_t us, timer_hf_cb_t cb) {
     assert(channel >= 0 && channel < TIMER_HF_CB_CHANS);  // Make sure the required channel is correct
-    assert(cb); // Make sure the callback function is valid
+    assert(cb);                                           // Make sure the callback function is valid
 
-    _timer_hf_vars.timer_callback[channel].period_us    = us;
-    _timer_hf_vars.timer_callback[channel].one_shot     = true;
-    _timer_hf_vars.timer_callback[channel].callback     = cb;
-    TIMER_HF->INTENSET = (1 << (TIMER_INTENSET_COMPARE0_Pos + channel));
-    TIMER_HF->TASKS_CAPTURE[channel] = 1;
+    _timer_hf_vars.timer_callback[channel].period_us = us;
+    _timer_hf_vars.timer_callback[channel].one_shot  = true;
+    _timer_hf_vars.timer_callback[channel].callback  = cb;
+    TIMER_HF->INTENSET                               = (1 << (TIMER_INTENSET_COMPARE0_Pos + channel));
+    TIMER_HF->TASKS_CAPTURE[channel]                 = 1;
     TIMER_HF->CC[channel] += _timer_hf_vars.timer_callback[channel].period_us;
 }
 
@@ -168,7 +168,7 @@ void db_timer_hf_delay_s(uint32_t s) {
 void TIMER_HF_ISR(void) {
     if (TIMER_HF->EVENTS_COMPARE[TIMER_HF_CB_CHANS] == 1) {
         TIMER_HF->EVENTS_COMPARE[TIMER_HF_CB_CHANS] = 0;
-        _timer_hf_vars.running = false;
+        _timer_hf_vars.running                      = false;
         __SEV();
     }
 
@@ -177,8 +177,7 @@ void TIMER_HF_ISR(void) {
             TIMER_HF->EVENTS_COMPARE[channel] = 0;
             if (_timer_hf_vars.timer_callback[channel].one_shot) {
                 TIMER_HF->INTENCLR = (1 << (TIMER_INTENCLR_COMPARE0_Pos + channel));
-            }
-            else {
+            } else {
                 TIMER_HF->CC[channel] += _timer_hf_vars.timer_callback[channel].period_us;
             }
             if (_timer_hf_vars.timer_callback[channel].callback) {

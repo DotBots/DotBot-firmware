@@ -15,8 +15,8 @@
 //=========================== defines ==========================================
 
 typedef struct {
-    bool hf_enabled;    ///< Checks whether high frequency clock is running
-    bool lf_enabled;    ///< Checks whether low frequency clock is running
+    bool hf_enabled;  ///< Checks whether high frequency clock is running
+    bool lf_enabled;  ///< Checks whether low frequency clock is running
 } clock_state_t;
 
 //=========================== variables ========================================
@@ -37,8 +37,8 @@ void db_hfclk_init(void) {
         return;
     }
 
-    NRF_CLOCK->EVENTS_HFCLKSTARTED  = 0x00;
-    NRF_CLOCK->TASKS_HFCLKSTART     = 0x01;
+    NRF_CLOCK->EVENTS_HFCLKSTARTED = 0x00;
+    NRF_CLOCK->TASKS_HFCLKSTART    = 0x01;
     while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) {}
     _clock_state.hf_enabled = true;
 }
@@ -52,9 +52,9 @@ void db_lfclk_init(void) {
         return;
     }
 
-    NRF_CLOCK->EVENTS_LFCLKSTARTED  = 0;
-    NRF_CLOCK->LFCLKSRC             = (CLOCK_LFCLKSRC_SRC_Xtal << CLOCK_LFCLKSRC_SRC_Pos);
-    NRF_CLOCK->TASKS_LFCLKSTART     = 1;
+    NRF_CLOCK->EVENTS_LFCLKSTARTED = 0;
+    NRF_CLOCK->LFCLKSRC            = (CLOCK_LFCLKSRC_SRC_Xtal << CLOCK_LFCLKSRC_SRC_Pos);
+    NRF_CLOCK->TASKS_LFCLKSTART    = 1;
     while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0) {}
     _clock_state.lf_enabled = true;
 }

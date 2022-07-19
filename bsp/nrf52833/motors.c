@@ -1,11 +1,11 @@
 /**
  * @file motors.c
  * @addtogroup BSP
- * 
+ *
  * @brief  nRF52833-specific definition of the "motors bsp module.
- * 
+ *
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
- * 
+ *
  * @copyright Inria, 2022
  */
 #include <stdio.h>
@@ -43,13 +43,13 @@ static motors_vars_t motors_vars;
 
 /**
  * @brief Configures the PMW0 peripheral to work with the onboard DotBot RGB Motor driver
- * 
- * The DotBot uses a DRV8833 dual H-bridge driver with a 4 pmw control interface. 
+ *
+ * The DotBot uses a DRV8833 dual H-bridge driver with a 4 pmw control interface.
  * the PWM0 peripheral is used to generate the pwm signals it requires.
- * 
+ *
  * PWM frequency = 10Khz
  * PWM resolution = 100 units (1us resolution)
- * 
+ *
  */
 void db_motors_init(void) {
 
@@ -83,20 +83,20 @@ void db_motors_init(void) {
     NRF_PWM0->ENABLE = (PWM_ENABLE_ENABLE_Enabled << PWM_ENABLE_ENABLE_Pos);
 
     // Configure PWM frequency and counting mode
-    NRF_PWM0->PRESCALER = PWM_PRESCALER_PRESCALER_DIV_16;         // 1MHz clock
-    NRF_PWM0->COUNTERTOP = M_TOP;                                 // 100us period for the PWM signal (10kHz)
-    NRF_PWM0->MODE = (PWM_MODE_UPDOWN_Up << PWM_MODE_UPDOWN_Pos); // UP counting mode
-    NRF_PWM0->LOOP = (PWM_LOOP_CNT_Disabled << PWM_LOOP_CNT_Pos); // Disable single sequence looping feature
+    NRF_PWM0->PRESCALER  = PWM_PRESCALER_PRESCALER_DIV_16;               // 1MHz clock
+    NRF_PWM0->COUNTERTOP = M_TOP;                                        // 100us period for the PWM signal (10kHz)
+    NRF_PWM0->MODE       = (PWM_MODE_UPDOWN_Up << PWM_MODE_UPDOWN_Pos);  // UP counting mode
+    NRF_PWM0->LOOP       = (PWM_LOOP_CNT_Disabled << PWM_LOOP_CNT_Pos);  // Disable single sequence looping feature
 
     // Configure how many, and how the PWM dutycycles are loaded from memory
-    NRF_PWM0->DECODER = (PWM_DECODER_LOAD_Individual << PWM_DECODER_LOAD_Pos) |  // Have a different duty cycle value for each channel.
-                        (PWM_DECODER_MODE_RefreshCount << PWM_DECODER_MODE_Pos); // Reload the duty cycle values after every period, no delay
+    NRF_PWM0->DECODER = (PWM_DECODER_LOAD_Individual << PWM_DECODER_LOAD_Pos) |   // Have a different duty cycle value for each channel.
+                        (PWM_DECODER_MODE_RefreshCount << PWM_DECODER_MODE_Pos);  // Reload the duty cycle values after every period, no delay
 
     // Configure the EasyDMA variables for loading the duty cycle values.
     NRF_PWM0->SEQ[0].PTR = ((uint32_t)(motors_vars.pwm_seq) << PWM_SEQ_PTR_PTR_Pos);
     NRF_PWM0->SEQ[0].CNT = ((sizeof(motors_vars.pwm_seq) / sizeof(uint16_t)) << PWM_SEQ_CNT_CNT_Pos);
 
-    NRF_PWM0->SEQ[0].REFRESH = 0UL;
+    NRF_PWM0->SEQ[0].REFRESH  = 0UL;
     NRF_PWM0->SEQ[0].ENDDELAY = 0UL;
 
     // Activate the automatic looping of the PWM duty cycle sequence.
@@ -113,47 +113,51 @@ void db_motors_init(void) {
 
 /**
  * @brief Set the percentage speed of the right and left motors on the DotBot
- * 
+ *
  *  Each motor input variable receives a percentage speed from -100 to 100.
  *  Positive values turn the motor forward.
  *  Negative values turn the motor backward.
  *  Zero, stops the motor
- * 
+ *
  * @param[in] l_speed speed of the left motor [-100, 100]
  * @param[in] r_speed speed of the left motor [-100, 100]
  */
 void db_motors_set_speed(int16_t l_speed, int16_t r_speed) {
 
     // Double check for out-of-bound values.
-    if (l_speed > 100) l_speed = 100;
-    if (r_speed > 100) r_speed = 100;
+    if (l_speed > 100)
+        l_speed = 100;
+    if (r_speed > 100)
+        r_speed = 100;
 
-    if (l_speed < -100) l_speed = -100;
-    if (r_speed < -100) r_speed = -100;
+    if (l_speed < -100)
+        l_speed = -100;
+    if (r_speed < -100)
+        r_speed = -100;
 
     // Left motor processing
-    if (l_speed >= 0) // Positive values turn the motor forward.
+    if (l_speed >= 0)  // Positive values turn the motor forward.
     {
         motors_vars.pwm_seq[0] = l_speed | 1 << 15;
         motors_vars.pwm_seq[1] = 0 | 1 << 15;
     }
-    if (l_speed < 0) // Negative values turn the motor backward.
+    if (l_speed < 0)  // Negative values turn the motor backward.
     {
-        l_speed *= -1; // remove the negative before loading into memory
+        l_speed *= -1;  // remove the negative before loading into memory
 
         motors_vars.pwm_seq[0] = 0 | 1 << 15;
         motors_vars.pwm_seq[1] = l_speed | 1 << 15;
     }
 
     // Right motor processing
-    if (r_speed >= 0) // Positive values turn the motor forward.
+    if (r_speed >= 0)  // Positive values turn the motor forward.
     {
         motors_vars.pwm_seq[2] = r_speed | 1 << 15;
         motors_vars.pwm_seq[3] = 0 | 1 << 15;
     }
-    if (r_speed < 0) // Negative values turn the motor backward.
+    if (r_speed < 0)  // Negative values turn the motor backward.
     {
-        r_speed *= -1; // remove the negative before loading into memory
+        r_speed *= -1;  // remove the negative before loading into memory
 
         motors_vars.pwm_seq[2] = 0 | 1 << 15;
         motors_vars.pwm_seq[3] = r_speed | 1 << 15;

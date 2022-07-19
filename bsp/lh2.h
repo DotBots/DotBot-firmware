@@ -4,11 +4,11 @@
 /**
  * @file lh2.h
  * @addtogroup BSP
- * 
+ *
  * @brief  nRF52833-specific definition of the "lh2" bsp module.
- * 
+ *
  * @author Filip Maksimovic <filip.maksimovic@inria.fr>, Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
- * 
+ *
  * @copyright Inria, 2022
  */
 
@@ -59,7 +59,7 @@ uint32_t reverse_count_p3(uint32_t bits);
 
 // setup the PPI
 void ppi_setup(void);
-void timer2_setup(void); 
+void timer2_setup(void);
 void gpiote_setup(void);
 
 // Said Set-Up
