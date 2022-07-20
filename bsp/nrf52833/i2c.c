@@ -21,7 +21,7 @@
 //=========================== defines ==========================================
 
 #define DB_TWIM             (NRF_TWIM1)     ///< TWI peripheral used
-#define DB_TWIM_TX_BUF_SIZE (256U)          ///< TX buffer used to send bytes
+#define DB_TWIM_TX_BUF_SIZE (32U)           ///< TX max buffer size
 
 typedef struct {
     uint8_t buffer[DB_TWIM_TX_BUF_SIZE];    ///< Internal buffer used to send bytes on I2C bus
@@ -41,23 +41,22 @@ static i2c_tx_vars_t _i2c_tx_vars;
 /**
  * @brief Initialize the I2C peripheral
  *
- * @param[in] scl       pointer to struct that handles the SCL pin
- * @param[in] sda       pointer to struct that handles the SDA pin
- * @param[in] speed     speed used on the I2C bus
+ * @param[in] scl       pointer to struct that represents the SCL pin
+ * @param[in] sda       pointer to struct that represents the SDA pin
  */
-void db_i2c_init(const gpio_t *scl, const gpio_t *sda, const i2c_speed_t speed) {
-    _i2c_tx_vars.running = false;
+void db_i2c_init(const gpio_t *scl, const gpio_t *sda) {
+    _i2c_tx_vars.running    = false;
     // Clear pending errors
-    DB_TWIM->EVENTS_ERROR = 0;
-    DB_TWIM->ERRORSRC = 0;
+    DB_TWIM->EVENTS_ERROR   = 0;
+    DB_TWIM->ERRORSRC       = 0;
     // Ensure TWIM is disabled while configuring it
-    DB_TWIM->ENABLE = TWIM_ENABLE_ENABLE_Disabled;
+    DB_TWIM->ENABLE         = TWIM_ENABLE_ENABLE_Disabled;
 
     // Configure TWIM pins
-    NRF_P0->PIN_CNF[scl->pin] |=    (GPIO_PIN_CNF_PULL_Pullup   << GPIO_PIN_CNF_PULL_Pos) |
-                                    (GPIO_PIN_CNF_DRIVE_S0D1    << GPIO_PIN_CNF_DRIVE_Pos);
-    NRF_P0->PIN_CNF[sda->pin] |=    (GPIO_PIN_CNF_PULL_Pullup   << GPIO_PIN_CNF_PULL_Pos) |
-                                    (GPIO_PIN_CNF_DRIVE_S0D1    << GPIO_PIN_CNF_DRIVE_Pos);
+    nrf_port[scl->port]->PIN_CNF[scl->pin] |=   (GPIO_PIN_CNF_PULL_Pullup   << GPIO_PIN_CNF_PULL_Pos) |
+                                                (GPIO_PIN_CNF_DRIVE_S0D1    << GPIO_PIN_CNF_DRIVE_Pos);
+    nrf_port[sda->port]->PIN_CNF[sda->pin] |=   (GPIO_PIN_CNF_PULL_Pullup   << GPIO_PIN_CNF_PULL_Pos) |
+                                                (GPIO_PIN_CNF_DRIVE_S0D1    << GPIO_PIN_CNF_DRIVE_Pos);
 
     // Configure TWIM
     DB_TWIM->PSEL.SCL   =   (scl->port                          << TWIM_PSEL_SCL_PORT_Pos)  |
@@ -68,7 +67,7 @@ void db_i2c_init(const gpio_t *scl, const gpio_t *sda, const i2c_speed_t speed) 
                             (TWIM_PSEL_SDA_CONNECT_Connected    << TWIM_PSEL_SDA_CONNECT_Pos);
 
     // Set frequency
-    DB_TWIM->FREQUENCY  =   speed;
+    DB_TWIM->FREQUENCY = TWIM_FREQUENCY_FREQUENCY_K400;
 
     NVIC_EnableIRQ(SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQn);
     NVIC_ClearPendingIRQ(SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQn);
