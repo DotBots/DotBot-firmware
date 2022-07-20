@@ -133,8 +133,8 @@ void db_i2c_write_regs(uint8_t addr, uint8_t reg, const void *data, size_t len) 
 //=========================== private ==========================================
 
 void _wait_for_transfer(void) {
-    DB_TWIM->INTENSET = TWIM_INTEN_STOPPED_Msk | TWIM_INTEN_ERROR_Msk;
-    _i2c_tx_vars.running = true;
+    DB_TWIM->INTENSET       = TWIM_INTEN_STOPPED_Msk | TWIM_INTEN_ERROR_Msk;
+    _i2c_tx_vars.running    = true;
     while (_i2c_tx_vars.running) {
         __WFI();
     }
@@ -149,8 +149,8 @@ void SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQHandler(void) {
     }
 
     if (DB_TWIM->EVENTS_ERROR) {
-        DB_TWIM->EVENTS_ERROR = 0;
-        _i2c_tx_vars.running = false;
+        DB_TWIM->EVENTS_ERROR   = 0;
+        _i2c_tx_vars.running    = false;
         if (DB_TWIM->ERRORSRC & TWIM_ERRORSRC_ANACK_Msk) {
             DB_TWIM->ERRORSRC = TWIM_ERRORSRC_ANACK_Msk;
             puts("NACK on address byte");
