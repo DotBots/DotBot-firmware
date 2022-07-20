@@ -21,7 +21,7 @@
 #define DB_UARTE            (NRF_UARTE0)
 #define DB_UARTE_IRQ        (UARTE0_UART0_IRQn)
 #define DB_UARTE_ISR        (UARTE0_UART0_IRQHandler)
-#define DB_UARTE_BAUDRATE   (UARTE_BAUDRATE_BAUDRATE_Baud115200)
+#define DB_UARTE_BAUDRATE   (UARTE_BAUDRATE_BAUDRATE_Baud1M)
 
 typedef struct {
     uint8_t byte;                   ///< The byte where received byte on UART is stored
