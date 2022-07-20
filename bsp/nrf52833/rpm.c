@@ -17,17 +17,17 @@
 
 //=========================== defines ==========================================
 
-#define RPM_LEFT_PIN            (17)                /**< Number of the pin connected to the left magnetic encoder */
-#define RPM_LEFT_PORT           (NRF_P0)            /**< Port of the pin connected to the left magnetic encoder */
-#define RPM_LEFT_TIMER          (NRF_TIMER0)        /**< Timer peripheral used to count left cycles */
-#define RPM_LEFT_PPI_CHAN       (0)                 /**< PPI channel used between left side timer and gpio */
-#define RPM_LEFT_GPIOTE_CHAN    (0)                 /**< GPIOTE channel used for left side gpio event */
-#define RPM_RIGHT_PIN           (15)                /**< Number of the pin connected to the right magnetic encoder */
-#define RPM_RIGHT_PORT          (NRF_P0)            /**< Port of the pin connected to the right magnetic encoder */
-#define RPM_RIGHT_TIMER         (NRF_TIMER1)        /**< Timer peripheral used to count right cycles */
-#define RPM_RIGHT_PPI_CHAN      (1)                 /**< PPI channel used between right side timer and gpio */
-#define RPM_RIGHT_GPIOTE_CHAN   (1)                 /**< GPIOTE channel used for right side gpio event */
-#define RPM_UPDATE_PERIOD_MS    (50)                /**< Counters update period in ms */
+#define RPM_LEFT_PIN            (17)                ///< Number of the pin connected to the left magnetic encoder
+#define RPM_LEFT_PORT           (NRF_P0)            ///< Port of the pin connected to the left magnetic encoder
+#define RPM_LEFT_TIMER          (NRF_TIMER0)        ///< Timer peripheral used to count left cycles
+#define RPM_LEFT_PPI_CHAN       (0)                 ///< PPI channel used between left side timer and gpio
+#define RPM_LEFT_GPIOTE_CHAN    (0)                 ///< GPIOTE channel used for left side gpio event
+#define RPM_RIGHT_PIN           (15)                ///< Number of the pin connected to the right magnetic encoder
+#define RPM_RIGHT_PORT          (NRF_P0)            ///< Port of the pin connected to the right magnetic encoder
+#define RPM_RIGHT_TIMER         (NRF_TIMER1)        ///< Timer peripheral used to count right cycles
+#define RPM_RIGHT_PPI_CHAN      (1)                 ///< PPI channel used between right side timer and gpio
+#define RPM_RIGHT_GPIOTE_CHAN   (1)                 ///< GPIOTE channel used for right side gpio event
+#define RPM_UPDATE_PERIOD_MS    (50)                ///< Counters update period in ms
 
 /**
  * Helper macro to compute speed in cm/s
