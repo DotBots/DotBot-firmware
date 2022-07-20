@@ -12,6 +12,7 @@
  * @copyright Inria, 2022
  */
 
+#include <nrf.h>
 #include <stdint.h>
 
 //=========================== defines ==========================================
@@ -28,5 +29,9 @@ typedef struct {
     uint8_t port;   ///< Port number of the GPIO
     uint8_t pin;    ///< Pin number of the GPIO
 } gpio_t;
+
+//=========================== variables ========================================
+
+static NRF_GPIO_Type *nrf_port[2] = { NRF_P0, NRF_P1 };
 
 #endif
