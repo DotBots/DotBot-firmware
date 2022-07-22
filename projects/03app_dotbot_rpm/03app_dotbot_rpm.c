@@ -32,10 +32,10 @@
 static pid_t _pid_left                      = { 0 };
 static pid_t _pid_right                     = { 0 };
 static rpm_values_t _rpm                    = { 0 };
-static const pid_parameters_t _pid_params   = {
-    .kp = 1,
-    .ki = 0.5,
-    .kd = 0.25,
+static const pid_gains_t _pid_params   = {
+    .kp = 2,
+    .ki = 5,
+    .kd = 0,
 };
 
 //=========================== prototypes =======================================
@@ -63,10 +63,10 @@ int main(void) {
     // Initialize the pids
     db_pid_init(&_pid_left, 0.0, PID_SPEED_TARGET,
                 _pid_params.kp, _pid_params.ki, _pid_params.kd,
-                0.0, 100.0, DB_PID_MODE_AUTO, DB_PID_DIRECTION_DIRECT);
+                0.0, 100.0, PID_SAMPLE_TIME_MS, DB_PID_MODE_AUTO, DB_PID_DIRECTION_DIRECT);
     db_pid_init(&_pid_right, 0.0, PID_SPEED_TARGET,
                 _pid_params.kp, _pid_params.ki, _pid_params.kd,
-                0.0, 100.0, DB_PID_MODE_AUTO, DB_PID_DIRECTION_DIRECT);
+                0.0, 100.0, PID_SAMPLE_TIME_MS, DB_PID_MODE_AUTO, DB_PID_DIRECTION_DIRECT);
 
     // PID update loop
     while (1) {
