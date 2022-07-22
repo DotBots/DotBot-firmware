@@ -22,11 +22,21 @@ jobs:
           github.event_name == 'push' &&
           startsWith(github.event.ref, 'refs/tags')
         run: BUILD_CONFIG=Release make
+      - name: Convert elf to hex
+        if: >-
+          github.event_name == 'push' &&
+          startsWith(github.event.ref, 'refs/tags')
+        run: >-
+          objcopy -O ihex
+          projects/03app_dotbot/Output/Release/Exe/03app_dotbot.elf
+          projects/03app_dotbot/Output/Release/Exe/03app_dotbot.hex
       - name: Release
         uses: ncipollo/release-action@v1
         if: >-
           github.event_name == 'push' &&
           startsWith(github.event.ref, 'refs/tags')
         with:
-          artifacts: "projects/03app_dotbot/Output/Release/Exe/03app_dotbot.elf"
+          artifacts: "
+            projects/03app_dotbot/Output/Release/Exe/03app_dotbot.elf,
+            projects/03app_dotbot/Output/Release/Exe/03app_dotbot.hex"
           token: ${{ secrets.RELEASE_TOKEN }}
