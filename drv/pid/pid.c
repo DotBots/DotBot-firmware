@@ -17,6 +17,7 @@
 void db_pid_init(pid_t *pid, float input, float target,
                     float kp, float ki, float kd,
                     float output_min, float output_max,
+                    uint32_t sample_time,
                     pid_mode_t mode, pid_direction_t direction) {
     assert(target >= output_min);
     assert(target <= output_max);
@@ -26,9 +27,10 @@ void db_pid_init(pid_t *pid, float input, float target,
     pid->state.last_input = input;
     pid->state.output_sum = 0;
     pid->mode = mode;
+    pid->sample_time = sample_time;
     db_pid_set_output_limits(pid, output_min, output_max);
-    pid_parameters_t parameters = {.kp = kp, .ki = ki, .kd = kd};
-    db_pid_set_parameters(pid, &parameters);
+    pid_gains_t gains = {.kp = kp, .ki = ki, .kd = kd};
+    db_pid_set_gains(pid, &gains);
     db_pid_set_direction(pid, direction);
 }
 
@@ -38,7 +40,7 @@ void db_pid_update(pid_t *pid) {
     }
 
     float error = pid->target - pid->input;
-    pid->state.output_sum += pid->parameters.ki * error;
+    pid->state.output_sum += pid->gains.ki * error;
     if (pid->state.output_sum > pid->output_max) {
         pid->state.output_sum = pid->output_max;
     }
@@ -48,7 +50,7 @@ void db_pid_update(pid_t *pid) {
     float d_input = pid->input - pid->state.last_input;
 
     // PID output computation
-    float result = pid->parameters.kp * error + pid->state.output_sum + pid->parameters.kd * d_input;
+    float result = pid->gains.kp * error + pid->state.output_sum + pid->gains.kd * d_input;
     if (result > pid->output_max) {
         result = pid->output_max;
     }
@@ -60,18 +62,30 @@ void db_pid_update(pid_t *pid) {
     pid->output = result;
 }
 
-void db_pid_set_parameters(pid_t *pid, const pid_parameters_t *parameters) {
-    if (parameters->kp < 0 || parameters->ki < 0|| parameters->kd < 0) {
+void db_pid_set_gains(pid_t *pid, const pid_gains_t *gains) {
+    if (gains->kp < 0 || gains->ki < 0|| gains->kd < 0) {
         return;
     }
-    pid->parameters.kp = parameters->kp;
-    pid->parameters.ki = parameters->ki;
-    pid->parameters.kd = parameters->kd;
+
+    float sample_time_s = (float)pid->sample_time / 1000;
+    pid->gains.kp = gains->kp;
+    pid->gains.ki = gains->ki * sample_time_s;
+    pid->gains.kd = gains->kd / sample_time_s;
+
     if (pid->direction == DB_PID_DIRECTION_REVERSED) {
-        pid->parameters.kp = (0 - pid->parameters.kp);
-        pid->parameters.ki = (0 - pid->parameters.ki);
-        pid->parameters.kd = (0 - pid->parameters.kd);
+        pid->gains.kp = (0 - pid->gains.kp);
+        pid->gains.ki = (0 - pid->gains.ki);
+        pid->gains.kd = (0 - pid->gains.kd);
     }
+}
+
+void db_pid_set_sample_time(pid_t *pid, uint32_t sample_time) {
+    assert(sample_time > 0);
+
+    float time_ratio = (float)sample_time / pid->sample_time;
+    pid->gains.ki *= time_ratio;
+    pid->gains.kd /= time_ratio;
+    pid->sample_time = sample_time;
 }
 
 void db_pid_set_output_limits(pid_t *pid, float output_min, float output_max) {
@@ -103,9 +117,9 @@ void db_pid_set_mode(pid_t *pid, pid_mode_t mode) {
     pid->mode = mode;
     if (mode == DB_PID_MODE_AUTO) {
         db_pid_init(pid, pid->input, pid->target,
-                    pid->parameters.kp, pid->parameters.ki, pid->parameters.kd,
+                    pid->gains.kp, pid->gains.ki, pid->gains.kd,
                     pid->output_min, pid->output_max,
-                    pid->mode, pid->direction);
+                    pid->sample_time, pid->mode, pid->direction);
     }
 }
 
@@ -115,9 +129,9 @@ void db_pid_set_direction(pid_t *pid, pid_direction_t direction) {
     }
 
     if (pid->mode == DB_PID_MODE_AUTO && pid->direction != direction) {
-        pid->parameters.kp = (0 - pid->parameters.kp);
-        pid->parameters.ki = (0 - pid->parameters.ki);
-        pid->parameters.kd = (0 - pid->parameters.kd);
+        pid->gains.kp = (0 - pid->gains.kp);
+        pid->gains.ki = (0 - pid->gains.ki);
+        pid->gains.kd = (0 - pid->gains.kd);
     }
     pid->direction = direction;
 }
