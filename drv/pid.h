@@ -53,16 +53,75 @@ typedef struct {
 
 //=========================== prototypes =======================================
 
+/**
+ * @brief   Initialize a PID control loop
+ *
+ * @param[in] pid           Pointer to the pid struct
+ * @param[in] input         Initial input value
+ * @param[in] target        Target value
+ * @param[in] kp.           Gain applied to the input value
+ * @param[in] ki.           Gain applied to the integrated term
+ * @param[in] kd.           Gain applied to the derivative term
+ * @param[in] output_min    Minimum output value
+ * @param[in] output_max    Maximum output value
+ * @param[in] sample_time   Sampling time of the pid (correspond to the update rate)
+ * @param[in] mode..........PID mode (manual or automatic)
+ * @param[in] direction.....Direction of the PID (direct or reversed)
+ */
 void db_pid_init(pid_t *pid, float input, float target,
                 float kp, float ki, float kd,
                 float output_min, float output_max,
                 uint32_t sample_time,
                 pid_mode_t mode, pid_direction_t direction);
+
+/**
+ * @brief   Update the PID state
+ *
+ * Input attribute of the PID should be updated before calling this function
+ *
+ * @param[in] pid           Pointer to the pid struct
+ */
 void db_pid_update(pid_t *pid);
+
+/**
+ * @brief   Set PID gains
+ *
+ * @param[in] pid           Pointer to the pid struct
+ * @param[in] gains         Pointer to the gains struct
+ */
 void db_pid_set_gains(pid_t *pid, const pid_gains_t *gains);
+
+/**
+ * @brief   Set PID sample time (in milliseconds)
+ *
+ * @param[in] pid           Pointer to the pid struct
+ * @param[in] sample_time   Sample time in milliseconds (must be > 0)
+ */
 void db_pid_set_sample_time(pid_t *pid, uint32_t sample_time);
+
+/**
+ * @brief   Set PID output limits
+ *
+ * @param[in] pid           Pointer to the pid struct
+ * @param[in] output_min    Minimum value of output
+ * @param[in] output_max    Maximum value of output
+ */
 void db_pid_set_output_limits(pid_t *pid, float output_min, float output_max);
+
+/**
+ * @brief   Update the mode of the PID (manual or automatic)
+ *
+ * @param[in] pid           Pointer to the pid struct
+ * @param[in] mode          New mode
+ */
 void db_pid_set_mode(pid_t *pid, pid_mode_t mode);
+
+/**
+ * @brief   Update the direction of the PID
+ *
+ * @param[in] pid           Pointer to the pid struct
+ * @param[in] direction     New direction
+ */
 void db_pid_set_direction(pid_t *pid, pid_direction_t direction);
 
 #endif
