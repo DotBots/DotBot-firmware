@@ -29,9 +29,14 @@
 
 //=========================== variables ========================================
 
-static pid_t _pid_right = { 0 };
-static const pid_parameters_t _pid_params = { .kp = 1, .ki = 0.5, .kd = 0.25 };
-static rpm_values_t _rpm = { 0 };
+static pid_t _pid_left                      = { 0 };
+static pid_t _pid_right                     = { 0 };
+static rpm_values_t _rpm                    = { 0 };
+static const pid_parameters_t _pid_params   = {
+    .kp = 1,
+    .ki = 0.5,
+    .kd = 0.25,
+};
 
 //=========================== prototypes =======================================
 
@@ -55,7 +60,10 @@ int main(void) {
     // Configure RPM driver
     db_rpm_init();
 
-    // Initialize the pid
+    // Initialize the pids
+    db_pid_init(&_pid_left, 0.0, PID_SPEED_TARGET,
+                _pid_params.kp, _pid_params.ki, _pid_params.kd,
+                0.0, 100.0, DB_PID_MODE_AUTO, DB_PID_DIRECTION_DIRECT);
     db_pid_init(&_pid_right, 0.0, PID_SPEED_TARGET,
                 _pid_params.kp, _pid_params.ki, _pid_params.kd,
                 0.0, 100.0, DB_PID_MODE_AUTO, DB_PID_DIRECTION_DIRECT);
@@ -63,14 +71,18 @@ int main(void) {
     // PID update loop
     while (1) {
         db_rpm_get_values(&_rpm);
-        _pid_right.input = _rpm.right.speed;
+        _pid_right.input    = _rpm.right.speed;
+        _pid_left.input     = _rpm.left.speed;
 
+        db_pid_update(&_pid_left);
         db_pid_update(&_pid_right);
-        printf("Speed RPM    : %f\n", _rpm.right.speed);
-        printf("Speed motors : %i\n", (int16_t)_pid_right.output);
+        printf("Speed left RPM    : %f\n", _rpm.left.speed);
+        printf("Speed left motors : %i\n", (int16_t)_pid_left.output);
+        printf("Speed right RPM   : %f\n", _rpm.right.speed);
+        printf("Speed right motors: %i\n", (int16_t)_pid_right.output);
         puts("");
 
-        db_motors_set_speed((int16_t)_pid_right.output, (int16_t)_pid_right.output);
+        db_motors_set_speed((int16_t)_pid_left.output, (int16_t)_pid_right.output);
         db_timer_hf_delay_ms(PID_SAMPLE_TIME_MS);
     }
 
