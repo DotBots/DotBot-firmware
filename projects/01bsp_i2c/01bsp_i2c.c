@@ -57,7 +57,7 @@ int main(void) {
         return -1;
     }
 
-    // Enable the accelerometer
+    // enable the accelerometer
     uint8_t reg = 0x57;
     db_i2c_write_regs(LSM303AGR_ADDR, LSM303AGR_CTRL1_A_REG, &reg, 1);
     db_i2c_end();
@@ -65,7 +65,7 @@ int main(void) {
     lsm303agr_acc_data_t data;
     uint8_t tmp = 0;
 
-    // Read accelerometer data in a loop
+    // read accelerometer data in a loop
     while (1) {
         db_i2c_begin();
         db_i2c_read_regs(LSM303AGR_ADDR, LSM303AGR_OUT_X_L_A, &tmp, 1);

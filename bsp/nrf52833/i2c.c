@@ -24,8 +24,8 @@
 #define DB_TWIM_TX_BUF_SIZE (32U)        ///< TX max buffer size
 
 typedef struct {
-    uint8_t buffer[DB_TWIM_TX_BUF_SIZE];  ///< Internal buffer used to send bytes on I2C bus
-    bool running;                         ///< Whether bytes are being sent on the I2C bus
+    uint8_t buffer[DB_TWIM_TX_BUF_SIZE];  ///< internal buffer used to send bytes on I2C bus
+    bool running;                         ///< whether bytes are being sent on the I2C bus
 } i2c_tx_vars_t;
 
 //=========================== prototypes =======================================
@@ -46,19 +46,19 @@ static i2c_tx_vars_t _i2c_tx_vars;
  */
 void db_i2c_init(const gpio_t *scl, const gpio_t *sda) {
     _i2c_tx_vars.running = false;
-    // Clear pending errors
+    // clear pending errors
     DB_TWIM->EVENTS_ERROR = 0;
     DB_TWIM->ERRORSRC     = 0;
-    // Ensure TWIM is disabled while configuring it
+    // ensure TWIM is disabled while configuring it
     DB_TWIM->ENABLE = TWIM_ENABLE_ENABLE_Disabled;
 
-    // Configure TWIM pins
+    // configure TWIM pins
     nrf_port[scl->port]->PIN_CNF[scl->pin] |= (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos) |
                                               (GPIO_PIN_CNF_DRIVE_S0D1 << GPIO_PIN_CNF_DRIVE_Pos);
     nrf_port[sda->port]->PIN_CNF[sda->pin] |= (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos) |
                                               (GPIO_PIN_CNF_DRIVE_S0D1 << GPIO_PIN_CNF_DRIVE_Pos);
 
-    // Configure TWIM
+    // configure TWIM
     DB_TWIM->PSEL.SCL = (scl->port << TWIM_PSEL_SCL_PORT_Pos) |
                         (scl->pin << TWIM_PSEL_SCL_PIN_Pos) |
                         (TWIM_PSEL_SCL_CONNECT_Connected << TWIM_PSEL_SCL_CONNECT_Pos);
@@ -66,7 +66,7 @@ void db_i2c_init(const gpio_t *scl, const gpio_t *sda) {
                         (sda->pin << TWIM_PSEL_SDA_PIN_Pos) |
                         (TWIM_PSEL_SDA_CONNECT_Connected << TWIM_PSEL_SDA_CONNECT_Pos);
 
-    // Set frequency
+    // set frequency
     DB_TWIM->FREQUENCY = TWIM_FREQUENCY_FREQUENCY_K400;
 
     NVIC_EnableIRQ(SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQn);
@@ -121,7 +121,7 @@ void db_i2c_write_regs(uint8_t addr, uint8_t reg, const void *data, size_t len) 
     _i2c_tx_vars.buffer[0] = reg;
     memcpy(&_i2c_tx_vars.buffer[1], data, len);
 
-    // Send the content to write to the register
+    // send the content to write to the register
     DB_TWIM->ADDRESS       = addr;
     DB_TWIM->TXD.PTR       = (uint32_t)_i2c_tx_vars.buffer;
     DB_TWIM->TXD.MAXCNT    = (uint8_t)len + 1;
