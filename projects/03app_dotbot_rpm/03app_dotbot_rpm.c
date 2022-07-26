@@ -23,16 +23,16 @@
 
 //=========================== defines ==========================================
 
-#define PID_SAMPLE_TIME_MS          (100)
-#define PID_SPEED_TARGET            (60)
-#define MOTORS_SPEED_INITIAL        (45)
+#define PID_SAMPLE_TIME_MS   (100)
+#define PID_SPEED_TARGET     (60)
+#define MOTORS_SPEED_INITIAL (45)
 
 //=========================== variables ========================================
 
-static pid_t _pid_left                      = { 0 };
-static pid_t _pid_right                     = { 0 };
-static rpm_values_t _rpm                    = { 0 };
-static const pid_gains_t _pid_params   = {
+static pid_t _pid_left               = { 0 };
+static pid_t _pid_right              = { 0 };
+static rpm_values_t _rpm             = { 0 };
+static const pid_gains_t _pid_params = {
     .kp = 2,
     .ki = 5,
     .kd = 0,
@@ -71,8 +71,8 @@ int main(void) {
     // PID update loop
     while (1) {
         db_rpm_get_values(&_rpm);
-        _pid_right.input    = _rpm.right.speed;
-        _pid_left.input     = _rpm.left.speed;
+        _pid_right.input = _rpm.right.speed;
+        _pid_left.input  = _rpm.left.speed;
 
         db_pid_update(&_pid_left);
         db_pid_update(&_pid_right);

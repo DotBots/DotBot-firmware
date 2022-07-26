@@ -34,7 +34,7 @@
  *
  * computed from the number of cycles measured within the last 50ms (one rotation is 3.77mm distance of the wheel)
  */
-#define RPM_CYCLES_TO_SPEED(cycles)     (float)(377.0 * cycles / RPM_UPDATE_PERIOD_MS)
+#define RPM_CYCLES_TO_SPEED(cycles) (float)(377.0 * cycles / RPM_UPDATE_PERIOD_MS)
 
 /**
  * Helper macro to compute rotation per minute

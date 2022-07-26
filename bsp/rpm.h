@@ -20,9 +20,9 @@
  * Structure containing different values computed by the rpm driver
  */
 typedef struct {
-    uint32_t rpm;    ///<  Rotation per minute
-    uint32_t rps;    ///<  Rotation per second
-    float    speed;  ///<  Speed in cm/s
+    uint32_t rpm;  ///<  Rotation per minute
+    uint32_t rps;  ///<  Rotation per second
+    float speed;   ///<  Speed in cm/s
 } rpm_side_values_t;
 
 /**
