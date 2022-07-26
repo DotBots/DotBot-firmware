@@ -16,7 +16,7 @@
 
 //=========================== defines ==========================================
 
-typedef void (*radio_cb_t)(uint8_t *packet, uint8_t length);    ///< Function pointer to the callback function called on packet receive
+typedef void (*radio_cb_t)(uint8_t *packet, uint8_t length);  ///< Function pointer to the callback function called on packet receive
 
 //=========================== public ===========================================
 

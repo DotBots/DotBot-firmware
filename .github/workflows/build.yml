@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: self-hosted
     steps:
-      - name: Checkout out repo
+      - name: Checkout repo
         uses: actions/checkout@v2
       - name: Build projects
         run: make
@@ -40,3 +40,10 @@ jobs:
             projects/03app_dotbot/Output/Release/Exe/03app_dotbot.elf,
             projects/03app_dotbot/Output/Release/Exe/03app_dotbot.hex"
           token: ${{ secrets.RELEASE_TOKEN }}
+  style:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: Check style
+        run: make check-format

@@ -24,15 +24,14 @@
 
 //=========================== prototypes =========================================
 
-void radio_callback(uint8_t *packet, uint8_t length); 
+void radio_callback(uint8_t *packet, uint8_t length);
 
 //=========================== main =========================================
 
 /**
-*  @brief The program starts executing here.
-*/
-int main(void)
-{
+ *  @brief The program starts executing here.
+ */
+int main(void) {
 
     // Turn ON the DotBot board regulator
     db_board_init();
@@ -40,22 +39,22 @@ int main(void)
     //=========================== Configure GPIO =========================================
 
     // Set the test pin (P0.31) as an output
-    NRF_P0->PIN_CNF[31] = (GPIO_PIN_CNF_DIR_Output << GPIO_PIN_CNF_DIR_Pos) |  // Set Pin as output
-                          (GPIO_PIN_CNF_DRIVE_S0S1 << GPIO_PIN_CNF_DRIVE_Pos); // Activate high current gpio mode.
+    NRF_P0->PIN_CNF[31] = (GPIO_PIN_CNF_DIR_Output << GPIO_PIN_CNF_DIR_Pos) |   // Set Pin as output
+                          (GPIO_PIN_CNF_DRIVE_S0S1 << GPIO_PIN_CNF_DRIVE_Pos);  // Activate high current gpio mode.
 
     //=========================== Configure Radio =========================================
 
-    db_radio_init(&radio_callback); // Set the callback function.
-    db_radio_set_frequency(8);      // Set the RX frquency to 2408 MHz.
-    db_radio_rx_enable();           // Start receiving packets.
+    db_radio_init(&radio_callback);  // Set the callback function.
+    db_radio_set_frequency(8);       // Set the RX frquency to 2408 MHz.
+    db_radio_rx_enable();            // Start receiving packets.
 
     while (1) {
 
-        __WFE(); // Enter a low power state while waiting.                  
-  }
+        __WFE();  // Enter a low power state while waiting.
+    }
 
-  // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
-  __NOP();
+    // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
+    __NOP();
 }
 
 //=========================== functions =========================================
@@ -67,18 +66,18 @@ int main(void)
  *
  * @param[in] packet pointer to the array of data to send over the radio (max size = 32)
  * @param[in] length Number of bytes to send (max size = 32)
- * 
+ *
  */
 void radio_callback(uint8_t *packet, uint8_t length) {
 
     // Check the arriving packet for any pressed button.
     if (packet[0] == 0x01 || packet[1] == 0x01 || packet[2] == 0x01 || packet[3] == 0x01) {
 
-        NRF_P0->OUTSET = 1 << GPIO_OUTSET_PIN31_Pos; // if any button is pressed, set the pin HIGH.
+        NRF_P0->OUTSET = 1 << GPIO_OUTSET_PIN31_Pos;  // if any button is pressed, set the pin HIGH.
     }
 
     else {
 
-      NRF_P0->OUTCLR = 1 << GPIO_OUTCLR_PIN31_Pos;  // No buttons pressed, set the pin LOW.
+        NRF_P0->OUTCLR = 1 << GPIO_OUTCLR_PIN31_Pos;  // No buttons pressed, set the pin LOW.
     }
 }

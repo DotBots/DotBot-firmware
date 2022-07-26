@@ -21,7 +21,7 @@
 //=========================== variables =========================================
 
 bool packet_ready;
-uint32_t * current_loc_p;
+uint32_t *current_loc_p;
 //=========================== main =========================================
 
 /**
@@ -39,17 +39,15 @@ int main(void) {
     start_transfer();
 
     while (1) {
-    //the location function has to be running all the time but not that fast
-    packet_ready = get_black_magic();
+        // the location function has to be running all the time but not that fast
+        packet_ready = get_black_magic();
 
+        // wait until the packet is ready
+        if (packet_ready) {
 
-    // wait until the packet is ready
-    if (packet_ready) {
-
-        NRF_P0->OUTSET = 1 << 20;
-        current_loc_p = get_current_location();
-        }  
-
+            NRF_P0->OUTSET = 1 << 20;
+            current_loc_p  = get_current_location();
+        }
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.

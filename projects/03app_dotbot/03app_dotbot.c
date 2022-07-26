@@ -2,14 +2,14 @@
  * @file 03app_dotbot.c
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  * @brief This is the main DotBot app.
- * 
- * Load this program on your board. Now the DotBot can be remote controlled 
- * from a nearby nRF52840-DK. THe buttons of the DK serving as Forward, 
+ *
+ * Load this program on your board. Now the DotBot can be remote controlled
+ * from a nearby nRF52840-DK. THe buttons of the DK serving as Forward,
  * Right, Left and Back buttons.
- * 
- * 
+ *
+ *
  * @copyright Inria, 2022
- * 
+ *
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,7 +23,7 @@
 
 //=========================== variables =========================================
 
-uint8_t command = 0x00; // variable to store the arriving command from the radio controller
+uint8_t command = 0x00;  // variable to store the arriving command from the radio controller
 
 //=========================== prototypes =========================================
 
@@ -40,9 +40,9 @@ int main(void) {
     db_board_init();
 
     // Configure Radio as a receiver
-    db_radio_init(&radio_callback); // Set the callback function.
-    db_radio_set_frequency(8);      // Set the RX frequency to 2408 MHz.
-    db_radio_rx_enable();           // Start receiving packets.
+    db_radio_init(&radio_callback);  // Set the callback function.
+    db_radio_set_frequency(8);       // Set the RX frequency to 2408 MHz.
+    db_radio_rx_enable();            // Start receiving packets.
 
     // Configure Motors
     db_motors_init();
@@ -75,54 +75,54 @@ void radio_callback(uint8_t *packet, uint8_t length) {
 
     switch (command) {
     case 0:
-        db_motors_set_speed(0, 0);      // No Buttons pressed, Stop
+        db_motors_set_speed(0, 0);  // No Buttons pressed, Stop
         break;
     case 1:
-        db_motors_set_speed(70, 70);    // Forward
+        db_motors_set_speed(70, 70);  // Forward
         break;
     case 2:
-        db_motors_set_speed(60, -60);   // Turn Right
+        db_motors_set_speed(60, -60);  // Turn Right
         break;
     case 3:
-        db_motors_set_speed(100, 70);   // Forward and Right
+        db_motors_set_speed(100, 70);  // Forward and Right
         break;
-    case 4: 
-        db_motors_set_speed(-60, 60);   // Turn Left
+    case 4:
+        db_motors_set_speed(-60, 60);  // Turn Left
         break;
     case 5:
-        db_motors_set_speed(70, 100);   // Forward and Left
+        db_motors_set_speed(70, 100);  // Forward and Left
         break;
     case 6:
-        db_motors_set_speed(0, 0);      // Left + Right = Stop
+        db_motors_set_speed(0, 0);  // Left + Right = Stop
         break;
     case 7:
-        db_motors_set_speed(70, 70);    // Forward + Left + Right = Forward
+        db_motors_set_speed(70, 70);  // Forward + Left + Right = Forward
         break;
     case 8:
         db_motors_set_speed(-70, -70);  // Backward
         break;
     case 9:
-        db_motors_set_speed(0, 0);      // Back and Forward = Stop
+        db_motors_set_speed(0, 0);  // Back and Forward = Stop
         break;
     case 10:
-        db_motors_set_speed(-100, -70); // Back + Left = Stop
+        db_motors_set_speed(-100, -70);  // Back + Left = Stop
         break;
     case 11:
-        db_motors_set_speed(60, -60);   // Forward + Back + Right = Right
+        db_motors_set_speed(60, -60);  // Forward + Back + Right = Right
         break;
     case 12:
-        db_motors_set_speed(-70, -100); // Back and Left
+        db_motors_set_speed(-70, -100);  // Back and Left
         break;
     case 13:
-        db_motors_set_speed(-60, 60);   // Forward + Back + Left = Left
+        db_motors_set_speed(-60, 60);  // Forward + Back + Left = Left
         break;
     case 14:
         db_motors_set_speed(-70, -70);  // Back + Left + Right = Back
         break;
     case 15:
-        db_motors_set_speed(0, 0);      // MASH ALL THE BUTTONS!! ... and stop the robot.
+        db_motors_set_speed(0, 0);  // MASH ALL THE BUTTONS!! ... and stop the robot.
         break;
     default:
-        db_motors_set_speed(0, 0);      // Otherwise, stop the robot
+        db_motors_set_speed(0, 0);  // Otherwise, stop the robot
     }
 }

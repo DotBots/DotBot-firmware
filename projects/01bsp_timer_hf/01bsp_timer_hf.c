@@ -38,8 +38,7 @@ static void led_callback(void) {
     _color_idx = (_color_idx + 1) % 2;
     if (_color_idx) {
         db_rgbled_set(255, 0, 0);
-    }
-    else {
+    } else {
         db_rgbled_set(0, 255, 0);
     }
 }

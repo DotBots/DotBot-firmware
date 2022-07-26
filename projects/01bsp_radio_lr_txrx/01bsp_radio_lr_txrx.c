@@ -27,13 +27,13 @@ static uint8_t packet_tx[NUMBER_OF_BYTES_IN_PACKET];
 
 //=========================== prototypes =========================================
 
-void radio_callback(uint8_t *packet, uint8_t length); 
+void radio_callback(uint8_t *packet, uint8_t length);
 
 //=========================== main =========================================
 
 /**
-*  @brief The program starts executing here.
-*/
+ *  @brief The program starts executing here.
+ */
 int main(void) {
 
     // Turn ON the DotBot board regulator
@@ -45,18 +45,17 @@ int main(void) {
     //=========================== Configure Radio =========================================
 
     db_radio_init_lr(&radio_callback);
-    db_radio_set_frequency(8);      // Set the RX frquency to 2408 MHz.
+    db_radio_set_frequency(8);  // Set the RX frquency to 2408 MHz.
 
     db_radio_tx(packet_tx, NUMBER_OF_BYTES_IN_PACKET);
-    db_radio_rx_enable();           // Start receiving packets.
+    db_radio_rx_enable();  // Start receiving packets.
 
     while (1) {
-            
-        __WFE();      
+
+        __WFE();
         __SEV();
         __WFE();
-                  
-    } 
+    }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
     __NOP();
@@ -71,15 +70,14 @@ int main(void) {
  *
  * @param[in] packet pointer to the array of data to send over the radio (max size = 32)
  * @param[in] length Number of bytes to send (max size = 32)
- * 
+ *
  */
 void radio_callback(uint8_t *packet, uint8_t length) {
 
     // Check the arriving packet for any pressed button.
     if (packet[0] == 0x01 || packet[1] == 0x01 || packet[2] == 0x01 || packet[3] == 0x01) {
-        NRF_P0->OUTSET = 1 << GPIO_OUTSET_PIN31_Pos; // if any button is pressed, set the pin HIGH.
-    }
-    else {
+        NRF_P0->OUTSET = 1 << GPIO_OUTSET_PIN31_Pos;  // if any button is pressed, set the pin HIGH.
+    } else {
         NRF_P0->OUTCLR = 1 << GPIO_OUTCLR_PIN31_Pos;  // No buttons pressed, set the pin LOW.
     }
 }
