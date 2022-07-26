@@ -15,11 +15,11 @@
 
 //=========================== defines ==========================================
 
-#define DB_UART_MAX_BYTES (64U)  ///< Max bytes in UART receive buffer
+#define DB_UART_MAX_BYTES (64U)  ///< max bytes in UART receive buffer
 
 typedef struct {
-    uint8_t buffer[DB_UART_MAX_BYTES];  ///< Buffer where message received on UART is stored
-    uint8_t pos;                        ///< Current position in the UART buffer
+    uint8_t buffer[DB_UART_MAX_BYTES];  ///< buffer where message received on UART is stored
+    uint8_t pos;                        ///< current position in the UART buffer
 } uart_vars_t;
 
 //=========================== variables ========================================

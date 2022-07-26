@@ -24,24 +24,24 @@
 #define DB_UARTE_BAUDRATE (UARTE_BAUDRATE_BAUDRATE_Baud1M)
 
 typedef struct {
-    uint8_t byte;           ///< The byte where received byte on UART is stored
-    uart_rx_cb_t callback;  ///< Pointer to the callback function
+    uint8_t byte;           ///< the byte where received byte on UART is stored
+    uart_rx_cb_t callback;  ///< pointer to the callback function
 } uart_vars_t;
 
 //=========================== variables ========================================
 
-static uart_vars_t _uart_vars;  ///< Variable handling the UART context
+static uart_vars_t _uart_vars;  ///< variable handling the UART context
 
 //=========================== public ===========================================
 
 void db_uart_init(const gpio_t *rx_pin, const gpio_t *tx_pin, uart_rx_cb_t callback) {
 
-    // Configure UART pins (RX as input, TX as output);
+    // configure UART pins (RX as input, TX as output);
     nrf_port[rx_pin->port]->PIN_CNF[rx_pin->pin] |= (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos);
     nrf_port[rx_pin->port]->PIN_CNF[tx_pin->pin] &= ~(1UL << GPIO_PIN_CNF_INPUT_Pos);
     nrf_port[rx_pin->port]->DIRSET = (1 << tx_pin->pin);
 
-    // Configure UART
+    // configure UART
     DB_UARTE->CONFIG   = 0;
     DB_UARTE->PSEL.RXD = (rx_pin->port << UARTE_PSEL_RXD_PORT_Pos) |
                          (rx_pin->pin << UARTE_PSEL_RXD_PIN_Pos) |
@@ -70,19 +70,18 @@ void db_uart_write(uint8_t *buffer, size_t length) {
     DB_UARTE->TXD.PTR       = (uint32_t)buffer;
     DB_UARTE->TXD.MAXCNT    = length;
     DB_UARTE->TASKS_STARTTX = 1;
-    while (DB_UARTE->EVENTS_ENDTX == 0)
-        ;
+    while (DB_UARTE->EVENTS_ENDTX == 0) {}
 }
 
 //=========================== interrupts =======================================
 
 void DB_UARTE_ISR(void) {
-    // Check if the interrupt was caused by a fully received package
+    // check if the interrupt was caused by a fully received package
     if (DB_UARTE->EVENTS_ENDRX) {
         DB_UARTE->EVENTS_ENDRX = 0;
         // make sure we actually received new data
         if (DB_UARTE->RXD.AMOUNT != 0) {
-            // Process received byte
+            // process received byte
             _uart_vars.callback(_uart_vars.byte);
         }
     }
