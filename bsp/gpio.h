@@ -32,10 +32,6 @@ typedef struct {
 
 //=========================== variables ========================================
 
-#ifdef NRF_P1
 static NRF_GPIO_Type *nrf_port[2] = { NRF_P0, NRF_P1 };
-#else
-static NRF_GPIO_Type *nrf_port[2] = { NRF_P0, NULL };
-#endif
 
 #endif
