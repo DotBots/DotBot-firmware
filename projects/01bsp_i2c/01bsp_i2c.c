@@ -15,17 +15,17 @@
 
 //=========================== defines ==========================================
 
-#define LSM303AGR_ADDR              (0x19)
-#define LSM303AGR_WHO_AM_I_VAL      (0x33)
+#define LSM303AGR_ADDR         (0x19)
+#define LSM303AGR_WHO_AM_I_VAL (0x33)
 
-#define LSM303AGR_WHO_AM_I_REG      (0x0F)
-#define LSM303AGR_CTRL1_A_REG       (0x20)
-#define LSM303AGR_OUT_X_L_A         (0x28)
-#define LSM303AGR_OUT_X_H_A         (0x29)
-#define LSM303AGR_OUT_Y_L_A         (0x2A)
-#define LSM303AGR_OUT_Y_H_A         (0x2B)
-#define LSM303AGR_OUT_Z_L_A         (0x2C)
-#define LSM303AGR_OUT_Z_H_A         (0x2D)
+#define LSM303AGR_WHO_AM_I_REG (0x0F)
+#define LSM303AGR_CTRL1_A_REG  (0x20)
+#define LSM303AGR_OUT_X_L_A    (0x28)
+#define LSM303AGR_OUT_X_H_A    (0x29)
+#define LSM303AGR_OUT_Y_L_A    (0x2A)
+#define LSM303AGR_OUT_Y_H_A    (0x2B)
+#define LSM303AGR_OUT_Z_L_A    (0x2C)
+#define LSM303AGR_OUT_Z_H_A    (0x2D)
 
 typedef struct {
     int16_t x;  ///< X axis
@@ -53,8 +53,7 @@ int main(void) {
     if (who_am_i != LSM303AGR_WHO_AM_I_VAL) {
         printf(
             "Invalid WHO_AM_I value '%d' (expected: %d)\n",
-            who_am_i, LSM303AGR_WHO_AM_I_VAL
-        );
+            who_am_i, LSM303AGR_WHO_AM_I_VAL);
         return -1;
     }
 
