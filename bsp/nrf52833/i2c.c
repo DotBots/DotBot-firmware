@@ -9,6 +9,7 @@
  * @copyright Inria, 2022
  */
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -117,6 +118,7 @@ void db_i2c_read_regs(uint8_t addr, uint8_t reg, void *data, size_t len) {
  * @param[in]   len     Length of the bytes to write
  */
 void db_i2c_write_regs(uint8_t addr, uint8_t reg, const void *data, size_t len) {
+    assert(len + 1 <= DB_TWIM_TX_BUF_SIZE);
     // concatenate register address and input data in a single TX buffer
     _i2c_tx_vars.buffer[0] = reg;
     memcpy(&_i2c_tx_vars.buffer[1], data, len);
