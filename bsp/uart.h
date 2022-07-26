@@ -18,7 +18,7 @@
 
 //=========================== defines ==========================================
 
-typedef void(*uart_rx_cb_t)(uint8_t data);  ///< Callback function prototype, it is called on each byte received
+typedef void (*uart_rx_cb_t)(uint8_t data);  ///< Callback function prototype, it is called on each byte received
 
 //=========================== public ===========================================
 

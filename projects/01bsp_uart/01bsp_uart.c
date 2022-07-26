@@ -15,7 +15,7 @@
 
 //=========================== defines ==========================================
 
-#define DB_UART_MAX_BYTES   (64U)       ///< Max bytes in UART receive buffer
+#define DB_UART_MAX_BYTES (64U)  ///< Max bytes in UART receive buffer
 
 typedef struct {
     uint8_t buffer[DB_UART_MAX_BYTES];  ///< Buffer where message received on UART is stored
@@ -24,18 +24,19 @@ typedef struct {
 
 //=========================== variables ========================================
 
-static const gpio_t _rx_pin     = { .pin = 9,   .port = 0 };
-static const gpio_t _tx_pin     = { .pin = 10,  .port = 0 };
-static uart_vars_t  _uart_vars  = { 0 };
+static const gpio_t _rx_pin   = { .pin = 9, .port = 0 };
+static const gpio_t _tx_pin   = { .pin = 10, .port = 0 };
+static uart_vars_t _uart_vars = { 0 };
 
 //=========================== callbacks ========================================
 
 static void uart_callback(uint8_t byte) {
     _uart_vars.buffer[_uart_vars.pos] = byte;
-    if (byte == '\n' || _uart_vars.pos == DB_UART_MAX_BYTES - 2) {
-        db_uart_write(_uart_vars.buffer, _uart_vars.pos);
-    }
     _uart_vars.pos++;
+    if (byte == '\n' || _uart_vars.pos == DB_UART_MAX_BYTES - 1) {
+        db_uart_write(_uart_vars.buffer, _uart_vars.pos);
+        _uart_vars.pos = 0;
+    }
 }
 
 //=========================== main =============================================
