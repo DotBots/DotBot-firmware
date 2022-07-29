@@ -1,7 +1,8 @@
-# DotBot remote control application
+# DotBot control application
 
 This application allows the DotBot to be controlled remotely either from
-- a joystick running a firmware that sends compatible _move_ commands
-- a computer running the [keyboard_control.py](../../scripts/keyboard_control.py) and
-with a nRF52840DK connected to it and used as gateway. The nRF52840DK must run the
+- a joystick or nrf52 compatible board running a firmware that sends compatible
+  commands _move_ or _rgbled_
+- a computer running [the bot-controller tool](https://github.com/DotBot/Botcontroller-python)
+and with a nRF52840DK connected to it and used as gateway. The nRF52840DK must run the
 `03app_dotbot_gateway` firmware.
