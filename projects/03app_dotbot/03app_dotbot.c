@@ -1,128 +1,85 @@
 /**
- * @file 03app_dotbot.c
+ * @file 03app_dotbot_remote_control.c
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
- * @brief This is the main DotBot app.
- *
- * Load this program on your board. Now the DotBot can be remote controlled
- * from a nearby nRF52840-DK. THe buttons of the DK serving as Forward,
- * Right, Left and Back buttons.
- *
+ * @author Alexandre Abadie <alexandre.abadie@inria.fr>
+ * @brief This application is used to control a single dotbot remotely with a joystick using radio.
  *
  * @copyright Inria, 2022
  *
  */
+#include <nrf.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <nrf.h>
-// Include BSP packages
-#include <radio.h>
-#include <motors.h>
-#include <board.h>
+// Include BSP headers
+#include "board.h"
+#include "protocol.h"
+#include "motors.h"
+#include "radio.h"
+#include "rgbled.h"
+#include "timer_hf.h"
 
 //=========================== defines =========================================
 
-//=========================== variables =========================================
+#define MAX_RECEIVE_DELAY_US (100 * 1000)
 
-uint8_t command = 0x00;  // variable to store the arriving command from the radio controller
-
-//=========================== prototypes =========================================
-
-void radio_callback(uint8_t *packet, uint8_t length);
+static uint32_t _last_packet_received = 0;
 
 //=========================== main =========================================
+
+static void radio_callback(uint8_t *pkt, uint8_t len) {
+    _last_packet_received      = db_timer_hf_now();
+    uint8_t *const ptk_ptr     = pkt;
+    protocol_header_ht *header = (protocol_header_ht *)ptk_ptr;
+    // Check version is supported
+    if (header->version != DB_PROTOCOL_VERSION) {
+        printf("Invalid version '%d', expected '%d'\n", header->version, DB_PROTOCOL_VERSION);
+        return;
+    }
+
+    uint8_t *const cmd_ptr = ptk_ptr + sizeof(protocol_header_ht);
+    // parse received packet and update the motors' speeds
+    switch (header->type) {
+    case DB_PROTOCOL_CMD_MOVE_RAW: {
+        protocol_move_raw_command_ht *command = (protocol_move_raw_command_ht *)cmd_ptr;
+        int16_t left                          = (int16_t)(100 * ((float)command->left_y / INT8_MAX));
+        int16_t right                         = (int16_t)(100 * ((float)command->right_y / INT8_MAX));
+        printf("Move: %i-%i\n", left, right);
+        db_motors_set_speed(left, right);
+    } break;
+    case DB_PROTOCOL_CMD_RGB_LED: {
+        protocol_rgbled_command_ht *command = (protocol_rgbled_command_ht *)cmd_ptr;
+        printf("%d-%d-%d\n", command->r, command->g, command->b);
+        db_rgbled_set(command->r, command->g, command->b);
+    } break;
+    }
+}
+
+static void timeout_check(void) {
+    uint32_t now = db_timer_hf_now();
+    if (now > _last_packet_received + MAX_RECEIVE_DELAY_US) {
+        db_motors_set_speed(0, 0);
+        puts("stopping motors");
+    }
+}
 
 /**
  *  @brief The program starts executing here.
  */
 int main(void) {
-
-    // Turn ON the DotBot board regulator
+    puts("DotBot application");
     db_board_init();
-
-    // Configure Radio as a receiver
-    db_radio_init(&radio_callback);  // Set the callback function.
-    db_radio_set_frequency(8);       // Set the RX frequency to 2408 MHz.
-    db_radio_rx_enable();            // Start receiving packets.
-
-    // Configure Motors
+    db_rgbled_init();
     db_motors_init();
+    db_radio_init(&radio_callback);
+    db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
+    db_radio_rx_enable();       // Start receiving packets.
+    db_timer_hf_init();
+    db_timer_hf_set_periodic_us(0, MAX_RECEIVE_DELAY_US, &timeout_check);
 
-    // Wait for radio packets to arrive/
     while (1) {
-
-        __WFE();
+        __WFE();  // Enter a low power state while waiting.
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
     __NOP();
-}
-
-//=========================== functions =========================================
-
-/**
- *  @brief Callback function to process received packets
- *
- * This function gets called each time a packet is received.
- *
- * @param[in] packet pointer to the array of data to send over the radio (max size = 32)
- * @param[in] length Number of bytes to send (max size = 32)
- *
- */
-void radio_callback(uint8_t *packet, uint8_t length) {
-
-    // Compress the arriving package into a single variable
-    command = (packet[0] & 0x0F) | (packet[1] & 0x0F) << 1 | (packet[2] & 0x0F) << 2 | (packet[3] & 0x0F) << 3;
-
-    switch (command) {
-    case 0:
-        db_motors_set_speed(0, 0);  // No Buttons pressed, Stop
-        break;
-    case 1:
-        db_motors_set_speed(70, 70);  // Forward
-        break;
-    case 2:
-        db_motors_set_speed(60, -60);  // Turn Right
-        break;
-    case 3:
-        db_motors_set_speed(100, 70);  // Forward and Right
-        break;
-    case 4:
-        db_motors_set_speed(-60, 60);  // Turn Left
-        break;
-    case 5:
-        db_motors_set_speed(70, 100);  // Forward and Left
-        break;
-    case 6:
-        db_motors_set_speed(0, 0);  // Left + Right = Stop
-        break;
-    case 7:
-        db_motors_set_speed(70, 70);  // Forward + Left + Right = Forward
-        break;
-    case 8:
-        db_motors_set_speed(-70, -70);  // Backward
-        break;
-    case 9:
-        db_motors_set_speed(0, 0);  // Back and Forward = Stop
-        break;
-    case 10:
-        db_motors_set_speed(-100, -70);  // Back + Left = Stop
-        break;
-    case 11:
-        db_motors_set_speed(60, -60);  // Forward + Back + Right = Right
-        break;
-    case 12:
-        db_motors_set_speed(-70, -100);  // Back and Left
-        break;
-    case 13:
-        db_motors_set_speed(-60, 60);  // Forward + Back + Left = Left
-        break;
-    case 14:
-        db_motors_set_speed(-70, -70);  // Back + Left + Right = Back
-        break;
-    case 15:
-        db_motors_set_speed(0, 0);  // MASH ALL THE BUTTONS!! ... and stop the robot.
-        break;
-    default:
-        db_motors_set_speed(0, 0);  // Otherwise, stop the robot
-    }
 }
