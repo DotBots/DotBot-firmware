@@ -22,7 +22,7 @@ jobs:
           github.event_name == 'push' &&
           startsWith(github.event.ref, 'refs/tags')
         run: BUILD_CONFIG=Release make
-      - name: Convert elf to hex
+      - name: Convert 03app_dotbot elf to hex
         if: >-
           github.event_name == 'push' &&
           startsWith(github.event.ref, 'refs/tags')
@@ -30,6 +30,14 @@ jobs:
           objcopy -O ihex
           projects/03app_dotbot/Output/Release/Exe/03app_dotbot.elf
           projects/03app_dotbot/Output/Release/Exe/03app_dotbot.hex
+      - name: Convert 03app_dotbot_gateway elf to hex
+        if: >-
+          github.event_name == 'push' &&
+          startsWith(github.event.ref, 'refs/tags')
+        run: >-
+          objcopy -O ihex
+          projects/03app_dotbot_gateway/Output/Release/Exe/03app_dotbot_gateway.elf
+          projects/03app_dotbot_gateway/Output/Release/Exe/03app_dotbot_gateway.hex
       - name: Release
         uses: ncipollo/release-action@v1
         if: >-
@@ -38,7 +46,9 @@ jobs:
         with:
           artifacts: "
             projects/03app_dotbot/Output/Release/Exe/03app_dotbot.elf,
-            projects/03app_dotbot/Output/Release/Exe/03app_dotbot.hex"
+            projects/03app_dotbot/Output/Release/Exe/03app_dotbot.hex,
+            projects/03app_dotbot_gateway/Output/Release/Exe/03app_dotbot_gateway.elf,
+            projects/03app_dotbot_gateway/Output/Release/Exe/03app_dotbot_gateway.hex"
           token: ${{ secrets.RELEASE_TOKEN }}
   style:
     runs-on: self-hosted
