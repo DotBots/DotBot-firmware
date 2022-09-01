@@ -17,6 +17,7 @@
 // Include BSP packages
 #include "radio.h"
 #include "servos.h"
+#include "protocol.h"
 
 //=========================== defines =========================================
 
@@ -39,25 +40,6 @@ typedef struct queue {
     int tail;
 } queue_t;
 
-// types from https://crystalfree.atlassian.net/wiki/spaces/DOT/pages/2090500127/DotBot+protocol
-typedef enum {
-    MOVE_RAW = 0,
-    RGB_LED  = 1,
-} command_type_t;
-
-typedef struct {
-    int8_t left_x;
-    int8_t left_y;
-    int8_t right_x;
-    int8_t right_y;
-} move_command_t;
-
-typedef struct {
-    uint8_t version;
-    uint8_t type;
-    move_command_t move;
-} dotbot_command_t;
-
 //=========================== variables =========================================
 
 queue_t queue;
@@ -66,10 +48,8 @@ queue_t queue;
 
 void fifo_init();
 int fifo_write(sailbot_command_t val);
-sailbot_command_t fifo_read();
-void board_init(void);
+void fifo_read(sailbot_command_t *command);
 void radio_callback(uint8_t *packet, uint8_t length);
-void turn(int, int);
 
 //=========================== main =========================================
 
@@ -98,19 +78,19 @@ int main(void) {
         __WFE();
 
         // check if there is something to consume
-        received_command = fifo_read();
+        fifo_read(&received_command);
         while (received_command.command != COMMAND_NONE) {
             switch (received_command.command) {
             case COMMAND_RUDDER:
                 servos_rudder_turn(received_command.angle);
                 break;
             case COMMAND_SAILS:
-                servos_sail_trim(received_command.angle);
+                servos_sail_turn(received_command.angle);
                 break;
             default:
                 break;
             }
-            received_command = fifo_read();
+            fifo_read(&received_command);
         }
     }
 
@@ -155,7 +135,7 @@ void radio_callback(uint8_t *packet, uint8_t length) {
 
     type = packet[1];
 
-    if (type != MOVE_RAW) {
+    if (type != DB_PROTOCOL_CMD_MOVE_RAW) {
         return;
     }
 
@@ -182,19 +162,13 @@ void radio_callback(uint8_t *packet, uint8_t length) {
     fifo_write(new_command);
 }
 
-void board_init(void) {
-    return;
-}
-
-sailbot_command_t fifo_read() {
-    sailbot_command_t ret;
-    ret.command = COMMAND_NONE;
-
+void fifo_read(sailbot_command_t *ret) {
+    ret->command = COMMAND_NONE;
     if (queue.tail == queue.head) {
-        return ret;
+        return;
     }
     queue.head = (queue.head + 1) % NUM_COMMANDS_FIFO;
-    return queue.commands[queue.head];
+    *ret       = queue.commands[queue.head];
 }
 
 int fifo_write(sailbot_command_t val) {

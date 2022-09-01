@@ -131,7 +131,7 @@ void servos_rudder_turn(int8_t angle) {
     turn_rudder(pwm_length);
 }
 
-void servos_sail_trim(int8_t angle) {
+void servos_sail_turn(int8_t angle) {
     uint16_t pwm_length;
 
     pwm_length = (angle * (SAIL_POSITION_UPPER_BOUND - SAIL_POSITION_LOWER_BOUND)) / 255;
