@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Inlcude BSP packages
+// Include BSP packages
 #include <board.h>
 #include <radio.h>
 

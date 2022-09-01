@@ -14,7 +14,7 @@
 #include <nrf.h>
 #include <stdio.h>
 #include <stdlib.h>
-// Inlcude BSP packages
+// Include BSP packages
 #include <board.h>
 #include <radio.h>
 
