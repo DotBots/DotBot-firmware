@@ -193,3 +193,24 @@ void db_motors_set_speed(int16_t l_speed, int16_t r_speed) {
     // Update PWM values
     NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
 }
+
+/**
+ * @brief Low-level set of the PWM pulse length on a specific channel.
+ *
+ *
+ * @param[in] ctx Pointer to the motors_vars_t context.
+ * @param[in] channel PWM channel [0,3].
+ * @param[in] pwm_length PWM pulse length.
+ */
+void db_motors_set_pwm_length(motors_vars_t *ctx, uint8_t channel, uint16_t pwm_length) {
+    if (channel > 3) {
+        return;
+    }
+
+    if (ctx != NULL) {
+        ctx->pwm_seq[channel] = pwm_length | 1 << 15;
+
+        // Update PWM values
+        NRF_PWM0->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
+    }
+}

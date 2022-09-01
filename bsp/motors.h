@@ -33,6 +33,7 @@ typedef struct {
 
 void db_motors_init(void);
 void db_pwm_init(motors_vars_t *ctx);
+void db_motors_set_pwm_length(motors_vars_t *ctx, uint8_t channel, uint16_t pwm_length);
 void db_motors_set_speed(int16_t l_speed, int16_t r_speed);
 
 #endif
