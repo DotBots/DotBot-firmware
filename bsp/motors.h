@@ -18,9 +18,21 @@
 
 //=========================== prototypes ======================================
 
+//============================= defines =======================================
+
+#define PIN_INVALID -1
+
+typedef struct {
+    int16_t pin[4];
+    int16_t port[4];
+    uint16_t mtop;
+    uint16_t pwm_seq[4];
+} motors_vars_t;
+
 //=========================== public ======================================
 
 void db_motors_init(void);
+void db_pwm_init(motors_vars_t *ctx);
 void db_motors_set_speed(int16_t l_speed, int16_t r_speed);
 
 #endif

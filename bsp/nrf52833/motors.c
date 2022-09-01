@@ -33,10 +33,6 @@
 
 // Variable that stores the PWM duty cycle for all four PWM channels
 
-typedef struct {
-    uint16_t pwm_seq[4];
-} motors_vars_t;
-
 static motors_vars_t motors_vars;
 
 //=========================== public ==========================================
@@ -53,38 +49,70 @@ static motors_vars_t motors_vars;
  */
 void db_motors_init(void) {
 
+    // Set the DotBot-specific motor pins
+    motors_vars.pin[0]  = AIN1_PIN;
+    motors_vars.port[0] = AIN1_PORT;
+    motors_vars.pin[1]  = AIN2_PIN;
+    motors_vars.port[1] = AIN2_PORT;
+    motors_vars.pin[2]  = BIN1_PIN;
+    motors_vars.port[2] = BIN1_PORT;
+    motors_vars.pin[3]  = BIN2_PIN;
+    motors_vars.port[3] = BIN2_PORT;
+    // Internal M_TOP value of 100
+    motors_vars.mtop = M_TOP;
+    // Init PWM module with internal values
+    db_pwm_init(&motors_vars);
+}
+
+void db_pwm_init(motors_vars_t *ctx) {
+
     // Configure the PWM pins as output in the GPIO peripheral.
-    NRF_P0->DIRSET = 1 << AIN1_PIN;
-    NRF_P0->DIRSET = 1 << AIN2_PIN;
-    NRF_P0->DIRSET = 1 << BIN2_PIN;
-    NRF_P0->DIRSET = 1 << BIN1_PIN;
+    if (ctx->pin[0] != PIN_INVALID && ctx->port[0] != PIN_INVALID) {
+        // Set corresponding GPIO as output
+        NRF_P0->DIRSET = 1 << ctx->pin[0];
 
-    // Output pin config AIN1
-    NRF_PWM0->PSEL.OUT[0] = (AIN1_PORT << PWM_PSEL_OUT_PORT_Pos) |
-                            (AIN1_PIN << PWM_PSEL_OUT_PIN_Pos) |
-                            (PWM_PSEL_OUT_CONNECT_Connected << PWM_PSEL_OUT_CONNECT_Pos);
+        // Output pin config
+        NRF_PWM0->PSEL.OUT[0] = (ctx->port[0] << PWM_PSEL_OUT_PORT_Pos) |
+                                (ctx->pin[0] << PWM_PSEL_OUT_PIN_Pos) |
+                                (PWM_PSEL_OUT_CONNECT_Connected << PWM_PSEL_OUT_CONNECT_Pos);
+    }
 
-    // Output pin config AIN2
-    NRF_PWM0->PSEL.OUT[1] = (AIN2_PORT << PWM_PSEL_OUT_PORT_Pos) |
-                            (AIN2_PIN << PWM_PSEL_OUT_PIN_Pos) |
-                            (PWM_PSEL_OUT_CONNECT_Connected << PWM_PSEL_OUT_CONNECT_Pos);
+    if (ctx->pin[1] != PIN_INVALID && ctx->port[1] != PIN_INVALID) {
+        // Set corresponding GPIO as output
+        NRF_P0->DIRSET = 1 << ctx->pin[1];
 
-    // Output pin config BIN1
-    NRF_PWM0->PSEL.OUT[2] = (BIN1_PORT << PWM_PSEL_OUT_PORT_Pos) |
-                            (BIN1_PIN << PWM_PSEL_OUT_PIN_Pos) |
-                            (PWM_PSEL_OUT_CONNECT_Connected << PWM_PSEL_OUT_CONNECT_Pos);
+        // Output pin config
+        NRF_PWM0->PSEL.OUT[1] = (ctx->port[1] << PWM_PSEL_OUT_PORT_Pos) |
+                                (ctx->pin[1] << PWM_PSEL_OUT_PIN_Pos) |
+                                (PWM_PSEL_OUT_CONNECT_Connected << PWM_PSEL_OUT_CONNECT_Pos);
+    }
 
-    // Output pin config BIN2
-    NRF_PWM0->PSEL.OUT[3] = (BIN2_PORT << PWM_PSEL_OUT_PORT_Pos) |
-                            (BIN2_PIN << PWM_PSEL_OUT_PIN_Pos) |
-                            (PWM_PSEL_OUT_CONNECT_Connected << PWM_PSEL_OUT_CONNECT_Pos);
+    if (ctx->pin[2] != PIN_INVALID && ctx->port[2] != PIN_INVALID) {
+        // Set corresponding GPIO as output
+        NRF_P0->DIRSET = 1 << ctx->pin[2];
+
+        // Output pin config
+        NRF_PWM0->PSEL.OUT[2] = (ctx->port[2] << PWM_PSEL_OUT_PORT_Pos) |
+                                (ctx->pin[2] << PWM_PSEL_OUT_PIN_Pos) |
+                                (PWM_PSEL_OUT_CONNECT_Connected << PWM_PSEL_OUT_CONNECT_Pos);
+    }
+
+    if (ctx->pin[3] != PIN_INVALID && ctx->port[3] != PIN_INVALID) {
+        // Set corresponding GPIO as output
+        NRF_P0->DIRSET = 1 << ctx->pin[3];
+
+        // Output pin config
+        NRF_PWM0->PSEL.OUT[3] = (ctx->port[3] << PWM_PSEL_OUT_PORT_Pos) |
+                                (ctx->pin[3] << PWM_PSEL_OUT_PIN_Pos) |
+                                (PWM_PSEL_OUT_CONNECT_Connected << PWM_PSEL_OUT_CONNECT_Pos);
+    }
 
     // Enable the PWM peripheral
     NRF_PWM0->ENABLE = (PWM_ENABLE_ENABLE_Enabled << PWM_ENABLE_ENABLE_Pos);
 
     // Configure PWM frequency and counting mode
     NRF_PWM0->PRESCALER  = PWM_PRESCALER_PRESCALER_DIV_16;               // 1MHz clock
-    NRF_PWM0->COUNTERTOP = M_TOP;                                        // 100us period for the PWM signal (10kHz)
+    NRF_PWM0->COUNTERTOP = ctx->mtop;                                    // period for the PWM signal (10kHz)
     NRF_PWM0->MODE       = (PWM_MODE_UPDOWN_Up << PWM_MODE_UPDOWN_Pos);  // UP counting mode
     NRF_PWM0->LOOP       = (PWM_LOOP_CNT_Disabled << PWM_LOOP_CNT_Pos);  // Disable single sequence looping feature
 
@@ -93,8 +121,8 @@ void db_motors_init(void) {
                         (PWM_DECODER_MODE_RefreshCount << PWM_DECODER_MODE_Pos);  // Reload the duty cycle values after every period, no delay
 
     // Configure the EasyDMA variables for loading the duty cycle values.
-    NRF_PWM0->SEQ[0].PTR = ((uint32_t)(motors_vars.pwm_seq) << PWM_SEQ_PTR_PTR_Pos);
-    NRF_PWM0->SEQ[0].CNT = ((sizeof(motors_vars.pwm_seq) / sizeof(uint16_t)) << PWM_SEQ_CNT_CNT_Pos);
+    NRF_PWM0->SEQ[0].PTR = ((uint32_t)(ctx->pwm_seq) << PWM_SEQ_PTR_PTR_Pos);
+    NRF_PWM0->SEQ[0].CNT = ((sizeof(ctx->pwm_seq) / sizeof(uint16_t)) << PWM_SEQ_CNT_CNT_Pos);
 
     NRF_PWM0->SEQ[0].REFRESH  = 0UL;
     NRF_PWM0->SEQ[0].ENDDELAY = 0UL;
@@ -103,12 +131,11 @@ void db_motors_init(void) {
     NRF_PWM0->SHORTS = (PWM_SHORTS_LOOPSDONE_SEQSTART0_Enabled << PWM_SHORTS_LOOPSDONE_SEQSTART0_Pos);
 
     // For safety, initialize all PWMs to zero.
-    // Assigning values must go between 0 and M_TOP (100). the "| 1 <<15" is to set the polarity of the pwm waveform,
-    // This way a value of 30 means the waveform is High 30% of the time, and the idle value of the PWM channels is 0v.
-    motors_vars.pwm_seq[0] = 0 | 1 << 15;
-    motors_vars.pwm_seq[1] = 0 | 1 << 15;
-    motors_vars.pwm_seq[2] = 0 | 1 << 15;
-    motors_vars.pwm_seq[3] = 0 | 1 << 15;
+    // Assigning values must go between 0 and M_TOP. the "| 1 <<15" is to set the polarity of the pwm waveform,
+    ctx->pwm_seq[0] = 0 | 1 << 15;
+    ctx->pwm_seq[1] = 0 | 1 << 15;
+    ctx->pwm_seq[2] = 0 | 1 << 15;
+    ctx->pwm_seq[3] = 0 | 1 << 15;
 }
 
 /**
