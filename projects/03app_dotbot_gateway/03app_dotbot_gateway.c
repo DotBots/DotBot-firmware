@@ -35,30 +35,30 @@ typedef struct {
     uart_message_t message;   ///< Structure that handles the UART message
     uart_state_t state;       ///< Internal state of the UART (idle or receiving)
     uint8_t expected_length;  ///< Expected length of message to receive
-} uart_ctx_t;
+} uart_vars_t;
 
 //=========================== variables ========================================
 
-static uart_ctx_t _uart_ctx;  // Variable handling the UART context
+static uart_vars_t _uart_vars;  // Variable handling the UART context
 static const gpio_t _rx_pin = { .pin = 8, .port = 0 };
 static const gpio_t _tx_pin = { .pin = 6, .port = 0 };
 
 //=========================== callbacks ========================================
 
 static void uart_callback(uint8_t data) {
-    switch (_uart_ctx.state) {
+    switch (_uart_vars.state) {
     case UART_STATE_IDLE:
-        _uart_ctx.expected_length = data;
-        _uart_ctx.message.pos     = 0;
-        _uart_ctx.state           = UART_STATE_RECEIVING;
+        _uart_vars.expected_length = data;
+        _uart_vars.message.pos     = 0;
+        _uart_vars.state           = UART_STATE_RECEIVING;
         break;
     case UART_STATE_RECEIVING:
-        _uart_ctx.message.buffer[_uart_ctx.message.pos] = data;
-        if (_uart_ctx.message.pos == _uart_ctx.expected_length - 1 || _uart_ctx.message.pos == DB_UART_MAX_BYTES - 1) {
-            db_radio_tx(_uart_ctx.message.buffer, _uart_ctx.expected_length);
-            _uart_ctx.state = UART_STATE_IDLE;
+        _uart_vars.message.buffer[_uart_vars.message.pos] = data;
+        if (_uart_vars.message.pos == _uart_vars.expected_length - 1 || _uart_vars.message.pos == DB_UART_MAX_BYTES - 1) {
+            db_radio_tx(_uart_vars.message.buffer, _uart_vars.expected_length);
+            _uart_vars.state = UART_STATE_IDLE;
         }
-        _uart_ctx.message.pos++;
+        _uart_vars.message.pos++;
         break;
     default:
         break;
@@ -81,8 +81,8 @@ int main(void) {
     db_radio_init(NULL);        // Set the callback function.
     db_radio_set_frequency(8);  // Set the radio frequency to 2408 MHz.
     // Initialize the uart context
-    _uart_ctx.expected_length = 0;
-    _uart_ctx.state           = UART_STATE_IDLE;
+    _uart_vars.expected_length = 0;
+    _uart_vars.state           = UART_STATE_IDLE;
     db_uart_init(&_rx_pin, &_tx_pin, &uart_callback);
 
     while (1) {
