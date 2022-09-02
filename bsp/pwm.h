@@ -29,8 +29,9 @@
  *
  * @param[in] pins          pointer to array of pointer to GPIO pins
  * @param[in] num_channels  number of channels to configure
+ * @param[in] mtop          max value of the PWM counter register
  */
-void db_pwm_init(const gpio_t *pins, size_t num_channels);
+void db_pwm_init(const gpio_t *pins, size_t num_channels, uint16_t mtop);
 
 /**
  * @brief Set the value of a PWM channel

@@ -22,8 +22,6 @@
 
 #define DB_PWM              (NRF_PWM0)
 #define DB_PWM_MAX_CHANNELS (4)
-// Max value of the PWM counter register.
-#define DB_PWM_M_TOP (100)
 
 // Variable that stores the PWM duty cycle for all four PWM channels
 
@@ -37,7 +35,7 @@ static pwm_vars_t pwm_vars;
 
 //=========================== public ===========================================
 
-void db_pwm_init(const gpio_t *pins, size_t num_channels) {
+void db_pwm_init(const gpio_t *pins, size_t num_channels, uint16_t mtop) {
 
     // configure PWM channel pins;
     for (uint8_t channel = 0; channel < num_channels; channel++) {
@@ -53,7 +51,7 @@ void db_pwm_init(const gpio_t *pins, size_t num_channels) {
 
     // Configure PWM frequency and counting mode
     NRF_PWM0->PRESCALER  = PWM_PRESCALER_PRESCALER_DIV_16;               // 1MHz clock
-    NRF_PWM0->COUNTERTOP = DB_PWM_M_TOP;                                 // 100us period for the PWM signal (10kHz)
+    NRF_PWM0->COUNTERTOP = mtop;                                         // for example 100us period for the PWM signal means 10kHz
     NRF_PWM0->MODE       = (PWM_MODE_UPDOWN_Up << PWM_MODE_UPDOWN_Pos);  // UP counting mode
     NRF_PWM0->LOOP       = (PWM_LOOP_CNT_Disabled << PWM_LOOP_CNT_Pos);  // Disable single sequence looping feature
 

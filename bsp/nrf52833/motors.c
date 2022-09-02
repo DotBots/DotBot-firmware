@@ -16,9 +16,16 @@
 #include "motors.h"
 #include "pwm.h"
 
+//=========================== defines ==========================================
+
+// Max value of the PWM counter register (100us => 10kHz)
+#define M_TOP (100)
+// 4 PWM channels are used
+#define PWM_CHANNELS (4)
+
 //=========================== variables =========================================
 
-static const gpio_t _pwm_pins[4] = {
+static const gpio_t _pwm_pins[PWM_CHANNELS] = {
     { .port = 0, .pin = 2 },   // AIN1
     { .port = 0, .pin = 28 },  // AIN2
     { .port = 1, .pin = 9 },   // BIN1
@@ -38,7 +45,7 @@ static const gpio_t _pwm_pins[4] = {
  *
  */
 void db_motors_init(void) {
-    db_pwm_init(_pwm_pins, 4);
+    db_pwm_init(_pwm_pins, PWM_CHANNELS, M_TOP);
 }
 
 /**
@@ -65,7 +72,7 @@ void db_motors_set_speed(int16_t l_speed, int16_t r_speed) {
     if (r_speed < -100)
         r_speed = -100;
 
-    uint16_t pwm_seq[4] = { 0 };
+    uint16_t pwm_seq[PWM_CHANNELS] = { 0 };
 
     // Left motor processing
     if (l_speed >= 0)  // Positive values turn the motor forward.
