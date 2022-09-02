@@ -1214,7 +1214,7 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      project_dependencies="00lib_radio;00lib_dotbot_board;00lib_uart"
+      project_dependencies="00lib_radio;00lib_dotbot_board;00lib_uart;00lib_timer;00lib_uart;00drv_dotbot_protocol"
       project_directory="03app_dotbot_gateway"
       project_type="Executable"
       target_reset_script="Reset();"
