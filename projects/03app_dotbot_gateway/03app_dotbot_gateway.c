@@ -116,9 +116,11 @@ int main(void) {
             command.right_y = 0;
         }
 
-        db_protocol_cmd_move_raw_to_buffer(tx_buffer, &command);
-        db_radio_tx(tx_buffer, 2 + sizeof(protocol_move_raw_command_ht));
-        db_timer_delay_ms(50);
+        if (command.left_y != 0 && command.right_y != 0) {
+            db_protocol_cmd_move_raw_to_buffer(tx_buffer, &command);
+            db_radio_tx(tx_buffer, 2 + sizeof(protocol_move_raw_command_ht));
+        }
+        db_timer_delay_ms(20);
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
