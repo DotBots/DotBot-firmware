@@ -33,15 +33,15 @@ typedef struct {
 } uart_message_t;
 
 typedef struct {
-    uart_message_t message;   ///< Structure that handles the UART message
-    uart_state_t state;       ///< Internal state of the UART (idle or receiving)
-    uint8_t expected_length;  ///< Expected length of message to receive
+    uart_message_t message;          ///< Structure that handles the UART message
+    uart_state_t   state;            ///< Internal state of the UART (idle or receiving)
+    uint8_t        expected_length;  ///< Expected length of message to receive
 } uart_vars_t;
 
 typedef struct {
-    uart_vars_t uart;                      ///< Uart related variables
-    uint32_t buttons;                      ///< Buttons state (one byte per button)
-    uint8_t tx_buffer[DB_UART_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
+    uart_vars_t uart;                          ///< Uart related variables
+    uint32_t    buttons;                       ///< Buttons state (one byte per button)
+    uint8_t     tx_buffer[DB_UART_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
 } gateway_vars_t;
 
 //=========================== variables ========================================

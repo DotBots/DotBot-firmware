@@ -40,7 +40,7 @@ static void _timeout_check(void);
 
 static void radio_callback(uint8_t *pkt, uint8_t len) {
     _dotbot_vars.ts_last_packet_received = db_timer_hf_now();
-    uint8_t *ptk_ptr                     = pkt;
+    uint8_t *           ptk_ptr          = pkt;
     protocol_header_ht *header           = (protocol_header_ht *)ptk_ptr;
     // Check version is supported
     if (header->version != DB_PROTOCOL_VERSION) {
@@ -53,8 +53,8 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
         case DB_PROTOCOL_CMD_MOVE_RAW:
         {
             protocol_move_raw_command_ht *command = (protocol_move_raw_command_ht *)cmd_ptr;
-            int16_t left                          = (int16_t)(100 * ((float)command->left_y / INT8_MAX));
-            int16_t right                         = (int16_t)(100 * ((float)command->right_y / INT8_MAX));
+            int16_t                       left    = (int16_t)(100 * ((float)command->left_y / INT8_MAX));
+            int16_t                       right   = (int16_t)(100 * ((float)command->right_y / INT8_MAX));
             db_motors_set_speed(left, right);
         } break;
         case DB_PROTOCOL_CMD_RGB_LED:
