@@ -24,14 +24,14 @@
 #define TIMER_HF_CB_CHANS (TIMER4_CC_NUM - 1)  ///< Number of channels that can be used for periodic callbacks
 
 typedef struct {
-    uint32_t period_us;      ///< Period in ticks between each callback
-    bool one_shot;           ///< Whether this is a one shot callback
-    timer_hf_cb_t callback;  ///< Pointer to the callback function
+    uint32_t      period_us;  ///< Period in ticks between each callback
+    bool          one_shot;   ///< Whether this is a one shot callback
+    timer_hf_cb_t callback;   ///< Pointer to the callback function
 } timer_hf_callback_t;
 
 typedef struct {
     timer_hf_callback_t timer_callback[TIMER_HF_CB_CHANS];  ///< List of timer callback structs
-    bool running;                                           ///< Whether the delay timer is running
+    bool                running;                            ///< Whether the delay timer is running
 } timer_hf_vars_t;
 
 //=========================== variables ========================================

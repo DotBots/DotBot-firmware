@@ -48,7 +48,7 @@ void LH2_initialize_TS4231(void);
 uint64_t LH2_demodulate_light(uint8_t *sample_buffer);
 
 uint64_t poly_check(uint32_t poly, uint32_t bits, uint8_t numbits);
-int LH2_determine_polynomial(uint64_t chipsH1, int *start_val);
+int      LH2_determine_polynomial(uint64_t chipsH1, int *start_val);
 
 uint64_t hamming_weight(uint64_t bits_in);
 

@@ -5,6 +5,7 @@ Language:                             Cpp
 #AlignArrayOfStructures:               Left
 AlignConsecutiveMacros:               true
 AlignConsecutiveAssignments:          true
+AlignConsecutiveDeclarations:         true
 AlignEscapedNewlines:                 true
 #AlignOperands:                        true
 AlignTrailingComments:                true

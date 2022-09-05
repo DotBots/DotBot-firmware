@@ -24,8 +24,8 @@ typedef enum {
 } command_type_t;
 
 typedef struct __attribute__((packed)) {
-    uint8_t version;      ///< Version of the protocol
-    command_type_t type;  ///< Type of command following this header
+    uint8_t        version;  ///< Version of the protocol
+    command_type_t type;     ///< Type of command following this header
 } protocol_header_ht;
 
 typedef struct __attribute__((packed)) {

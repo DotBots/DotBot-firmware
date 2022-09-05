@@ -24,9 +24,9 @@ typedef struct {
 
 //=========================== variables ========================================
 
-static const gpio_t _rx_pin   = { .pin = 9, .port = 0 };
-static const gpio_t _tx_pin   = { .pin = 10, .port = 0 };
-static uart_vars_t _uart_vars = { 0 };
+static const gpio_t _rx_pin    = { .pin = 9, .port = 0 };
+static const gpio_t _tx_pin    = { .pin = 10, .port = 0 };
+static uart_vars_t  _uart_vars = { 0 };
 
 //=========================== callbacks ========================================
 

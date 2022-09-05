@@ -26,7 +26,7 @@
 
 typedef struct {
     uint8_t buffer[DB_TWIM_TX_BUF_SIZE];  ///< internal buffer used to send bytes on I2C bus
-    bool running;                         ///< whether bytes are being sent on the I2C bus
+    bool    running;                      ///< whether bytes are being sent on the I2C bus
 } i2c_tx_vars_t;
 
 //=========================== prototypes =======================================

@@ -63,7 +63,7 @@ int main(void) {
     db_i2c_end();
 
     lsm303agr_acc_data_t data;
-    uint8_t tmp = 0;
+    uint8_t              tmp = 0;
 
     // read accelerometer data in a loop
     while (1) {

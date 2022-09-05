@@ -64,7 +64,7 @@
 volatile bool spi_xfer_done;
 
 volatile bool TRANSFER_HAPPENED;
-volatile int TRANSFER_COUNTER;
+volatile int  TRANSFER_COUNTER;
 
 // variable where location packet is stored
 uint32_t lh2_packet[LH2_PACKET_SIZE];
@@ -107,9 +107,9 @@ volatile uint32_t LH2_envelope_duration_3 = 0xFFFFFFFF;
 volatile uint32_t LH2_envelope_duration_4 = 0xFFFFFFFF;
 
 // Define SPI buffer
-uint8_t m_tx_buf[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-uint8_t m_rx_buf[sizeof(m_tx_buf) + 1];
-const uint8_t m_length = sizeof(m_tx_buf);
+uint8_t          m_tx_buf[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+uint8_t          m_rx_buf[sizeof(m_tx_buf) + 1];
+const uint8_t    m_length = sizeof(m_tx_buf);
 volatile uint8_t spi_storage[sizeof(m_tx_buf) + 1];
 
 // arrays of bits for local storage, contents of SPI transfer are copied into this
@@ -447,9 +447,9 @@ uint64_t LH2_demodulate_light(uint8_t *sample_buffer) {  // bad input variable n
     uint8_t temp_byte_M;  // TODO: bad variable name "temp byte"
 
     // initialize loop variables
-    uint8_t ii  = 0x00;
-    int jj      = 0;
-    int kk      = 0;
+    uint8_t  ii = 0x00;
+    int      jj = 0;
+    int      kk = 0;
     uint64_t gg = 0;
 
     // initialize temporary "ones counter" variable that counts consecutive ones
@@ -705,12 +705,12 @@ uint64_t LH2_demodulate_light(uint8_t *sample_buffer) {  // bad input variable n
  * @return sequence of bits resulting from running the LFSR forward
  */
 uint64_t poly_check(uint32_t poly, uint32_t bits, uint8_t numbits) {
-    uint64_t bits_out     = 0;
-    uint8_t shift_counter = 1;
-    uint8_t result        = 0;
-    uint8_t ii            = 0;
-    uint32_t masked_buff  = 0;
-    uint32_t buffer       = bits;    // mask to prevent bit overflow
+    uint64_t bits_out      = 0;
+    uint8_t  shift_counter = 1;
+    uint8_t  result        = 0;
+    uint8_t  ii            = 0;
+    uint32_t masked_buff   = 0;
+    uint32_t buffer        = bits;   // mask to prevent bit overflow
     poly &= 0x00001FFFF;             // mask to prevent silliness
     bits_out |= buffer;              // initialize 17 LSBs of result
     bits_out &= 0x00000000FFFFFFFF;  // mask because I didn't want to re-cast the buffer
@@ -746,8 +746,8 @@ int LH2_determine_polynomial(uint64_t chipsH1, int *start_val) {
     volatile uint32_t poly1           = 0b10111111000000100;  // TODO: change this back to hex
     volatile uint32_t poly2           = 0x0001FF6B;
     volatile uint32_t poly3           = 0x00013F67;  // TODO: no more magic #s here, move this to #defines
-    volatile int bits_N_for_comp      = 47;
-    volatile int match1               = 0;
+    volatile int      bits_N_for_comp = 47;
+    volatile int      match1          = 0;
     volatile uint32_t bit_buffer1     = (uint32_t)(((0xFFFF800000000000) & chipsH1) >> 47);
     volatile uint64_t bits_from_poly0 = 0;
     volatile uint64_t bits_from_poly1 = 0;
@@ -757,9 +757,9 @@ int LH2_determine_polynomial(uint64_t chipsH1, int *start_val) {
     volatile uint64_t weight1         = 0xFFFFFFFFFFFFFFFF;
     volatile uint64_t weight2         = 0xFFFFFFFFFFFFFFFF;
     volatile uint64_t weight3         = 0xFFFFFFFFFFFFFFFF;
-    volatile int selected_poly_1      = LH2_POLYNOMIAL_ERROR_INDICATOR;  // initialize to error condition
+    volatile int      selected_poly_1 = LH2_POLYNOMIAL_ERROR_INDICATOR;  // initialize to error condition
     volatile uint64_t bits_to_compare = 0;
-    volatile int threshold            = LH2_DETERMINE_POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
+    volatile int      threshold       = LH2_DETERMINE_POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
 
     *start_val = 0;  // TODO: remove this? possible that I modify start value during the demodulation process
 
@@ -863,7 +863,7 @@ uint32_t reverse_count_p0(uint32_t bits) {
     uint32_t end_buffer14 = 0b11011100110011101;  // 14/16 way through
     uint32_t end_buffer15 = 0b10000110101101011;  // 15/16 way through
 
-    uint8_t ii           = 0;  // loop variable for cumulative sum
+    uint8_t  ii          = 0;  // loop variable for cumulative sum
     uint32_t result      = 0;
     uint32_t b17         = 0;
     uint32_t masked_buff = 0;
@@ -971,7 +971,7 @@ uint32_t reverse_count_p1(uint32_t bits) {
     uint32_t end_buffer14 = 0b10001101000111011;  // 14/16 way through
     uint32_t end_buffer15 = 0b00111100110011100;  // 15/16 way through
 
-    uint8_t ii           = 0;  // loop variable for cumulative sum
+    uint8_t  ii          = 0;  // loop variable for cumulative sum
     uint32_t result      = 0;
     uint32_t b17         = 0;
     uint32_t masked_buff = 0;
@@ -1079,7 +1079,7 @@ uint32_t reverse_count_p2(uint32_t bits) {
     uint32_t end_buffer14 = 0b01001011100000011;  // 14/16 way through
     uint32_t end_buffer15 = 0b00010110111101110;  // 15/16 way through
 
-    uint8_t ii           = 0;  // loop variable for cumulative sum
+    uint8_t  ii          = 0;  // loop variable for cumulative sum
     uint32_t result      = 0;
     uint32_t b17         = 0;
     uint32_t masked_buff = 0;
@@ -1187,7 +1187,7 @@ uint32_t reverse_count_p3(uint32_t bits) {
     uint32_t end_buffer14 = 0b00010000110100010;  // 14/16 way through
     uint32_t end_buffer15 = 0b00010111110101110;  // 15/16 way through
 
-    uint8_t ii           = 0;  // loop variable for cumulative sum
+    uint8_t  ii          = 0;  // loop variable for cumulative sum
     uint32_t result      = 0;
     uint32_t b17         = 0;
     uint32_t masked_buff = 0;

@@ -24,14 +24,14 @@
 #define TIMER_RTC_CB_CHANS (RTC2_CC_NUM - 1)  ///< Number of channels that can be used for periodic callbacks
 
 typedef struct {
-    uint32_t period_ticks;  ///< Period in ticks between each callback
-    bool one_shot;          ///< Whether this is a one shot callback
-    timer_cb_t callback;    ///< Pointer to the callback function
+    uint32_t   period_ticks;  ///< Period in ticks between each callback
+    bool       one_shot;      ///< Whether this is a one shot callback
+    timer_cb_t callback;      ///< Pointer to the callback function
 } timer_callback_t;
 
 typedef struct {
     timer_callback_t timer_callback[TIMER_RTC_CB_CHANS];  ///< List of timer callback structs
-    bool running;                                         ///< Whether the delay timer is running
+    bool             running;                             ///< Whether the delay timer is running
 } timer_vars_t;
 
 //=========================== prototypes =======================================

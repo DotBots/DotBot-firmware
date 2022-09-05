@@ -24,7 +24,7 @@
 #define DB_UARTE_BAUDRATE (UARTE_BAUDRATE_BAUDRATE_Baud1M)
 
 typedef struct {
-    uint8_t byte;           ///< the byte where received byte on UART is stored
+    uint8_t      byte;      ///< the byte where received byte on UART is stored
     uart_rx_cb_t callback;  ///< pointer to the callback function
 } uart_vars_t;
 
