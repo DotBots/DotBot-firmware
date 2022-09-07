@@ -1262,6 +1262,8 @@
       <file file_name="03app_sailbot.c" />
       <file file_name="servos.h" />
       <file file_name="servos.c" />
+      <file file_name="gps.c" />
+      <file file_name="gps.h" />
     </folder>
     <folder Name="System Files">
       <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />

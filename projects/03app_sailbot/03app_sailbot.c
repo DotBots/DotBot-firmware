@@ -18,6 +18,7 @@
 #include "device.h"
 #include "radio.h"
 #include "servos.h"
+#include "gps.h"
 #include "protocol.h"
 #include "timer_hf.h"
 
@@ -58,6 +59,10 @@ int main(void) {
 
     // Configure Motors
     servos_init();
+
+    // Configure GPS
+    gps_init();
+
     // Wait for radio packets to arrive/
     while (1) {
         // processor idle until an interrupt occurs and is handled
