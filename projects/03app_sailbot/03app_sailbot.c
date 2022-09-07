@@ -31,13 +31,13 @@ typedef enum command {
 
 typedef struct {
     sailbot_command_type_t command;
-    int8_t angle;
+    int8_t                 angle;
 } sailbot_command_t;
 
 typedef struct queue {
     sailbot_command_t commands[NUM_COMMANDS_FIFO];
-    int head;
-    int tail;
+    int               head;
+    int               tail;
 } queue_t;
 
 //=========================== variables =========================================
@@ -47,7 +47,7 @@ queue_t queue;
 //=========================== prototypes =========================================
 
 void fifo_init();
-int fifo_write(sailbot_command_t val);
+int  fifo_write(sailbot_command_t val);
 void fifo_read(sailbot_command_t *command);
 void radio_callback(uint8_t *packet, uint8_t length);
 
@@ -58,8 +58,8 @@ void radio_callback(uint8_t *packet, uint8_t length);
  */
 int main(void) {
     sailbot_command_t received_command;
-    uint32_t command;
-    uint16_t duration;
+    uint32_t          command;
+    uint16_t          duration;
 
     received_command.command = COMMAND_NONE;
 
@@ -111,13 +111,13 @@ int main(void) {
  */
 void radio_callback(uint8_t *packet, uint8_t length) {
 
-    uint8_t version;
-    uint8_t type;
-    int8_t left_x;
-    int8_t left_y;
-    int8_t right_x;
-    int8_t right_y;
-    static int8_t right_y_last_position = 0;
+    uint8_t           version;
+    uint8_t           type;
+    int8_t            left_x;
+    int8_t            left_y;
+    int8_t            right_x;
+    int8_t            right_y;
+    static int8_t     right_y_last_position = 0;
     sailbot_command_t new_command;
 
     // we filter out all packets other than MOVE_RAW command of length 6 in total
