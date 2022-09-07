@@ -27,9 +27,10 @@ typedef void (*uart_rx_cb_t)(uint8_t data);  ///< Callback function prototype, i
  *
  * @param[in] rx_pin    pointer to RX pin
  * @param[in] tx_pin    pointer to TX pin
+ * @param[in] baudrate  Baudrate in bauds
  * @param[in] callback  callback function called on each received byte
  */
-void db_uart_init(const gpio_t *rx_pin, const gpio_t *tx_pin, uart_rx_cb_t callback);
+void db_uart_init(const gpio_t *rx_pin, const gpio_t *tx_pin, uint32_t baudrate, uart_rx_cb_t callback);
 
 /**
  * @brief Write bytes to the UART

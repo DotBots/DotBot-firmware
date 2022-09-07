@@ -1,7 +1,7 @@
 /**
  * @file uart.c
  * @addtogroup BSP
- * 
+ *
  * @brief  nRF52833-specific definition of the "uart" bsp module.
  *
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
@@ -18,10 +18,9 @@
 
 //=========================== defines ==========================================
 
-#define DB_UARTE          (NRF_UARTE0)
-#define DB_UARTE_IRQ      (UARTE0_UART0_IRQn)
-#define DB_UARTE_ISR      (UARTE0_UART0_IRQHandler)
-#define DB_UARTE_BAUDRATE (UARTE_BAUDRATE_BAUDRATE_Baud1M)
+#define DB_UARTE     (NRF_UARTE0)
+#define DB_UARTE_IRQ (UARTE0_UART0_IRQn)
+#define DB_UARTE_ISR (UARTE0_UART0_IRQHandler)
 
 typedef struct {
     uint8_t      byte;      ///< the byte where received byte on UART is stored
@@ -34,7 +33,7 @@ static uart_vars_t _uart_vars;  ///< variable handling the UART context
 
 //=========================== public ===========================================
 
-void db_uart_init(const gpio_t *rx_pin, const gpio_t *tx_pin, uart_rx_cb_t callback) {
+void db_uart_init(const gpio_t *rx_pin, const gpio_t *tx_pin, uint32_t baudrate, uart_rx_cb_t callback) {
 
     // configure UART pins (RX as input, TX as output);
     nrf_port[rx_pin->port]->PIN_CNF[rx_pin->pin] |= (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos);
@@ -51,8 +50,63 @@ void db_uart_init(const gpio_t *rx_pin, const gpio_t *tx_pin, uart_rx_cb_t callb
                          (UARTE_PSEL_TXD_CONNECT_Connected << UARTE_PSEL_TXD_CONNECT_Pos);
     DB_UARTE->PSEL.RTS = 0xffffffff;  // pin disconnected
     DB_UARTE->PSEL.CTS = 0xffffffff;  // pin disconnected
-    DB_UARTE->BAUDRATE = (DB_UARTE_BAUDRATE << UARTE_BAUDRATE_BAUDRATE_Pos);
-    DB_UARTE->ENABLE   = (UARTE_ENABLE_ENABLE_Enabled << UARTE_ENABLE_ENABLE_Pos);
+
+    // configure baudrate
+    switch (baudrate) {
+    case 1200:
+        DB_UARTE->BAUDRATE = (UARTE_BAUDRATE_BAUDRATE_Baud1200 << UARTE_BAUDRATE_BAUDRATE_Pos);
+        break;
+    case 9600:
+        DB_UARTE->BAUDRATE = (UARTE_BAUDRATE_BAUDRATE_Baud9600 << UARTE_BAUDRATE_BAUDRATE_Pos);
+        break;
+    case 14400:
+        DB_UARTE->BAUDRATE = (UARTE_BAUDRATE_BAUDRATE_Baud14400 << UARTE_BAUDRATE_BAUDRATE_Pos);
+        break;
+    case 19200:
+        DB_UARTE->BAUDRATE = (UARTE_BAUDRATE_BAUDRATE_Baud19200 << UARTE_BAUDRATE_BAUDRATE_Pos);
+        break;
+    case 28800:
+        DB_UARTE->BAUDRATE = (UARTE_BAUDRATE_BAUDRATE_Baud28800 << UARTE_BAUDRATE_BAUDRATE_Pos);
+        break;
+    case 31250:
+        DB_UARTE->BAUDRATE = (UARTE_BAUDRATE_BAUDRATE_Baud31250 << UARTE_BAUDRATE_BAUDRATE_Pos);
+        break;
+    case 38400:
+        DB_UARTE->BAUDRATE = (UARTE_BAUDRATE_BAUDRATE_Baud38400 << UARTE_BAUDRATE_BAUDRATE_Pos);
+        break;
+    case 56000:
+        DB_UARTE->BAUDRATE = (UARTE_BAUDRATE_BAUDRATE_Baud56000 << UARTE_BAUDRATE_BAUDRATE_Pos);
+        break;
+    case 57600:
+        DB_UARTE->BAUDRATE = (UARTE_BAUDRATE_BAUDRATE_Baud57600 << UARTE_BAUDRATE_BAUDRATE_Pos);
+        break;
+    case 76800:
+        DB_UARTE->BAUDRATE = (UARTE_BAUDRATE_BAUDRATE_Baud76800 << UARTE_BAUDRATE_BAUDRATE_Pos);
+        break;
+    case 115200:
+        DB_UARTE->BAUDRATE = (UARTE_BAUDRATE_BAUDRATE_Baud115200 << UARTE_BAUDRATE_BAUDRATE_Pos);
+        break;
+    case 230400:
+        DB_UARTE->BAUDRATE = (UARTE_BAUDRATE_BAUDRATE_Baud230400 << UARTE_BAUDRATE_BAUDRATE_Pos);
+        break;
+    case 250000:
+        DB_UARTE->BAUDRATE = (UARTE_BAUDRATE_BAUDRATE_Baud250000 << UARTE_BAUDRATE_BAUDRATE_Pos);
+        break;
+    case 460800:
+        DB_UARTE->BAUDRATE = (UARTE_BAUDRATE_BAUDRATE_Baud460800 << UARTE_BAUDRATE_BAUDRATE_Pos);
+        break;
+    case 921600:
+        DB_UARTE->BAUDRATE = (UARTE_BAUDRATE_BAUDRATE_Baud921600 << UARTE_BAUDRATE_BAUDRATE_Pos);
+        break;
+    case 1000000:
+        DB_UARTE->BAUDRATE = (UARTE_BAUDRATE_BAUDRATE_Baud1M << UARTE_BAUDRATE_BAUDRATE_Pos);
+        break;
+    default:
+        // error, return without enabling UART
+        return;
+    }
+
+    DB_UARTE->ENABLE = (UARTE_ENABLE_ENABLE_Enabled << UARTE_ENABLE_ENABLE_Pos);
 
     if (callback) {
         _uart_vars.callback     = callback;
