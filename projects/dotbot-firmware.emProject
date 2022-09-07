@@ -1272,6 +1272,7 @@
         <configuration Name="Common" file_type="Assembly" />
       </file>
     </folder>
+    <configuration Name="Debug" linker_printf_fp_enabled="Float" />
   </project>
   <configuration Name="Common" linker_output_format="hex" />
   <project Name="03app_dotbot_gateway">
