@@ -77,9 +77,9 @@ int main(void) {
         // processor idle until an interrupt occurs and is handled
         __WFE();
 
-        // check if there is something to consume
-        fifo_read(&received_command);
-        while (received_command.command != COMMAND_NONE) {
+        do {
+            // check if there is something to consume
+            fifo_read(&received_command);
             switch (received_command.command) {
             case COMMAND_RUDDER:
                 servos_rudder_turn(received_command.angle);
@@ -90,8 +90,7 @@ int main(void) {
             default:
                 break;
             }
-            fifo_read(&received_command);
-        }
+        } while (1);
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.

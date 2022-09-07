@@ -23,7 +23,7 @@
 // Max value of the PWM counter register.
 #define M_TOP 20000
 
-// 4 PWM channels are used
+// 2 PWM channels are used
 #define PWM_CHANNELS (2)
 
 enum servo_position {
