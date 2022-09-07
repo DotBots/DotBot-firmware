@@ -41,25 +41,25 @@ int main(void) {
     while (1) {
         // Right motor forward
         db_motors_set_speed(0, 60);
-        db_timer_delay_s(2);        // wait 2 sec
+        db_timer_delay_s(1);        // wait 2 sec
         db_motors_set_speed(0, 0);  // Turn off motor
         db_timer_delay_s(1);        // wait 1 sec
 
         // Right motor backward
         db_motors_set_speed(0, -60);
-        db_timer_delay_s(2);        // wait 2 sec
+        db_timer_delay_s(1);        // wait 2 sec
         db_motors_set_speed(0, 0);  // Turn off motor
         db_timer_delay_s(1);        // wait 1 sec
 
         // Left motor forward
         db_motors_set_speed(60, 0);
-        db_timer_delay_s(2);        // wait 2 sec
+        db_timer_delay_s(1);        // wait 2 sec
         db_motors_set_speed(0, 0);  // Turn off motor
         db_timer_delay_s(1);        // wait 1 sec
 
         // Left motor backward
         db_motors_set_speed(-60, 0);
-        db_timer_delay_s(2);        // wait 2 sec
+        db_timer_delay_s(1);        // wait 2 sec
         db_motors_set_speed(0, 0);  // Turn off motor
         db_timer_delay_s(1);        // wait 1 sec
     }

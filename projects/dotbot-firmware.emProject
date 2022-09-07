@@ -50,6 +50,7 @@
   <project Name="00lib_dotbot_motors">
     <configuration
       Name="Common"
+      project_dependencies="00lib_pwm"
       project_directory="../bsp/nrf52833"
       project_type="Library" />
     <file file_name="motors.c" />
@@ -62,6 +63,14 @@
       project_type="Library" />
     <file file_name="i2c.c" />
     <file file_name="../i2c.h" />
+  </project>
+  <project Name="00lib_pwm">
+    <configuration
+      Name="Common"
+      project_directory="../bsp/nrf52833"
+      project_type="Library" />
+    <file file_name="pwm.c" />
+    <file file_name="../pwm.h" />
   </project>
   <project Name="00lib_radio">
     <configuration
