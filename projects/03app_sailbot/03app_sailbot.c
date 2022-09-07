@@ -81,14 +81,14 @@ int main(void) {
             // check if there is something to consume
             fifo_read(&received_command);
             switch (received_command.command) {
-            case COMMAND_RUDDER:
-                servos_rudder_turn(received_command.angle);
-                break;
-            case COMMAND_SAILS:
-                servos_sail_turn(received_command.angle);
-                break;
-            default:
-                break;
+                case COMMAND_RUDDER:
+                    servos_rudder_turn(received_command.angle);
+                    break;
+                case COMMAND_SAILS:
+                    servos_sail_turn(received_command.angle);
+                    break;
+                default:
+                    break;
             }
         } while (1);
     }
