@@ -93,7 +93,7 @@ int main(void) {
     _gw_vars.buttons              = 0x0000;
     _gw_vars.uart.expected_length = 0;
     _gw_vars.uart.state           = UART_STATE_IDLE;
-    db_uart_init(&_rx_pin, &_tx_pin, &uart_callback);
+    db_uart_init(&_rx_pin, &_tx_pin, 1000000, &uart_callback);
 
     _init_buttons();
 
