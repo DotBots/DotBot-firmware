@@ -30,6 +30,14 @@ jobs:
           objcopy -O ihex
           projects/03app_dotbot/Output/Release/Exe/03app_dotbot.elf
           projects/03app_dotbot/Output/Release/Exe/03app_dotbot.hex
+      - name: Convert 03app_sailbot elf to hex
+        if: >-
+          github.event_name == 'push' &&
+          startsWith(github.event.ref, 'refs/tags')
+        run: >-
+          objcopy -O ihex
+          projects/03app_sailbot/Output/Release/Exe/03app_sailbot.elf
+          projects/03app_sailbot/Output/Release/Exe/03app_sailbot.hex
       - name: Convert 03app_dotbot_gateway elf to hex
         if: >-
           github.event_name == 'push' &&
@@ -47,6 +55,8 @@ jobs:
           artifacts: "
             projects/03app_dotbot/Output/Release/Exe/03app_dotbot.elf,
             projects/03app_dotbot/Output/Release/Exe/03app_dotbot.hex,
+            projects/03app_sailbot/Output/Release/Exe/03app_sailbot.elf,
+            projects/03app_sailbot/Output/Release/Exe/03app_sailbot.hex,
             projects/03app_dotbot_gateway/Output/Release/Exe/03app_dotbot_gateway.elf,
             projects/03app_dotbot_gateway/Output/Release/Exe/03app_dotbot_gateway.hex"
           token: ${{ secrets.RELEASE_TOKEN }}
