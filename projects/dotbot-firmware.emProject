@@ -24,7 +24,7 @@
     gcc_debugging_level="Level 2"
     gcc_omit_frame_pointer="Yes"
     gcc_optimization_level="Level 2 balanced" />
-  <project Name="00lib_clock">
+  <project Name="00bsp_clock">
     <configuration
       Name="Common"
       project_directory="../bsp/nrf52833"
@@ -32,7 +32,7 @@
     <file file_name="clock.c" />
     <file file_name="../clock.h" />
   </project>
-  <project Name="00lib_dotbot_board">
+  <project Name="00bsp_dotbot_board">
     <configuration
       Name="Common"
       project_directory="../bsp/nrf52833"
@@ -40,7 +40,7 @@
     <file file_name="board.c" />
     <file file_name="../board.h" />
   </project>
-  <project Name="00lib_dotbot_lh2">
+  <project Name="00bsp_dotbot_lh2">
     <configuration
       Name="Common"
       project_directory="../bsp/nrf52833"
@@ -48,41 +48,16 @@
     <file file_name="lh2.c" />
     <file file_name="../lh2.h" />
   </project>
-  <project Name="00lib_dotbot_motors">
+  <project Name="00bsp_dotbot_motors">
     <configuration
       Name="Common"
-      project_dependencies="00lib_pwm"
+      project_dependencies="00bsp_pwm"
       project_directory="../bsp/nrf52833"
       project_type="Library" />
     <file file_name="motors.c" />
     <file file_name="../motors.h" />
   </project>
-  <project Name="00lib_i2c">
-    <configuration
-      Name="Common"
-      project_directory="../bsp/nrf52833"
-      project_type="Library" />
-    <file file_name="i2c.c" />
-    <file file_name="../i2c.h" />
-  </project>
-  <project Name="00lib_pwm">
-    <configuration
-      Name="Common"
-      project_directory="../bsp/nrf52833"
-      project_type="Library" />
-    <file file_name="pwm.c" />
-    <file file_name="../pwm.h" />
-  </project>
-  <project Name="00lib_radio">
-    <configuration
-      Name="Common"
-      project_dependencies="00lib_clock"
-      project_directory="../bsp/nrf52833"
-      project_type="Library" />
-    <file file_name="radio.c" />
-    <file file_name="../radio.h" />
-  </project>
-  <project Name="00lib_dotbot_rgbled">
+  <project Name="00bsp_dotbot_rgbled">
     <configuration
       Name="Common"
       project_directory="../bsp/nrf52833"
@@ -90,34 +65,59 @@
     <file file_name="rgbled.c" />
     <file file_name="../rgbled.h" />
   </project>
-  <project Name="00lib_dotbot_rpm">
+  <project Name="00bsp_dotbot_rpm">
     <configuration
       Name="Common"
-      project_dependencies="00lib_timer"
+      project_dependencies="00bsp_timer"
       project_directory="../bsp/nrf52833"
       project_type="Library" />
     <file file_name="rpm.c" />
     <file file_name="../rpm.h" />
   </project>
-  <project Name="00lib_timer">
+  <project Name="00bsp_i2c">
     <configuration
       Name="Common"
-      project_dependencies="00lib_clock"
+      project_directory="../bsp/nrf52833"
+      project_type="Library" />
+    <file file_name="i2c.c" />
+    <file file_name="../i2c.h" />
+  </project>
+  <project Name="00bsp_pwm">
+    <configuration
+      Name="Common"
+      project_directory="../bsp/nrf52833"
+      project_type="Library" />
+    <file file_name="pwm.c" />
+    <file file_name="../pwm.h" />
+  </project>
+  <project Name="00bsp_radio">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_clock"
+      project_directory="../bsp/nrf52833"
+      project_type="Library" />
+    <file file_name="radio.c" />
+    <file file_name="../radio.h" />
+  </project>
+  <project Name="00bsp_timer">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_clock"
       project_directory="../bsp/nrf52833"
       project_type="Library" />
     <file file_name="timer.c" />
     <file file_name="../timer.h" />
   </project>
-  <project Name="00lib_timer_hf">
+  <project Name="00bsp_timer_hf">
     <configuration
       Name="Common"
-      project_dependencies="00lib_clock"
+      project_dependencies="00bsp_clock"
       project_directory="../bsp/nrf52833"
       project_type="Library" />
     <file file_name="timer_hf.c" />
     <file file_name="../timer_hf.h" />
   </project>
-  <project Name="00lib_uart">
+  <project Name="00bsp_uart">
     <configuration
       Name="Common"
       project_directory="../bsp/nrf52833"
@@ -462,7 +462,7 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      project_dependencies="00lib_dotbot_board;00lib_i2c;00lib_timer_hf"
+      project_dependencies="00bsp_dotbot_board;00bsp_i2c;00bsp_timer_hf"
       project_directory="01bsp_i2c"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -525,7 +525,7 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      project_dependencies="00lib_dotbot_board;00lib_dotbot_rgbled;00lib_timer"
+      project_dependencies="00bsp_dotbot_board;00bsp_dotbot_rgbled;00bsp_timer"
       project_directory="01bsp_rgbled"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -587,7 +587,7 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      project_dependencies="00lib_dotbot_board;00lib_dotbot_lh2"
+      project_dependencies="00bsp_dotbot_board;00bsp_dotbot_lh2"
       project_directory="01bsp_lighthouse"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -650,7 +650,7 @@
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       linker_section_placements_segments="FLASH1 RX 0x00000000 0x00080000;RAM1 RWX 0x20000000 0x00020000"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      project_dependencies="00lib_dotbot_board;00lib_radio"
+      project_dependencies="00bsp_dotbot_board;00bsp_radio"
       project_directory="01bsp_radio_lr_txrx"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -712,7 +712,7 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      project_dependencies="00lib_dotbot_board;00lib_dotbot_motors;00lib_timer"
+      project_dependencies="00bsp_dotbot_board;00bsp_dotbot_motors;00bsp_timer"
       project_directory="01bsp_motors"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -775,7 +775,7 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      project_dependencies="00lib_dotbot_board;00lib_radio"
+      project_dependencies="00bsp_dotbot_board;00bsp_radio"
       project_directory="01bsp_radio_txrx"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -837,7 +837,7 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      project_dependencies="00lib_dotbot_board;00lib_dotbot_rpm;00lib_timer"
+      project_dependencies="00bsp_dotbot_board;00bsp_dotbot_rpm;00bsp_timer"
       project_directory="01bsp_rpm"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -899,7 +899,7 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      project_dependencies="00lib_dotbot_board;00lib_dotbot_rgbled;00lib_timer"
+      project_dependencies="00bsp_dotbot_board;00bsp_dotbot_rgbled;00bsp_timer"
       project_directory="01bsp_timer"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -962,7 +962,7 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      project_dependencies="00lib_dotbot_board;00lib_dotbot_rgbled;00lib_timer_hf"
+      project_dependencies="00bsp_dotbot_board;00bsp_dotbot_rgbled;00bsp_timer_hf"
       project_directory="01bsp_timer_hf"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -1025,7 +1025,7 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      project_dependencies="00lib_dotbot_board;00lib_uart"
+      project_dependencies="00bsp_dotbot_board;00bsp_uart"
       project_directory="01bsp_uart"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -1087,7 +1087,7 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      project_dependencies="00lib_dotbot_board;00lib_dotbot_motors;00lib_dotbot_rgbled;00lib_radio;00lib_timer_hf"
+      project_dependencies="00bsp_dotbot_board;00bsp_dotbot_motors;00bsp_dotbot_rgbled;00bsp_radio;00bsp_timer_hf"
       project_directory="03app_dotbot"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -1149,7 +1149,7 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      project_dependencies="00lib_radio;00lib_uart;00drv_dotbot_protocol;00lib_pwm"
+      project_dependencies="00bsp_radio;00bsp_uart;00drv_dotbot_protocol;00bsp_pwm"
       project_directory="03app_sailbot"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -1214,7 +1214,7 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      project_dependencies="00lib_radio;00lib_dotbot_board;00lib_uart;00lib_timer;00lib_uart;00drv_dotbot_protocol"
+      project_dependencies="00bsp_radio;00bsp_dotbot_board;00bsp_uart;00bsp_timer;00bsp_uart;00drv_dotbot_protocol"
       project_directory="03app_dotbot_gateway"
       project_type="Executable"
       target_reset_script="Reset();"
