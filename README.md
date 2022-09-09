@@ -25,7 +25,7 @@ The following instructions will guide through running the default remote control
 ### Download the firmware onto the boards
 
 
-1. Download the lastest releases (the .hex files) of the DotBot-firmware and of the Gateway firmware from
+1. Download the latest releases (the .hex files) of the DotBot-firmware and of the Gateway firmware from
 [here](https://github.com/DotBots/DotBot-firmware-fresh/releases)
 
 You should end up with 2 files named `03app_dotbot.hex` and `03app_dotbot_gateway.hex`.
