@@ -39,16 +39,16 @@ typedef struct {
 } pid_state_t;
 
 typedef struct {
-    pid_gains_t gains;          ///< Factor parameters of the PID
-    pid_mode_t mode;            ///< Current mode, auto or manual
-    pid_direction_t direction;  ///< Direction
-    pid_state_t state;          ///< Internal state
-    uint32_t sample_time;       ///< Sampling time in milliseconds
-    float input;                ///< Current input value
-    float output;               ///< Last computed output
-    float target;               ///< Current target
-    float output_min;           ///< Minimal value allowed for output
-    float output_max;           ///< Maximal value allowed for output
+    pid_gains_t     gains;        ///< Factor parameters of the PID
+    pid_mode_t      mode;         ///< Current mode, auto or manual
+    pid_direction_t direction;    ///< Direction
+    pid_state_t     state;        ///< Internal state
+    uint32_t        sample_time;  ///< Sampling time in milliseconds
+    float           input;        ///< Current input value
+    float           output;       ///< Last computed output
+    float           target;       ///< Current target
+    float           output_min;   ///< Minimal value allowed for output
+    float           output_max;   ///< Maximal value allowed for output
 } pid_t;
 
 //=========================== prototypes =======================================
@@ -71,7 +71,7 @@ typedef struct {
 void db_pid_init(pid_t *pid, float input, float target,
                  float kp, float ki, float kd,
                  float output_min, float output_max,
-                 uint32_t sample_time,
+                 uint32_t   sample_time,
                  pid_mode_t mode, pid_direction_t direction);
 
 /**

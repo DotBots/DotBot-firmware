@@ -17,7 +17,7 @@
 void db_pid_init(pid_t *pid, float input, float target,
                  float kp, float ki, float kd,
                  float output_min, float output_max,
-                 uint32_t sample_time,
+                 uint32_t   sample_time,
                  pid_mode_t mode, pid_direction_t direction) {
     assert(target >= output_min);
     assert(target <= output_max);
