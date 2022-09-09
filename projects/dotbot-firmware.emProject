@@ -58,6 +58,14 @@
     <file file_name="motors.c" />
     <file file_name="../motors.h" />
   </project>
+  <project Name="00bsp_dotbot_rgbled">
+    <configuration
+      Name="Common"
+      project_directory="../bsp/nrf52833"
+      project_type="Library" />
+    <file file_name="rgbled.c" />
+    <file file_name="../rgbled.h" />
+  </project>
   <project Name="00bsp_dotbot_rpm">
     <configuration
       Name="Common"
