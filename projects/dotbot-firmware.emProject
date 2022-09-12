@@ -125,6 +125,14 @@
     <file file_name="uart.c" />
     <file file_name="../uart.h" />
   </project>
+  <project Name="00drv_dotbot_hdlc">
+    <configuration
+      Name="Common"
+      project_directory="../drv/hdlc"
+      project_type="Library" />
+    <file file_name="hdlc.c" />
+    <file file_name="../hdlc.h" />
+  </project>
   <project Name="00drv_dotbot_protocol">
     <configuration
       Name="Common"
