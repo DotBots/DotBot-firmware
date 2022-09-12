@@ -13,6 +13,7 @@
 // Include BSP headers
 #include "board.h"
 #include "gpio.h"
+#include "hdlc.h"
 #include "protocol.h"
 #include "radio.h"
 #include "timer.h"
@@ -20,28 +21,13 @@
 
 //=========================== defines ==========================================
 
-#define DB_UART_MAX_BYTES (32U)  ///< Max bytes in UART receive buffer
-
-typedef enum {
-    UART_STATE_IDLE = 0,   ///< The UART is ready to start receiving messages
-    UART_STATE_RECEIVING,  ///< The UART is receiving messages
-} uart_state_t;
+#define DB_BUFFER_MAX_BYTES (32U)  ///< Max bytes in UART receive buffer
 
 typedef struct {
-    uint8_t buffer[DB_UART_MAX_BYTES];  ///< Buffer where message received on UART is stored
-    uint8_t pos;                        ///< Current position in the UART buffer
-} uart_message_t;
-
-typedef struct {
-    uart_message_t message;          ///< Structure that handles the UART message
-    uart_state_t   state;            ///< Internal state of the UART (idle or receiving)
-    uint8_t        expected_length;  ///< Expected length of message to receive
-} uart_vars_t;
-
-typedef struct {
-    uart_vars_t uart;                          ///< Uart related variables
-    uint32_t    buttons;                       ///< Buttons state (one byte per button)
-    uint8_t     tx_buffer[DB_UART_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
+    db_hdlc_state_t hdlc_state;                        ///< Current state of the HDLC decoding engine
+    uint8_t         hdlc_buffer[DB_BUFFER_MAX_BYTES];  ///< Buffer where message received on UART is stored
+    uint32_t        buttons;                           ///< Buttons state (one byte per button)
+    uint8_t         tx_buffer[DB_BUFFER_MAX_BYTES];    ///< Internal buffer that contains the command to send (from buttons)
 } gateway_vars_t;
 
 //=========================== variables ========================================
@@ -58,20 +44,19 @@ static void _init_buttons(void);
 //=========================== callbacks ========================================
 
 static void uart_callback(uint8_t data) {
-    switch (_gw_vars.uart.state) {
-        case UART_STATE_IDLE:
-            _gw_vars.uart.expected_length = data;
-            _gw_vars.uart.message.pos     = 0;
-            _gw_vars.uart.state           = UART_STATE_RECEIVING;
+    _gw_vars.hdlc_state = db_hdlc_rx_byte(data);
+    switch ((uint8_t)_gw_vars.hdlc_state) {
+        case DB_HDLC_STATE_IDLE:
+        case DB_HDLC_STATE_RECEIVING:
+        case DB_HDLC_STATE_ERROR:
             break;
-        case UART_STATE_RECEIVING:
-            _gw_vars.uart.message.buffer[_gw_vars.uart.message.pos] = data;
-            if (_gw_vars.uart.message.pos == _gw_vars.uart.expected_length - 1 || _gw_vars.uart.message.pos == DB_UART_MAX_BYTES - 1) {
-                db_radio_tx(_gw_vars.uart.message.buffer, _gw_vars.uart.expected_length);
-                _gw_vars.uart.state = UART_STATE_IDLE;
+        case DB_HDLC_STATE_READY:
+        {
+            size_t msg_len = db_hdlc_decode(_gw_vars.hdlc_buffer);
+            if (msg_len) {
+                db_radio_tx(_gw_vars.hdlc_buffer, msg_len);
             }
-            _gw_vars.uart.message.pos++;
-            break;
+        } break;
         default:
             break;
     }
@@ -90,9 +75,7 @@ int main(void) {
     db_radio_init(NULL);        // The radio callback is not used since the gateway doesn't handle paquet received
     db_radio_set_frequency(8);  // Set the radio frequency to 2408 MHz.
     // Initialize the gateway context
-    _gw_vars.buttons              = 0x0000;
-    _gw_vars.uart.expected_length = 0;
-    _gw_vars.uart.state           = UART_STATE_IDLE;
+    _gw_vars.buttons = 0x0000;
     db_uart_init(&_rx_pin, &_tx_pin, 1000000, &uart_callback);
 
     _init_buttons();
