@@ -21,7 +21,8 @@
 
 //=========================== defines ==========================================
 
-#define DB_BUFFER_MAX_BYTES (32U)  ///< Max bytes in UART receive buffer
+#define DB_BUFFER_MAX_BYTES (32U)        ///< Max bytes in UART receive buffer
+#define DB_UART_BAUDRATE    (1000000UL)  ///< UART baudrate used by the gateway
 
 typedef struct {
     db_hdlc_state_t hdlc_state;                        ///< Current state of the HDLC decoding engine
@@ -76,7 +77,7 @@ int main(void) {
     db_radio_set_frequency(8);  // Set the radio frequency to 2408 MHz.
     // Initialize the gateway context
     _gw_vars.buttons = 0x0000;
-    db_uart_init(&_rx_pin, &_tx_pin, 1000000, &uart_callback);
+    db_uart_init(&_rx_pin, &_tx_pin, DB_UART_BAUDRATE, &uart_callback);
 
     _init_buttons();
 
