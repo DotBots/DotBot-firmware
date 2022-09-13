@@ -52,6 +52,7 @@ jobs:
           github.event_name == 'push' &&
           startsWith(github.event.ref, 'refs/tags')
         with:
+          generateReleaseNotes: true
           artifacts: "
             projects/03app_dotbot/Output/Release/Exe/03app_dotbot.elf,
             projects/03app_dotbot/Output/Release/Exe/03app_dotbot.hex,
