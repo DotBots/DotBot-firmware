@@ -158,7 +158,7 @@ void db_radio_tx(uint8_t *tx_buffer, uint8_t length) {
 }
 
 /**
- * @brief Starts Receiving packets thtough the Radio.
+ * @brief Starts Receiving packets through the Radio.
  *
  * NOTE: Must configure the radio and the frequency before calling this function.
  * (with the functions db_radio_init db_radio_set_frequency).
@@ -180,7 +180,7 @@ void db_radio_rx_enable(void) {
 }
 
 /**
- * @brief Stops receiving packets thtough the Radio.
+ * @brief Stops receiving packets through the Radio.
  *
  */
 void db_radio_rx_disable(void) {
