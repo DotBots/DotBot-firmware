@@ -3,6 +3,9 @@ changelog:
     - title: New features
       labels:
         - "new feature"
+    - title: Bugs fixed
+      labels:
+        - "bug"
     - title: Other Changes
       labels:
         - "*"
