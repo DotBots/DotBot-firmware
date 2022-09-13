@@ -106,18 +106,18 @@ int main(void) {
         _gw_vars.buttons = NRF_P0->IN;
         // Read Button 1 (P0.11)
         if (!(_gw_vars.buttons & GPIO_IN_PIN11_Msk)) {
-            command.left_y = 80;
+            command.left_y = 100;
         } else if (!(_gw_vars.buttons & GPIO_IN_PIN24_Msk)) {
-            command.left_y = -80;
+            command.left_y = -100;
         } else {
             command.left_y = 0;
         }
 
         // Read Button 2 (P0.12)
         if (!(_gw_vars.buttons & GPIO_IN_PIN12_Msk)) {
-            command.right_y = 80;
+            command.right_y = 100;
         } else if (!(_gw_vars.buttons & GPIO_IN_PIN25_Msk)) {
-            command.right_y = -80;
+            command.right_y = -100;
         } else {
             command.right_y = 0;
         }
