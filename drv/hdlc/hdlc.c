@@ -16,12 +16,14 @@
 
 //=========================== definitions ======================================
 
-#define DB_HDLC_BUFFER_SIZE (UINT8_MAX)  ///< Maximum size of the RX buffer
-#define DB_HDLC_FLAG        (0x7E)       ///< Start/End flag
-#define DB_HDLC_ESCAPE      (0x7D)       ///< Data escape byte
-#define DB_HDLC_ESCAPE_MASK (0x20)       ///< Data escape mask applied to retrieve the original byte
-#define DB_HDLC_FCS_INIT    (0xFFFF)     ///< Initialization value of the FCS
-#define DB_HDLC_FCS_OK      (0xF0B8)     ///< Expected value of the FCS
+#define DB_HDLC_BUFFER_SIZE    (UINT8_MAX)  ///< Maximum size of the RX buffer
+#define DB_HDLC_FLAG           (0x7E)       ///< Start/End flag
+#define DB_HDLC_FLAG_ESCAPED   (0x5E)       ///< Start/End flag escaped
+#define DB_HDLC_ESCAPE         (0x7D)       ///< Data escape byte
+#define DB_HDLC_ESCAPE_ESCAPED (0x5D)       ///< Escape flag escaped
+#define DB_HDLC_ESCAPE_MASK    (0x20)       ///< Data escape mask applied to retrieve the original byte
+#define DB_HDLC_FCS_INIT       (0xFFFF)     ///< Initialization value of the FCS
+#define DB_HDLC_FCS_OK         (0xF0B8)     ///< Expected value of the FCS
 
 typedef struct {
     uint8_t         buffer[DB_HDLC_BUFFER_SIZE];  ///< Input buffer
@@ -129,6 +131,39 @@ size_t db_hdlc_decode(uint8_t *output) {
 
     _hdlc_vars.state = DB_HDLC_STATE_IDLE;
     return output_pos;
+}
+
+size_t db_hdlc_encode(const uint8_t *input, size_t input_len, uint8_t *frame) {
+    uint16_t fcs       = DB_HDLC_FCS_INIT;
+    size_t   frame_len = 0;
+
+    // Start flag
+    frame[frame_len++] = DB_HDLC_FLAG;
+
+    for (uint8_t pos = 0; pos < input_len; pos++) {
+        uint8_t byte = input[pos];
+        fcs          = _db_hdlc_update_fcs(fcs, byte);
+        if (byte == DB_HDLC_ESCAPE) {
+            frame[frame_len++] = DB_HDLC_ESCAPE;
+            frame[frame_len++] = DB_HDLC_ESCAPE_ESCAPED;
+        } else if (byte == DB_HDLC_FLAG) {
+            frame[frame_len++] = DB_HDLC_ESCAPE;
+            frame[frame_len++] = DB_HDLC_FLAG_ESCAPED;
+        } else {
+            frame[frame_len++] = byte;
+        }
+    }
+
+    fcs = 0xFFFF - fcs;
+
+    // Write the FCS in the frame
+    frame[frame_len++] = (fcs & 0xFF);
+    frame[frame_len++] = (fcs & 0xFF00 >> 8);
+
+    // End flag
+    frame[frame_len++] = DB_HDLC_FLAG;
+
+    return frame_len;
 }
 
 //=========================== private ==========================================
