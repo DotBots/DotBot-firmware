@@ -31,7 +31,6 @@ typedef struct {
     float   variation;
     uint8_t variation_E_W;
     uint8_t mode;
-    uint8_t checksum;
 } nmea_gprmc_t;
 
 typedef struct {
@@ -100,8 +99,6 @@ void nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
 
     current_position = 0;
 
-    printf("RECEIVED: %s", buffer);
-
     current_value = strtok_new(buffer, ",*\n");
     while (current_value != NULL) {
         switch (current_position) {
@@ -110,7 +107,6 @@ void nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
                 break;
             case 1:  // time
                 strcpy(position->timestamp, current_value);
-                printf("Time: %s\n", position->timestamp);
                 break;
             case 2:  // Status "A" or "V"
                 if (strcmp(current_value, "A") == 0) {
@@ -118,51 +114,39 @@ void nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
                 } else {
                     position->valid = 0;
                 }
-                printf("Valid: %d\n", position->valid);
                 break;
             case 3:  // Latitude
                 position->latitude = atof(current_value);
-                printf("Latitude: %f\n", position->latitude);
                 break;
             case 4:  // Latitude N/S
                 position->latitude_N_S = *current_value;
-                // printf("Latitude N/S: %c\n", position->latitude_N_S);
                 break;
             case 5:  // Longitude
                 position->longitude = atof(current_value);
-                printf("Longitude: %f\n", position->longitude);
                 break;
             case 6:  // Longitude E/W
                 position->longitude_E_W = *current_value;
-                // printf("Longitude E/W: %c\n", position->longitude_E_W);
                 break;
             case 7:  // Speed over ground in knots
                 position->velocity = atof(current_value);
-                printf("Speed (kn): %f\n", position->velocity);
                 break;
             case 8:  // True course
                 position->course = atof(current_value);
-                printf("Tracke angle (deg): %f\n", position->course);
                 break;
             case 9:  // Date
                 strcpy(position->datestamp, current_value);
-                printf("Date: %s\n", position->datestamp);
                 break;
             case 10:  // Magnetic variation
                 position->variation = atof(current_value);
-                printf("Magnetic variation: %f\n", position->variation);
                 break;
             case 11:  // Magnetic variation E/W
                 position->variation_E_W = *current_value;
-                // printf("Magnetic variation E/W: %c\n", position->variation_E_W);
                 break;
             case 12:  // Mode indicator
                 position->mode = *current_value;
-                printf("Mode: %c\n", position->mode);
                 break;
             case 13:
-                position->checksum = strtol(current_value, NULL, 16);
-                printf("Checksum: %x\n", position->checksum);
+                // TODO verify checksum
                 break;
             default:
                 return;
