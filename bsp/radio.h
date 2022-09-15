@@ -60,11 +60,11 @@ void db_radio_set_frequency(uint8_t freq);
  * NOTE: The radio must not be receiving packets when calling this function.
  * (first call db_radio_rx_disable if needed)
  *
- * @param[in] tx_buffer pointer to the array of data to send over the radio (max size = 32)
+ * @param[in] packet pointer to the array of data to send over the radio (max size = 32)
  * @param[in] length Number of bytes to send (max size = 32)
  *
  */
-void db_radio_tx(uint8_t *package, uint8_t length);
+void db_radio_tx(uint8_t *packet, uint8_t length);
 
 /**
  * @brief Starts Receiving packets through the Radio
