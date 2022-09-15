@@ -98,10 +98,6 @@ int main(void) {
     _init_buttons();
 
     while (1) {
-        if (_gw_vars.uart.state != UART_STATE_IDLE) {
-            continue;
-        }
-
         protocol_move_raw_command_ht command;
         _gw_vars.buttons = NRF_P0->IN;
         // Read Button 1 (P0.11)
