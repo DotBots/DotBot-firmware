@@ -36,9 +36,21 @@ db_hdlc_state_t db_hdlc_rx_byte(uint8_t byte);
 /**
  * @brief   Decode an HDLC frame
  *
- * @param[in]   payload     Decoded payload contained in the input buffer
+ * @param[output]   payload     Decoded payload contained in the input buffer
+ *
  * @return the number of bytes decoded
  */
 size_t db_hdlc_decode(uint8_t *output);
+
+/**
+ * @brief   Encode a buffer in an HDLC frame
+ *
+ * @param[in]   input       Input buffer to encode in the HDLC frame
+ * @param[in]   input_len   Number of bytes of the input buffer
+ * @param[out]  frame       Buffer containing the output HDLC frame
+ *
+ * @return the size of the HDLC frame
+ */
+size_t db_hdlc_encode(const uint8_t *input, size_t input_len, uint8_t *frame);
 
 #endif
