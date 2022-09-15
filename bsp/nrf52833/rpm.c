@@ -82,19 +82,10 @@ static uint32_t _db_rpm_left_cycles(void);
  */
 static uint32_t _db_rpm_right_cycles(void);
 
-static void update_counters(void);
+static void _update_counters(void);
 
 //=========================== public ===========================================
 
-/**
- * @brief Initalize the revolution counter driver
- *
- * 2 GPIOTE input pins with one timer each. Each time a magnet comes in front of the magnetic encoder,
- * GPIOTE event is triggered which clears the timer ticks counter, for each side (left and right).
- * The speed/rpm are computed by the user code on demand by capturing the timer current count, reading
- * the timer CC register and clearing the timer count. Computations are done with the `ME_TICK_TO_*`
- * constants.
- */
 void db_rpm_init(void) {
     // Configure pin connected to left magnetic encoder sensor, input pullup
     RPM_LEFT_PORT->PIN_CNF[RPM_LEFT_PIN] |= (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos);
@@ -135,25 +126,11 @@ void db_rpm_init(void) {
 
     // Configure RTC timer period used to update counters
     db_timer_init();
-    db_timer_set_periodic_ms(0, RPM_UPDATE_PERIOD_MS, &update_counters);
+    db_timer_set_periodic_ms(0, RPM_UPDATE_PERIOD_MS, &_update_counters);
 
     // Start timers used as counters
     RPM_LEFT_TIMER->TASKS_START  = 1;
     RPM_RIGHT_TIMER->TASKS_START = 1;
-}
-
-static void update_counters(void) {
-    // Copy the last counts from previous time frame in the corresponding variables
-    _rpm_vars.previous_left_counts  = _rpm_vars.last_left_counts;
-    _rpm_vars.previous_right_counts = _rpm_vars.last_right_counts;
-
-    // Move current timers count to CC registers
-    RPM_LEFT_TIMER->TASKS_CAPTURE[0]  = 1;
-    RPM_RIGHT_TIMER->TASKS_CAPTURE[0] = 1;
-
-    // Update last counts variables with the value in CC
-    _rpm_vars.last_left_counts  = RPM_LEFT_TIMER->CC[0];
-    _rpm_vars.last_right_counts = RPM_RIGHT_TIMER->CC[0];
 }
 
 void db_rpm_get_values(rpm_values_t *values) {
@@ -170,6 +147,20 @@ void db_rpm_get_values(rpm_values_t *values) {
 }
 
 //=========================== private ==========================================
+
+static void _update_counters(void) {
+    // Copy the last counts from previous time frame in the corresponding variables
+    _rpm_vars.previous_left_counts  = _rpm_vars.last_left_counts;
+    _rpm_vars.previous_right_counts = _rpm_vars.last_right_counts;
+
+    // Move current timers count to CC registers
+    RPM_LEFT_TIMER->TASKS_CAPTURE[0]  = 1;
+    RPM_RIGHT_TIMER->TASKS_CAPTURE[0] = 1;
+
+    // Update last counts variables with the value in CC
+    _rpm_vars.last_left_counts  = RPM_LEFT_TIMER->CC[0];
+    _rpm_vars.last_right_counts = RPM_RIGHT_TIMER->CC[0];
+}
 
 static uint32_t _db_rpm_left_cycles(void) {
     if (_rpm_vars.last_left_counts < _rpm_vars.previous_left_counts) {

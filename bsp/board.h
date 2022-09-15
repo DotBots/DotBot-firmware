@@ -12,10 +12,23 @@
  * @copyright Inria, 2022
  */
 
-//=========================== public ===========================================
-
+/**
+ * @brief Turn ON the DotBot board
+ *
+ * Especifically turn on the Board Regulator
+ * all the on board regulators ENABLE pins
+ * are tied to the nRF pin P0.20
+ */
 void db_board_init(void);
+
+/**
+ * @brief Turn ON the on-board regulator
+ */
 void db_board_regulator_on(void);
+
+/**
+ * @brief Turn OFF the on-board regulator
+ */
 void db_board_regulator_off(void);
 
 #endif

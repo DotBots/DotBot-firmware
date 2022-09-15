@@ -12,7 +12,14 @@
  * @copyright Inria, 2022
  */
 
+/**
+ * @brief Initialize and start the High Frequency clock
+ */
 void db_hfclk_init(void);
+
+/**
+ * @brief Initialize and start the Low Frequency clock
+ */
 void db_lfclk_init(void);
 
 #endif

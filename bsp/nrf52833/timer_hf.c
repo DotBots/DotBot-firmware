@@ -40,9 +40,6 @@ static timer_hf_vars_t _timer_hf_vars;
 
 //=========================== public ===========================================
 
-/**
- * @brief Configure a high frequency timer with microsecond precision
- */
 void db_timer_hf_init(void) {
     // No delay is running after initialization
     _timer_hf_vars.running = false;
@@ -61,21 +58,11 @@ void db_timer_hf_init(void) {
     TIMER_HF->TASKS_START = 1;
 }
 
-/**
- * @brief Return the current timer time in microseconds
- */
 uint32_t db_timer_hf_now(void) {
     TIMER_HF->TASKS_CAPTURE[5] = 1;
     return TIMER_HF->CC[5];
 }
 
-/**
- * @brief Set a callback to be called periodically using the high frequency timer
- *
- * @param[in] channel   TIMER channel used
- * @param[in] us        periodicity in microseconds
- * @param[in] cb        callback function
- */
 void db_timer_hf_set_periodic_us(uint8_t channel, uint32_t us, timer_hf_cb_t cb) {
     assert(channel >= 0 && channel < TIMER_HF_CB_CHANS);  // Make sure the required channel is correct
     assert(cb);                                           // Make sure the callback function is valid
@@ -88,13 +75,6 @@ void db_timer_hf_set_periodic_us(uint8_t channel, uint32_t us, timer_hf_cb_t cb)
     TIMER_HF->CC[channel] += _timer_hf_vars.timer_callback[channel].period_us;
 }
 
-/**
- * @brief Set a callback to be called after an amount of microseconds
- *
- * @param[in] channel   TIMER channel used
- * @param[in] us        delay in microseconds
- * @param[in] cb        callback function
- */
 void db_timer_hf_set_oneshot_us(uint8_t channel, uint32_t us, timer_hf_cb_t cb) {
     assert(channel >= 0 && channel < TIMER_HF_CB_CHANS);  // Make sure the required channel is correct
     assert(cb);                                           // Make sure the callback function is valid
@@ -107,33 +87,14 @@ void db_timer_hf_set_oneshot_us(uint8_t channel, uint32_t us, timer_hf_cb_t cb) 
     TIMER_HF->CC[channel] += _timer_hf_vars.timer_callback[channel].period_us;
 }
 
-/**
- * @brief Set a callback to be called after an amount of milliseconds
- *
- * @param[in] channel   TIMER channel used
- * @param[in] ms        delay in milliseconds
- * @param[in] cb        callback function
- */
 void db_timer_hf_set_oneshot_ms(uint8_t channel, uint32_t ms, timer_hf_cb_t cb) {
     db_timer_hf_set_oneshot_us(channel, ms * 1000UL, cb);
 }
 
-/**
- * @brief Set a callback to be called after an amount of seconds
- *
- * @param[in] channel   TIMER channel used
- * @param[in] s         delay in seconds
- * @param[in] cb        callback function
- */
 void db_timer_hf_set_oneshot_s(uint8_t channel, uint32_t s, timer_hf_cb_t cb) {
     db_timer_hf_set_oneshot_us(channel, s * 1000UL * 1000UL, cb);
 }
 
-/**
- * @brief Add a delay in us using the high frequency timer
- *
- * @param[in] us    delay in us
- */
 void db_timer_hf_delay_us(uint32_t us) {
     TIMER_HF->TASKS_CAPTURE[TIMER_HF_CB_CHANS] = 1;
     TIMER_HF->CC[5] += us;
@@ -145,20 +106,10 @@ void db_timer_hf_delay_us(uint32_t us) {
     }
 }
 
-/**
- * @brief Add a delay in milliseconds using the high frequency timer
- *
- * @param[in] ms    delay in milliseconds
- */
 void db_timer_hf_delay_ms(uint32_t ms) {
     db_timer_hf_delay_us(ms * 1000UL);
 }
 
-/**
- * @brief Add a delay in seconds using the high frequency timer
- *
- * @param[in] s delay in seconds
- */
 void db_timer_hf_delay_s(uint32_t s) {
     db_timer_hf_delay_us(s * 1000UL * 1000UL);
 }

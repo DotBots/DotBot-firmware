@@ -36,7 +36,13 @@ typedef struct {
 //=========================== prototypes =======================================
 
 /**
- * Initialize the rpm driver
+ * @brief Initalize the RPM driver
+ *
+ * 2 GPIOTE input pins with one timer each. Each time a magnet comes in front of the magnetic encoder,
+ * GPIOTE event is triggered which clears the timer ticks counter, for each side (left and right).
+ * The speed/rpm are computed by the user code on demand by capturing the timer current count, reading
+ * the timer CC register and clearing the timer count. Computations are done with the `ME_TICK_TO_*`
+ * constants.
  */
 void db_rpm_init(void);
 

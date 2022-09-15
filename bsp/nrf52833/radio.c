@@ -42,15 +42,6 @@ static void radio_init_common(radio_cb_t callback);
 
 //=========================== public ===========================================
 
-/**
- * @brief Initializes the RADIO peripheral.
- *
- * After this function you must explicitly set the frequency of the radio
- * with the db_radio_set_frequency function.
- *
- * @param[in] callback pointer to a function that will be called each time a packet is received.
- *
- */
 void db_radio_init(radio_cb_t callback) {
 
     // General configuration of the radio.
@@ -73,15 +64,6 @@ void db_radio_init(radio_cb_t callback) {
     radio_init_common(callback);
 }
 
-/**
- * @brief Initializes the Long Range RADIO peripheral (125 kbps).
- *
- * After this function you must explicitly set the frequency of the radio
- * with the db_radio_set_frequency function.
- *
- * @param[in] callback pointer to a function that will be called each time a packet is received.
- *
- */
 void db_radio_init_lr(radio_cb_t callback) {
 
     // General configuration of the radio.
@@ -113,31 +95,11 @@ void db_radio_init_lr(radio_cb_t callback) {
     radio_init_common(callback);
 }
 
-/**
- * @brief Set the tx-rx frequency of the radio, by the following formula
- *
- * Radio frequency 2400 + freq (MHz) [0, 100]
- *
- * @param[in] freq Frequency of the radio [0, 100]
- */
 void db_radio_set_frequency(uint8_t freq) {
 
     NRF_RADIO->FREQUENCY = freq << RADIO_FREQUENCY_FREQUENCY_Pos;
 }
 
-/**
- * @brief Sends a single packet through the Radio.
- *
- * NOTE: Must configure the radio and the frequency before calling this function.
- * (with the functions db_radio_init db_radio_set_frequency).
- *
- * NOTE: The radio must not be receiving packets when calling this function.
- * (first call db_radio_rx_disable if needed)
- *
- * @param[in] tx_buffer pointer to the array of data to send over the radio (max size = 32)
- * @param[in] length Number of bytes to send (max size = 32)
- *
- */
 void db_radio_tx(uint8_t *tx_buffer, uint8_t length) {
 
     // Load the tx_buffer into memory.
@@ -157,13 +119,6 @@ void db_radio_tx(uint8_t *tx_buffer, uint8_t length) {
     memset(radio_vars.packet, 0, NUMBER_OF_BYTES_IN_PACKET);
 }
 
-/**
- * @brief Starts Receiving packets through the Radio.
- *
- * NOTE: Must configure the radio and the frequency before calling this function.
- * (with the functions db_radio_init db_radio_set_frequency).
- *
- */
 void db_radio_rx_enable(void) {
 
     // Configure the Shortcuts to expedite the packet reception.
@@ -179,10 +134,6 @@ void db_radio_rx_enable(void) {
     NVIC_EnableIRQ(RADIO_IRQn);
 }
 
-/**
- * @brief Stops receiving packets through the Radio.
- *
- */
 void db_radio_rx_disable(void) {
 
     NRF_RADIO->EVENTS_DISABLED = 0;                                          // Clear the flag before starting the radio.

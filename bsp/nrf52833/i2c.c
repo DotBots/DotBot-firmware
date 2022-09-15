@@ -39,12 +39,6 @@ static i2c_tx_vars_t _i2c_tx_vars;
 
 //=========================== public ===========================================
 
-/**
- * @brief Initialize the I2C peripheral
- *
- * @param[in] scl       pointer to struct that represents the SCL pin
- * @param[in] sda       pointer to struct that represents the SDA pin
- */
 void db_i2c_init(const gpio_t *scl, const gpio_t *sda) {
     _i2c_tx_vars.running = false;
     // clear pending errors
@@ -76,28 +70,14 @@ void db_i2c_init(const gpio_t *scl, const gpio_t *sda) {
     DB_TWIM->ENABLE = (TWIM_ENABLE_ENABLE_Enabled << TWIM_ENABLE_ENABLE_Pos);
 }
 
-/**
- * @brief Begin transmission on I2C
- */
 void db_i2c_begin(void) {
     DB_TWIM->ENABLE = (TWIM_ENABLE_ENABLE_Enabled << TWIM_ENABLE_ENABLE_Pos);
 }
 
-/**
- * @brief End transmission on I2C
- */
 void db_i2c_end(void) {
     DB_TWIM->ENABLE = (TWIM_ENABLE_ENABLE_Disabled << TWIM_ENABLE_ENABLE_Pos);
 }
 
-/**
- * @brief Read bytes from one register
- *
- * @param[in]   addr    Address of the device on the I2C bus
- * @param[in]   reg     Address of the register to read
- * @param[out]  data    Pointer to the output byte array
- * @param[in]   len     Length of the bytes to read
- */
 void db_i2c_read_regs(uint8_t addr, uint8_t reg, void *data, size_t len) {
     DB_TWIM->ADDRESS       = addr;
     DB_TWIM->TXD.MAXCNT    = 1;
@@ -109,14 +89,6 @@ void db_i2c_read_regs(uint8_t addr, uint8_t reg, void *data, size_t len) {
     _wait_for_transfer();
 }
 
-/**
- * @brief Write bytes to register
- *
- * @param[in]   addr    Address of the device on the I2C bus
- * @param[in]   reg     Address of the register to write
- * @param[out]  data    Pointer to the input byte array
- * @param[in]   len     Length of the bytes to write
- */
 void db_i2c_write_regs(uint8_t addr, uint8_t reg, const void *data, size_t len) {
     assert(len + 1 <= DB_TWIM_TX_BUF_SIZE);
     // concatenate register address and input data in a single TX buffer

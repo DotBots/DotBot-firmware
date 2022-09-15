@@ -44,9 +44,6 @@ static timer_vars_t _timer_vars;
 
 //=========================== public ===========================================
 
-/**
- * @brief Configure an RTC timer with millisecond precision
- */
 void db_timer_init(void) {
     // No delay is running after initialization
     _timer_vars.running = false;
@@ -66,13 +63,6 @@ void db_timer_init(void) {
     TIMER_RTC->TASKS_START = 1;
 }
 
-/**
- * @brief Set a callback to be called periodically
- *
- * @param[in] channel   RTC channel used
- * @param[in] ms        periodicity in milliseconds
- * @param[in] cb        callback function
- */
 void db_timer_set_periodic_ms(uint8_t channel, uint32_t ms, timer_cb_t cb) {
     assert(channel >= 0 && channel < TIMER_RTC_CB_CHANS);  // Make sure the required channel is correct
     assert(cb);                                            // Make sure the callback function is valid
@@ -85,13 +75,6 @@ void db_timer_set_periodic_ms(uint8_t channel, uint32_t ms, timer_cb_t cb) {
     TIMER_RTC->CC[channel]                           = TIMER_RTC->COUNTER + _timer_vars.timer_callback[channel].period_ticks;
 }
 
-/**
- * @brief Set a callback to be called once after an amount of ticks (1 tick ~= 30us)
- *
- * @param[in] channel   RTC channel used
- * @param[in] ticks     delay in ticks
- * @param[in] cb        callback function
- */
 void db_timer_set_oneshot_ticks(uint8_t channel, uint32_t ticks, timer_cb_t cb) {
     assert(channel >= 0 && channel < TIMER_RTC_CB_CHANS);  // Make sure the required channel is correct
     assert(cb);                                            // Make sure the callback function is valid
@@ -104,33 +87,14 @@ void db_timer_set_oneshot_ticks(uint8_t channel, uint32_t ticks, timer_cb_t cb) 
     TIMER_RTC->CC[channel]                           = TIMER_RTC->COUNTER + _timer_vars.timer_callback[channel].period_ticks;
 }
 
-/**
- * @brief Set a callback to be called once after an amount of milliseconds
- *
- * @param[in] channel   RTC channel used
- * @param[in] ms        delay in milliseconds
- * @param[in] cb        callback function
- */
 void db_timer_set_oneshot_ms(uint8_t channel, uint32_t ms, timer_cb_t cb) {
     db_timer_set_oneshot_ticks(channel, _ms_to_ticks(ms), cb);
 }
 
-/**
- * @brief Set a callback to be called once after an amount of seconds
- *
- * @param[in] channel   RTC channel used
- * @param[in] s         delay in seconds
- * @param[in] cb        callback function
- */
 void db_timer_set_oneshot_s(uint8_t channel, uint32_t s, timer_cb_t cb) {
     db_timer_set_oneshot_ticks(channel, s * 32768, cb);
 }
 
-/**
- * @brief Add a delay in ticks (1 tick ~ 30us)
- *
- * @param[in] ticks delay in ticks
- */
 void db_timer_delay_ticks(uint32_t ticks) {
     TIMER_RTC->CC[TIMER_RTC_CB_CHANS] = TIMER_RTC->COUNTER + ticks;
     _timer_vars.running               = true;
@@ -144,20 +108,10 @@ void db_timer_delay_ticks(uint32_t ticks) {
     }
 }
 
-/**
- * @brief Add a delay in milliseconds
- *
- * @param[in] ms    delay in milliseconds
- */
 void db_timer_delay_ms(uint32_t ms) {
     db_timer_delay_ticks(_ms_to_ticks(ms));
 }
 
-/**
- * @brief Add a delay in seconds
- *
- * @param[in] s delay in seconds
- */
 void db_timer_delay_s(uint32_t s) {
     db_timer_delay_ticks(s * 32768);
 }

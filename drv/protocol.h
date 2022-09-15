@@ -43,7 +43,20 @@ typedef struct __attribute__((packed)) {
 
 //=========================== public ===========================================
 
+/**
+ * @brief   Write a move raw command in a buffer
+ *
+ * @param[out]  buffer      Bytes array to write to
+ * @param[in]   command     Pointer to the move raw command
+ */
 void db_protocol_cmd_move_raw_to_buffer(uint8_t *buffer, protocol_move_raw_command_ht *command);
+
+/**
+ * @brief   Write an rgbled command in a buffer
+ *
+ * @param[out]  buffer      Bytes array to write to
+ * @param[in]   command     Pointer to the rgbled command
+ */
 void db_protocol_cmd_rgbled_to_buffer(uint8_t *buffer, protocol_rgbled_command_ht *command);
 
 #endif

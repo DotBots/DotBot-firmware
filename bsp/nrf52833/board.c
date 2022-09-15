@@ -20,14 +20,6 @@
 
 //=========================== public ==========================================
 
-/**
- * @brief Turn ON the DotBot board.
- *
- * Especifically turn on the Board Regulator
- * all the on board regulators ENABLE pins
- * are tied to the nRF pin P0.20
- *
- */
 void db_board_init(void) {
 
     // Turn ON the DotBot board regulator
@@ -35,20 +27,12 @@ void db_board_init(void) {
     NRF_P0->OUTSET = 1 << 20;  // set pin HIGH
 }
 
-/**
- * @brief Turn ON the on-board regulator.
- *
- */
 void db_board_regulator_on(void) {
 
     // Turn ON the DotBot board regulator
     NRF_P0->OUTSET = 1 << 20;  // set pin HIGH
 }
 
-/**
- * @brief Turn OFF the on-board regulator.
- *
- */
 void db_board_regulator_off(void) {
 
     // Turn OFF the DotBot board regulator

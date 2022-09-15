@@ -28,9 +28,6 @@ static clock_state_t _clock_state = {
 
 //=========================== public ===========================================
 
-/**
- * @brief Initialize and start the High Frequency clock.
- */
 void db_hfclk_init(void) {
     if (_clock_state.hf_enabled) {
         // Do nothing if already running
@@ -43,9 +40,6 @@ void db_hfclk_init(void) {
     _clock_state.hf_enabled = true;
 }
 
-/**
- * @brief Initialize and start the Low Frequency clock.
- */
 void db_lfclk_init(void) {
     if (_clock_state.lf_enabled) {
         // Do nothing if already running
