@@ -121,8 +121,12 @@ size_t db_hdlc_decode(uint8_t *output) {
         if (current_byte == DB_HDLC_ESCAPE) {
             escape_byte = true;
         } else if (escape_byte == true) {
-            output[output_pos++] = _hdlc_vars.buffer[input_pos] & DB_HDLC_ESCAPE_MASK;
-            escape_byte          = false;
+            if (current_byte == DB_HDLC_ESCAPE_ESCAPED) {
+                output[output_pos++] = DB_HDLC_ESCAPE;
+            } else if (current_byte == DB_HDLC_FLAG_ESCAPED) {
+                output[output_pos++] = DB_HDLC_FLAG;
+            }
+            escape_byte = false;
         } else {
             output[output_pos++] = _hdlc_vars.buffer[input_pos];
         }
