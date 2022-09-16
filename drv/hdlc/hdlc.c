@@ -21,7 +21,6 @@
 #define DB_HDLC_FLAG_ESCAPED   (0x5E)       ///< Start/End flag escaped
 #define DB_HDLC_ESCAPE         (0x7D)       ///< Data escape byte
 #define DB_HDLC_ESCAPE_ESCAPED (0x5D)       ///< Escape flag escaped
-#define DB_HDLC_ESCAPE_MASK    (0x20)       ///< Data escape mask applied to retrieve the original byte
 #define DB_HDLC_FCS_INIT       (0xFFFF)     ///< Initialization value of the FCS
 #define DB_HDLC_FCS_OK         (0xF0B8)     ///< Expected value of the FCS
 
