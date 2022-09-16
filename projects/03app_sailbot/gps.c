@@ -13,25 +13,11 @@
 #include "assert.h"
 #include "gpio.h"
 #include "uart.h"
+#include "gps.h"
 
 //=========================== defines ==========================================
 
 #define GPS_UART_MAX_BYTES (83U)  ///< max bytes in UART receive buffer 82 bytes for NMEA + 1
-
-typedef struct {
-    uint8_t timestamp[11];
-    uint8_t valid;
-    float   latitude;
-    uint8_t latitude_N_S;
-    float   longitude;
-    uint8_t longitude_E_W;
-    float   velocity;
-    float   course;
-    uint8_t datestamp[7];
-    float   variation;
-    uint8_t variation_E_W;
-    uint8_t mode;
-} nmea_gprmc_t;
 
 typedef struct {
     uint8_t      buffer[GPS_UART_MAX_BYTES];  ///< buffer where message received on UART is stored
@@ -168,6 +154,6 @@ void gps_init() {
     db_uart_init(&_rx_pin, &_tx_pin, 9600, &uart_callback);
 }
 
-void gps_last_known_position(void) {
-    return;
+nmea_gprmc_t *gps_last_known_position(void) {
+    return &_gps_vars.gps_position;
 }
