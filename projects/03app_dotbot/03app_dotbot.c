@@ -14,6 +14,7 @@
 #include <stdlib.h>
 // Include BSP headers
 #include "board.h"
+#include "device.h"
 #include "protocol.h"
 #include "motors.h"
 #include "radio.h"
@@ -45,6 +46,11 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
         protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
         // Check version is supported
         if (header->version != DB_PROTOCOL_VERSION) {
+            break;
+        }
+
+        // Check destination address matches
+        if (header->dst != DB_BROADCAST_ADDRESS && header->dst != db_device_id()) {
             break;
         }
 

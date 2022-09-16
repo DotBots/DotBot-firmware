@@ -15,6 +15,7 @@
 #include <nrf.h>
 
 // Include BSP packages
+#include "device.h"
 #include "radio.h"
 #include "servos.h"
 #include "protocol.h"
@@ -110,14 +111,15 @@ int main(void) {
  */
 void radio_callback(uint8_t *packet, uint8_t length) {
 
-    uint8_t           version;
-    uint8_t           type;
-    int8_t            left_x;
-    int8_t            left_y;
-    int8_t            right_x;
-    int8_t            right_y;
-    static int8_t     right_y_last_position = 0;
-    sailbot_command_t new_command;
+    uint8_t            type;
+    int8_t             left_x;
+    int8_t             left_y;
+    int8_t             right_x;
+    int8_t             right_y;
+    static int8_t      right_y_last_position = 0;
+    sailbot_command_t  new_command;
+    uint8_t *          ptk_ptr = packet;
+    protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
 
     // we filter out all packets other than MOVE_RAW command of length 6 in total
     // FIXME packet sent by BotController is 32 bytes in length
@@ -125,35 +127,35 @@ void radio_callback(uint8_t *packet, uint8_t length) {
         return;
     }
 
-    // parse the packet according to the protocol at https://crystalfree.atlassian.net/wiki/spaces/DOT/pages/2090500127/DotBot+protocol
-    version = packet[0];
-
-    if (version != 0) {
+    // Check version is compatible
+    if (header->version != DB_PROTOCOL_VERSION) {
         return;
     }
 
-    type = packet[1];
-
-    if (type != DB_PROTOCOL_CMD_MOVE_RAW) {
+    // Check destination address matches
+    if (header->dst != DB_BROADCAST_ADDRESS && header->dst != db_device_id()) {
         return;
     }
 
-    left_x  = (int8_t)packet[2];  // used to control rudder to starboard or portside with a given angle
-    left_y  = (int8_t)packet[3];  // we don't care about this value as rudder only moves left or right (x axis)
-    right_x = (int8_t)packet[4];  // we don't care about this value as sails are controlled using y axis values
-    right_y = (int8_t)packet[5];  // used to control the sail trim
+    // Only move raw commands are supported
+    if (header->type != DB_PROTOCOL_CMD_MOVE_RAW) {
+        return;
+    }
 
-    if (right_y_last_position + right_y >= 127) {
+    // Read the DotBot command
+    protocol_move_raw_command_t *command = (protocol_move_raw_command_t *)(ptk_ptr + sizeof(protocol_header_t));
+
+    if (right_y_last_position + command->right_y >= 127) {
         right_y_last_position = 127;
-    } else if (right_y_last_position + right_y <= -127) {
+    } else if (right_y_last_position + command->right_y <= -127) {
         right_y_last_position = -127;
     } else {
-        right_y_last_position += right_y / 3;
+        right_y_last_position += command->right_y / 3;
     }
 
     // add the commands to the fifo
     new_command.command = COMMAND_RUDDER;
-    new_command.angle   = left_x;
+    new_command.angle   = command->left_x;
     fifo_write(new_command);
 
     new_command.command = COMMAND_SAILS;
