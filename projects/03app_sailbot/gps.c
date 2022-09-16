@@ -80,6 +80,7 @@ uint8_t *strtok_new(uint8_t *string, uint8_t const *delimiter) {
 
 // buffer is a NULL-terminated string
 void nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
+    uint8_t  coordinate_degrees[4];
     uint8_t *current_value;
     uint8_t  current_position;
 
@@ -102,13 +103,28 @@ void nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
                 }
                 break;
             case 3:  // Latitude
-                position->latitude = atof(current_value);
+                position->latitude = 0;
+                if (strlen(current_value) > 2) {
+                    coordinate_degrees[0] = current_value[0];
+                    coordinate_degrees[1] = current_value[1];
+                    coordinate_degrees[2] = NULL;
+                    position->latitude += atoi(coordinate_degrees);
+                    position->latitude += atof(&current_value[2]) / 60.0;
+                }
                 break;
             case 4:  // Latitude N/S
                 position->latitude_N_S = *current_value;
                 break;
             case 5:  // Longitude
-                position->longitude = atof(current_value);
+                position->longitude = 0;
+                if (strlen(current_value) > 3) {
+                    coordinate_degrees[0] = current_value[0];
+                    coordinate_degrees[1] = current_value[1];
+                    coordinate_degrees[2] = current_value[2];
+                    coordinate_degrees[3] = NULL;
+                    position->longitude += atoi(coordinate_degrees);
+                    position->longitude += atof(&current_value[3]) / 60.0;
+                }
                 break;
             case 6:  // Longitude E/W
                 position->longitude_E_W = *current_value;
