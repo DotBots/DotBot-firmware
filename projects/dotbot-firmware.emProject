@@ -43,6 +43,7 @@
   <project Name="00bsp_dotbot_lh2">
     <configuration
       Name="Common"
+      project_dependencies="00bsp_timer_hf"
       project_directory="../bsp/nrf52833"
       project_type="Library" />
     <file file_name="lh2.c" />

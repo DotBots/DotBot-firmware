@@ -15,7 +15,8 @@
 #include <stdbool.h>
 #include <nrf.h>
 
-#include <lh2.h>
+#include "timer_hf.h"
+#include "lh2.h"
 
 //=========================== defines =========================================
 
@@ -371,7 +372,7 @@ void start_transfer(void) {
 void LH2_initialize_TS4231(void) {
 
     // Configure the wait timer
-    lh2_wait_timer_config();
+    db_timer_hf_init();
 
     // Filip's code define these pins as inputs, and then changes them quickly to outputs. Not sure why, but it works.
     lh2_pin_set_input(D_pin);
@@ -380,33 +381,33 @@ void LH2_initialize_TS4231(void) {
     // start the TS4231 initialization
     // Wiggle the Envelope and Data pins
     lh2_pin_set_output(E_pin);
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     NRF_P0->OUTSET = 1 << E_pin;  // set pin HIGH
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     NRF_P0->OUTCLR = 1 << E_pin;  // set pin LOW
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     NRF_P0->OUTSET = 1 << E_pin;
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     lh2_pin_set_output(D_pin);
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     NRF_P0->OUTSET = 1 << D_pin;
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     // Turn the pins back to inputs
     lh2_pin_set_input(D_pin);
     lh2_pin_set_input(E_pin);
     // finally, wait 1 milisecond
-    lh2_wait_usec(1000);
+    db_timer_hf_delay_us(1000);
 
     // Send the configuration magic number/sequence
     uint16_t config_val = 0x392B;
     // Turn the Data and Envelope lines back to outputs and clear them.
     lh2_pin_set_output(E_pin);
     lh2_pin_set_output(D_pin);
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     NRF_P0->OUTCLR = 1 << D_pin;
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     NRF_P0->OUTCLR = 1 << E_pin;
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     // Send the magic configuration value, MSB first.
     for (uint8_t i = 0; i < 15; i++) {
 
@@ -417,71 +418,71 @@ void LH2_initialize_TS4231(void) {
             NRF_P0->OUTCLR = 1 << D_pin;
 
         // Toggle the Envelope line as a clock.
-        lh2_wait_usec(1);
+        db_timer_hf_delay_us(10);
         NRF_P0->OUTSET = 1 << E_pin;
-        lh2_wait_usec(1);
+        db_timer_hf_delay_us(10);
         NRF_P0->OUTCLR = 1 << E_pin;
-        lh2_wait_usec(1);
+        db_timer_hf_delay_us(10);
     }
     // Finish send sequence and turn pins into inputs again.
     NRF_P0->OUTCLR = 1 << D_pin;
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     NRF_P0->OUTSET = 1 << E_pin;
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     NRF_P0->OUTSET = 1 << D_pin;
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     lh2_pin_set_input(D_pin);
     lh2_pin_set_input(E_pin);
     // Finish by waiting 10usec
-    lh2_wait_usec(10);
+    db_timer_hf_delay_us(10);
 
     // Now read back the sequence that the TS4231 answers.
     lh2_pin_set_output(E_pin);
     lh2_pin_set_output(D_pin);
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     NRF_P0->OUTCLR = 1 << D_pin;
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     NRF_P0->OUTCLR = 1 << E_pin;
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     NRF_P0->OUTSET = 1 << D_pin;
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     NRF_P0->OUTSET = 1 << E_pin;
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     // Set Data pin as an input, to receive the data
     lh2_pin_set_input(D_pin);
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     NRF_P0->OUTCLR = 1 << E_pin;
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     // Use the Envelope pin to output a clock while the data arrives.
     for (uint8_t i = 0; i < 14; i++) {
 
         NRF_P0->OUTSET = 1 << E_pin;
-        lh2_wait_usec(1);
+        db_timer_hf_delay_us(10);
         NRF_P0->OUTCLR = 1 << E_pin;
-        lh2_wait_usec(1);
+        db_timer_hf_delay_us(10);
     }
 
     // Finish the configuration procedure
     lh2_pin_set_output(D_pin);
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     NRF_P0->OUTSET = 1 << E_pin;
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     NRF_P0->OUTSET = 1 << D_pin;
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
 
     NRF_P0->OUTCLR = 1 << E_pin;
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     NRF_P0->OUTCLR = 1 << D_pin;
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
     NRF_P0->OUTSET = 1 << E_pin;
-    lh2_wait_usec(1);
+    db_timer_hf_delay_us(10);
 
     lh2_pin_set_input(D_pin);
     lh2_pin_set_input(E_pin);
 
-    lh2_wait_usec(50000);
+    db_timer_hf_delay_us(50000);
 
-    NRF_TIMER3->TASKS_STOP = (1UL);
+    //NRF_TIMER3->TASKS_STOP = (1UL);
 }
 
 /**
@@ -1469,42 +1470,4 @@ void lh2_pin_set_output(uint8_t pin) {
     // Configure Data pin as OUTPUT, with standar power drive current.
     NRF_P0->PIN_CNF[pin] = (GPIO_PIN_CNF_DIR_Output << GPIO_PIN_CNF_DIR_Pos) |   // Set Pin as output
                            (GPIO_PIN_CNF_DRIVE_S0S1 << GPIO_PIN_CNF_DRIVE_Pos);  // Activate high current gpio mode.
-}
-
-/**
- * @brief Configure TIMER3 to function as a bloacking wait timer
- *
- * The Compare events will be used to signal when enough time has passed
- * And the Shorcuts take care of stoping and reseting the timers.
- *
- */
-void lh2_wait_timer_config(void) {
-
-    // activate the external HFClock. (to help with accurate pulse timming for the LH2 initialization)
-    NRF_CLOCK->EVENTS_HFCLKSTARTED = 0x00;          // Clear the flag
-    NRF_CLOCK->TASKS_HFCLKSTART    = 0x01;          // Start the clock
-    while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) {}  // Wait for the clock to actually start.
-
-    // Innitialize TIMER 3, it's used time busy wait (to help with accurate pulse timming for the LH2 initialization)
-    NRF_TIMER3->PRESCALER = (0UL);                                         // 16 MHz clock counter
-    NRF_TIMER3->BITMODE   = TIMER_BITMODE_BITMODE_32Bit;                   // 32 bit counter (max count value ~4.5min)
-    NRF_TIMER3->MODE      = TIMER_MODE_MODE_Timer << TIMER_MODE_MODE_Pos;  // Timer mode set to "Timer"
-    NRF_TIMER3->SHORTS    = 0x01 << TIMER_SHORTS_COMPARE0_STOP_Pos |
-                         0x01 << TIMER_SHORTS_COMPARE0_CLEAR_Pos;  // Stop the Timer as soon as the target value is achieved.
-    NRF_TIMER3->CC[0] = 16;                                        // count up to 16 (1us wait)
-}
-
-/**
- * @brief Blocking wait in microseconds
- * @param[in] usec: number of microseconds to wait
- *
- */
-void lh2_wait_usec(uint32_t usec) {
-
-    // Load the wait time into the compare register.
-    NRF_TIMER3->CC[0] = 16 * usec;  // TIMER clock is running at 16MHz, 1 usec is 16 clock cycles.
-
-    NRF_TIMER3->EVENTS_COMPARE[0] = 0;             // Clear the compare flag.
-    NRF_TIMER3->TASKS_START       = 0x01;          // Start the timer
-    while (NRF_TIMER3->EVENTS_COMPARE[0] == 0) {}  // Wait for the clock to actually start.
 }

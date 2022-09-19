@@ -65,7 +65,5 @@ void gpiote_setup(void);
 // Said Set-Up
 void lh2_pin_set_input(uint8_t pin);
 void lh2_pin_set_output(uint8_t pin);
-void lh2_wait_timer_config(void);
-void lh2_wait_usec(uint32_t usec);
 
 #endif /* LH2_H_ */
