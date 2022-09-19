@@ -197,8 +197,6 @@ bool get_black_magic(void) {
     int8_t invalid_packet_counter;
 
     if (buffers_ready) {
-        NRF_P0->OUTCLR = 1 << 20;
-
         buffers_ready = false;
 
         LH2_bits_sweep_1 = 0;

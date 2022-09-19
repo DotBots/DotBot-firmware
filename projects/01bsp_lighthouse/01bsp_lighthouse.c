@@ -35,8 +35,6 @@ int main(void) {
     lh2_init();
 
     // Start SPI capture
-    NRF_P0->DIRSET = 1 << 20;
-    NRF_P0->OUTSET = 1 << 20;
     start_transfer();
 
     while (1) {
@@ -45,8 +43,6 @@ int main(void) {
 
         // wait until the packet is ready
         if (packet_ready) {
-
-            NRF_P0->OUTSET = 1 << 20;
             current_loc_p  = get_current_location();
         }
     }
