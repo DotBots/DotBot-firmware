@@ -30,7 +30,7 @@ void lh2_init(void);
 bool get_black_magic(void);
 
 // function for the dotbot to get hold of the current location packet when it is ready
-uint32_t *get_current_location(void);
+void get_current_location(uint32_t *location);
 
 // function to restart SPM3
 void start_transfer(void);

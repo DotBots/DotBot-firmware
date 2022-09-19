@@ -349,11 +349,11 @@ bool get_black_magic(void) {
     return false;
 }
 
-uint32_t *get_current_location(void) {
+void get_current_location(uint32_t *position) {
+    memcpy(position, lh2_results, 8 * sizeof(uint32_t));
     TRANSFER_COUNTER = 0;
     ready            = false;
     start_transfer();
-    return lh2_results;
 }
 
 void start_transfer(void) {

@@ -21,7 +21,7 @@
 //=========================== variables =========================================
 
 bool      packet_ready;
-uint32_t *current_loc_p;
+uint32_t current_loc_p[8] = { 0 };
 //=========================== main =========================================
 
 /**
@@ -43,7 +43,7 @@ int main(void) {
 
         // wait until the packet is ready
         if (packet_ready) {
-            current_loc_p  = get_current_location();
+            get_current_location(current_loc_p);
         }
     }
 
