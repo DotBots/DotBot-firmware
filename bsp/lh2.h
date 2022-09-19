@@ -29,9 +29,6 @@ void lh2_init(void);
 // do fil's stuff
 bool get_black_magic(void);
 
-// test function
-bool get_black_magic_2(void);
-
 // function for the dotbot to get hold of the current location packet when it is ready
 uint32_t *get_current_location(void);
 
