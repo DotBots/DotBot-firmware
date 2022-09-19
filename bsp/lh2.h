@@ -24,25 +24,23 @@
 //=========================== public ==========================================
 
 // initialization function
-void lh2_init(void);
+void db_lh2_init(void);
 
 // do fil's stuff
-bool get_black_magic(void);
+bool db_get_black_magic(void);
 
 // function for the dotbot to get hold of the current location packet when it is ready
-void get_current_location(uint32_t *location);
+void db_get_current_location(uint32_t *location);
 
 // function to restart SPM3
-void start_transfer(void);
-
-void restart_lh2(void);
+void db_lh2_start_transfer(void);
 
 //=========================== private ==========================================
 
 // these functions are called in the order written to perform the LH2 localization
-void LH2_initialize_TS4231(void);
+void db_lh2_initialize_ts4231(void);
 
-uint64_t LH2_demodulate_light(uint8_t *sample_buffer);
+uint64_t db_lh2_demodulate_light(uint8_t *sample_buffer);
 
 uint64_t poly_check(uint32_t poly, uint32_t bits, uint8_t numbits);
 int      LH2_determine_polynomial(uint64_t chipsH1, int *start_val);

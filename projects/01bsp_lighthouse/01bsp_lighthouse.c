@@ -32,18 +32,19 @@ int main(void) {
     db_board_init();
 
     // Initialize the LH2
-    lh2_init();
+    db_lh2_init();
 
     // Start SPI capture
-    start_transfer();
+    db_lh2_start_transfer();
 
     while (1) {
         // the location function has to be running all the time but not that fast
-        packet_ready = get_black_magic();
+        packet_ready = db_get_black_magic();
 
         // wait until the packet is ready
         if (packet_ready) {
-            get_current_location(current_loc_p);
+            db_get_current_location(current_loc_p);
+            __NOP();
         }
     }
 

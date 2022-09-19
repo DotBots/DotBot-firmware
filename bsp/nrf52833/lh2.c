@@ -133,9 +133,9 @@ bool ready         = false;
 bool buffers_ready = false;
 
 //=========================== public ==========================================
-void lh2_init(void) {
+void db_lh2_init(void) {
     // Initialize the TS4231 on power-up - this is only necessary when power-cycling
-    LH2_initialize_TS4231();
+    db_lh2_initialize_ts4231();
 
     // Configure the necessary Pins in the GPIO peripheral  (MOSI and CS not needed)
     lh2_pin_set_input(D_pin);          // Data_pin will become the MISO pin
@@ -191,7 +191,7 @@ void lh2_init(void) {
     ppi_setup();
 }
 
-bool get_black_magic(void) {
+bool db_get_black_magic(void) {
     uint8_t i;
     uint8_t j;
     // invalid packet detection:
@@ -207,10 +207,10 @@ bool get_black_magic(void) {
 
         // perform the demodulation + poly search on the received packets
         // convert the SPI reading to bits via zero-crossing counter demodulation and differential/biphasic manchester decoding
-        LH2_bits_sweep_1 = LH2_demodulate_light(stored_buff_1);
-        LH2_bits_sweep_2 = LH2_demodulate_light(stored_buff_2);
-        LH2_bits_sweep_3 = LH2_demodulate_light(stored_buff_3);
-        LH2_bits_sweep_4 = LH2_demodulate_light(stored_buff_4);
+        LH2_bits_sweep_1 = db_lh2_demodulate_light(stored_buff_1);
+        LH2_bits_sweep_2 = db_lh2_demodulate_light(stored_buff_2);
+        LH2_bits_sweep_3 = db_lh2_demodulate_light(stored_buff_3);
+        LH2_bits_sweep_4 = db_lh2_demodulate_light(stored_buff_4);
 
         // figure out which polynomial each one of the two samples come from.
         LH2_selected_poly_1 = LH2_determine_polynomial(LH2_bits_sweep_1, &LH2_bit_offset_1);
@@ -228,7 +228,7 @@ bool get_black_magic(void) {
             (LH2_selected_poly_3 == LH2_POLYNOMIAL_ERROR_INDICATOR) |
             (LH2_selected_poly_4 == LH2_POLYNOMIAL_ERROR_INDICATOR)) {  // failure to find one of the two polynomials - start from scratch and grab another capture
             TRANSFER_COUNTER = 0;
-            start_transfer();
+            db_lh2_start_transfer();
             return false;
         } else {
             // find location of the first data set by counting the LFSR backwards
@@ -349,14 +349,14 @@ bool get_black_magic(void) {
     return false;
 }
 
-void get_current_location(uint32_t *position) {
+void db_get_current_location(uint32_t *position) {
     memcpy(position, lh2_results, 8 * sizeof(uint32_t));
     TRANSFER_COUNTER = 0;
     ready            = false;
-    start_transfer();
+    db_lh2_start_transfer();
 }
 
-void start_transfer(void) {
+void db_lh2_start_transfer(void) {
     NRF_PPI->CHENSET = (PPI_CHENSET_CH2_Enabled << PPI_CHENSET_CH2_Pos) |
                        //(PPI_CHENSET_CH3_Enabled << PPI_CHENSET_CH3_Pos);
                        (PPI_CHENSET_CH4_Enabled << PPI_CHENSET_CH4_Pos) |
@@ -369,7 +369,7 @@ void start_transfer(void) {
  * @brief wiggle the data and envelope lines in a magical way to configure the TS4231 to continuously read for LH2 sweep signals.
  *
  */
-void LH2_initialize_TS4231(void) {
+void db_lh2_initialize_ts4231(void) {
 
     // Configure the wait timer
     db_timer_hf_init();
@@ -490,7 +490,7 @@ void LH2_initialize_TS4231(void) {
  * @param sample_buffer: SPI samples loaded into a local buffer
  * @return chipsH: 64-bits of demodulated data
  */
-uint64_t LH2_demodulate_light(uint8_t *sample_buffer) {  // bad input variable name!!
+uint64_t db_lh2_demodulate_light(uint8_t *sample_buffer) {  // bad input variable name!!
     // TODO: rename sample_buffer
     // TODO: make it a void and have chips be a modified pointer thingie
     // FIXME: there is an edge case where I throw away an initial "1" and do not count it in the bit-shift offset, resulting in an incorrect error of 1 in the LFSR location
