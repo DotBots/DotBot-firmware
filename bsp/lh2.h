@@ -32,7 +32,9 @@ bool db_lh2_get_black_magic(void);
 // function for the dotbot to get hold of the current location packet when it is ready
 void db_lh2_get_current_location(uint32_t *location);
 
-// function to restart SPM3
+// start transfering bits from the lighthouse module
 void db_lh2_start_transfer(void);
+// stop transfering bits from the lighthouse module
+void db_lh2_stop_transfer(void);
 
 #endif /* LH2_H_ */

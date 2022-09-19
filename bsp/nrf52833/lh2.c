@@ -20,25 +20,19 @@
 
 //=========================== defines =========================================
 
-// Interrupt priority, as high as it will go.
-#define SPIM3_INTERRUPT_PRIORITY 1
+#define SPIM3_INTERRUPT_PRIORITY 1    ///< Interrupt priority, as high as it will go
+#define SPI3_BUFFER_SIZE         64   ///< Size of buffers used for SPI communications
+#define LH2_PACKET_SIZE          5    ///< magic number definitions
+#define I_AM_ROBOT               420  ///< THIS ROBOT IS NUMBER
 
-// magic number definitions
-#define LH2_PACKET_SIZE 5
-
-// THIS ROBOT IS NUMBER
-#define I_AM_ROBOT 420
-
-#define D_pin 29
-#define E_pin 30
-
-#define flag 26
+#define LH2_D_PIN 29
+#define LH2_E_PIN 30
 
 #define FUZZY_CHIP 0xFF
 
-#define LH2_LOCATION_ERROR_INDICATOR                         0xFFFFFFFF
-#define LH2_POLYNOMIAL_ERROR_INDICATOR                       255
-#define _determine_polynomial_BIT_ERROR_INITIAL_THRESHOLD 4
+#define LH2_LOCATION_ERROR_INDICATOR           0xFFFFFFFF
+#define LH2_POLYNOMIAL_ERROR_INDICATOR         255
+#define POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD 4
 
 // gpiote definitions
 #define GPIOTE_CH_OUT           0
@@ -54,32 +48,19 @@
 #define FAKE_SCK_PIN 6  // NOTE: SPIM needs an SCK pin to be defined, otherwise it doesn't work. \
                         // nRF52840 P1.6 is used because it's not an available pin in the BCM module.
 
-// Define SPI interface
-#define SPI_INSTANCE 3  // absolutely necessary to use #3, it is the only one that is able to run at 32MHz clock
-// static const nrfx_spim_t spi = NRFX_SPIM_INSTANCE(SPI_INSTANCE); /**< SPI instance. */
-
-#define LH2_PACKET_SIZE_IN_BYTES sizeof(lh2_packet)  // should be 4*5 = 20 bytes
-
 typedef struct {
     uint8_t transfer_counter;
+    bool    buffers_ready;
 } lh2_vars_t;
 
-//=========================== variables =========================================
+//=========================== variables ========================================
 
 static lh2_vars_t _lh2_vars;
-
-volatile bool spi_xfer_done;
 
 // variable where location packet is stored
 uint32_t lh2_packet[LH2_PACKET_SIZE];
 
 uint32_t lh2_results[8];
-
-// please show me my variables?
-volatile uint64_t temp1;
-volatile uint64_t temp2;
-volatile uint64_t temp3;
-volatile uint64_t temp4;
 
 // initialize LH2 demodulation variables
 // bits sweep is the result of the demodulation, sweep_N indicates which SPI transfer those bits are associated with
@@ -113,10 +94,8 @@ volatile uint32_t LH2_envelope_duration_3 = 0xFFFFFFFF;
 volatile uint32_t LH2_envelope_duration_4 = 0xFFFFFFFF;
 
 // Define SPI buffer
-uint8_t          m_tx_buf[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-uint8_t          m_rx_buf[sizeof(m_tx_buf) + 1];
-const uint8_t    m_length = sizeof(m_tx_buf);
-volatile uint8_t spi_storage[sizeof(m_tx_buf) + 1];
+static uint8_t m_tx_buf[SPI3_BUFFER_SIZE] = { 0 };
+static uint8_t m_rx_buf[SPI3_BUFFER_SIZE] = { 0 };
 
 // arrays of bits for local storage, contents of SPI transfer are copied into this
 uint8_t stored_buff[128];  // TODO: make these local variables inside of main - no reason for them to be glob
@@ -124,16 +103,6 @@ uint8_t stored_buff_1[128];
 uint8_t stored_buff_2[128];
 uint8_t stored_buff_3[128];
 uint8_t stored_buff_4[128];
-
-// please show me my variables?
-volatile uint64_t temp1;
-volatile uint64_t temp2;
-volatile uint64_t temp3;
-volatile uint64_t temp4;
-
-// other variables
-bool ready         = false;
-bool buffers_ready = false;
 
 //=========================== prototypes =======================================
 
@@ -153,65 +122,30 @@ uint32_t _reverse_count_p2(uint32_t bits);
 uint32_t _reverse_count_p3(uint32_t bits);
 
 // setup the PPI
-void _ppi_setup(void);
-void _timer2_setup(void);
 void _gpiote_setup(void);
+void _ppi_setup(void);
+void _spi3_setup(void);
+void _timer2_setup(void);
 
 // Said Set-Up
 void _lh2_pin_set_input(uint8_t pin);
 void _lh2_pin_set_output(uint8_t pin);
 
-//=========================== public ==========================================
+//=========================== public ===========================================
 
 void db_lh2_init(void) {
     // Initialize the TS4231 on power-up - this is only necessary when power-cycling
     _initialize_ts4231();
 
     // Configure the necessary Pins in the GPIO peripheral  (MOSI and CS not needed)
-    _lh2_pin_set_input(D_pin);          // Data_pin will become the MISO pin
+    _lh2_pin_set_input(LH2_D_PIN);      // Data_pin will become the MISO pin
     _lh2_pin_set_output(FAKE_SCK_PIN);  // set SCK as Output.
 
-    // Define the necessary Pins in the SPIM peripheral
-    NRF_SPIM3->PSEL.MISO = D_pin << SPIM_PSEL_MISO_PIN_Pos |                                // Define pin number for MISO pin
-                           0 << SPIM_PSEL_MISO_PORT_Pos |                                   // Define pin port for MISO pin
-                           SPIM_PSEL_MISO_CONNECT_Connected << SPIM_PSEL_MISO_CONNECT_Pos;  // Enable the MISO pin
+    _spi3_setup();
 
-    NRF_SPIM3->PSEL.SCK = FAKE_SCK_PIN << SPIM_PSEL_SCK_PIN_Pos |                        // Define pin number for SCK pin
-                          1 << SPIM_PSEL_SCK_PORT_Pos |                                  // Define pin port for SCK pin
-                          SPIM_PSEL_SCK_CONNECT_Connected << SPIM_PSEL_SCK_CONNECT_Pos;  // Enable the SCK pin
-
-    NRF_SPIM3->PSEL.MOSI = (4UL) << SPIM_PSEL_MOSI_PIN_Pos |
-                           1 << SPIM_PSEL_MOSI_PORT_Pos |
-                           SPIM_PSEL_MOSI_CONNECT_Connected << SPIM_PSEL_MOSI_CONNECT_Pos;
-
-    // Configure the SPIM peripheral
-    NRF_SPIM3->FREQUENCY = SPIM_FREQUENCY_FREQUENCY_M32;                         // Set SPI frequency to 32MHz
-    NRF_SPIM3->CONFIG    = SPIM_CONFIG_ORDER_MsbFirst << SPIM_CONFIG_ORDER_Pos;  // Set MsB out first
-
-    // Configure the EasyDMA channel
-    // Configuring the READER channel
-    NRF_SPIM3->RXD.MAXCNT = m_length;            // Set the size of the input buffer.
-    NRF_SPIM3->RXD.PTR    = (uint32_t)m_rx_buf;  // Set the input buffer pointer.
-    // Configure the WRITER channel
-    NRF_SPIM3->TXD.MAXCNT = m_length;            // Set the size of the output buffer.
-    NRF_SPIM3->TXD.PTR    = (uint32_t)m_tx_buf;  // Set the output buffer pointer.
-
-    // Enable the SPIM pripheral
-    NRF_SPIM3->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
-
-    // Configure the Interruptions
-    NVIC_DisableIRQ(SPIM3_IRQn);  // Disable interruptions while configuring
-
-    NRF_SPIM3->INTENSET = SPIM_INTENSET_END_Enabled << SPIM_INTENSET_END_Pos;  // Enable interruption for when a packet arrives
-    NVIC_SetPriority(SPIM3_IRQn, SPIM3_INTERRUPT_PRIORITY);                    // Set priority for Radio interrupts to 1
-    NVIC_ClearPendingIRQ(SPIM3_IRQn);
-    // Enable SPIM interruptions
-    NVIC_EnableIRQ(SPIM3_IRQn);
-
-    // Empty the receive buffer
-    memset(m_rx_buf, 0, m_length);
-    // Reset the Transfer Counter
+    // Setup the LH2 local variables
     _lh2_vars.transfer_counter = 0;
+    _lh2_vars.buffers_ready    = false;
 
     // initialize GPIOTEs
     _gpiote_setup();
@@ -227,8 +161,8 @@ bool db_lh2_get_black_magic(void) {
     // invalid packet detection:
     int8_t invalid_packet_counter;
 
-    if (buffers_ready) {
-        buffers_ready = false;
+    if (_lh2_vars.buffers_ready) {
+        _lh2_vars.buffers_ready = false;
 
         LH2_bits_sweep_1 = 0;
         LH2_bits_sweep_2 = 0;
@@ -247,11 +181,6 @@ bool db_lh2_get_black_magic(void) {
         LH2_selected_poly_2 = _determine_polynomial(LH2_bits_sweep_2, &LH2_bit_offset_2);
         LH2_selected_poly_3 = _determine_polynomial(LH2_bits_sweep_3, &LH2_bit_offset_3);
         LH2_selected_poly_4 = _determine_polynomial(LH2_bits_sweep_4, &LH2_bit_offset_4);
-
-        temp1 = LH2_selected_poly_1;  // "temp" are global variables used for debugging purposes
-        temp2 = LH2_selected_poly_2;
-        temp3 = LH2_bit_offset_1;
-        temp4 = LH2_bit_offset_2;
 
         if ((LH2_selected_poly_1 == LH2_POLYNOMIAL_ERROR_INDICATOR) |
             (LH2_selected_poly_2 == LH2_POLYNOMIAL_ERROR_INDICATOR) |
@@ -305,9 +234,6 @@ bool db_lh2_get_black_magic(void) {
             }
         }
 
-        // SEND A PACKET???
-        spi_xfer_done = 0;  // TODO: figure out if this does anything... I'm not convinced that this does anything
-
         // packet structure:
         // packet[0] is the robot #
         // packet[1-4] are the results from the four sweeps organized in 32-bit chunks as follows:
@@ -333,17 +259,17 @@ bool db_lh2_get_black_magic(void) {
         // detect invalid packets
         invalid_packet_counter = 0;
         for (i = 0; i < 7; i += 2) {
-            if ((lh2_results[i] == 0) | (lh2_results[i] == 1)) {
+            if ((lh2_results[i] == 0) || (lh2_results[i] == 1)) {
                 invalid_packet_counter++;  // from LHA
-            } else if ((lh2_results[i] == 2) | (lh2_results[i] == 3)) {
+            } else if ((lh2_results[i] == 2) || (lh2_results[i] == 3)) {
                 invalid_packet_counter--;  // from LHB
             }
         }
-        if ((invalid_packet_counter == 1) | (invalid_packet_counter == -1)) {
+        if ((invalid_packet_counter == 1) || (invalid_packet_counter == -1)) {
             return false;  // odd # of packets from 1 LH, erroneous result
         }
 
-        if ((invalid_packet_counter == 4) | (invalid_packet_counter == -4)) {
+        if ((invalid_packet_counter == 4) || (invalid_packet_counter == -4)) {
             // results from one LH2 were discovered - sort the two pairs
             if (LH2_LFSR_location_1 > LH2_LFSR_location_2) {
                 lh2_results[0] = (uint32_t)LH2_selected_poly_2;
@@ -382,7 +308,6 @@ bool db_lh2_get_black_magic(void) {
 void db_lh2_get_current_location(uint32_t *position) {
     memcpy(position, lh2_results, 8 * sizeof(uint32_t));
     _lh2_vars.transfer_counter = 0;
-    ready            = false;
     db_lh2_start_transfer();
 }
 
@@ -391,6 +316,13 @@ void db_lh2_start_transfer(void) {
                        //(PPI_CHENSET_CH3_Enabled << PPI_CHENSET_CH3_Pos);
                        (PPI_CHENSET_CH4_Enabled << PPI_CHENSET_CH4_Pos) |
                        (PPI_CHENSET_CH5_Enabled << PPI_CHENSET_CH5_Pos);
+}
+
+void db_lh2_stop_transfer(void) {
+    NRF_PPI->CHENCLR = (PPI_CHENCLR_CH2_Enabled << PPI_CHENCLR_CH2_Pos) |
+                       //(PPI_CHENCLR_CH3_Enabled << PPI_CHENCLR_CH3_Pos);
+                       (PPI_CHENCLR_CH4_Enabled << PPI_CHENCLR_CH4_Pos) |
+                       (PPI_CHENCLR_CH5_Enabled << PPI_CHENCLR_CH5_Pos);  // stop receiving data while it thinks
 }
 
 //=========================== private ==========================================
@@ -405,110 +337,110 @@ void _initialize_ts4231(void) {
     db_timer_hf_init();
 
     // Filip's code define these pins as inputs, and then changes them quickly to outputs. Not sure why, but it works.
-    _lh2_pin_set_input(D_pin);
-    _lh2_pin_set_input(E_pin);
+    _lh2_pin_set_input(LH2_D_PIN);
+    _lh2_pin_set_input(LH2_E_PIN);
 
     // start the TS4231 initialization
     // Wiggle the Envelope and Data pins
-    _lh2_pin_set_output(E_pin);
+    _lh2_pin_set_output(LH2_E_PIN);
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << E_pin;  // set pin HIGH
+    NRF_P0->OUTSET = 1 << LH2_E_PIN;  // set pin HIGH
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << E_pin;  // set pin LOW
+    NRF_P0->OUTCLR = 1 << LH2_E_PIN;  // set pin LOW
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << E_pin;
+    NRF_P0->OUTSET = 1 << LH2_E_PIN;
     db_timer_hf_delay_us(10);
-    _lh2_pin_set_output(D_pin);
+    _lh2_pin_set_output(LH2_D_PIN);
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << D_pin;
+    NRF_P0->OUTSET = 1 << LH2_D_PIN;
     db_timer_hf_delay_us(10);
     // Turn the pins back to inputs
-    _lh2_pin_set_input(D_pin);
-    _lh2_pin_set_input(E_pin);
+    _lh2_pin_set_input(LH2_D_PIN);
+    _lh2_pin_set_input(LH2_E_PIN);
     // finally, wait 1 milisecond
     db_timer_hf_delay_us(1000);
 
     // Send the configuration magic number/sequence
     uint16_t config_val = 0x392B;
     // Turn the Data and Envelope lines back to outputs and clear them.
-    _lh2_pin_set_output(E_pin);
-    _lh2_pin_set_output(D_pin);
+    _lh2_pin_set_output(LH2_E_PIN);
+    _lh2_pin_set_output(LH2_D_PIN);
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << D_pin;
+    NRF_P0->OUTCLR = 1 << LH2_D_PIN;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << E_pin;
+    NRF_P0->OUTCLR = 1 << LH2_E_PIN;
     db_timer_hf_delay_us(10);
     // Send the magic configuration value, MSB first.
     for (uint8_t i = 0; i < 15; i++) {
 
         config_val = config_val << 1;
-        if ((config_val & 0x8000) > 0)
-            NRF_P0->OUTSET = 1 << D_pin;
-        else
-            NRF_P0->OUTCLR = 1 << D_pin;
+        if ((config_val & 0x8000) > 0) {
+            NRF_P0->OUTSET = 1 << LH2_D_PIN;
+        } else {
+            NRF_P0->OUTCLR = 1 << LH2_D_PIN;
+        }
 
         // Toggle the Envelope line as a clock.
         db_timer_hf_delay_us(10);
-        NRF_P0->OUTSET = 1 << E_pin;
+        NRF_P0->OUTSET = 1 << LH2_E_PIN;
         db_timer_hf_delay_us(10);
-        NRF_P0->OUTCLR = 1 << E_pin;
+        NRF_P0->OUTCLR = 1 << LH2_E_PIN;
         db_timer_hf_delay_us(10);
     }
     // Finish send sequence and turn pins into inputs again.
-    NRF_P0->OUTCLR = 1 << D_pin;
+    NRF_P0->OUTCLR = 1 << LH2_D_PIN;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << E_pin;
+    NRF_P0->OUTSET = 1 << LH2_E_PIN;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << D_pin;
+    NRF_P0->OUTSET = 1 << LH2_D_PIN;
     db_timer_hf_delay_us(10);
-    _lh2_pin_set_input(D_pin);
-    _lh2_pin_set_input(E_pin);
+    _lh2_pin_set_input(LH2_D_PIN);
+    _lh2_pin_set_input(LH2_E_PIN);
     // Finish by waiting 10usec
     db_timer_hf_delay_us(10);
 
     // Now read back the sequence that the TS4231 answers.
-    _lh2_pin_set_output(E_pin);
-    _lh2_pin_set_output(D_pin);
+    _lh2_pin_set_output(LH2_E_PIN);
+    _lh2_pin_set_output(LH2_D_PIN);
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << D_pin;
+    NRF_P0->OUTCLR = 1 << LH2_D_PIN;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << E_pin;
+    NRF_P0->OUTCLR = 1 << LH2_E_PIN;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << D_pin;
+    NRF_P0->OUTSET = 1 << LH2_D_PIN;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << E_pin;
+    NRF_P0->OUTSET = 1 << LH2_E_PIN;
     db_timer_hf_delay_us(10);
     // Set Data pin as an input, to receive the data
-    _lh2_pin_set_input(D_pin);
+    _lh2_pin_set_input(LH2_D_PIN);
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << E_pin;
+    NRF_P0->OUTCLR = 1 << LH2_E_PIN;
     db_timer_hf_delay_us(10);
     // Use the Envelope pin to output a clock while the data arrives.
     for (uint8_t i = 0; i < 14; i++) {
-
-        NRF_P0->OUTSET = 1 << E_pin;
+        NRF_P0->OUTSET = 1 << LH2_E_PIN;
         db_timer_hf_delay_us(10);
-        NRF_P0->OUTCLR = 1 << E_pin;
+        NRF_P0->OUTCLR = 1 << LH2_E_PIN;
         db_timer_hf_delay_us(10);
     }
 
     // Finish the configuration procedure
-    _lh2_pin_set_output(D_pin);
+    _lh2_pin_set_output(LH2_D_PIN);
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << E_pin;
+    NRF_P0->OUTSET = 1 << LH2_E_PIN;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << D_pin;
-    db_timer_hf_delay_us(10);
-
-    NRF_P0->OUTCLR = 1 << E_pin;
-    db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << D_pin;
-    db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << E_pin;
+    NRF_P0->OUTSET = 1 << LH2_D_PIN;
     db_timer_hf_delay_us(10);
 
-    _lh2_pin_set_input(D_pin);
-    _lh2_pin_set_input(E_pin);
+    NRF_P0->OUTCLR = 1 << LH2_E_PIN;
+    db_timer_hf_delay_us(10);
+    NRF_P0->OUTCLR = 1 << LH2_D_PIN;
+    db_timer_hf_delay_us(10);
+    NRF_P0->OUTSET = 1 << LH2_E_PIN;
+    db_timer_hf_delay_us(10);
+
+    _lh2_pin_set_input(LH2_D_PIN);
+    _lh2_pin_set_input(LH2_E_PIN);
 
     db_timer_hf_delay_us(50000);
 
@@ -847,7 +779,7 @@ int _determine_polynomial(uint64_t chipsH1, int *start_val) {
     volatile uint64_t weight3         = 0xFFFFFFFFFFFFFFFF;
     volatile int      selected_poly_1 = LH2_POLYNOMIAL_ERROR_INDICATOR;  // initialize to error condition
     volatile uint64_t bits_to_compare = 0;
-    volatile int      threshold       = _determine_polynomial_BIT_ERROR_INITIAL_THRESHOLD;
+    volatile int      threshold       = POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
 
     *start_val = 0;  // TODO: remove this? possible that I modify start value during the demodulation process
 
@@ -1356,6 +1288,54 @@ uint32_t _reverse_count_p3(uint32_t bits) {
     return count;
 }
 
+/**
+ * @brief Set a pin of port 0 as an INPUT with no pull-up or pull-down
+ * @param[in] pin: port 0 pin to configure as input [0-31]
+ *
+ */
+void _lh2_pin_set_input(uint8_t pin) {
+
+    // Configure Data pin as INPUT, with no pullup or pull down.
+    NRF_P0->PIN_CNF[pin] = (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos) |
+                           (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos) |
+                           (GPIO_PIN_CNF_PULL_Disabled << GPIO_PIN_CNF_PULL_Pos);
+}
+
+/**
+ * @brief Set a pin of port 0 as an OUTPUT with standard drive
+ * @param[in] pin: port 0 pin to configure as input [0-31]
+ *
+ */
+void _lh2_pin_set_output(uint8_t pin) {
+
+    // Configure Data pin as OUTPUT, with standar power drive current.
+    NRF_P0->PIN_CNF[pin] = (GPIO_PIN_CNF_DIR_Output << GPIO_PIN_CNF_DIR_Pos) |   // Set Pin as output
+                           (GPIO_PIN_CNF_DRIVE_S0S1 << GPIO_PIN_CNF_DRIVE_Pos);  // Activate high current gpio mode.
+}
+
+/**
+ * @brief set-up GPIOTE so that events are configured for falling (GPIOTE_CH_IN) and rising edges (GPIOTE_CH_IN_ENV_HiToLo) of the envelope signal
+ *
+ */
+void _gpiote_setup(void) {
+
+    // NRF_GPIOTE->CONFIG[GPIOTE_CH_OUT] =           (GPIOTE_CONFIG_MODE_Task        << GPIOTE_CONFIG_MODE_Pos) | // TODO: remove this event, it exists for debug purposes
+    //                                               (OUTPUT_PIN_NUMBER              << GPIOTE_CONFIG_PSEL_Pos) |
+    //                                               (OUTPUT_PIN_PORT                << GPIOTE_CONFIG_PORT_Pos) |
+    //                                               (GPIOTE_CONFIG_POLARITY_Toggle  << GPIOTE_CONFIG_POLARITY_Pos) |
+    //                                               (GPIOTE_CONFIG_OUTINIT_High     << GPIOTE_CONFIG_OUTINIT_Pos);
+
+    NRF_GPIOTE->CONFIG[GPIOTE_CH_IN_ENV_HiToLo] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
+                                                  (INPUT_PIN_NUMBER << GPIOTE_CONFIG_PSEL_Pos) |
+                                                  (INPUT_PIN_PORT << GPIOTE_CONFIG_PORT_Pos) |
+                                                  (GPIOTE_CONFIG_POLARITY_HiToLo << GPIOTE_CONFIG_POLARITY_Pos);
+
+    NRF_GPIOTE->CONFIG[GPIOTE_CH_IN_ENV_LoToHi] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
+                                                  (INPUT_PIN_NUMBER << GPIOTE_CONFIG_PSEL_Pos) |
+                                                  (INPUT_PIN_PORT << GPIOTE_CONFIG_PORT_Pos) |
+                                                  (GPIOTE_CONFIG_POLARITY_LoToHi << GPIOTE_CONFIG_POLARITY_Pos);
+}
+
 // setup the PPI
 /**
  * @brief start SPI3 at falling edge of envelope, start timer2 at falling edge of envelope, stop/capture timer2 at rising edge of envelope
@@ -1388,6 +1368,45 @@ void _ppi_setup(void) {
     NRF_PPI->FORK[5].TEP = spi3_stop_task_addr;     // stop spi3 transfer
 }
 
+void _spi3_setup(void) {
+    // Define the necessary Pins in the SPIM peripheral
+    NRF_SPIM3->PSEL.MISO = LH2_D_PIN << SPIM_PSEL_MISO_PIN_Pos |                            // Define pin number for MISO pin
+                           0 << SPIM_PSEL_MISO_PORT_Pos |                                   // Define pin port for MISO pin
+                           SPIM_PSEL_MISO_CONNECT_Connected << SPIM_PSEL_MISO_CONNECT_Pos;  // Enable the MISO pin
+
+    NRF_SPIM3->PSEL.SCK = FAKE_SCK_PIN << SPIM_PSEL_SCK_PIN_Pos |                        // Define pin number for SCK pin
+                          1 << SPIM_PSEL_SCK_PORT_Pos |                                  // Define pin port for SCK pin
+                          SPIM_PSEL_SCK_CONNECT_Connected << SPIM_PSEL_SCK_CONNECT_Pos;  // Enable the SCK pin
+
+    NRF_SPIM3->PSEL.MOSI = (4UL) << SPIM_PSEL_MOSI_PIN_Pos |
+                           1 << SPIM_PSEL_MOSI_PORT_Pos |
+                           SPIM_PSEL_MOSI_CONNECT_Connected << SPIM_PSEL_MOSI_CONNECT_Pos;
+
+    // Configure the SPIM peripheral
+    NRF_SPIM3->FREQUENCY = SPIM_FREQUENCY_FREQUENCY_M32;                         // Set SPI frequency to 32MHz
+    NRF_SPIM3->CONFIG    = SPIM_CONFIG_ORDER_MsbFirst << SPIM_CONFIG_ORDER_Pos;  // Set MsB out first
+
+    // Configure the EasyDMA channel
+    // Configuring the READER channel
+    NRF_SPIM3->RXD.MAXCNT = SPI3_BUFFER_SIZE;    // Set the size of the input buffer.
+    NRF_SPIM3->RXD.PTR    = (uint32_t)m_rx_buf;  // Set the input buffer pointer.
+    // Configure the WRITER channel
+    NRF_SPIM3->TXD.MAXCNT = SPI3_BUFFER_SIZE;    // Set the size of the output buffer.
+    NRF_SPIM3->TXD.PTR    = (uint32_t)m_tx_buf;  // Set the output buffer pointer.
+
+    // Enable the SPIM pripheral
+    NRF_SPIM3->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
+
+    // Configure the Interruptions
+    NVIC_DisableIRQ(SPIM3_IRQn);  // Disable interruptions while configuring
+
+    NRF_SPIM3->INTENSET = SPIM_INTENSET_END_Enabled << SPIM_INTENSET_END_Pos;  // Enable interruption for when a packet arrives
+    NVIC_SetPriority(SPIM3_IRQn, SPIM3_INTERRUPT_PRIORITY);                    // Set priority for Radio interrupts to 1
+    NVIC_ClearPendingIRQ(SPIM3_IRQn);
+    // Enable SPIM interruptions
+    NVIC_EnableIRQ(SPIM3_IRQn);
+}
+
 /**
  * @brief timer2 setup, in _ppi_setup() this timer will CLEAR/START at falling edge of envelop signal and STOP/CAPTURE at rising edge of envelope signal
  *
@@ -1401,6 +1420,8 @@ void _timer2_setup(void) {
     // it is the processor's responsibility to read this timer's count value and reset it
 }
 
+//=========================== interrupts =======================================
+
 /**
  * @brief SPIM3 interrupt handler
  *
@@ -1408,8 +1429,6 @@ void _timer2_setup(void) {
 void SPIM3_IRQHandler(void) {
     NVIC_ClearPendingIRQ(SPIM3_IRQn);
 
-    spi_xfer_done = true;
-    ready         = false;
     _lh2_vars.transfer_counter++;
 
     volatile int lp = 0;  // temporary loop variable to go through each byte of the SPI buffer
@@ -1422,82 +1441,31 @@ void SPIM3_IRQHandler(void) {
 
         // load global SPI buffer (m_rx_buf) into four local arrays (stored_buff_1 ... stored_buff_4)
         if (_lh2_vars.transfer_counter == 1) {
-            for (lp = 0; lp < m_length; lp++) {
+            for (lp = 0; lp < SPI3_BUFFER_SIZE; lp++) {
                 stored_buff_1[lp] = m_rx_buf[lp];
                 m_rx_buf[lp]      = 0x00;
             }
             LH2_envelope_duration_1 = NRF_TIMER2->CC[0];
         } else if (_lh2_vars.transfer_counter == 2) {
-            for (lp = 0; lp < m_length; lp++) {
+            for (lp = 0; lp < SPI3_BUFFER_SIZE; lp++) {
                 stored_buff_2[lp] = m_rx_buf[lp];
                 m_rx_buf[lp]      = 0x00;
             }
             LH2_envelope_duration_2 = NRF_TIMER2->CC[0];
         } else if (_lh2_vars.transfer_counter == 3) {
-            for (lp = 0; lp < m_length; lp++) {
+            for (lp = 0; lp < SPI3_BUFFER_SIZE; lp++) {
                 stored_buff_3[lp] = m_rx_buf[lp];
                 m_rx_buf[lp]      = 0x00;
             }
             LH2_envelope_duration_3 = NRF_TIMER2->CC[0];
         } else if (_lh2_vars.transfer_counter == 4) {
-            for (lp = 0; lp < m_length; lp++) {
+            for (lp = 0; lp < SPI3_BUFFER_SIZE; lp++) {
                 stored_buff_4[lp] = m_rx_buf[lp];
                 m_rx_buf[lp]      = 0x00;
             }
             LH2_envelope_duration_4 = NRF_TIMER2->CC[0];
-            NRF_PPI->CHENCLR        = (PPI_CHENCLR_CH2_Enabled << PPI_CHENCLR_CH2_Pos) |
-                               //(PPI_CHENCLR_CH3_Enabled << PPI_CHENCLR_CH3_Pos);
-                               (PPI_CHENCLR_CH4_Enabled << PPI_CHENCLR_CH4_Pos) |
-                               (PPI_CHENCLR_CH5_Enabled << PPI_CHENCLR_CH5_Pos);  // stop receiving data while it thinks
-            buffers_ready = true;
+            db_lh2_stop_transfer();
+            _lh2_vars.buffers_ready = true;
         }
     }
-}
-
-/**
- * @brief set-up GPIOTE so that events are configured for falling (GPIOTE_CH_IN) and rising edges (GPIOTE_CH_IN_ENV_HiToLo) of the envelope signal
- *
- */
-void _gpiote_setup(void) {
-
-    // NRF_GPIOTE->CONFIG[GPIOTE_CH_OUT] =           (GPIOTE_CONFIG_MODE_Task        << GPIOTE_CONFIG_MODE_Pos) | // TODO: remove this event, it exists for debug purposes
-    //                                               (OUTPUT_PIN_NUMBER              << GPIOTE_CONFIG_PSEL_Pos) |
-    //                                               (OUTPUT_PIN_PORT                << GPIOTE_CONFIG_PORT_Pos) |
-    //                                               (GPIOTE_CONFIG_POLARITY_Toggle  << GPIOTE_CONFIG_POLARITY_Pos) |
-    //                                               (GPIOTE_CONFIG_OUTINIT_High     << GPIOTE_CONFIG_OUTINIT_Pos);
-
-    NRF_GPIOTE->CONFIG[GPIOTE_CH_IN_ENV_HiToLo] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
-                                                  (INPUT_PIN_NUMBER << GPIOTE_CONFIG_PSEL_Pos) |
-                                                  (INPUT_PIN_PORT << GPIOTE_CONFIG_PORT_Pos) |
-                                                  (GPIOTE_CONFIG_POLARITY_HiToLo << GPIOTE_CONFIG_POLARITY_Pos);
-
-    NRF_GPIOTE->CONFIG[GPIOTE_CH_IN_ENV_LoToHi] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
-                                                  (INPUT_PIN_NUMBER << GPIOTE_CONFIG_PSEL_Pos) |
-                                                  (INPUT_PIN_PORT << GPIOTE_CONFIG_PORT_Pos) |
-                                                  (GPIOTE_CONFIG_POLARITY_LoToHi << GPIOTE_CONFIG_POLARITY_Pos);
-}
-
-/**
- * @brief Set a pin of port 0 as an INPUT with no pull-up or pull-down
- * @param[in] pin: port 0 pin to configure as input [0-31]
- *
- */
-void _lh2_pin_set_input(uint8_t pin) {
-
-    // Configure Data pin as INPUT, with no pullup or pull down.
-    NRF_P0->PIN_CNF[pin] = (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos) |
-                           (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos) |
-                           (GPIO_PIN_CNF_PULL_Disabled << GPIO_PIN_CNF_PULL_Pos);
-}
-
-/**
- * @brief Set a pin of port 0 as an OUTPUT with standard drive
- * @param[in] pin: port 0 pin to configure as input [0-31]
- *
- */
-void _lh2_pin_set_output(uint8_t pin) {
-
-    // Configure Data pin as OUTPUT, with standar power drive current.
-    NRF_P0->PIN_CNF[pin] = (GPIO_PIN_CNF_DIR_Output << GPIO_PIN_CNF_DIR_Pos) |   // Set Pin as output
-                           (GPIO_PIN_CNF_DRIVE_S0S1 << GPIO_PIN_CNF_DRIVE_Pos);  // Activate high current gpio mode.
 }
