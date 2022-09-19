@@ -58,51 +58,51 @@ typedef struct {
 static lh2_vars_t _lh2_vars;
 
 // variable where location packet is stored
-uint32_t lh2_packet[LH2_PACKET_SIZE];
+static uint32_t lh2_packet[LH2_PACKET_SIZE];
 
-uint32_t lh2_results[8];
+static uint32_t lh2_results[8];
 
 // initialize LH2 demodulation variables
 // bits sweep is the result of the demodulation, sweep_N indicates which SPI transfer those bits are associated with
-volatile uint64_t LH2_bits_sweep_1 = 0;
-volatile uint64_t LH2_bits_sweep_2 = 0;
-volatile uint64_t LH2_bits_sweep_3 = 0;
-volatile uint64_t LH2_bits_sweep_4 = 0;
+static uint64_t LH2_bits_sweep_1 = 0;
+static uint64_t LH2_bits_sweep_2 = 0;
+static uint64_t LH2_bits_sweep_3 = 0;
+static uint64_t LH2_bits_sweep_4 = 0;
 
 // selected poly is the polyomial # (between 0 and 31) that the demodulation code thinks the demodulated bits are a part of, initialize to error state
-volatile int LH2_selected_poly_1 = LH2_POLYNOMIAL_ERROR_INDICATOR;
-volatile int LH2_selected_poly_2 = LH2_POLYNOMIAL_ERROR_INDICATOR;
-volatile int LH2_selected_poly_3 = LH2_POLYNOMIAL_ERROR_INDICATOR;
-volatile int LH2_selected_poly_4 = LH2_POLYNOMIAL_ERROR_INDICATOR;
+static int LH2_selected_poly_1 = LH2_POLYNOMIAL_ERROR_INDICATOR;
+static int LH2_selected_poly_2 = LH2_POLYNOMIAL_ERROR_INDICATOR;
+static int LH2_selected_poly_3 = LH2_POLYNOMIAL_ERROR_INDICATOR;
+static int LH2_selected_poly_4 = LH2_POLYNOMIAL_ERROR_INDICATOR;
 
 // bit_offset indicates an offset between the start of the packet, as indicated by envelope dropping, and the 17-bit sequence that is verified to be in a known LFSR sequence
-int LH2_bit_offset_1 = 0;
-int LH2_bit_offset_2 = 0;
-int LH2_bit_offset_3 = 0;
-int LH2_bit_offset_4 = 0;
+static int LH2_bit_offset_1 = 0;
+static int LH2_bit_offset_2 = 0;
+static int LH2_bit_offset_3 = 0;
+static int LH2_bit_offset_4 = 0;
 
 // LFSR location is the position in a given polynomial's LFSR that the decoded data is, initialize to error state
-volatile uint32_t LH2_LFSR_location_1 = LH2_LOCATION_ERROR_INDICATOR;  // mark as all Fs, so that if the receiver gets a -1 (signed) it knows something went horribly wrong
-volatile uint32_t LH2_LFSR_location_2 = LH2_LOCATION_ERROR_INDICATOR;
-volatile uint32_t LH2_LFSR_location_3 = LH2_LOCATION_ERROR_INDICATOR;
-volatile uint32_t LH2_LFSR_location_4 = LH2_LOCATION_ERROR_INDICATOR;
+static uint32_t LH2_LFSR_location_1 = LH2_LOCATION_ERROR_INDICATOR;  // mark as all Fs, so that if the receiver gets a -1 (signed) it knows something went horribly wrong
+static uint32_t LH2_LFSR_location_2 = LH2_LOCATION_ERROR_INDICATOR;
+static uint32_t LH2_LFSR_location_3 = LH2_LOCATION_ERROR_INDICATOR;
+static uint32_t LH2_LFSR_location_4 = LH2_LOCATION_ERROR_INDICATOR;
 
 // initialize envelope duration storage variables
-volatile uint32_t LH2_envelope_duration_1 = 0xFFFFFFFF;  // initialize to all 1s, error state
-volatile uint32_t LH2_envelope_duration_2 = 0xFFFFFFFF;
-volatile uint32_t LH2_envelope_duration_3 = 0xFFFFFFFF;
-volatile uint32_t LH2_envelope_duration_4 = 0xFFFFFFFF;
+static uint32_t LH2_envelope_duration_1 = 0xFFFFFFFF;  // initialize to all 1s, error state
+static uint32_t LH2_envelope_duration_2 = 0xFFFFFFFF;
+static uint32_t LH2_envelope_duration_3 = 0xFFFFFFFF;
+static uint32_t LH2_envelope_duration_4 = 0xFFFFFFFF;
 
 // Define SPI buffer
 static uint8_t m_tx_buf[SPI3_BUFFER_SIZE] = { 0 };
 static uint8_t m_rx_buf[SPI3_BUFFER_SIZE] = { 0 };
 
 // arrays of bits for local storage, contents of SPI transfer are copied into this
-uint8_t stored_buff[128];  // TODO: make these local variables inside of main - no reason for them to be glob
-uint8_t stored_buff_1[128];
-uint8_t stored_buff_2[128];
-uint8_t stored_buff_3[128];
-uint8_t stored_buff_4[128];
+static uint8_t stored_buff[128];  // TODO: make these local variables inside of main - no reason for them to be glob
+static uint8_t stored_buff_1[128];
+static uint8_t stored_buff_2[128];
+static uint8_t stored_buff_3[128];
+static uint8_t stored_buff_4[128];
 
 //=========================== prototypes =======================================
 
@@ -762,24 +762,24 @@ int _determine_polynomial(uint64_t chipsH1, int *start_val) {
     // check which polynomial the bit sequence is part of
     // TODO: make function a void and modify memory directly
     // TODO: rename chipsH1 to something relevant... like bits?
-    volatile uint32_t poly0           = 0b11101001001011000;
-    volatile uint32_t poly1           = 0b10111111000000100;  // TODO: change this back to hex
-    volatile uint32_t poly2           = 0x0001FF6B;
-    volatile uint32_t poly3           = 0x00013F67;  // TODO: no more magic #s here, move this to #defines
-    volatile int      bits_N_for_comp = 47;
-    volatile int      match1          = 0;
-    volatile uint32_t bit_buffer1     = (uint32_t)(((0xFFFF800000000000) & chipsH1) >> 47);
-    volatile uint64_t bits_from_poly0 = 0;
-    volatile uint64_t bits_from_poly1 = 0;
-    volatile uint64_t bits_from_poly2 = 0;
-    volatile uint64_t bits_from_poly3 = 0;
-    volatile uint64_t weight0         = 0xFFFFFFFFFFFFFFFF;
-    volatile uint64_t weight1         = 0xFFFFFFFFFFFFFFFF;
-    volatile uint64_t weight2         = 0xFFFFFFFFFFFFFFFF;
-    volatile uint64_t weight3         = 0xFFFFFFFFFFFFFFFF;
-    volatile int      selected_poly_1 = LH2_POLYNOMIAL_ERROR_INDICATOR;  // initialize to error condition
-    volatile uint64_t bits_to_compare = 0;
-    volatile int      threshold       = POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
+    uint32_t poly0           = 0b11101001001011000;
+    uint32_t poly1           = 0b10111111000000100;  // TODO: change this back to hex
+    uint32_t poly2           = 0x0001FF6B;
+    uint32_t poly3           = 0x00013F67;  // TODO: no more magic #s here, move this to #defines
+    int32_t  bits_N_for_comp = 47;
+    int32_t  match1          = 0;
+    uint32_t bit_buffer1     = (uint32_t)(((0xFFFF800000000000) & chipsH1) >> 47);
+    uint64_t bits_from_poly0 = 0;
+    uint64_t bits_from_poly1 = 0;
+    uint64_t bits_from_poly2 = 0;
+    uint64_t bits_from_poly3 = 0;
+    uint64_t weight0         = 0xFFFFFFFFFFFFFFFF;
+    uint64_t weight1         = 0xFFFFFFFFFFFFFFFF;
+    uint64_t weight2         = 0xFFFFFFFFFFFFFFFF;
+    uint64_t weight3         = 0xFFFFFFFFFFFFFFFF;
+    int32_t  selected_poly_1 = LH2_POLYNOMIAL_ERROR_INDICATOR;  // initialize to error condition
+    uint64_t bits_to_compare = 0;
+    int32_t  threshold       = POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
 
     *start_val = 0;  // TODO: remove this? possible that I modify start value during the demodulation process
 
@@ -1431,7 +1431,7 @@ void SPIM3_IRQHandler(void) {
 
     _lh2_vars.transfer_counter++;
 
-    volatile int lp = 0;  // temporary loop variable to go through each byte of the SPI buffer
+    int32_t lp = 0;  // temporary loop variable to go through each byte of the SPI buffer
 
     // Check if the interrupt was caused by a fully send package
     if (NRF_SPIM3->EVENTS_END) {
