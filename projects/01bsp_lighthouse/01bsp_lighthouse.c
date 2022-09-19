@@ -39,11 +39,11 @@ int main(void) {
 
     while (1) {
         // the location function has to be running all the time but not that fast
-        packet_ready = db_get_black_magic();
+        packet_ready = db_lh2_get_black_magic();
 
         // wait until the packet is ready
         if (packet_ready) {
-            db_get_current_location(current_loc_p);
+            db_lh2_get_current_location(current_loc_p);
             __NOP();
         }
     }
