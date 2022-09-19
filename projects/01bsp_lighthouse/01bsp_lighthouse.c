@@ -35,6 +35,7 @@ int main(void) {
     lh2_init();
 
     // Start SPI capture
+    NRF_P0->DIRSET = 1 << 20;
     NRF_P0->OUTSET = 1 << 20;
     start_transfer();
 

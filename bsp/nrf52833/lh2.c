@@ -20,7 +20,7 @@
 //=========================== defines =========================================
 
 // Interrupt priority, as high as it will go.
-#define SPIM3_INTERRUPT_PRIORITY 0
+#define SPIM3_INTERRUPT_PRIORITY 1
 
 // magic number definitions
 #define LH2_PACKET_SIZE 5
@@ -68,6 +68,8 @@ volatile int  TRANSFER_COUNTER;
 
 // variable where location packet is stored
 uint32_t lh2_packet[LH2_PACKET_SIZE];
+
+uint32_t lh2_results[8];
 
 // please show me my variables?
 volatile uint64_t temp1;
@@ -189,6 +191,10 @@ void lh2_init(void) {
 }
 
 bool get_black_magic(void) {
+    uint8_t i;
+    uint8_t j;
+    // invalid packet detection:
+    int8_t invalid_packet_counter;
 
     if (buffers_ready) {
         NRF_P0->OUTCLR = 1 << 20;
@@ -217,11 +223,6 @@ bool get_black_magic(void) {
         temp2 = LH2_selected_poly_2;
         temp3 = LH2_bit_offset_1;
         temp4 = LH2_bit_offset_2;
-
-        memset(stored_buff_1, 0, sizeof(stored_buff_1));
-        memset(stored_buff_2, 0, sizeof(stored_buff_2));
-        memset(stored_buff_3, 0, sizeof(stored_buff_3));
-        memset(stored_buff_4, 0, sizeof(stored_buff_4));
 
         if ((LH2_selected_poly_1 == LH2_POLYNOMIAL_ERROR_INDICATOR) |
             (LH2_selected_poly_2 == LH2_POLYNOMIAL_ERROR_INDICATOR) |
@@ -291,6 +292,59 @@ bool get_black_magic(void) {
         lh2_packet[3] = ((LH2_envelope_duration_3 & 0x000003FF) << 22) | ((LH2_selected_poly_3 & 0x0000001F) << 17) | ((LH2_LFSR_location_3 & 0x0001FFFF));
         lh2_packet[4] = ((LH2_envelope_duration_4 & 0x000003FF) << 22) | ((LH2_selected_poly_4 & 0x0000001F) << 17) | ((LH2_LFSR_location_4 & 0x0001FFFF));
 
+        lh2_results[0] = (uint32_t)LH2_selected_poly_1;
+        lh2_results[2] = (uint32_t)LH2_selected_poly_2;
+        lh2_results[4] = (uint32_t)LH2_selected_poly_3;
+        lh2_results[6] = (uint32_t)LH2_selected_poly_4;
+        lh2_results[1] = LH2_LFSR_location_1;
+        lh2_results[3] = LH2_LFSR_location_2;
+        lh2_results[5] = LH2_LFSR_location_3;
+        lh2_results[7] = LH2_LFSR_location_4;
+
+        // detect invalid packets
+        invalid_packet_counter = 0;
+        for (i = 0; i < 7; i += 2) {
+            if ((lh2_results[i] == 0) | (lh2_results[i] == 1)) {
+                invalid_packet_counter++;  // from LHA
+            } else if ((lh2_results[i] == 2) | (lh2_results[i] == 3)) {
+                invalid_packet_counter--;  // from LHB
+            }
+        }
+        if ((invalid_packet_counter == 1) | (invalid_packet_counter == -1)) {
+            return false;  // odd # of packets from 1 LH, erroneous result
+        }
+
+        if ((invalid_packet_counter == 4) | (invalid_packet_counter == -4)) {
+            // results from one LH2 were discovered - sort the two pairs
+            if (LH2_LFSR_location_1 > LH2_LFSR_location_2) {
+                lh2_results[0] = (uint32_t)LH2_selected_poly_2;
+                lh2_results[2] = (uint32_t)LH2_selected_poly_1;
+                lh2_results[1] = LH2_LFSR_location_2;
+                lh2_results[3] = LH2_LFSR_location_1;
+            } else {
+                lh2_results[0] = (uint32_t)LH2_selected_poly_1;
+                lh2_results[2] = (uint32_t)LH2_selected_poly_2;
+                lh2_results[1] = LH2_LFSR_location_1;
+                lh2_results[3] = LH2_LFSR_location_2;
+            }
+            if (LH2_LFSR_location_3 > LH2_LFSR_location_4) {
+                lh2_results[0] = (uint32_t)LH2_selected_poly_4;
+                lh2_results[2] = (uint32_t)LH2_selected_poly_3;
+                lh2_results[1] = LH2_LFSR_location_4;
+                lh2_results[3] = LH2_LFSR_location_3;
+            } else {
+                lh2_results[0] = (uint32_t)LH2_selected_poly_3;
+                lh2_results[2] = (uint32_t)LH2_selected_poly_4;
+                lh2_results[1] = LH2_LFSR_location_3;
+                lh2_results[3] = LH2_LFSR_location_4;
+            }
+        }
+
+        memset(stored_buff_1, 0, sizeof(stored_buff_1));
+        memset(stored_buff_2, 0, sizeof(stored_buff_2));
+        memset(stored_buff_3, 0, sizeof(stored_buff_3));
+        memset(stored_buff_4, 0, sizeof(stored_buff_4));
+
         return true;
     }
     return false;
@@ -300,7 +354,7 @@ uint32_t *get_current_location(void) {
     TRANSFER_COUNTER = 0;
     ready            = false;
     start_transfer();
-    return lh2_packet;
+    return lh2_results;
 }
 
 void start_transfer(void) {
@@ -428,6 +482,8 @@ void LH2_initialize_TS4231(void) {
     lh2_pin_set_input(E_pin);
 
     lh2_wait_usec(50000);
+
+    NRF_TIMER3->TASKS_STOP = (1UL);
 }
 
 /**
@@ -492,7 +548,7 @@ uint64_t LH2_demodulate_light(uint8_t *sample_buffer) {  // bad input variable n
     }
 
     // threshold the zero crossings into: likely one chip, likely two zero chips, or fuzzy
-    for (jj = 0; jj < 127; jj++) {
+    for (jj = 0; jj < 128; jj++) {
         // not memory efficient, but ok for readability, turn ZCCS into chips by thresholding
         if (zccs_1[jj] >= 5) {
             chips1[jj] = 0;  // it's a very likely zero
@@ -539,9 +595,12 @@ uint64_t LH2_demodulate_light(uint8_t *sample_buffer) {  // bad input variable n
                 ones_counter = ones_counter + 1;
             }
         }
-        if ((chips1[jj] == FUZZY_CHIP) & (ones_counter == 0)) {  // fuzz after a zero
-                                                                 // k_msleep(10);
-            if (chips1[jj + 1] == 0) {                           // zero then fuzz then zero -> fuzz is a zero
+
+        if ((jj == 127) & (chips1[jj] == FUZZY_CHIP)) {
+            chips1[jj] = 0x00;
+        } else if ((chips1[jj] == FUZZY_CHIP) & (ones_counter == 0)) {  // fuzz after a zero
+                                                                        // k_msleep(10);
+            if (chips1[jj + 1] == 0) {                                  // zero then fuzz then zero -> fuzz is a zero
                 jj++;
                 chips1[jj - 1] = 0;
             } else if (chips1[jj + 1] == FUZZY_CHIP) {  // zero then fuzz then fuzz -> just move on, you're probably screwed
