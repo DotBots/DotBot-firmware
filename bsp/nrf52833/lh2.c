@@ -60,12 +60,15 @@
 
 #define LH2_PACKET_SIZE_IN_BYTES sizeof(lh2_packet)  // should be 4*5 = 20 bytes
 
+typedef struct {
+    uint8_t transfer_counter;
+} lh2_vars_t;
+
 //=========================== variables =========================================
 
-volatile bool spi_xfer_done;
+static lh2_vars_t _lh2_vars;
 
-volatile bool TRANSFER_HAPPENED;
-volatile int  TRANSFER_COUNTER;
+volatile bool spi_xfer_done;
 
 // variable where location packet is stored
 uint32_t lh2_packet[LH2_PACKET_SIZE];
@@ -208,7 +211,7 @@ void db_lh2_init(void) {
     // Empty the receive buffer
     memset(m_rx_buf, 0, m_length);
     // Reset the Transfer Counter
-    TRANSFER_COUNTER = 0;
+    _lh2_vars.transfer_counter = 0;
 
     // initialize GPIOTEs
     _gpiote_setup();
@@ -254,7 +257,7 @@ bool db_lh2_get_black_magic(void) {
             (LH2_selected_poly_2 == LH2_POLYNOMIAL_ERROR_INDICATOR) |
             (LH2_selected_poly_3 == LH2_POLYNOMIAL_ERROR_INDICATOR) |
             (LH2_selected_poly_4 == LH2_POLYNOMIAL_ERROR_INDICATOR)) {  // failure to find one of the two polynomials - start from scratch and grab another capture
-            TRANSFER_COUNTER = 0;
+            _lh2_vars.transfer_counter = 0;
             db_lh2_start_transfer();
             return false;
         } else {
@@ -378,7 +381,7 @@ bool db_lh2_get_black_magic(void) {
 
 void db_lh2_get_current_location(uint32_t *position) {
     memcpy(position, lh2_results, 8 * sizeof(uint32_t));
-    TRANSFER_COUNTER = 0;
+    _lh2_vars.transfer_counter = 0;
     ready            = false;
     db_lh2_start_transfer();
 }
@@ -1407,7 +1410,7 @@ void SPIM3_IRQHandler(void) {
 
     spi_xfer_done = true;
     ready         = false;
-    TRANSFER_COUNTER++;
+    _lh2_vars.transfer_counter++;
 
     volatile int lp = 0;  // temporary loop variable to go through each byte of the SPI buffer
 
@@ -1418,25 +1421,25 @@ void SPIM3_IRQHandler(void) {
         NRF_SPIM3->EVENTS_END = 0;
 
         // load global SPI buffer (m_rx_buf) into four local arrays (stored_buff_1 ... stored_buff_4)
-        if (TRANSFER_COUNTER == 1) {
+        if (_lh2_vars.transfer_counter == 1) {
             for (lp = 0; lp < m_length; lp++) {
                 stored_buff_1[lp] = m_rx_buf[lp];
                 m_rx_buf[lp]      = 0x00;
             }
             LH2_envelope_duration_1 = NRF_TIMER2->CC[0];
-        } else if (TRANSFER_COUNTER == 2) {
+        } else if (_lh2_vars.transfer_counter == 2) {
             for (lp = 0; lp < m_length; lp++) {
                 stored_buff_2[lp] = m_rx_buf[lp];
                 m_rx_buf[lp]      = 0x00;
             }
             LH2_envelope_duration_2 = NRF_TIMER2->CC[0];
-        } else if (TRANSFER_COUNTER == 3) {
+        } else if (_lh2_vars.transfer_counter == 3) {
             for (lp = 0; lp < m_length; lp++) {
                 stored_buff_3[lp] = m_rx_buf[lp];
                 m_rx_buf[lp]      = 0x00;
             }
             LH2_envelope_duration_3 = NRF_TIMER2->CC[0];
-        } else if (TRANSFER_COUNTER == 4) {
+        } else if (_lh2_vars.transfer_counter == 4) {
             for (lp = 0; lp < m_length; lp++) {
                 stored_buff_4[lp] = m_rx_buf[lp];
                 m_rx_buf[lp]      = 0x00;
