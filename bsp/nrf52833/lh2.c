@@ -15,8 +15,8 @@
 #include <stdbool.h>
 #include <nrf.h>
 
-#include "timer_hf.h"
 #include "lh2.h"
+#include "timer_hf.h"
 
 //=========================== defines =========================================
 
@@ -44,7 +44,7 @@
 typedef struct {
     uint64_t bits_sweep;               // bits sweep is the result of the demodulation, sweep_N indicates which SPI transfer those bits are associated with
     uint8_t  selected_polynomial;      // selected poly is the polyomial # (between 0 and 31) that the demodulation code thinks the demodulated bits are a part of, initialize to error state
-    int32_t  bit_offset;               // bit_offset indicates an offset between the start of the packet, as indicated by envelope dropping, and the 17-bit sequence that is verified to be in a known LFSR sequence
+    int8_t  bit_offset;                // bit_offset indicates an offset between the start of the packet, as indicated by envelope dropping, and the 17-bit sequence that is verified to be in a known LFSR sequence
     uint32_t lfsr_location;            // LFSR location is the position in a given polynomial's LFSR that the decoded data is, initialize to error state
     uint32_t envelope_duration;        // initialize envelope duration storage variables
     uint8_t  buffer[LH2_BUFFER_SIZE];  // arrays of bits for local storage, contents of SPI transfer are copied into this
@@ -55,7 +55,6 @@ typedef struct {
     uint8_t                 spi_rx_buffer[SPI3_BUFFER_SIZE];
     bool                    buffers_ready;
     lh2_demodulation_data_t data[LH2_LOCATIONS_COUNT];
-    uint32_t                results[LH2_RESULTS_SIZE];
 } lh2_vars_t;
 
 //=========================== variables ========================================
@@ -152,14 +151,10 @@ static lh2_vars_t _lh2_vars;
 
 // these functions are called in the order written to perform the LH2 localization
 void _initialize_ts4231(void);
-
 uint64_t _demodulate_light(uint8_t *sample_buffer);
-
 uint64_t _poly_check(uint32_t poly, uint32_t bits, uint8_t numbits);
-uint8_t  _determine_polynomial(uint64_t chipsH1, int *start_val);
-
+uint8_t  _determine_polynomial(uint64_t chipsH1, int8_t *start_val);
 uint64_t _hamming_weight(uint64_t bits_in);
-
 uint32_t _reverse_count_p(uint8_t index, uint32_t bits);
 
 // setup the PPI
@@ -207,140 +202,147 @@ void db_lh2_init(void) {
     _ppi_setup();
 }
 
+void db_lh2_reset(db_lh2_t *lh2) {
+    _lh2_vars.transfer_counter = 0;
+    _lh2_vars.buffers_ready = false;
+    lh2->state = DB_LH2_RUNNING;
+}
+
 void db_lh2_process_location(db_lh2_t *lh2) {
     uint8_t i;
     uint8_t j;
     // invalid packet detection:
     int8_t invalid_packet_counter;
 
-    if (_lh2_vars.buffers_ready) {
-        _lh2_vars.buffers_ready = false;
-
-        _lh2_vars.data[0].bits_sweep = 0;
-        _lh2_vars.data[1].bits_sweep = 0;
-        _lh2_vars.data[2].bits_sweep = 0;
-        _lh2_vars.data[3].bits_sweep = 0;
-
-        // perform the demodulation + poly search on the received packets
-        // convert the SPI reading to bits via zero-crossing counter demodulation and differential/biphasic manchester decoding
-        _lh2_vars.data[0].bits_sweep = _demodulate_light(_lh2_vars.data[0].buffer);
-        _lh2_vars.data[1].bits_sweep = _demodulate_light(_lh2_vars.data[1].buffer);
-        _lh2_vars.data[2].bits_sweep = _demodulate_light(_lh2_vars.data[2].buffer);
-        _lh2_vars.data[3].bits_sweep = _demodulate_light(_lh2_vars.data[3].buffer);
-
-        // figure out which polynomial each one of the two samples come from.
-        _lh2_vars.data[0].selected_polynomial = _determine_polynomial(_lh2_vars.data[0].bits_sweep, &_lh2_vars.data[0].bit_offset);
-        _lh2_vars.data[1].selected_polynomial = _determine_polynomial(_lh2_vars.data[1].bits_sweep, &_lh2_vars.data[1].bit_offset);
-        _lh2_vars.data[2].selected_polynomial = _determine_polynomial(_lh2_vars.data[2].bits_sweep, &_lh2_vars.data[2].bit_offset);
-        _lh2_vars.data[2].selected_polynomial = _determine_polynomial(_lh2_vars.data[3].bits_sweep, &_lh2_vars.data[3].bit_offset);
-
-        if ((_lh2_vars.data[0].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) |
-            (_lh2_vars.data[1].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) |
-            (_lh2_vars.data[2].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) |
-            (_lh2_vars.data[2].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR)) {  // failure to find one of the two polynomials - start from scratch and grab another capture
-            _lh2_vars.transfer_counter = 0;
-            db_lh2_start_transfer(lh2);
-            return;
-        } else {
-            // find location of the first data set by counting the LFSR backwards
-            if (_lh2_vars.data[0].selected_polynomial == 0) {  // TODO: functionalize this nested if statement to clean up the main/applet code
-                _lh2_vars.data[0].lfsr_location = _reverse_count_p(0, _lh2_vars.data[0].bits_sweep >> (47 - _lh2_vars.data[0].bit_offset)) - _lh2_vars.data[0].bit_offset;
-            } else if (_lh2_vars.data[0].selected_polynomial == 1) {
-                _lh2_vars.data[0].lfsr_location = _reverse_count_p(1, _lh2_vars.data[0].bits_sweep >> (47 - _lh2_vars.data[0].bit_offset)) - _lh2_vars.data[0].bit_offset;
-            } else if (_lh2_vars.data[0].selected_polynomial == 2) {
-                _lh2_vars.data[0].lfsr_location = _reverse_count_p(2, _lh2_vars.data[0].bits_sweep >> (47 - _lh2_vars.data[0].bit_offset)) - _lh2_vars.data[0].bit_offset;
-            } else if (_lh2_vars.data[0].selected_polynomial == 3) {
-                _lh2_vars.data[0].lfsr_location = _reverse_count_p(3, _lh2_vars.data[0].bits_sweep >> (47 - _lh2_vars.data[0].bit_offset)) - _lh2_vars.data[0].bit_offset;
-            }
-            // find location of the second data set
-            if (_lh2_vars.data[1].selected_polynomial == 0) {
-                _lh2_vars.data[1].lfsr_location = _reverse_count_p(0, _lh2_vars.data[1].bits_sweep >> (47 - _lh2_vars.data[1].bit_offset)) - _lh2_vars.data[1].bit_offset;
-            } else if (_lh2_vars.data[1].selected_polynomial == 1) {
-                _lh2_vars.data[1].lfsr_location = _reverse_count_p(1, _lh2_vars.data[1].bits_sweep >> (47 - _lh2_vars.data[1].bit_offset)) - _lh2_vars.data[1].bit_offset;
-            } else if (_lh2_vars.data[1].selected_polynomial == 2) {
-                _lh2_vars.data[1].lfsr_location = _reverse_count_p(2, _lh2_vars.data[1].bits_sweep >> (47 - _lh2_vars.data[1].bit_offset)) - _lh2_vars.data[1].bit_offset;
-            } else if (_lh2_vars.data[1].selected_polynomial == 3) {
-                _lh2_vars.data[1].lfsr_location = _reverse_count_p(3, _lh2_vars.data[1].bits_sweep >> (47 - _lh2_vars.data[1].bit_offset)) - _lh2_vars.data[1].bit_offset;
-            }
-
-            // find location of the third data set
-            if (_lh2_vars.data[2].selected_polynomial == 0) {
-                _lh2_vars.data[2].lfsr_location = _reverse_count_p(0, _lh2_vars.data[2].bits_sweep >> (47 - _lh2_vars.data[2].bit_offset)) - _lh2_vars.data[2].bit_offset;
-            } else if (_lh2_vars.data[2].selected_polynomial == 1) {
-                _lh2_vars.data[2].lfsr_location = _reverse_count_p(1, _lh2_vars.data[2].bits_sweep >> (47 - _lh2_vars.data[2].bit_offset)) - _lh2_vars.data[2].bit_offset;
-            } else if (_lh2_vars.data[2].selected_polynomial == 2) {
-                _lh2_vars.data[2].lfsr_location = _reverse_count_p(2, _lh2_vars.data[2].bits_sweep >> (47 - _lh2_vars.data[2].bit_offset)) - _lh2_vars.data[2].bit_offset;
-            } else if (_lh2_vars.data[2].selected_polynomial == 3) {
-                _lh2_vars.data[2].lfsr_location = _reverse_count_p(3, _lh2_vars.data[2].bits_sweep >> (47 - _lh2_vars.data[2].bit_offset)) - _lh2_vars.data[2].bit_offset;
-            }
-
-            // find location of the fourth data set
-            if (_lh2_vars.data[2].selected_polynomial == 0) {
-                _lh2_vars.data[3].lfsr_location = _reverse_count_p(0, _lh2_vars.data[3].bits_sweep >> (47 - _lh2_vars.data[3].bit_offset)) - _lh2_vars.data[3].bit_offset;
-            } else if (_lh2_vars.data[2].selected_polynomial == 1) {
-                _lh2_vars.data[3].lfsr_location = _reverse_count_p(1, _lh2_vars.data[3].bits_sweep >> (47 - _lh2_vars.data[3].bit_offset)) - _lh2_vars.data[3].bit_offset;
-            } else if (_lh2_vars.data[2].selected_polynomial == 2) {
-                _lh2_vars.data[3].lfsr_location = _reverse_count_p(2, _lh2_vars.data[3].bits_sweep >> (47 - _lh2_vars.data[3].bit_offset)) - _lh2_vars.data[3].bit_offset;
-            } else if (_lh2_vars.data[2].selected_polynomial == 3) {
-                _lh2_vars.data[3].lfsr_location = _reverse_count_p(3, _lh2_vars.data[3].bits_sweep >> (47 - _lh2_vars.data[3].bit_offset)) - _lh2_vars.data[3].bit_offset;
-            }
-        }
-
-        lh2->results[0] = (uint32_t)_lh2_vars.data[0].selected_polynomial;
-        lh2->results[2] = (uint32_t)_lh2_vars.data[1].selected_polynomial;
-        lh2->results[4] = (uint32_t)_lh2_vars.data[2].selected_polynomial;
-        lh2->results[6] = (uint32_t)_lh2_vars.data[2].selected_polynomial;
-        lh2->results[1] = _lh2_vars.data[0].lfsr_location;
-        lh2->results[3] = _lh2_vars.data[1].lfsr_location;
-        lh2->results[5] = _lh2_vars.data[2].lfsr_location;
-        lh2->results[7] = _lh2_vars.data[3].lfsr_location;
-
-        // detect invalid packets
-        invalid_packet_counter = 0;
-        for (i = 0; i < 7; i += 2) {
-            if ((lh2->results[i] == 0) || (lh2->results[i] == 1)) {
-                invalid_packet_counter++;  // from LHA
-            } else if ((lh2->results[i] == 2) || (lh2->results[i] == 3)) {
-                invalid_packet_counter--;  // from LHB
-            }
-        }
-        if ((invalid_packet_counter == 1) || (invalid_packet_counter == -1)) {
-            return;  // odd # of packets from 1 LH, erroneous result
-        }
-
-        if ((invalid_packet_counter == 4) || (invalid_packet_counter == -4)) {
-            // results from one LH2 were discovered - sort the two pairs
-            if (_lh2_vars.data[0].lfsr_location > _lh2_vars.data[1].lfsr_location) {
-                lh2->results[0] = (uint32_t)_lh2_vars.data[1].selected_polynomial;
-                lh2->results[2] = (uint32_t)_lh2_vars.data[0].selected_polynomial;
-                lh2->results[1] = _lh2_vars.data[1].lfsr_location;
-                lh2->results[3] = _lh2_vars.data[0].lfsr_location;
-            } else {
-                lh2->results[0] = (uint32_t)_lh2_vars.data[0].selected_polynomial;
-                lh2->results[2] = (uint32_t)_lh2_vars.data[1].selected_polynomial;
-                lh2->results[1] = _lh2_vars.data[0].lfsr_location;
-                lh2->results[3] = _lh2_vars.data[1].lfsr_location;
-            }
-            if (_lh2_vars.data[2].lfsr_location > _lh2_vars.data[3].lfsr_location) {
-                lh2->results[0] = (uint32_t)_lh2_vars.data[2].selected_polynomial;
-                lh2->results[2] = (uint32_t)_lh2_vars.data[2].selected_polynomial;
-                lh2->results[1] = _lh2_vars.data[3].lfsr_location;
-                lh2->results[3] = _lh2_vars.data[2].lfsr_location;
-            } else {
-                lh2->results[0] = (uint32_t)_lh2_vars.data[2].selected_polynomial;
-                lh2->results[2] = (uint32_t)_lh2_vars.data[2].selected_polynomial;
-                lh2->results[1] = _lh2_vars.data[2].lfsr_location;
-                lh2->results[3] = _lh2_vars.data[3].lfsr_location;
-            }
-        }
-
-        memset(_lh2_vars.data[0].buffer, 0, sizeof(_lh2_vars.data[0].buffer));
-        memset(_lh2_vars.data[1].buffer, 0, sizeof(_lh2_vars.data[1].buffer));
-        memset(_lh2_vars.data[2].buffer, 0, sizeof(_lh2_vars.data[2].buffer));
-        memset(_lh2_vars.data[3].buffer, 0, sizeof(_lh2_vars.data[3].buffer));
-        lh2->state = DB_LH2_READY;
+    if (!_lh2_vars.buffers_ready) {
         return;
     }
+
+    _lh2_vars.buffers_ready = false;
+
+    _lh2_vars.data[0].bits_sweep = 0;
+    _lh2_vars.data[1].bits_sweep = 0;
+    _lh2_vars.data[2].bits_sweep = 0;
+    _lh2_vars.data[3].bits_sweep = 0;
+
+    // perform the demodulation + poly search on the received packets
+    // convert the SPI reading to bits via zero-crossing counter demodulation and differential/biphasic manchester decoding
+    _lh2_vars.data[0].bits_sweep = _demodulate_light(_lh2_vars.data[0].buffer);
+    _lh2_vars.data[1].bits_sweep = _demodulate_light(_lh2_vars.data[1].buffer);
+    _lh2_vars.data[2].bits_sweep = _demodulate_light(_lh2_vars.data[2].buffer);
+    _lh2_vars.data[3].bits_sweep = _demodulate_light(_lh2_vars.data[3].buffer);
+
+    // figure out which polynomial each one of the two samples come from.
+    _lh2_vars.data[0].selected_polynomial = _determine_polynomial(_lh2_vars.data[0].bits_sweep, &_lh2_vars.data[0].bit_offset);
+    _lh2_vars.data[1].selected_polynomial = _determine_polynomial(_lh2_vars.data[1].bits_sweep, &_lh2_vars.data[1].bit_offset);
+    _lh2_vars.data[2].selected_polynomial = _determine_polynomial(_lh2_vars.data[2].bits_sweep, &_lh2_vars.data[2].bit_offset);
+    _lh2_vars.data[3].selected_polynomial = _determine_polynomial(_lh2_vars.data[3].bits_sweep, &_lh2_vars.data[3].bit_offset);
+
+    if ((_lh2_vars.data[0].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) |
+        (_lh2_vars.data[1].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) |
+        (_lh2_vars.data[2].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) |
+        (_lh2_vars.data[3].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR)) {  // failure to find one of the two polynomials - start from scratch and grab another capture
+        db_lh2_reset(lh2);
+        return;
+    }
+
+    // find location of the first data set by counting the LFSR backwards
+    if (_lh2_vars.data[0].selected_polynomial == 0) {  // TODO: functionalize this nested if statement to clean up the main/applet code
+        _lh2_vars.data[0].lfsr_location = _reverse_count_p(0, _lh2_vars.data[0].bits_sweep >> (47 - _lh2_vars.data[0].bit_offset)) - _lh2_vars.data[0].bit_offset;
+    } else if (_lh2_vars.data[0].selected_polynomial == 1) {
+        _lh2_vars.data[0].lfsr_location = _reverse_count_p(1, _lh2_vars.data[0].bits_sweep >> (47 - _lh2_vars.data[0].bit_offset)) - _lh2_vars.data[0].bit_offset;
+    } else if (_lh2_vars.data[0].selected_polynomial == 2) {
+        _lh2_vars.data[0].lfsr_location = _reverse_count_p(2, _lh2_vars.data[0].bits_sweep >> (47 - _lh2_vars.data[0].bit_offset)) - _lh2_vars.data[0].bit_offset;
+    } else if (_lh2_vars.data[0].selected_polynomial == 3) {
+        _lh2_vars.data[0].lfsr_location = _reverse_count_p(3, _lh2_vars.data[0].bits_sweep >> (47 - _lh2_vars.data[0].bit_offset)) - _lh2_vars.data[0].bit_offset;
+    }
+    // find location of the second data set
+    if (_lh2_vars.data[1].selected_polynomial == 0) {
+        _lh2_vars.data[1].lfsr_location = _reverse_count_p(0, _lh2_vars.data[1].bits_sweep >> (47 - _lh2_vars.data[1].bit_offset)) - _lh2_vars.data[1].bit_offset;
+    } else if (_lh2_vars.data[1].selected_polynomial == 1) {
+        _lh2_vars.data[1].lfsr_location = _reverse_count_p(1, _lh2_vars.data[1].bits_sweep >> (47 - _lh2_vars.data[1].bit_offset)) - _lh2_vars.data[1].bit_offset;
+    } else if (_lh2_vars.data[1].selected_polynomial == 2) {
+        _lh2_vars.data[1].lfsr_location = _reverse_count_p(2, _lh2_vars.data[1].bits_sweep >> (47 - _lh2_vars.data[1].bit_offset)) - _lh2_vars.data[1].bit_offset;
+    } else if (_lh2_vars.data[1].selected_polynomial == 3) {
+        _lh2_vars.data[1].lfsr_location = _reverse_count_p(3, _lh2_vars.data[1].bits_sweep >> (47 - _lh2_vars.data[1].bit_offset)) - _lh2_vars.data[1].bit_offset;
+    }
+
+    // find location of the third data set
+    if (_lh2_vars.data[2].selected_polynomial == 0) {
+        _lh2_vars.data[2].lfsr_location = _reverse_count_p(0, _lh2_vars.data[2].bits_sweep >> (47 - _lh2_vars.data[2].bit_offset)) - _lh2_vars.data[2].bit_offset;
+    } else if (_lh2_vars.data[2].selected_polynomial == 1) {
+        _lh2_vars.data[2].lfsr_location = _reverse_count_p(1, _lh2_vars.data[2].bits_sweep >> (47 - _lh2_vars.data[2].bit_offset)) - _lh2_vars.data[2].bit_offset;
+    } else if (_lh2_vars.data[2].selected_polynomial == 2) {
+        _lh2_vars.data[2].lfsr_location = _reverse_count_p(2, _lh2_vars.data[2].bits_sweep >> (47 - _lh2_vars.data[2].bit_offset)) - _lh2_vars.data[2].bit_offset;
+    } else if (_lh2_vars.data[2].selected_polynomial == 3) {
+        _lh2_vars.data[2].lfsr_location = _reverse_count_p(3, _lh2_vars.data[2].bits_sweep >> (47 - _lh2_vars.data[2].bit_offset)) - _lh2_vars.data[2].bit_offset;
+    }
+
+    // find location of the fourth data set
+    if (_lh2_vars.data[3].selected_polynomial == 0) {
+        _lh2_vars.data[3].lfsr_location = _reverse_count_p(0, _lh2_vars.data[3].bits_sweep >> (47 - _lh2_vars.data[3].bit_offset)) - _lh2_vars.data[3].bit_offset;
+    } else if (_lh2_vars.data[3].selected_polynomial == 1) {
+        _lh2_vars.data[3].lfsr_location = _reverse_count_p(1, _lh2_vars.data[3].bits_sweep >> (47 - _lh2_vars.data[3].bit_offset)) - _lh2_vars.data[3].bit_offset;
+    } else if (_lh2_vars.data[3].selected_polynomial == 2) {
+        _lh2_vars.data[3].lfsr_location = _reverse_count_p(2, _lh2_vars.data[3].bits_sweep >> (47 - _lh2_vars.data[3].bit_offset)) - _lh2_vars.data[3].bit_offset;
+    } else if (_lh2_vars.data[3].selected_polynomial == 3) {
+        _lh2_vars.data[3].lfsr_location = _reverse_count_p(3, _lh2_vars.data[3].bits_sweep >> (47 - _lh2_vars.data[3].bit_offset)) - _lh2_vars.data[3].bit_offset;
+    }
+
+    lh2->results[0] = (uint32_t)_lh2_vars.data[0].selected_polynomial;
+    lh2->results[2] = (uint32_t)_lh2_vars.data[1].selected_polynomial;
+    lh2->results[4] = (uint32_t)_lh2_vars.data[2].selected_polynomial;
+    lh2->results[6] = (uint32_t)_lh2_vars.data[3].selected_polynomial;
+    lh2->results[1] = _lh2_vars.data[0].lfsr_location;
+    lh2->results[3] = _lh2_vars.data[1].lfsr_location;
+    lh2->results[5] = _lh2_vars.data[2].lfsr_location;
+    lh2->results[7] = _lh2_vars.data[3].lfsr_location;
+
+    // detect invalid packets
+    invalid_packet_counter = 0;
+    for (i = 0; i < 7; i += 2) {
+        if ((lh2->results[i] == 0) || (lh2->results[i] == 1)) {
+            invalid_packet_counter++;  // from LHA
+        } else if ((lh2->results[i] == 2) || (lh2->results[i] == 3)) {
+            invalid_packet_counter--;  // from LHB
+        }
+    }
+    if ((invalid_packet_counter == 1) || (invalid_packet_counter == -1)) {
+        db_lh2_reset(lh2);
+        return;  // odd # of packets from 1 LH, erroneous result
+    }
+
+    if ((invalid_packet_counter == 4) || (invalid_packet_counter == -4)) {
+        // results from one LH2 were discovered - sort the two pairs
+        if (_lh2_vars.data[0].lfsr_location > _lh2_vars.data[1].lfsr_location) {
+            lh2->results[0] = (uint32_t)_lh2_vars.data[1].selected_polynomial;
+            lh2->results[2] = (uint32_t)_lh2_vars.data[0].selected_polynomial;
+            lh2->results[1] = _lh2_vars.data[1].lfsr_location;
+            lh2->results[3] = _lh2_vars.data[0].lfsr_location;
+        } else {
+            lh2->results[0] = (uint32_t)_lh2_vars.data[0].selected_polynomial;
+            lh2->results[2] = (uint32_t)_lh2_vars.data[1].selected_polynomial;
+            lh2->results[1] = _lh2_vars.data[0].lfsr_location;
+            lh2->results[3] = _lh2_vars.data[1].lfsr_location;
+        }
+        if (_lh2_vars.data[2].lfsr_location > _lh2_vars.data[3].lfsr_location) {
+            lh2->results[0] = (uint32_t)_lh2_vars.data[3].selected_polynomial;
+            lh2->results[2] = (uint32_t)_lh2_vars.data[2].selected_polynomial;
+            lh2->results[1] = _lh2_vars.data[3].lfsr_location;
+            lh2->results[3] = _lh2_vars.data[2].lfsr_location;
+        } else {
+            lh2->results[0] = (uint32_t)_lh2_vars.data[2].selected_polynomial;
+            lh2->results[2] = (uint32_t)_lh2_vars.data[3].selected_polynomial;
+            lh2->results[1] = _lh2_vars.data[2].lfsr_location;
+            lh2->results[3] = _lh2_vars.data[3].lfsr_location;
+        }
+    }
+
+    memset(_lh2_vars.data[0].buffer, 0, sizeof(_lh2_vars.data[0].buffer));
+    memset(_lh2_vars.data[1].buffer, 0, sizeof(_lh2_vars.data[1].buffer));
+    memset(_lh2_vars.data[2].buffer, 0, sizeof(_lh2_vars.data[2].buffer));
+    memset(_lh2_vars.data[3].buffer, 0, sizeof(_lh2_vars.data[3].buffer));
+    lh2->state = DB_LH2_READY;
 }
 
 void db_lh2_start_transfer(db_lh2_t *lh2) {
@@ -791,7 +793,7 @@ uint64_t _poly_check(uint32_t poly, uint32_t bits, uint8_t numbits) {
  *
  * @return polynomial, indicating which polynomial was found, or FF for error (polynomial not found).
  */
-uint8_t _determine_polynomial(uint64_t chipsH1, int *start_val) {
+uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
     // check which polynomial the bit sequence is part of
     // TODO: make function a void and modify memory directly
     // TODO: rename chipsH1 to something relevant... like bits?

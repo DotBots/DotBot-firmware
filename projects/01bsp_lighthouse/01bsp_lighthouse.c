@@ -38,14 +38,16 @@ int main(void) {
     db_lh2_start_transfer(&_lh2);
 
     while (1) {
-        // the location function has to be running all the time but not that fast
+        // wait until something happens e.g. an SPI interrupt
+        __WFE();
+
+        // the location function has to be running all the time
         db_lh2_process_location(&_lh2);
 
-        // wait until the packet is ready
+        // Reset the LH2 driver if a packet is ready. At this point, locations
+        // can be read from lh2.results array
         if (_lh2.state == DB_LH2_READY) {
-            db_lh2_stop_transfer(&_lh2);
-            db_lh2_start_transfer(&_lh2);
-            __NOP();
+            db_lh2_reset(&_lh2);
         }
     }
 

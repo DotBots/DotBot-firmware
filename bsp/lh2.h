@@ -42,6 +42,8 @@ void db_lh2_init(void);
 // do fil's stuff
 void db_lh2_process_location(db_lh2_t *lh2);
 
+void db_lh2_reset(db_lh2_t *lh2);
+
 // start transfering bits from the lighthouse module
 void db_lh2_start_transfer(db_lh2_t *lh2);
 // stop transfering bits from the lighthouse module
