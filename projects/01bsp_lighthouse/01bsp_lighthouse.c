@@ -20,8 +20,8 @@
 
 //=========================== variables =========================================
 
-bool     packet_ready;
-uint32_t current_loc_p[8] = { 0 };
+static db_lh2_t _lh2;
+
 //=========================== main =========================================
 
 /**
@@ -35,17 +35,16 @@ int main(void) {
     db_lh2_init();
 
     // Start SPI capture
-    db_lh2_start_transfer();
+    db_lh2_start_transfer(&_lh2);
 
     while (1) {
         // the location function has to be running all the time but not that fast
-        packet_ready = db_lh2_get_black_magic();
+        db_lh2_process_location(&_lh2);
 
         // wait until the packet is ready
-        if (packet_ready) {
-            db_lh2_stop_transfer();
-            db_lh2_get_current_location(current_loc_p);
-            db_lh2_start_transfer();
+        if (_lh2.state == DB_LH2_READY) {
+            db_lh2_stop_transfer(&_lh2);
+            db_lh2_start_transfer(&_lh2);
             __NOP();
         }
     }

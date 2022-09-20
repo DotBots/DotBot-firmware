@@ -13,11 +13,24 @@
  */
 
 #include <nrf.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 //=========================== defines =========================================
+
+#define LH2_LOCATIONS_COUNT                    4
+#define LH2_RESULTS_SIZE                       LH2_LOCATIONS_COUNT * 2
+
+typedef enum {
+    DB_LH2_IDLE,
+    DB_LH2_RUNNING,
+    DB_LH2_READY,
+} db_lh2_state_t;
+
+typedef struct {
+    db_lh2_state_t state;
+    uint32_t results[LH2_RESULTS_SIZE];
+} db_lh2_t;
 
 //=========================== variables =========================================
 
@@ -27,14 +40,11 @@
 void db_lh2_init(void);
 
 // do fil's stuff
-bool db_lh2_get_black_magic(void);
-
-// function for the dotbot to get hold of the current location packet when it is ready
-void db_lh2_get_current_location(uint32_t *location);
+void db_lh2_process_location(db_lh2_t *lh2);
 
 // start transfering bits from the lighthouse module
-void db_lh2_start_transfer(void);
+void db_lh2_start_transfer(db_lh2_t *lh2);
 // stop transfering bits from the lighthouse module
-void db_lh2_stop_transfer(void);
+void db_lh2_stop_transfer(db_lh2_t *lh2);
 
 #endif /* LH2_H_ */
