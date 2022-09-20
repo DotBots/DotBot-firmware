@@ -60,6 +60,13 @@ typedef struct {
 
 //=========================== variables ========================================
 
+static const uint32_t _polynomials[4] = {
+    0x0001D258,
+    0x00017E04,
+    0x0001FF6B,
+    0x00013F67,
+};
+
 static const uint32_t _end_buffers[4][16] = {
     {
         // p0
@@ -153,10 +160,7 @@ uint8_t  _determine_polynomial(uint64_t chipsH1, int *start_val);
 
 uint64_t _hamming_weight(uint64_t bits_in);
 
-uint32_t _reverse_count_p0(uint32_t bits);
-uint32_t _reverse_count_p1(uint32_t bits);
-uint32_t _reverse_count_p2(uint32_t bits);
-uint32_t _reverse_count_p3(uint32_t bits);
+uint32_t _reverse_count_p(uint8_t index, uint32_t bits);
 
 // setup the PPI
 void _gpiote_setup(void);
@@ -240,45 +244,45 @@ void db_lh2_process_location(db_lh2_t *lh2) {
         } else {
             // find location of the first data set by counting the LFSR backwards
             if (_lh2_vars.data[0].selected_polynomial == 0) {  // TODO: functionalize this nested if statement to clean up the main/applet code
-                _lh2_vars.data[0].lfsr_location = _reverse_count_p0(_lh2_vars.data[0].bits_sweep >> (47 - _lh2_vars.data[0].bit_offset)) - _lh2_vars.data[0].bit_offset;
+                _lh2_vars.data[0].lfsr_location = _reverse_count_p(0, _lh2_vars.data[0].bits_sweep >> (47 - _lh2_vars.data[0].bit_offset)) - _lh2_vars.data[0].bit_offset;
             } else if (_lh2_vars.data[0].selected_polynomial == 1) {
-                _lh2_vars.data[0].lfsr_location = _reverse_count_p1(_lh2_vars.data[0].bits_sweep >> (47 - _lh2_vars.data[0].bit_offset)) - _lh2_vars.data[0].bit_offset;
+                _lh2_vars.data[0].lfsr_location = _reverse_count_p(1, _lh2_vars.data[0].bits_sweep >> (47 - _lh2_vars.data[0].bit_offset)) - _lh2_vars.data[0].bit_offset;
             } else if (_lh2_vars.data[0].selected_polynomial == 2) {
-                _lh2_vars.data[0].lfsr_location = _reverse_count_p2(_lh2_vars.data[0].bits_sweep >> (47 - _lh2_vars.data[0].bit_offset)) - _lh2_vars.data[0].bit_offset;
+                _lh2_vars.data[0].lfsr_location = _reverse_count_p(2, _lh2_vars.data[0].bits_sweep >> (47 - _lh2_vars.data[0].bit_offset)) - _lh2_vars.data[0].bit_offset;
             } else if (_lh2_vars.data[0].selected_polynomial == 3) {
-                _lh2_vars.data[0].lfsr_location = _reverse_count_p3(_lh2_vars.data[0].bits_sweep >> (47 - _lh2_vars.data[0].bit_offset)) - _lh2_vars.data[0].bit_offset;
+                _lh2_vars.data[0].lfsr_location = _reverse_count_p(3, _lh2_vars.data[0].bits_sweep >> (47 - _lh2_vars.data[0].bit_offset)) - _lh2_vars.data[0].bit_offset;
             }
             // find location of the second data set
             if (_lh2_vars.data[1].selected_polynomial == 0) {
-                _lh2_vars.data[1].lfsr_location = _reverse_count_p0(_lh2_vars.data[1].bits_sweep >> (47 - _lh2_vars.data[1].bit_offset)) - _lh2_vars.data[1].bit_offset;
+                _lh2_vars.data[1].lfsr_location = _reverse_count_p(0, _lh2_vars.data[1].bits_sweep >> (47 - _lh2_vars.data[1].bit_offset)) - _lh2_vars.data[1].bit_offset;
             } else if (_lh2_vars.data[1].selected_polynomial == 1) {
-                _lh2_vars.data[1].lfsr_location = _reverse_count_p1(_lh2_vars.data[1].bits_sweep >> (47 - _lh2_vars.data[1].bit_offset)) - _lh2_vars.data[1].bit_offset;
+                _lh2_vars.data[1].lfsr_location = _reverse_count_p(1, _lh2_vars.data[1].bits_sweep >> (47 - _lh2_vars.data[1].bit_offset)) - _lh2_vars.data[1].bit_offset;
             } else if (_lh2_vars.data[1].selected_polynomial == 2) {
-                _lh2_vars.data[1].lfsr_location = _reverse_count_p2(_lh2_vars.data[1].bits_sweep >> (47 - _lh2_vars.data[1].bit_offset)) - _lh2_vars.data[1].bit_offset;
+                _lh2_vars.data[1].lfsr_location = _reverse_count_p(2, _lh2_vars.data[1].bits_sweep >> (47 - _lh2_vars.data[1].bit_offset)) - _lh2_vars.data[1].bit_offset;
             } else if (_lh2_vars.data[1].selected_polynomial == 3) {
-                _lh2_vars.data[1].lfsr_location = _reverse_count_p3(_lh2_vars.data[1].bits_sweep >> (47 - _lh2_vars.data[1].bit_offset)) - _lh2_vars.data[1].bit_offset;
+                _lh2_vars.data[1].lfsr_location = _reverse_count_p(3, _lh2_vars.data[1].bits_sweep >> (47 - _lh2_vars.data[1].bit_offset)) - _lh2_vars.data[1].bit_offset;
             }
 
             // find location of the third data set
             if (_lh2_vars.data[2].selected_polynomial == 0) {
-                _lh2_vars.data[2].lfsr_location = _reverse_count_p0(_lh2_vars.data[2].bits_sweep >> (47 - _lh2_vars.data[2].bit_offset)) - _lh2_vars.data[2].bit_offset;
+                _lh2_vars.data[2].lfsr_location = _reverse_count_p(0, _lh2_vars.data[2].bits_sweep >> (47 - _lh2_vars.data[2].bit_offset)) - _lh2_vars.data[2].bit_offset;
             } else if (_lh2_vars.data[2].selected_polynomial == 1) {
-                _lh2_vars.data[2].lfsr_location = _reverse_count_p1(_lh2_vars.data[2].bits_sweep >> (47 - _lh2_vars.data[2].bit_offset)) - _lh2_vars.data[2].bit_offset;
+                _lh2_vars.data[2].lfsr_location = _reverse_count_p(1, _lh2_vars.data[2].bits_sweep >> (47 - _lh2_vars.data[2].bit_offset)) - _lh2_vars.data[2].bit_offset;
             } else if (_lh2_vars.data[2].selected_polynomial == 2) {
-                _lh2_vars.data[2].lfsr_location = _reverse_count_p2(_lh2_vars.data[2].bits_sweep >> (47 - _lh2_vars.data[2].bit_offset)) - _lh2_vars.data[2].bit_offset;
+                _lh2_vars.data[2].lfsr_location = _reverse_count_p(2, _lh2_vars.data[2].bits_sweep >> (47 - _lh2_vars.data[2].bit_offset)) - _lh2_vars.data[2].bit_offset;
             } else if (_lh2_vars.data[2].selected_polynomial == 3) {
-                _lh2_vars.data[2].lfsr_location = _reverse_count_p3(_lh2_vars.data[2].bits_sweep >> (47 - _lh2_vars.data[2].bit_offset)) - _lh2_vars.data[2].bit_offset;
+                _lh2_vars.data[2].lfsr_location = _reverse_count_p(3, _lh2_vars.data[2].bits_sweep >> (47 - _lh2_vars.data[2].bit_offset)) - _lh2_vars.data[2].bit_offset;
             }
 
             // find location of the fourth data set
             if (_lh2_vars.data[2].selected_polynomial == 0) {
-                _lh2_vars.data[3].lfsr_location = _reverse_count_p0(_lh2_vars.data[3].bits_sweep >> (47 - _lh2_vars.data[3].bit_offset)) - _lh2_vars.data[3].bit_offset;
+                _lh2_vars.data[3].lfsr_location = _reverse_count_p(0, _lh2_vars.data[3].bits_sweep >> (47 - _lh2_vars.data[3].bit_offset)) - _lh2_vars.data[3].bit_offset;
             } else if (_lh2_vars.data[2].selected_polynomial == 1) {
-                _lh2_vars.data[3].lfsr_location = _reverse_count_p1(_lh2_vars.data[3].bits_sweep >> (47 - _lh2_vars.data[3].bit_offset)) - _lh2_vars.data[3].bit_offset;
+                _lh2_vars.data[3].lfsr_location = _reverse_count_p(1, _lh2_vars.data[3].bits_sweep >> (47 - _lh2_vars.data[3].bit_offset)) - _lh2_vars.data[3].bit_offset;
             } else if (_lh2_vars.data[2].selected_polynomial == 2) {
-                _lh2_vars.data[3].lfsr_location = _reverse_count_p2(_lh2_vars.data[3].bits_sweep >> (47 - _lh2_vars.data[3].bit_offset)) - _lh2_vars.data[3].bit_offset;
+                _lh2_vars.data[3].lfsr_location = _reverse_count_p(2, _lh2_vars.data[3].bits_sweep >> (47 - _lh2_vars.data[3].bit_offset)) - _lh2_vars.data[3].bit_offset;
             } else if (_lh2_vars.data[2].selected_polynomial == 3) {
-                _lh2_vars.data[3].lfsr_location = _reverse_count_p3(_lh2_vars.data[3].bits_sweep >> (47 - _lh2_vars.data[3].bit_offset)) - _lh2_vars.data[3].bit_offset;
+                _lh2_vars.data[3].lfsr_location = _reverse_count_p(3, _lh2_vars.data[3].bits_sweep >> (47 - _lh2_vars.data[3].bit_offset)) - _lh2_vars.data[3].bit_offset;
             }
         }
 
@@ -791,10 +795,6 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int *start_val) {
     // check which polynomial the bit sequence is part of
     // TODO: make function a void and modify memory directly
     // TODO: rename chipsH1 to something relevant... like bits?
-    uint32_t poly0                               = 0b11101001001011000;
-    uint32_t poly1                               = 0b10111111000000100;  // TODO: change this back to hex
-    uint32_t poly2                               = 0x0001FF6B;
-    uint32_t poly3                               = 0x00013F67;  // TODO: no more magic #s here, move this to #defines
     int32_t  bits_N_for_comp                     = 47;
     uint32_t bit_buffer1                         = (uint32_t)(((0xFFFF800000000000) & chipsH1) >> 47);
     uint64_t bits_from_poly[LH2_LOCATIONS_COUNT] = { 0 };
@@ -816,10 +816,10 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int *start_val) {
     while (1) {
         // TODO: do this math stuff in multiple operations to: (a) make it readable (b) ensure order-of-execution
         bit_buffer1       = (uint32_t)(((0xFFFF800000000000 >> (*start_val)) & chipsH1) >> (64 - 17 - (*start_val)));
-        bits_from_poly[0] = (((_poly_check(poly0, bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
-        bits_from_poly[1] = (((_poly_check(poly1, bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
-        bits_from_poly[2] = (((_poly_check(poly2, bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
-        bits_from_poly[3] = (((_poly_check(poly3, bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
+        bits_from_poly[0] = (((_poly_check(_polynomials[0], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
+        bits_from_poly[1] = (((_poly_check(_polynomials[1], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
+        bits_from_poly[2] = (((_poly_check(_polynomials[2], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
+        bits_from_poly[3] = (((_poly_check(_polynomials[3], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
         bits_to_compare   = (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - 17 - (*start_val) - bits_N_for_comp)));
         weights[0]        = _hamming_weight(bits_from_poly[0] ^ bits_to_compare);
         weights[1]        = _hamming_weight(bits_from_poly[1] ^ bits_to_compare);
@@ -879,25 +879,24 @@ uint64_t _hamming_weight(uint64_t bits_in) {  // TODO: bad name for function? or
 }
 
 /**
- * @brief finds the position of a 17-bit sequence (bits) in the sequence generated by polynomial0 with initial seed 1
+ * @brief finds the position of a 17-bit sequence (bits) in the sequence generated by polynomial index with initial seed 1
  *
  * @param bits: 17-bit sequence
  *
  * @return count: location of the sequence
  */
-uint32_t _reverse_count_p0(uint32_t bits) {
-    uint32_t count       = 0;
+uint32_t _reverse_count_p(uint8_t index, uint32_t bits) {
+        uint32_t count       = 0;
     uint32_t buffer      = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
     uint8_t  ii          = 0;                   // loop variable for cumulative sum
     uint32_t result      = 0;
     uint32_t b17         = 0;
     uint32_t masked_buff = 0;
-    uint32_t poly        = 0b11101001001011000;
-    while (buffer != _end_buffers[0][0])  // do until buffer reaches one of the saved states
+    while (buffer != _end_buffers[index][0])  // do until buffer reaches one of the saved states
     {
         b17         = buffer & 0x00000001;           // save the "newest" bit of the buffer
         buffer      = (buffer & (0x0001FFFE)) >> 1;  // shift the buffer right, backwards in time
-        masked_buff = (buffer) & (poly);             // mask the buffer w/ the selected polynomial
+        masked_buff = (buffer) & (_polynomials[index]);             // mask the buffer w/ the selected polynomial
         for (ii = 0; ii < 17; ii++) {
             result = result ^ (((masked_buff) >> ii) & (0x00000001));  // cumulative sum of buffer&poly
         }
@@ -905,249 +904,65 @@ uint32_t _reverse_count_p0(uint32_t bits) {
         buffer = buffer | (result << 16);  // update buffer w/ result
         result = 0;                        // reset result
         count++;
-        if ((buffer ^ _end_buffers[0][1]) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][1]) == 0x00000000) {
             count  = count + 8192 - 1;
-            buffer = _end_buffers[0][0];
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ _end_buffers[0][2]) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][2]) == 0x00000000) {
             count  = count + 16384 - 1;
-            buffer = _end_buffers[0][0];
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ _end_buffers[0][3]) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][3]) == 0x00000000) {
             count  = count + 24576 - 1;
-            buffer = _end_buffers[0][0];
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ _end_buffers[0][4]) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][4]) == 0x00000000) {
             count  = count + 32768 - 1;
-            buffer = _end_buffers[0][0];
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ _end_buffers[0][5]) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][5]) == 0x00000000) {
             count  = count + 40960 - 1;
-            buffer = _end_buffers[0][0];
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ _end_buffers[0][6]) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][6]) == 0x00000000) {
             count  = count + 49152 - 1;
-            buffer = _end_buffers[0][0];
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ _end_buffers[0][7]) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][7]) == 0x00000000) {
             count  = count + 57344 - 1;
-            buffer = _end_buffers[0][0];
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ _end_buffers[0][8]) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][8]) == 0x00000000) {
             count  = count + 65536 - 1;
-            buffer = _end_buffers[0][0];
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ _end_buffers[0][9]) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][9]) == 0x00000000) {
             count  = count + 73728 - 1;
-            buffer = _end_buffers[0][0];
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ _end_buffers[0][10]) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][10]) == 0x00000000) {
             count  = count + 81920 - 1;
-            buffer = _end_buffers[0][0];
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ _end_buffers[0][11]) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][11]) == 0x00000000) {
             count  = count + 90112 - 1;
-            buffer = _end_buffers[0][0];
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ _end_buffers[0][12]) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][12]) == 0x00000000) {
             count  = count + 98304 - 1;
-            buffer = _end_buffers[0][0];
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ _end_buffers[0][13]) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][13]) == 0x00000000) {
             count  = count + 106496 - 1;
-            buffer = _end_buffers[0][0];
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ _end_buffers[0][14]) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][14]) == 0x00000000) {
             count  = count + 114688 - 1;
-            buffer = _end_buffers[0][0];
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ _end_buffers[0][15]) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][15]) == 0x00000000) {
             count  = count + 122880 - 1;
-            buffer = _end_buffers[0][0];
-        }
-    }
-    return count;
-}
-
-/**
- * @brief finds the position of a 17-bit sequence (bits) in the sequence generated by polynomial1 with initial seed 1
- *
- * @param bits: 17-bit sequence
-
- * @return count: location of the sequence
-*/
-uint32_t _reverse_count_p1(uint32_t bits) {
-    uint32_t count  = 0;
-    uint32_t buffer = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
-
-    uint8_t  ii          = 0;  // loop variable for cumulative sum
-    uint32_t result      = 0;
-    uint32_t b17         = 0;
-    uint32_t masked_buff = 0;
-    uint32_t poly        = 0b10111111000000100;
-    while (buffer != _end_buffers[1][0])  // do until buffer reaches one of the saved states
-    {
-        b17         = buffer & 0x00000001;           // save the "newest" bit of the buffer
-        buffer      = (buffer & (0x0001FFFE)) >> 1;  // shift the buffer right, backwards in time
-        masked_buff = (buffer) & (poly);             // mask the buffer w/ the selected polynomial
-        for (ii = 0; ii < 17; ii++) {
-            result = result ^ (((masked_buff) >> ii) & (0x00000001));  // cumulative sum of buffer&poly
-        }
-        result = result ^ b17;
-        buffer = buffer | (result << 16);  // update buffer w/ result
-        result = 0;                        // reset result
-        count++;
-        if ((buffer ^ _end_buffers[1][1]) == 0x00000000) {
-            count  = count + 8192 - 1;
-            buffer = _end_buffers[1][0];
-        }
-        if ((buffer ^ _end_buffers[1][2]) == 0x00000000) {
-            count  = count + 16384 - 1;
-            buffer = _end_buffers[1][0];
-        }
-        if ((buffer ^ _end_buffers[1][3]) == 0x00000000) {
-            count  = count + 24576 - 1;
-            buffer = _end_buffers[1][0];
-        }
-        if ((buffer ^ _end_buffers[1][4]) == 0x00000000) {
-            count  = count + 32768 - 1;
-            buffer = _end_buffers[1][0];
-        }
-        if ((buffer ^ _end_buffers[1][5]) == 0x00000000) {
-            count  = count + 40960 - 1;
-            buffer = _end_buffers[1][0];
-        }
-        if ((buffer ^ _end_buffers[1][6]) == 0x00000000) {
-            count  = count + 49152 - 1;
-            buffer = _end_buffers[1][0];
-        }
-        if ((buffer ^ _end_buffers[1][7]) == 0x00000000) {
-            count  = count + 57344 - 1;
-            buffer = _end_buffers[1][0];
-        }
-        if ((buffer ^ _end_buffers[1][8]) == 0x00000000) {
-            count  = count + 65536 - 1;
-            buffer = _end_buffers[1][0];
-        }
-        if ((buffer ^ _end_buffers[1][9]) == 0x00000000) {
-            count  = count + 73728 - 1;
-            buffer = _end_buffers[1][0];
-        }
-        if ((buffer ^ _end_buffers[1][10]) == 0x00000000) {
-            count  = count + 81920 - 1;
-            buffer = _end_buffers[1][0];
-        }
-        if ((buffer ^ _end_buffers[1][11]) == 0x00000000) {
-            count  = count + 90112 - 1;
-            buffer = _end_buffers[1][0];
-        }
-        if ((buffer ^ _end_buffers[1][12]) == 0x00000000) {
-            count  = count + 98304 - 1;
-            buffer = _end_buffers[1][0];
-        }
-        if ((buffer ^ _end_buffers[1][13]) == 0x00000000) {
-            count  = count + 106496 - 1;
-            buffer = _end_buffers[1][0];
-        }
-        if ((buffer ^ _end_buffers[1][14]) == 0x00000000) {
-            count  = count + 114688 - 1;
-            buffer = _end_buffers[1][0];
-        }
-        if ((buffer ^ _end_buffers[1][15]) == 0x00000000) {
-            count  = count + 122880 - 1;
-            buffer = _end_buffers[1][0];
-        }
-    }
-    return count;
-}
-
-/**
- * @brief finds the position of a 17-bit sequence (bits) in the sequence generated by polynomial2 with initial seed 1
- *
- * @param bits: 17-bit sequence
- *
- * @return count: location of the sequence
- */
-uint32_t _reverse_count_p2(uint32_t bits) {
-    uint32_t count  = 0;
-    uint32_t buffer = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
-
-    uint8_t  ii          = 0;  // loop variable for cumulative sum
-    uint32_t result      = 0;
-    uint32_t b17         = 0;
-    uint32_t masked_buff = 0;
-    uint32_t poly        = 0b11111111101101011;
-    while (buffer != _end_buffers[2][0])  // do until buffer reaches one of the saved states
-    {
-        b17         = buffer & 0x00000001;           // save the "newest" bit of the buffer
-        buffer      = (buffer & (0x0001FFFE)) >> 1;  // shift the buffer right, backwards in time
-        masked_buff = (buffer) & (poly);             // mask the buffer w/ the selected polynomial
-        for (ii = 0; ii < 17; ii++) {
-            result = result ^ (((masked_buff) >> ii) & (0x00000001));  // cumulative sum of buffer&poly
-        }
-        result = result ^ b17;
-        buffer = buffer | (result << 16);  // update buffer w/ result
-        result = 0;                        // reset result
-        count++;
-        if ((buffer ^ _end_buffers[2][1]) == 0x00000000) {
-            count  = count + 8192 - 1;
-            buffer = _end_buffers[2][0];
-        }
-        if ((buffer ^ _end_buffers[2][2]) == 0x00000000) {
-            count  = count + 16384 - 1;
-            buffer = _end_buffers[2][0];
-        }
-        if ((buffer ^ _end_buffers[2][3]) == 0x00000000) {
-            count  = count + 24576 - 1;
-            buffer = _end_buffers[2][0];
-        }
-        if ((buffer ^ _end_buffers[2][4]) == 0x00000000) {
-            count  = count + 32768 - 1;
-            buffer = _end_buffers[2][0];
-        }
-        if ((buffer ^ _end_buffers[2][5]) == 0x00000000) {
-            count  = count + 40960 - 1;
-            buffer = _end_buffers[2][0];
-        }
-        if ((buffer ^ _end_buffers[2][6]) == 0x00000000) {
-            count  = count + 49152 - 1;
-            buffer = _end_buffers[2][0];
-        }
-        if ((buffer ^ _end_buffers[2][7]) == 0x00000000) {
-            count  = count + 57344 - 1;
-            buffer = _end_buffers[2][0];
-        }
-        if ((buffer ^ _end_buffers[2][8]) == 0x00000000) {
-            count  = count + 65536 - 1;
-            buffer = _end_buffers[2][0];
-        }
-        if ((buffer ^ _end_buffers[2][9]) == 0x00000000) {
-            count  = count + 73728 - 1;
-            buffer = _end_buffers[2][0];
-        }
-        if ((buffer ^ _end_buffers[2][10]) == 0x00000000) {
-            count  = count + 81920 - 1;
-            buffer = _end_buffers[2][0];
-        }
-        if ((buffer ^ _end_buffers[2][11]) == 0x00000000) {
-            count  = count + 90112 - 1;
-            buffer = _end_buffers[2][0];
-        }
-        if ((buffer ^ _end_buffers[2][12]) == 0x00000000) {
-            count  = count + 98304 - 1;
-            buffer = _end_buffers[2][0];
-        }
-        if ((buffer ^ _end_buffers[2][13]) == 0x00000000) {
-            count  = count + 106496 - 1;
-            buffer = _end_buffers[2][0];
-        }
-        if ((buffer ^ _end_buffers[2][14]) == 0x00000000) {
-            count  = count + 114688 - 1;
-            buffer = _end_buffers[2][0];
-        }
-        if ((buffer ^ _end_buffers[2][15]) == 0x00000000) {
-            count  = count + 122880 - 1;
-            buffer = _end_buffers[2][0];
+            buffer = _end_buffers[index][0];
         }
     }
     return count;
@@ -1168,12 +983,11 @@ uint32_t _reverse_count_p3(uint32_t bits) {
     uint32_t result      = 0;
     uint32_t b17         = 0;
     uint32_t masked_buff = 0;
-    uint32_t poly        = 0b10011111101100111;
     while (buffer != _end_buffers[3][0])  // do until buffer reaches one of the saved states
     {
         b17         = buffer & 0x00000001;           // save the "newest" bit of the buffer
         buffer      = (buffer & (0x0001FFFE)) >> 1;  // shift the buffer right, backwards in time
-        masked_buff = (buffer) & (poly);             // mask the buffer w/ the selected polynomial
+        masked_buff = (buffer) & (_polynomials[3]);             // mask the buffer w/ the selected polynomial
         for (ii = 0; ii < 17; ii++) {
             result = result ^ (((masked_buff) >> ii) & (0x00000001));  // cumulative sum of buffer&poly
         }
