@@ -34,9 +34,6 @@ int main(void) {
     // Initialize the LH2
     db_lh2_init();
 
-    // Start SPI capture
-    db_lh2_start_transfer(&_lh2);
-
     while (1) {
         // wait until something happens e.g. an SPI interrupt
         __WFE();

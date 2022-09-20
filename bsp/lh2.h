@@ -16,37 +16,40 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-//=========================== defines =========================================
+//=========================== defines ==========================================
 
-#define LH2_LOCATIONS_COUNT                    4
-#define LH2_RESULTS_SIZE                       LH2_LOCATIONS_COUNT * 2
+#define LH2_LOCATIONS_COUNT 4                        ///< Number of computed locations
+#define LH2_RESULTS_SIZE    LH2_LOCATIONS_COUNT * 2  ///< Size of the location result array
 
 typedef enum {
-    DB_LH2_IDLE,
-    DB_LH2_RUNNING,
-    DB_LH2_READY,
+    DB_LH2_RUNNING,  ///< the lh2 engine is running
+    DB_LH2_READY,    ///< some lh2 location is ready to be read
 } db_lh2_state_t;
 
 typedef struct {
-    db_lh2_state_t state;
-    uint32_t results[LH2_RESULTS_SIZE];
+    db_lh2_state_t state;                      ///< current state of the lh2 engine
+    uint32_t       results[LH2_RESULTS_SIZE];  ///< buffer holding the location data
 } db_lh2_t;
 
-//=========================== variables =========================================
+//=========================== public ===========================================
 
-//=========================== public ==========================================
-
-// initialization function
+/**
+ * @brief Initialize LH2
+ */
 void db_lh2_init(void);
 
-// do fil's stuff
+/**
+ * @brief Compute the location based on available frames
+ *
+ * @param[in]   lh2 pointer to the lh2 instance
+ */
 void db_lh2_process_location(db_lh2_t *lh2);
 
+/**
+ * @brief Reset the lh2 internal state so new location computation can be made
+ *
+ * @param[in]   lh2 pointer to the lh2 instance
+ */
 void db_lh2_reset(db_lh2_t *lh2);
-
-// start transfering bits from the lighthouse module
-void db_lh2_start_transfer(db_lh2_t *lh2);
-// stop transfering bits from the lighthouse module
-void db_lh2_stop_transfer(db_lh2_t *lh2);
 
 #endif /* LH2_H_ */

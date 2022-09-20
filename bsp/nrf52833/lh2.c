@@ -15,46 +15,38 @@
 #include <stdbool.h>
 #include <nrf.h>
 
+#include "gpio.h"
 #include "lh2.h"
 #include "timer_hf.h"
 
 //=========================== defines =========================================
 
-#define SPIM3_INTERRUPT_PRIORITY               1   ///< Interrupt priority, as high as it will go
-#define SPI3_BUFFER_SIZE                       64  ///< Size of buffers used for SPI communications
-#define SPI3_FAKE_SCK_PIN                      6   ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
-#define FUZZY_CHIP                             0xFF
-#define LH2_LOCATION_ERROR_INDICATOR           0xFFFFFFFF
-#define LH2_POLYNOMIAL_ERROR_INDICATOR         0xFF
-#define POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD 4
-#define LH2_BUFFER_SIZE                        128
-#define LH2_D_PIN                              29
-#define LH2_E_PIN                              30
-
-// gpiote definitions
-#define GPIOTE_CH_OUT           0
-#define GPIOTE_CH_IN_ENV_HiToLo 1
-#define GPIOTE_CH_IN_ENV_LoToHi 2
-
-#define OUTPUT_PIN_NUMBER 31
-#define OUTPUT_PIN_PORT   0UL
-#define INPUT_PIN_NUMBER  30
-#define INPUT_PIN_PORT    0UL
+#define SPIM3_INTERRUPT_PRIORITY               1           ///< Interrupt priority, as high as it will go
+#define SPI3_BUFFER_SIZE                       64          ///< Size of buffers used for SPI communications
+#define SPI3_FAKE_SCK_PIN                      6           ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
+#define SPI3_FAKE_SCK_PORT                     1           ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
+#define FUZZY_CHIP                             0xFF        ///< not sure what this is about
+#define LH2_LOCATION_ERROR_INDICATOR           0xFFFFFFFF  ///< indicate the location value is false
+#define LH2_POLYNOMIAL_ERROR_INDICATOR         0xFF        ///< indicate the polynomial index is invalid
+#define POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD 4           ///< initial threshold of polynomial error
+#define LH2_BUFFER_SIZE                        128         ///< buffer size containing lh2 frames
+#define GPIOTE_CH_IN_ENV_HiToLo                1           ///< falling edge gpio channel
+#define GPIOTE_CH_IN_ENV_LoToHi                2           ///< rising edge gpio channel
 
 typedef struct {
-    uint64_t bits_sweep;               // bits sweep is the result of the demodulation, sweep_N indicates which SPI transfer those bits are associated with
-    uint8_t  selected_polynomial;      // selected poly is the polyomial # (between 0 and 31) that the demodulation code thinks the demodulated bits are a part of, initialize to error state
-    int8_t  bit_offset;                // bit_offset indicates an offset between the start of the packet, as indicated by envelope dropping, and the 17-bit sequence that is verified to be in a known LFSR sequence
-    uint32_t lfsr_location;            // LFSR location is the position in a given polynomial's LFSR that the decoded data is, initialize to error state
-    uint32_t envelope_duration;        // initialize envelope duration storage variables
-    uint8_t  buffer[LH2_BUFFER_SIZE];  // arrays of bits for local storage, contents of SPI transfer are copied into this
+    uint64_t bits_sweep;               ///< bits sweep is the result of the demodulation, sweep_N indicates which SPI transfer those bits are associated with
+    uint8_t  selected_polynomial;      ///< selected poly is the polyomial # (between 0 and 31) that the demodulation code thinks the demodulated bits are a part of, initialize to error state
+    int8_t   bit_offset;               ///< bit_offset indicates an offset between the start of the packet, as indicated by envelope dropping, and the 17-bit sequence that is verified to be in a known LFSR sequence
+    uint32_t lfsr_location;            ///< LFSR location is the position in a given polynomial's LFSR that the decoded data is, initialize to error state
+    uint32_t envelope_duration;        ///< initialize envelope duration storage variables
+    uint8_t  buffer[LH2_BUFFER_SIZE];  ///< arrays of bits for local storage, contents of SPI transfer are copied into this
 } lh2_demodulation_data_t;
 
 typedef struct {
-    uint8_t                 transfer_counter;
-    uint8_t                 spi_rx_buffer[SPI3_BUFFER_SIZE];
-    bool                    buffers_ready;
-    lh2_demodulation_data_t data[LH2_LOCATIONS_COUNT];
+    uint8_t                 transfer_counter;                 ///< counter of spi transfer in the current cycle
+    uint8_t                 spi_rx_buffer[SPI3_BUFFER_SIZE];  ///< buffer where data coming from SPI are stored
+    bool                    buffers_ready;                    ///< specify when data buffers are ready to be process
+    lh2_demodulation_data_t data[LH2_LOCATIONS_COUNT];        ///< array containing demodulation data of each locations
 } lh2_vars_t;
 
 //=========================== variables ========================================
@@ -145,27 +137,112 @@ static const uint32_t _end_buffers[4][16] = {
     },
 };
 
-static lh2_vars_t _lh2_vars;
+///! LH2 event gpio
+static const gpio_t _lh2_e_gpio = {
+    .port = 0,
+    .pin  = 30,
+};
+
+///! LH2 data gpio
+static const gpio_t _lh2_d_gpio = {
+    .port = 0,
+    .pin  = 29,
+};
+
+///! NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module
+static const gpio_t _lh2_spi_fake_sck_gpio = {
+    .port = 1,
+    .pin  = 6,
+};
+
+static lh2_vars_t _lh2_vars;  ///< local data of the LH2 driver
 
 //=========================== prototypes =======================================
 
 // these functions are called in the order written to perform the LH2 localization
+/**
+ * @brief wiggle the data and envelope lines in a magical way to configure the TS4231 to continuously read for LH2 sweep signals.
+ *
+ */
 void _initialize_ts4231(void);
+
+/**
+ * @brief
+ * @param sample_buffer: SPI samples loaded into a local buffer
+ * @return chipsH: 64-bits of demodulated data
+ */
 uint64_t _demodulate_light(uint8_t *sample_buffer);
+
+/**
+ * @brief from a 17-bit sequence and a polynomial, generate up to 64-17=47 bits as if the LFSR specified by poly were run forwards for numbits cycles, all little endian
+ *
+ * @param poly: 17-bit polynomial
+ * @param bits_in: starting seed
+ * @param numbits: number of bits
+ *
+ * @return sequence of bits resulting from running the LFSR forward
+ */
 uint64_t _poly_check(uint32_t poly, uint32_t bits, uint8_t numbits);
-uint8_t  _determine_polynomial(uint64_t chipsH1, int8_t *start_val);
+
+/**
+ * @brief find out which LFSR polynomial the bit sequence is a member of
+ *
+ * @param[in] chipsH1: input sequences of bits from demodulation
+ * @param[in] start_val: number of bits between the envelope falling edge and the beginning of the sequence where valid data has been found
+ *
+ * @return polynomial, indicating which polynomial was found, or FF for error (polynomial not found).
+ */
+uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val);
+
+/**
+ * @brief counts the number of 1s in a 64-bit
+ *
+ * @param bits_in, arbitrary bits
+ *
+ * @return cumulative number of 1s inside of bits_in
+ */
 uint64_t _hamming_weight(uint64_t bits_in);
+
+/**
+ * @brief finds the position of a 17-bit sequence (bits) in the sequence generated by polynomial3 with initial seed 1
+ *
+ * @param bits: 17-bit sequence
+ *
+ * @return count: location of the sequence
+ */
 uint32_t _reverse_count_p(uint8_t index, uint32_t bits);
 
-// setup the PPI
-void _gpiote_setup(void);
-void _ppi_setup(void);
-void _spi3_setup(void);
-void _timer2_setup(void);
+/**
+ * @brief Set a gpio as an INPUT with no pull-up or pull-down
+ * @param[in] gpio: pin to configure as input [0-31]
+ */
+void _lh2_pin_set_input(const gpio_t *gpio);
 
-// Said Set-Up
-void _lh2_pin_set_input(uint8_t pin);
-void _lh2_pin_set_output(uint8_t pin);
+/**
+ * @brief Set a gpio as an OUTPUT with standard drive
+ * @param[in] gpio: gpio to configure as input [0-31]
+ */
+void _lh2_pin_set_output(const gpio_t *gpio);
+
+/**
+ * @brief set-up GPIOTE so that events are configured for falling (GPIOTE_CH_IN) and rising edges (GPIOTE_CH_IN_ENV_HiToLo) of the envelope signal
+ */
+void _gpiote_setup(void);
+
+/**
+ * @brief start SPI3 at falling edge of envelope, start timer2 at falling edge of envelope, stop/capture timer2 at rising edge of envelope
+ */
+void _ppi_setup(void);
+
+/**
+ * @brief spi3 setup
+ */
+void _spi3_setup(void);
+
+/**
+ * @brief timer2 setup, in _ppi_setup() this timer will CLEAR/START at falling edge of envelop signal and STOP/CAPTURE at rising edge of envelope signal
+ */
+void _timer2_setup(void);
 
 //=========================== public ===========================================
 
@@ -174,8 +251,8 @@ void db_lh2_init(void) {
     _initialize_ts4231();
 
     // Configure the necessary Pins in the GPIO peripheral  (MOSI and CS not needed)
-    _lh2_pin_set_input(LH2_D_PIN);           // Data_pin will become the MISO pin
-    _lh2_pin_set_output(SPI3_FAKE_SCK_PIN);  // set SCK as Output.
+    _lh2_pin_set_input(&_lh2_d_gpio);              // Data_pin will become the MISO pin
+    _lh2_pin_set_output(&_lh2_spi_fake_sck_gpio);  // set SCK as Output.
 
     _spi3_setup();
 
@@ -204,8 +281,8 @@ void db_lh2_init(void) {
 
 void db_lh2_reset(db_lh2_t *lh2) {
     _lh2_vars.transfer_counter = 0;
-    _lh2_vars.buffers_ready = false;
-    lh2->state = DB_LH2_RUNNING;
+    _lh2_vars.buffers_ready    = false;
+    lh2->state                 = DB_LH2_RUNNING;
 }
 
 void db_lh2_process_location(db_lh2_t *lh2) {
@@ -345,148 +422,122 @@ void db_lh2_process_location(db_lh2_t *lh2) {
     lh2->state = DB_LH2_READY;
 }
 
-void db_lh2_start_transfer(db_lh2_t *lh2) {
-    _lh2_vars.transfer_counter = 0;
-    lh2->state = DB_LH2_RUNNING;
-    NRF_PPI->CHENSET           = (PPI_CHENSET_CH2_Enabled << PPI_CHENSET_CH2_Pos) |
-                       //(PPI_CHENSET_CH3_Enabled << PPI_CHENSET_CH3_Pos);
-                       (PPI_CHENSET_CH4_Enabled << PPI_CHENSET_CH4_Pos) |
-                       (PPI_CHENSET_CH5_Enabled << PPI_CHENSET_CH5_Pos);
-}
-
-void db_lh2_stop_transfer(db_lh2_t *lh2) {
-    NRF_PPI->CHENCLR = (PPI_CHENCLR_CH2_Enabled << PPI_CHENCLR_CH2_Pos) |
-                       //(PPI_CHENCLR_CH3_Enabled << PPI_CHENCLR_CH3_Pos);
-                       (PPI_CHENCLR_CH4_Enabled << PPI_CHENCLR_CH4_Pos) |
-                       (PPI_CHENCLR_CH5_Enabled << PPI_CHENCLR_CH5_Pos);  // stop receiving data while it thinks
-    lh2->state = DB_LH2_IDLE;
-}
-
 //=========================== private ==========================================
 
-/**
- * @brief wiggle the data and envelope lines in a magical way to configure the TS4231 to continuously read for LH2 sweep signals.
- *
- */
 void _initialize_ts4231(void) {
 
     // Configure the wait timer
     db_timer_hf_init();
 
     // Filip's code define these pins as inputs, and then changes them quickly to outputs. Not sure why, but it works.
-    _lh2_pin_set_input(LH2_D_PIN);
-    _lh2_pin_set_input(LH2_E_PIN);
+    _lh2_pin_set_input(&_lh2_d_gpio);
+    _lh2_pin_set_input(&_lh2_e_gpio);
 
     // start the TS4231 initialization
     // Wiggle the Envelope and Data pins
-    _lh2_pin_set_output(LH2_E_PIN);
+    _lh2_pin_set_output(&_lh2_e_gpio);
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << LH2_E_PIN;  // set pin HIGH
+    NRF_P0->OUTSET = 1 << _lh2_e_gpio.pin;  // set pin HIGH
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << LH2_E_PIN;  // set pin LOW
+    NRF_P0->OUTCLR = 1 << _lh2_e_gpio.pin;  // set pin LOW
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << LH2_E_PIN;
+    NRF_P0->OUTSET = 1 << _lh2_e_gpio.pin;
     db_timer_hf_delay_us(10);
-    _lh2_pin_set_output(LH2_D_PIN);
+    _lh2_pin_set_output(&_lh2_d_gpio);
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << LH2_D_PIN;
+    NRF_P0->OUTSET = 1 << _lh2_d_gpio.pin;
     db_timer_hf_delay_us(10);
     // Turn the pins back to inputs
-    _lh2_pin_set_input(LH2_D_PIN);
-    _lh2_pin_set_input(LH2_E_PIN);
+    _lh2_pin_set_input(&_lh2_d_gpio);
+    _lh2_pin_set_input(&_lh2_e_gpio);
     // finally, wait 1 milisecond
     db_timer_hf_delay_us(1000);
 
     // Send the configuration magic number/sequence
     uint16_t config_val = 0x392B;
     // Turn the Data and Envelope lines back to outputs and clear them.
-    _lh2_pin_set_output(LH2_E_PIN);
-    _lh2_pin_set_output(LH2_D_PIN);
+    _lh2_pin_set_output(&_lh2_e_gpio);
+    _lh2_pin_set_output(&_lh2_d_gpio);
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << LH2_D_PIN;
+    NRF_P0->OUTCLR = 1 << _lh2_d_gpio.pin;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << LH2_E_PIN;
+    NRF_P0->OUTCLR = 1 << _lh2_e_gpio.pin;
     db_timer_hf_delay_us(10);
     // Send the magic configuration value, MSB first.
     for (uint8_t i = 0; i < 15; i++) {
 
         config_val = config_val << 1;
         if ((config_val & 0x8000) > 0) {
-            NRF_P0->OUTSET = 1 << LH2_D_PIN;
+            NRF_P0->OUTSET = 1 << _lh2_d_gpio.pin;
         } else {
-            NRF_P0->OUTCLR = 1 << LH2_D_PIN;
+            NRF_P0->OUTCLR = 1 << _lh2_d_gpio.pin;
         }
 
         // Toggle the Envelope line as a clock.
         db_timer_hf_delay_us(10);
-        NRF_P0->OUTSET = 1 << LH2_E_PIN;
+        NRF_P0->OUTSET = 1 << _lh2_e_gpio.pin;
         db_timer_hf_delay_us(10);
-        NRF_P0->OUTCLR = 1 << LH2_E_PIN;
+        NRF_P0->OUTCLR = 1 << _lh2_e_gpio.pin;
         db_timer_hf_delay_us(10);
     }
     // Finish send sequence and turn pins into inputs again.
-    NRF_P0->OUTCLR = 1 << LH2_D_PIN;
+    NRF_P0->OUTCLR = 1 << _lh2_d_gpio.pin;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << LH2_E_PIN;
+    NRF_P0->OUTSET = 1 << _lh2_e_gpio.pin;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << LH2_D_PIN;
+    NRF_P0->OUTSET = 1 << _lh2_d_gpio.pin;
     db_timer_hf_delay_us(10);
-    _lh2_pin_set_input(LH2_D_PIN);
-    _lh2_pin_set_input(LH2_E_PIN);
+    _lh2_pin_set_input(&_lh2_d_gpio);
+    _lh2_pin_set_input(&_lh2_e_gpio);
     // Finish by waiting 10usec
     db_timer_hf_delay_us(10);
 
     // Now read back the sequence that the TS4231 answers.
-    _lh2_pin_set_output(LH2_E_PIN);
-    _lh2_pin_set_output(LH2_D_PIN);
+    _lh2_pin_set_output(&_lh2_e_gpio);
+    _lh2_pin_set_output(&_lh2_d_gpio);
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << LH2_D_PIN;
+    NRF_P0->OUTCLR = 1 << _lh2_d_gpio.pin;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << LH2_E_PIN;
+    NRF_P0->OUTCLR = 1 << _lh2_e_gpio.pin;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << LH2_D_PIN;
+    NRF_P0->OUTSET = 1 << _lh2_d_gpio.pin;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << LH2_E_PIN;
+    NRF_P0->OUTSET = 1 << _lh2_e_gpio.pin;
     db_timer_hf_delay_us(10);
     // Set Data pin as an input, to receive the data
-    _lh2_pin_set_input(LH2_D_PIN);
+    _lh2_pin_set_input(&_lh2_d_gpio);
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << LH2_E_PIN;
+    NRF_P0->OUTCLR = 1 << _lh2_e_gpio.pin;
     db_timer_hf_delay_us(10);
     // Use the Envelope pin to output a clock while the data arrives.
     for (uint8_t i = 0; i < 14; i++) {
-        NRF_P0->OUTSET = 1 << LH2_E_PIN;
+        NRF_P0->OUTSET = 1 << _lh2_e_gpio.pin;
         db_timer_hf_delay_us(10);
-        NRF_P0->OUTCLR = 1 << LH2_E_PIN;
+        NRF_P0->OUTCLR = 1 << _lh2_e_gpio.pin;
         db_timer_hf_delay_us(10);
     }
 
     // Finish the configuration procedure
-    _lh2_pin_set_output(LH2_D_PIN);
+    _lh2_pin_set_output(&_lh2_d_gpio);
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << LH2_E_PIN;
+    NRF_P0->OUTSET = 1 << _lh2_e_gpio.pin;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << LH2_D_PIN;
-    db_timer_hf_delay_us(10);
-
-    NRF_P0->OUTCLR = 1 << LH2_E_PIN;
-    db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << LH2_D_PIN;
-    db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << LH2_E_PIN;
+    NRF_P0->OUTSET = 1 << _lh2_d_gpio.pin;
     db_timer_hf_delay_us(10);
 
-    _lh2_pin_set_input(LH2_D_PIN);
-    _lh2_pin_set_input(LH2_E_PIN);
+    NRF_P0->OUTCLR = 1 << _lh2_e_gpio.pin;
+    db_timer_hf_delay_us(10);
+    NRF_P0->OUTCLR = 1 << _lh2_d_gpio.pin;
+    db_timer_hf_delay_us(10);
+    NRF_P0->OUTSET = 1 << _lh2_e_gpio.pin;
+    db_timer_hf_delay_us(10);
+
+    _lh2_pin_set_input(&_lh2_d_gpio);
+    _lh2_pin_set_input(&_lh2_e_gpio);
 
     db_timer_hf_delay_us(50000);
 }
 
-/**
- * @brief
- * @param sample_buffer: SPI samples loaded into a local buffer
- * @return chipsH: 64-bits of demodulated data
- */
 uint64_t _demodulate_light(uint8_t *sample_buffer) {  // bad input variable name!!
     // TODO: rename sample_buffer
     // TODO: make it a void and have chips be a modified pointer thingie
@@ -750,15 +801,6 @@ uint64_t _demodulate_light(uint8_t *sample_buffer) {  // bad input variable name
     return chipsH1;
 }
 
-/**
- * @brief from a 17-bit sequence and a polynomial, generate up to 64-17=47 bits as if the LFSR specified by poly were run forwards for numbits cycles, all little endian
- *
- * @param poly: 17-bit polynomial
- * @param bits_in: starting seed
- * @param numbits: number of bits
- *
- * @return sequence of bits resulting from running the LFSR forward
- */
 uint64_t _poly_check(uint32_t poly, uint32_t bits, uint8_t numbits) {
     uint64_t bits_out      = 0;
     uint8_t  shift_counter = 1;
@@ -785,14 +827,6 @@ uint64_t _poly_check(uint32_t poly, uint32_t bits, uint8_t numbits) {
     return bits_out;
 }
 
-/**
- * @brief find out which LFSR polynomial the bit sequence is a member of
- *
- * @param[in] chipsH1: input sequences of bits from demodulation
- * @param[in] start_val: number of bits between the envelope falling edge and the beginning of the sequence where valid data has been found
- *
- * @return polynomial, indicating which polynomial was found, or FF for error (polynomial not found).
- */
 uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
     // check which polynomial the bit sequence is part of
     // TODO: make function a void and modify memory directly
@@ -861,13 +895,6 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
     return selected_poly;
 }
 
-/**
- * @brief counts the number of 1s in a 64-bit
- *
- * @param bits_in, arbitrary bits
- *
- * @return cumulative number of 1s inside of bits_in
- */
 uint64_t _hamming_weight(uint64_t bits_in) {  // TODO: bad name for function? or is it, it might be a good name for a function, because it describes exactly what it does
     uint64_t weight = bits_in;
     weight          = weight - ((weight >> 1) & 0x5555555555555555);                         // find # of 1s in every 2-bit block
@@ -880,15 +907,8 @@ uint64_t _hamming_weight(uint64_t bits_in) {  // TODO: bad name for function? or
     return weight;
 }
 
-/**
- * @brief finds the position of a 17-bit sequence (bits) in the sequence generated by polynomial index with initial seed 1
- *
- * @param bits: 17-bit sequence
- *
- * @return count: location of the sequence
- */
 uint32_t _reverse_count_p(uint8_t index, uint32_t bits) {
-        uint32_t count       = 0;
+    uint32_t count       = 0;
     uint32_t buffer      = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
     uint8_t  ii          = 0;                   // loop variable for cumulative sum
     uint32_t result      = 0;
@@ -896,9 +916,9 @@ uint32_t _reverse_count_p(uint8_t index, uint32_t bits) {
     uint32_t masked_buff = 0;
     while (buffer != _end_buffers[index][0])  // do until buffer reaches one of the saved states
     {
-        b17         = buffer & 0x00000001;           // save the "newest" bit of the buffer
-        buffer      = (buffer & (0x0001FFFE)) >> 1;  // shift the buffer right, backwards in time
-        masked_buff = (buffer) & (_polynomials[index]);             // mask the buffer w/ the selected polynomial
+        b17         = buffer & 0x00000001;               // save the "newest" bit of the buffer
+        buffer      = (buffer & (0x0001FFFE)) >> 1;      // shift the buffer right, backwards in time
+        masked_buff = (buffer) & (_polynomials[index]);  // mask the buffer w/ the selected polynomial
         for (ii = 0; ii < 17; ii++) {
             result = result ^ (((masked_buff) >> ii) & (0x00000001));  // cumulative sum of buffer&poly
         }
@@ -970,13 +990,6 @@ uint32_t _reverse_count_p(uint8_t index, uint32_t bits) {
     return count;
 }
 
-/**
- * @brief finds the position of a 17-bit sequence (bits) in the sequence generated by polynomial3 with initial seed 1
- *
- * @param bits: 17-bit sequence
- *
- * @return count: location of the sequence
- */
 uint32_t _reverse_count_p3(uint32_t bits) {
     uint32_t count  = 0;
     uint32_t buffer = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
@@ -989,7 +1002,7 @@ uint32_t _reverse_count_p3(uint32_t bits) {
     {
         b17         = buffer & 0x00000001;           // save the "newest" bit of the buffer
         buffer      = (buffer & (0x0001FFFE)) >> 1;  // shift the buffer right, backwards in time
-        masked_buff = (buffer) & (_polynomials[3]);             // mask the buffer w/ the selected polynomial
+        masked_buff = (buffer) & (_polynomials[3]);  // mask the buffer w/ the selected polynomial
         for (ii = 0; ii < 17; ii++) {
             result = result ^ (((masked_buff) >> ii) & (0x00000001));  // cumulative sum of buffer&poly
         }
@@ -1061,61 +1074,32 @@ uint32_t _reverse_count_p3(uint32_t bits) {
     return count;
 }
 
-/**
- * @brief Set a pin of port 0 as an INPUT with no pull-up or pull-down
- * @param[in] pin: port 0 pin to configure as input [0-31]
- *
- */
-void _lh2_pin_set_input(uint8_t pin) {
-
+void _lh2_pin_set_input(const gpio_t *gpio) {
     // Configure Data pin as INPUT, with no pullup or pull down.
-    NRF_P0->PIN_CNF[pin] = (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos) |
-                           (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos) |
-                           (GPIO_PIN_CNF_PULL_Disabled << GPIO_PIN_CNF_PULL_Pos);
+    nrf_port[gpio->port]->PIN_CNF[gpio->pin] = (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos) |
+                                               (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos) |
+                                               (GPIO_PIN_CNF_PULL_Disabled << GPIO_PIN_CNF_PULL_Pos);
 }
 
-/**
- * @brief Set a pin of port 0 as an OUTPUT with standard drive
- * @param[in] pin: port 0 pin to configure as input [0-31]
- *
- */
-void _lh2_pin_set_output(uint8_t pin) {
-
+void _lh2_pin_set_output(const gpio_t *gpio) {
     // Configure Data pin as OUTPUT, with standar power drive current.
-    NRF_P0->PIN_CNF[pin] = (GPIO_PIN_CNF_DIR_Output << GPIO_PIN_CNF_DIR_Pos) |   // Set Pin as output
-                           (GPIO_PIN_CNF_DRIVE_S0S1 << GPIO_PIN_CNF_DRIVE_Pos);  // Activate high current gpio mode.
+    nrf_port[gpio->port]->PIN_CNF[gpio->pin] = (GPIO_PIN_CNF_DIR_Output << GPIO_PIN_CNF_DIR_Pos) |   // Set Pin as output
+                                               (GPIO_PIN_CNF_DRIVE_S0S1 << GPIO_PIN_CNF_DRIVE_Pos);  // Activate high current gpio mode.
 }
 
-/**
- * @brief set-up GPIOTE so that events are configured for falling (GPIOTE_CH_IN) and rising edges (GPIOTE_CH_IN_ENV_HiToLo) of the envelope signal
- *
- */
 void _gpiote_setup(void) {
-
-    // NRF_GPIOTE->CONFIG[GPIOTE_CH_OUT] =           (GPIOTE_CONFIG_MODE_Task        << GPIOTE_CONFIG_MODE_Pos) | // TODO: remove this event, it exists for debug purposes
-    //                                               (OUTPUT_PIN_NUMBER              << GPIOTE_CONFIG_PSEL_Pos) |
-    //                                               (OUTPUT_PIN_PORT                << GPIOTE_CONFIG_PORT_Pos) |
-    //                                               (GPIOTE_CONFIG_POLARITY_Toggle  << GPIOTE_CONFIG_POLARITY_Pos) |
-    //                                               (GPIOTE_CONFIG_OUTINIT_High     << GPIOTE_CONFIG_OUTINIT_Pos);
-
     NRF_GPIOTE->CONFIG[GPIOTE_CH_IN_ENV_HiToLo] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
-                                                  (INPUT_PIN_NUMBER << GPIOTE_CONFIG_PSEL_Pos) |
-                                                  (INPUT_PIN_PORT << GPIOTE_CONFIG_PORT_Pos) |
+                                                  (_lh2_e_gpio.pin << GPIOTE_CONFIG_PSEL_Pos) |
+                                                  (_lh2_e_gpio.port << GPIOTE_CONFIG_PORT_Pos) |
                                                   (GPIOTE_CONFIG_POLARITY_HiToLo << GPIOTE_CONFIG_POLARITY_Pos);
 
     NRF_GPIOTE->CONFIG[GPIOTE_CH_IN_ENV_LoToHi] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
-                                                  (INPUT_PIN_NUMBER << GPIOTE_CONFIG_PSEL_Pos) |
-                                                  (INPUT_PIN_PORT << GPIOTE_CONFIG_PORT_Pos) |
+                                                  (_lh2_e_gpio.pin << GPIOTE_CONFIG_PSEL_Pos) |
+                                                  (_lh2_e_gpio.port << GPIOTE_CONFIG_PORT_Pos) |
                                                   (GPIOTE_CONFIG_POLARITY_LoToHi << GPIOTE_CONFIG_POLARITY_Pos);
 }
 
-// setup the PPI
-/**
- * @brief start SPI3 at falling edge of envelope, start timer2 at falling edge of envelope, stop/capture timer2 at rising edge of envelope
- *
- */
 void _ppi_setup(void) {
-    // uint32_t gpiote_output_task_addr  = (uint32_t)&NRF_GPIOTE->TASKS_OUT[GPIOTE_CH_OUT];
     uint32_t gpiote_input_task_addr   = (uint32_t)&NRF_GPIOTE->EVENTS_IN[GPIOTE_CH_IN_ENV_HiToLo];
     uint32_t envelope_input_LoToHi    = (uint32_t)&NRF_GPIOTE->EVENTS_IN[GPIOTE_CH_IN_ENV_LoToHi];
     uint32_t spi3_start_task_addr     = (uint32_t)&NRF_SPIM3->TASKS_START;
@@ -1139,16 +1123,21 @@ void _ppi_setup(void) {
     NRF_PPI->CH[5].EEP   = envelope_input_LoToHi;
     NRF_PPI->CH[5].TEP   = timer2_clear_task_addr;  // clear timer
     NRF_PPI->FORK[5].TEP = spi3_stop_task_addr;     // stop spi3 transfer
+
+    NRF_PPI->CHENSET = (PPI_CHENSET_CH2_Enabled << PPI_CHENSET_CH2_Pos) |
+                       //(PPI_CHENSET_CH3_Enabled << PPI_CHENSET_CH3_Pos);
+                       (PPI_CHENSET_CH4_Enabled << PPI_CHENSET_CH4_Pos) |
+                       (PPI_CHENSET_CH5_Enabled << PPI_CHENSET_CH5_Pos);
 }
 
 void _spi3_setup(void) {
     // Define the necessary Pins in the SPIM peripheral
-    NRF_SPIM3->PSEL.MISO = LH2_D_PIN << SPIM_PSEL_MISO_PIN_Pos |                            // Define pin number for MISO pin
-                           0 << SPIM_PSEL_MISO_PORT_Pos |                                   // Define pin port for MISO pin
+    NRF_SPIM3->PSEL.MISO = _lh2_d_gpio.pin << SPIM_PSEL_MISO_PIN_Pos |                      // Define pin number for MISO pin
+                           _lh2_d_gpio.port << SPIM_PSEL_MISO_PORT_Pos |                    // Define pin port for MISO pin
                            SPIM_PSEL_MISO_CONNECT_Connected << SPIM_PSEL_MISO_CONNECT_Pos;  // Enable the MISO pin
 
-    NRF_SPIM3->PSEL.SCK = SPI3_FAKE_SCK_PIN << SPIM_PSEL_SCK_PIN_Pos |                   // Define pin number for SCK pin
-                          1 << SPIM_PSEL_SCK_PORT_Pos |                                  // Define pin port for SCK pin
+    NRF_SPIM3->PSEL.SCK = _lh2_spi_fake_sck_gpio.pin << SPIM_PSEL_SCK_PIN_Pos |          // Define pin number for SCK pin
+                          _lh2_spi_fake_sck_gpio.port << SPIM_PSEL_SCK_PORT_Pos |        // Define pin port for SCK pin
                           SPIM_PSEL_SCK_CONNECT_Connected << SPIM_PSEL_SCK_CONNECT_Pos;  // Enable the SCK pin
 
     NRF_SPIM3->PSEL.MOSI = (4UL) << SPIM_PSEL_MOSI_PIN_Pos |
@@ -1176,10 +1165,6 @@ void _spi3_setup(void) {
     NRF_SPIM3->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
 }
 
-/**
- * @brief timer2 setup, in _ppi_setup() this timer will CLEAR/START at falling edge of envelop signal and STOP/CAPTURE at rising edge of envelope signal
- *
- */
 void _timer2_setup(void) {
     NRF_TIMER2->BITMODE   = TIMER_BITMODE_BITMODE_32Bit;
     NRF_TIMER2->PRESCALER = (0UL);  // 16 MHz clock counter
@@ -1191,10 +1176,6 @@ void _timer2_setup(void) {
 
 //=========================== interrupts =======================================
 
-/**
- * @brief SPIM3 interrupt handler
- *
- */
 void SPIM3_IRQHandler(void) {
     // Check if the interrupt was caused by a fully send package
     if (NRF_SPIM3->EVENTS_END) {
