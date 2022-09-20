@@ -20,8 +20,7 @@
 
 //=========================== defines ==========================================
 
-#define LH2_LOCATIONS_COUNT 4                        ///< Number of computed locations
-#define LH2_RESULTS_SIZE    LH2_LOCATIONS_COUNT * 2  ///< Size of the location result array
+#define LH2_LOCATIONS_COUNT 4  ///< Number of computed locations
 
 typedef enum {
     DB_LH2_RUNNING,  ///< the lh2 engine is running
@@ -29,8 +28,13 @@ typedef enum {
 } db_lh2_state_t;
 
 typedef struct {
-    db_lh2_state_t state;                      ///< current state of the lh2 engine
-    uint32_t       results[LH2_RESULTS_SIZE];  ///< buffer holding the location data
+    uint8_t  selected_polynomial;  ///< selected polynomial
+    uint32_t lfsr_location;        ///< lfsr location
+} db_lh2_result_t;
+
+typedef struct {
+    db_lh2_state_t  state;                         ///< current state of the lh2 engine
+    db_lh2_result_t results[LH2_LOCATIONS_COUNT];  ///< buffer holding the location data
 } db_lh2_t;
 
 //=========================== public ===========================================
