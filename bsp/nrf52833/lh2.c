@@ -20,10 +20,8 @@
 
 //=========================== defines =========================================
 
-#define SPIM3_INTERRUPT_PRIORITY 1    ///< Interrupt priority, as high as it will go
-#define SPI3_BUFFER_SIZE         64   ///< Size of buffers used for SPI communications
-#define LH2_PACKET_SIZE          5    ///< magic number definitions
-#define I_AM_ROBOT               420  ///< THIS ROBOT IS NUMBER
+#define SPIM3_INTERRUPT_PRIORITY 1   ///< Interrupt priority, as high as it will go
+#define SPI3_BUFFER_SIZE         64  ///< Size of buffers used for SPI communications
 
 #define LH2_D_PIN 29
 #define LH2_E_PIN 30
@@ -31,8 +29,11 @@
 #define FUZZY_CHIP 0xFF
 
 #define LH2_LOCATION_ERROR_INDICATOR           0xFFFFFFFF
-#define LH2_POLYNOMIAL_ERROR_INDICATOR         255
+#define LH2_POLYNOMIAL_ERROR_INDICATOR         0xFF
 #define POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD 4
+#define LH2_BUFFER_SIZE                        128
+#define LH2_LOCATIONS_COUNT                    4
+#define LH2_RESULTS_SIZE                       LH2_LOCATIONS_COUNT * 2
 
 // gpiote definitions
 #define GPIOTE_CH_OUT           0
@@ -49,18 +50,104 @@
                         // nRF52840 P1.6 is used because it's not an available pin in the BCM module.
 
 typedef struct {
-    uint8_t transfer_counter;
-    bool    buffers_ready;
+    uint64_t bits_sweep;
+    uint8_t  selected_polynomial;
+    int32_t  bit_offset;
+    uint32_t lfsr_location;
+    uint32_t enveloppe_duration;
+    uint8_t  buffer[LH2_BUFFER_SIZE];
+} lh2_data_t;
+
+typedef struct {
+    uint8_t    transfer_counter;
+    uint8_t    spi_rx_buffer[SPI3_BUFFER_SIZE];
+    bool       buffers_ready;
+    lh2_data_t data[LH2_LOCATIONS_COUNT];
+    uint32_t   results[LH2_RESULTS_SIZE];
 } lh2_vars_t;
 
 //=========================== variables ========================================
 
+static const uint32_t _end_buffers[4][16] = {
+    {
+        // p0
+        0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
+        0b10101010110011101,  // 1/16 way through
+        0b10001010101011010,  // 2/16 way through
+        0b11001100100000010,  // 3/16 way through
+        0b01100101100011111,  // 4/16 way through
+        0b10010001101011110,  // 5/16 way through
+        0b10100011001011111,  // 6/16 way through
+        0b11110001010110001,  // 7/16 way through
+        0b10111000110011011,  // 8/16 way through
+        0b10100110100011110,  // 9/16 way through
+        0b11001101100010000,  // 10/16 way through
+        0b01000101110011111,  // 11/16 way through
+        0b11100101011110101,  // 12/16 way through
+        0b01001001110110111,  // 13/16 way through
+        0b11011100110011101,  // 14/16 way through
+        0b10000110101101011,  // 15/16 way through
+    },
+    {
+        // p1
+        0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
+        0b11010000110111110,  // 1/16 way through
+        0b10110111100111100,  // 2/16 way through
+        0b11000010101101111,  // 3/16 way through
+        0b00101110001101110,  // 4/16 way through
+        0b01000011000110100,  // 5/16 way through
+        0b00010001010011110,  // 6/16 way through
+        0b10100101111010001,  // 7/16 way through
+        0b10011000000100001,  // 8/16 way through
+        0b01110011011010110,  // 9/16 way through
+        0b00100011101000011,  // 10/16 way through
+        0b10111011010000101,  // 11/16 way through
+        0b00110010100110110,  // 12/16 way through
+        0b01000111111100110,  // 13/16 way through
+        0b10001101000111011,  // 14/16 way through
+        0b00111100110011100,  // 15/16 way through
+    },
+    {
+        // p2
+        0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
+        0b00011011011000100,  // 1/16 way through
+        0b01011101010010110,  // 2/16 way through
+        0b11001011001101010,  // 3/16 way through
+        0b01110001111011010,  // 4/16 way through
+        0b10110110011111010,  // 5/16 way through
+        0b10110001110000001,  // 6/16 way through
+        0b10001001011101001,  // 7/16 way through
+        0b00000010011101011,  // 8/16 way through
+        0b01100010101111011,  // 9/16 way through
+        0b00111000001101111,  // 10/16 way through
+        0b10101011100111000,  // 11/16 way through
+        0b01111110101111111,  // 12/16 way through
+        0b01000011110101010,  // 13/16 way through
+        0b01001011100000011,  // 14/16 way through
+        0b00010110111101110,  // 15/16 way through
+    },
+    {
+        // p3
+        0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
+        0b11011011110010110,  // 1/16 way through
+        0b11000100000001101,  // 2/16 way through
+        0b11100011000010110,  // 3/16 way through
+        0b00011111010001100,  // 4/16 way through
+        0b11000001011110011,  // 5/16 way through
+        0b10011101110001010,  // 6/16 way through
+        0b00001011001111000,  // 7/16 way through
+        0b00111100010000101,  // 8/16 way through
+        0b01001111001010100,  // 9/16 way through
+        0b01011010010110011,  // 10/16 way through
+        0b11111101010001100,  // 11/16 way through
+        0b00110101011011111,  // 12/16 way through
+        0b01110110010101011,  // 13/16 way through
+        0b00010000110100010,  // 14/16 way through
+        0b00010111110101110,  // 15/16 way through
+    },
+};
+
 static lh2_vars_t _lh2_vars;
-
-// variable where location packet is stored
-static uint32_t lh2_packet[LH2_PACKET_SIZE];
-
-static uint32_t lh2_results[8];
 
 // initialize LH2 demodulation variables
 // bits sweep is the result of the demodulation, sweep_N indicates which SPI transfer those bits are associated with
@@ -93,16 +180,11 @@ static uint32_t LH2_envelope_duration_2 = 0xFFFFFFFF;
 static uint32_t LH2_envelope_duration_3 = 0xFFFFFFFF;
 static uint32_t LH2_envelope_duration_4 = 0xFFFFFFFF;
 
-// Define SPI buffer
-static uint8_t m_tx_buf[SPI3_BUFFER_SIZE] = { 0 };
-static uint8_t m_rx_buf[SPI3_BUFFER_SIZE] = { 0 };
-
 // arrays of bits for local storage, contents of SPI transfer are copied into this
-static uint8_t stored_buff[128];  // TODO: make these local variables inside of main - no reason for them to be glob
-static uint8_t stored_buff_1[128];
-static uint8_t stored_buff_2[128];
-static uint8_t stored_buff_3[128];
-static uint8_t stored_buff_4[128];
+static uint8_t stored_buff_1[LH2_BUFFER_SIZE];
+static uint8_t stored_buff_2[LH2_BUFFER_SIZE];
+static uint8_t stored_buff_3[LH2_BUFFER_SIZE];
+static uint8_t stored_buff_4[LH2_BUFFER_SIZE];
 
 //=========================== prototypes =======================================
 
@@ -112,7 +194,7 @@ void _initialize_ts4231(void);
 uint64_t _demodulate_light(uint8_t *sample_buffer);
 
 uint64_t _poly_check(uint32_t poly, uint32_t bits, uint8_t numbits);
-int      _determine_polynomial(uint64_t chipsH1, int *start_val);
+uint8_t  _determine_polynomial(uint64_t chipsH1, int *start_val);
 
 uint64_t _hamming_weight(uint64_t bits_in);
 
@@ -144,8 +226,19 @@ void db_lh2_init(void) {
     _spi3_setup();
 
     // Setup the LH2 local variables
+    memset(_lh2_vars.spi_rx_buffer, 0, SPI3_BUFFER_SIZE);
     _lh2_vars.transfer_counter = 0;
     _lh2_vars.buffers_ready    = false;
+
+    // Setup LH2 data
+    for (uint8_t location = 0; location < LH2_LOCATIONS_COUNT; location++) {
+        _lh2_vars.data[location].bits_sweep          = 0;
+        _lh2_vars.data[location].selected_polynomial = LH2_POLYNOMIAL_ERROR_INDICATOR;
+        _lh2_vars.data[location].bit_offset          = 0;
+        _lh2_vars.data[location].lfsr_location       = LH2_LOCATION_ERROR_INDICATOR;
+        _lh2_vars.data[location].enveloppe_duration  = 0xFFFFFFFF;
+        memset(_lh2_vars.data[location].buffer, 0, LH2_BUFFER_SIZE);
+    }
 
     // initialize GPIOTEs
     _gpiote_setup();
@@ -234,34 +327,21 @@ bool db_lh2_get_black_magic(void) {
             }
         }
 
-        // packet structure:
-        // packet[0] is the robot #
-        // packet[1-4] are the results from the four sweeps organized in 32-bit chunks as follows:
-        //        env. duration                    poly #                             location in LFSR
-        // [  -  -  -  -  -  -  -  -  -  -  |  -  -  -  -  -  |  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  ]
-        //           10 bits                       5 bits                               17 bits (max)
-        //
-        lh2_packet[0] = I_AM_ROBOT;
-        lh2_packet[1] = ((LH2_envelope_duration_1 & 0x000003FF) << 22) | ((LH2_selected_poly_1 & 0x0000001F) << 17) | ((LH2_LFSR_location_1 & 0x0001FFFF));
-        lh2_packet[2] = ((LH2_envelope_duration_2 & 0x000003FF) << 22) | ((LH2_selected_poly_2 & 0x0000001F) << 17) | ((LH2_LFSR_location_2 & 0x0001FFFF));
-        lh2_packet[3] = ((LH2_envelope_duration_3 & 0x000003FF) << 22) | ((LH2_selected_poly_3 & 0x0000001F) << 17) | ((LH2_LFSR_location_3 & 0x0001FFFF));
-        lh2_packet[4] = ((LH2_envelope_duration_4 & 0x000003FF) << 22) | ((LH2_selected_poly_4 & 0x0000001F) << 17) | ((LH2_LFSR_location_4 & 0x0001FFFF));
-
-        lh2_results[0] = (uint32_t)LH2_selected_poly_1;
-        lh2_results[2] = (uint32_t)LH2_selected_poly_2;
-        lh2_results[4] = (uint32_t)LH2_selected_poly_3;
-        lh2_results[6] = (uint32_t)LH2_selected_poly_4;
-        lh2_results[1] = LH2_LFSR_location_1;
-        lh2_results[3] = LH2_LFSR_location_2;
-        lh2_results[5] = LH2_LFSR_location_3;
-        lh2_results[7] = LH2_LFSR_location_4;
+        _lh2_vars.results[0] = (uint32_t)LH2_selected_poly_1;
+        _lh2_vars.results[2] = (uint32_t)LH2_selected_poly_2;
+        _lh2_vars.results[4] = (uint32_t)LH2_selected_poly_3;
+        _lh2_vars.results[6] = (uint32_t)LH2_selected_poly_4;
+        _lh2_vars.results[1] = LH2_LFSR_location_1;
+        _lh2_vars.results[3] = LH2_LFSR_location_2;
+        _lh2_vars.results[5] = LH2_LFSR_location_3;
+        _lh2_vars.results[7] = LH2_LFSR_location_4;
 
         // detect invalid packets
         invalid_packet_counter = 0;
         for (i = 0; i < 7; i += 2) {
-            if ((lh2_results[i] == 0) || (lh2_results[i] == 1)) {
+            if ((_lh2_vars.results[i] == 0) || (_lh2_vars.results[i] == 1)) {
                 invalid_packet_counter++;  // from LHA
-            } else if ((lh2_results[i] == 2) || (lh2_results[i] == 3)) {
+            } else if ((_lh2_vars.results[i] == 2) || (_lh2_vars.results[i] == 3)) {
                 invalid_packet_counter--;  // from LHB
             }
         }
@@ -272,26 +352,26 @@ bool db_lh2_get_black_magic(void) {
         if ((invalid_packet_counter == 4) || (invalid_packet_counter == -4)) {
             // results from one LH2 were discovered - sort the two pairs
             if (LH2_LFSR_location_1 > LH2_LFSR_location_2) {
-                lh2_results[0] = (uint32_t)LH2_selected_poly_2;
-                lh2_results[2] = (uint32_t)LH2_selected_poly_1;
-                lh2_results[1] = LH2_LFSR_location_2;
-                lh2_results[3] = LH2_LFSR_location_1;
+                _lh2_vars.results[0] = (uint32_t)LH2_selected_poly_2;
+                _lh2_vars.results[2] = (uint32_t)LH2_selected_poly_1;
+                _lh2_vars.results[1] = LH2_LFSR_location_2;
+                _lh2_vars.results[3] = LH2_LFSR_location_1;
             } else {
-                lh2_results[0] = (uint32_t)LH2_selected_poly_1;
-                lh2_results[2] = (uint32_t)LH2_selected_poly_2;
-                lh2_results[1] = LH2_LFSR_location_1;
-                lh2_results[3] = LH2_LFSR_location_2;
+                _lh2_vars.results[0] = (uint32_t)LH2_selected_poly_1;
+                _lh2_vars.results[2] = (uint32_t)LH2_selected_poly_2;
+                _lh2_vars.results[1] = LH2_LFSR_location_1;
+                _lh2_vars.results[3] = LH2_LFSR_location_2;
             }
             if (LH2_LFSR_location_3 > LH2_LFSR_location_4) {
-                lh2_results[0] = (uint32_t)LH2_selected_poly_4;
-                lh2_results[2] = (uint32_t)LH2_selected_poly_3;
-                lh2_results[1] = LH2_LFSR_location_4;
-                lh2_results[3] = LH2_LFSR_location_3;
+                _lh2_vars.results[0] = (uint32_t)LH2_selected_poly_4;
+                _lh2_vars.results[2] = (uint32_t)LH2_selected_poly_3;
+                _lh2_vars.results[1] = LH2_LFSR_location_4;
+                _lh2_vars.results[3] = LH2_LFSR_location_3;
             } else {
-                lh2_results[0] = (uint32_t)LH2_selected_poly_3;
-                lh2_results[2] = (uint32_t)LH2_selected_poly_4;
-                lh2_results[1] = LH2_LFSR_location_3;
-                lh2_results[3] = LH2_LFSR_location_4;
+                _lh2_vars.results[0] = (uint32_t)LH2_selected_poly_3;
+                _lh2_vars.results[2] = (uint32_t)LH2_selected_poly_4;
+                _lh2_vars.results[1] = LH2_LFSR_location_3;
+                _lh2_vars.results[3] = LH2_LFSR_location_4;
             }
         }
 
@@ -306,13 +386,12 @@ bool db_lh2_get_black_magic(void) {
 }
 
 void db_lh2_get_current_location(uint32_t *position) {
-    memcpy(position, lh2_results, 8 * sizeof(uint32_t));
-    _lh2_vars.transfer_counter = 0;
-    db_lh2_start_transfer();
+    memcpy(position, _lh2_vars.results, 8 * sizeof(uint32_t));
 }
 
 void db_lh2_start_transfer(void) {
-    NRF_PPI->CHENSET = (PPI_CHENSET_CH2_Enabled << PPI_CHENSET_CH2_Pos) |
+    _lh2_vars.transfer_counter = 0;
+    NRF_PPI->CHENSET           = (PPI_CHENSET_CH2_Enabled << PPI_CHENSET_CH2_Pos) |
                        //(PPI_CHENSET_CH3_Enabled << PPI_CHENSET_CH3_Pos);
                        (PPI_CHENSET_CH4_Enabled << PPI_CHENSET_CH4_Pos) |
                        (PPI_CHENSET_CH5_Enabled << PPI_CHENSET_CH5_Pos);
@@ -443,8 +522,6 @@ void _initialize_ts4231(void) {
     _lh2_pin_set_input(LH2_E_PIN);
 
     db_timer_hf_delay_us(50000);
-
-    //NRF_TIMER3->TASKS_STOP = (1UL);
 }
 
 /**
@@ -758,28 +835,21 @@ uint64_t _poly_check(uint32_t poly, uint32_t bits, uint8_t numbits) {
  *
  * @return polynomial, indicating which polynomial was found, or FF for error (polynomial not found).
  */
-int _determine_polynomial(uint64_t chipsH1, int *start_val) {
+uint8_t _determine_polynomial(uint64_t chipsH1, int *start_val) {
     // check which polynomial the bit sequence is part of
     // TODO: make function a void and modify memory directly
     // TODO: rename chipsH1 to something relevant... like bits?
-    uint32_t poly0           = 0b11101001001011000;
-    uint32_t poly1           = 0b10111111000000100;  // TODO: change this back to hex
-    uint32_t poly2           = 0x0001FF6B;
-    uint32_t poly3           = 0x00013F67;  // TODO: no more magic #s here, move this to #defines
-    int32_t  bits_N_for_comp = 47;
-    int32_t  match1          = 0;
-    uint32_t bit_buffer1     = (uint32_t)(((0xFFFF800000000000) & chipsH1) >> 47);
-    uint64_t bits_from_poly0 = 0;
-    uint64_t bits_from_poly1 = 0;
-    uint64_t bits_from_poly2 = 0;
-    uint64_t bits_from_poly3 = 0;
-    uint64_t weight0         = 0xFFFFFFFFFFFFFFFF;
-    uint64_t weight1         = 0xFFFFFFFFFFFFFFFF;
-    uint64_t weight2         = 0xFFFFFFFFFFFFFFFF;
-    uint64_t weight3         = 0xFFFFFFFFFFFFFFFF;
-    int32_t  selected_poly_1 = LH2_POLYNOMIAL_ERROR_INDICATOR;  // initialize to error condition
-    uint64_t bits_to_compare = 0;
-    int32_t  threshold       = POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
+    uint32_t poly0                               = 0b11101001001011000;
+    uint32_t poly1                               = 0b10111111000000100;  // TODO: change this back to hex
+    uint32_t poly2                               = 0x0001FF6B;
+    uint32_t poly3                               = 0x00013F67;  // TODO: no more magic #s here, move this to #defines
+    int32_t  bits_N_for_comp                     = 47;
+    uint32_t bit_buffer1                         = (uint32_t)(((0xFFFF800000000000) & chipsH1) >> 47);
+    uint64_t bits_from_poly[LH2_LOCATIONS_COUNT] = { 0 };
+    uint64_t weights[LH2_LOCATIONS_COUNT]        = { 0xFFFFFFFFFFFFFFFF };
+    uint8_t  selected_poly                       = LH2_POLYNOMIAL_ERROR_INDICATOR;  // initialize to error condition
+    uint64_t bits_to_compare                     = 0;
+    int32_t  threshold                           = POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
 
     *start_val = 0;  // TODO: remove this? possible that I modify start value during the demodulation process
 
@@ -791,35 +861,35 @@ int _determine_polynomial(uint64_t chipsH1, int *start_val) {
     // removing bits reduces the threshold correspondingly, as incorrect packet detection will cause a significant delay in location estimate
 
     // run polynomial search on the first capture
-    while (match1 == 0) {
+    while (1) {
         // TODO: do this math stuff in multiple operations to: (a) make it readable (b) ensure order-of-execution
-        bit_buffer1     = (uint32_t)(((0xFFFF800000000000 >> (*start_val)) & chipsH1) >> (64 - 17 - (*start_val)));
-        bits_from_poly0 = (((_poly_check(poly0, bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
-        bits_from_poly1 = (((_poly_check(poly1, bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
-        bits_from_poly2 = (((_poly_check(poly2, bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
-        bits_from_poly3 = (((_poly_check(poly3, bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
-        bits_to_compare = (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - 17 - (*start_val) - bits_N_for_comp)));
-        weight0         = _hamming_weight(bits_from_poly0 ^ bits_to_compare);
-        weight1         = _hamming_weight(bits_from_poly1 ^ bits_to_compare);
-        weight2         = _hamming_weight(bits_from_poly2 ^ bits_to_compare);
-        weight3         = _hamming_weight(bits_from_poly3 ^ bits_to_compare);
-        if (bits_N_for_comp < 10) {                            // too few bits to reliably compare, give up
-            selected_poly_1 = LH2_POLYNOMIAL_ERROR_INDICATOR;  // mark the poly as "wrong"
-            match1          = 1;
+        bit_buffer1       = (uint32_t)(((0xFFFF800000000000 >> (*start_val)) & chipsH1) >> (64 - 17 - (*start_val)));
+        bits_from_poly[0] = (((_poly_check(poly0, bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
+        bits_from_poly[1] = (((_poly_check(poly1, bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
+        bits_from_poly[2] = (((_poly_check(poly2, bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
+        bits_from_poly[3] = (((_poly_check(poly3, bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
+        bits_to_compare   = (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - 17 - (*start_val) - bits_N_for_comp)));
+        weights[0]        = _hamming_weight(bits_from_poly[0] ^ bits_to_compare);
+        weights[1]        = _hamming_weight(bits_from_poly[1] ^ bits_to_compare);
+        weights[2]        = _hamming_weight(bits_from_poly[2] ^ bits_to_compare);
+        weights[3]        = _hamming_weight(bits_from_poly[3] ^ bits_to_compare);
+        if (bits_N_for_comp < 10) {                          // too few bits to reliably compare, give up
+            selected_poly = LH2_POLYNOMIAL_ERROR_INDICATOR;  // mark the poly as "wrong"
+            break;
         }  // TODO: implement sorting network for efficiency?
-        if ((weight0 <= threshold) | (weight1 <= threshold) | (weight2 <= threshold) | (weight3 <= threshold)) {
-            if ((weight0 < weight1) & (weight0 < weight2) & (weight0 < weight3)) {  // weight0 is the smallest
-                selected_poly_1 = 0;
-                match1          = 1;
-            } else if ((weight1 < weight0) & (weight1 < weight2) & (weight1 < weight3)) {  // weight1 is the smallest
-                selected_poly_1 = 1;
-                match1          = 1;
-            } else if ((weight2 < weight0) & (weight2 < weight1) & (weight2 < weight3)) {  // weight2 is the smallest
-                selected_poly_1 = 2;
-                match1          = 1;
-            } else if ((weight3 < weight0) & (weight3 < weight1) & (weight3 < weight2)) {  // weight3 is the smallest
-                selected_poly_1 = 3;
-                match1          = 1;
+        if ((weights[0] <= threshold) | (weights[1] <= threshold) | (weights[2] <= threshold) | (weights[3] <= threshold)) {
+            if ((weights[0] < weights[1]) & (weights[0] < weights[2]) & (weights[0] < weights[3])) {  // weight0 is the smallest
+                selected_poly = 0;
+                break;
+            } else if ((weights[1] < weights[0]) & (weights[1] < weights[2]) & (weights[1] < weights[3])) {  // weight1 is the smallest
+                selected_poly = 1;
+                break;
+            } else if ((weights[2] < weights[0]) & (weights[2] < weights[1]) & (weights[2] < weights[3])) {  // weight2 is the smallest
+                selected_poly = 2;
+                break;
+            } else if ((weights[3] < weights[0]) & (weights[3] < weights[1]) & (weights[3] < weights[2])) {  // weight3 is the smallest
+                selected_poly = 3;
+                break;
             }
         } else if (*start_val > 8) {  // match failed, try again removing bits from the end
             *start_val      = 0;
@@ -834,7 +904,7 @@ int _determine_polynomial(uint64_t chipsH1, int *start_val) {
             bits_N_for_comp = bits_N_for_comp - 1;
         }
     }
-    return selected_poly_1;
+    return selected_poly;
 }
 
 /**
@@ -864,31 +934,14 @@ uint64_t _hamming_weight(uint64_t bits_in) {  // TODO: bad name for function? or
  * @return count: location of the sequence
  */
 uint32_t _reverse_count_p0(uint32_t bits) {
-    uint32_t count        = 0;
-    uint32_t buffer       = bits & 0x0001FFFFF;   // initialize buffer to initial bits, masked
-    uint32_t end_buffer0  = 0x00000000000000001;  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
-    uint32_t end_buffer1  = 0b10101010110011101;  // 1/16 way through
-    uint32_t end_buffer2  = 0b10001010101011010;  // 2/16 way through
-    uint32_t end_buffer3  = 0b11001100100000010;  // 3/16 way through
-    uint32_t end_buffer4  = 0b01100101100011111;  // 4/16 way through
-    uint32_t end_buffer5  = 0b10010001101011110;  // 5/16 way through
-    uint32_t end_buffer6  = 0b10100011001011111;  // 6/16 way through
-    uint32_t end_buffer7  = 0b11110001010110001;  // 7/16 way through
-    uint32_t end_buffer8  = 0b10111000110011011;  // 8/16 way through
-    uint32_t end_buffer9  = 0b10100110100011110;  // 9/16 way through
-    uint32_t end_buffer10 = 0b11001101100010000;  // 10/16 way through
-    uint32_t end_buffer11 = 0b01000101110011111;  // 11/16 way through
-    uint32_t end_buffer12 = 0b11100101011110101;  // 12/16 way through
-    uint32_t end_buffer13 = 0b01001001110110111;  // 13/16 way through
-    uint32_t end_buffer14 = 0b11011100110011101;  // 14/16 way through
-    uint32_t end_buffer15 = 0b10000110101101011;  // 15/16 way through
-
-    uint8_t  ii          = 0;  // loop variable for cumulative sum
+    uint32_t count       = 0;
+    uint32_t buffer      = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
+    uint8_t  ii          = 0;                   // loop variable for cumulative sum
     uint32_t result      = 0;
     uint32_t b17         = 0;
     uint32_t masked_buff = 0;
     uint32_t poly        = 0b11101001001011000;
-    while (buffer != end_buffer0)  // do until buffer reaches one of the saved states
+    while (buffer != _end_buffers[0][0])  // do until buffer reaches one of the saved states
     {
         b17         = buffer & 0x00000001;           // save the "newest" bit of the buffer
         buffer      = (buffer & (0x0001FFFE)) >> 1;  // shift the buffer right, backwards in time
@@ -900,65 +953,65 @@ uint32_t _reverse_count_p0(uint32_t bits) {
         buffer = buffer | (result << 16);  // update buffer w/ result
         result = 0;                        // reset result
         count++;
-        if ((buffer ^ end_buffer1) == 0x00000000) {
+        if ((buffer ^ _end_buffers[0][1]) == 0x00000000) {
             count  = count + 8192 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[0][0];
         }
-        if ((buffer ^ end_buffer2) == 0x00000000) {
+        if ((buffer ^ _end_buffers[0][2]) == 0x00000000) {
             count  = count + 16384 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[0][0];
         }
-        if ((buffer ^ end_buffer3) == 0x00000000) {
+        if ((buffer ^ _end_buffers[0][3]) == 0x00000000) {
             count  = count + 24576 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[0][0];
         }
-        if ((buffer ^ end_buffer4) == 0x00000000) {
+        if ((buffer ^ _end_buffers[0][4]) == 0x00000000) {
             count  = count + 32768 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[0][0];
         }
-        if ((buffer ^ end_buffer5) == 0x00000000) {
+        if ((buffer ^ _end_buffers[0][5]) == 0x00000000) {
             count  = count + 40960 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[0][0];
         }
-        if ((buffer ^ end_buffer6) == 0x00000000) {
+        if ((buffer ^ _end_buffers[0][6]) == 0x00000000) {
             count  = count + 49152 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[0][0];
         }
-        if ((buffer ^ end_buffer7) == 0x00000000) {
+        if ((buffer ^ _end_buffers[0][7]) == 0x00000000) {
             count  = count + 57344 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[0][0];
         }
-        if ((buffer ^ end_buffer8) == 0x00000000) {
+        if ((buffer ^ _end_buffers[0][8]) == 0x00000000) {
             count  = count + 65536 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[0][0];
         }
-        if ((buffer ^ end_buffer9) == 0x00000000) {
+        if ((buffer ^ _end_buffers[0][9]) == 0x00000000) {
             count  = count + 73728 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[0][0];
         }
-        if ((buffer ^ end_buffer10) == 0x00000000) {
+        if ((buffer ^ _end_buffers[0][10]) == 0x00000000) {
             count  = count + 81920 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[0][0];
         }
-        if ((buffer ^ end_buffer11) == 0x00000000) {
+        if ((buffer ^ _end_buffers[0][11]) == 0x00000000) {
             count  = count + 90112 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[0][0];
         }
-        if ((buffer ^ end_buffer12) == 0x00000000) {
+        if ((buffer ^ _end_buffers[0][12]) == 0x00000000) {
             count  = count + 98304 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[0][0];
         }
-        if ((buffer ^ end_buffer13) == 0x00000000) {
+        if ((buffer ^ _end_buffers[0][13]) == 0x00000000) {
             count  = count + 106496 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[0][0];
         }
-        if ((buffer ^ end_buffer14) == 0x00000000) {
+        if ((buffer ^ _end_buffers[0][14]) == 0x00000000) {
             count  = count + 114688 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[0][0];
         }
-        if ((buffer ^ end_buffer15) == 0x00000000) {
+        if ((buffer ^ _end_buffers[0][15]) == 0x00000000) {
             count  = count + 122880 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[0][0];
         }
     }
     return count;
@@ -972,31 +1025,15 @@ uint32_t _reverse_count_p0(uint32_t bits) {
  * @return count: location of the sequence
 */
 uint32_t _reverse_count_p1(uint32_t bits) {
-    uint32_t count        = 0;
-    uint32_t buffer       = bits & 0x0001FFFFF;   // initialize buffer to initial bits, masked
-    uint32_t end_buffer0  = 0x00000000000000001;  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
-    uint32_t end_buffer1  = 0b11010000110111110;  // 1/16 way through
-    uint32_t end_buffer2  = 0b10110111100111100;  // 2/16 way through
-    uint32_t end_buffer3  = 0b11000010101101111;  // 3/16 way through
-    uint32_t end_buffer4  = 0b00101110001101110;  // 4/16 way through
-    uint32_t end_buffer5  = 0b01000011000110100;  // 5/16 way through
-    uint32_t end_buffer6  = 0b00010001010011110;  // 6/16 way through
-    uint32_t end_buffer7  = 0b10100101111010001;  // 7/16 way through
-    uint32_t end_buffer8  = 0b10011000000100001;  // 8/16 way through
-    uint32_t end_buffer9  = 0b01110011011010110;  // 9/16 way through
-    uint32_t end_buffer10 = 0b00100011101000011;  // 10/16 way through
-    uint32_t end_buffer11 = 0b10111011010000101;  // 11/16 way through
-    uint32_t end_buffer12 = 0b00110010100110110;  // 12/16 way through
-    uint32_t end_buffer13 = 0b01000111111100110;  // 13/16 way through
-    uint32_t end_buffer14 = 0b10001101000111011;  // 14/16 way through
-    uint32_t end_buffer15 = 0b00111100110011100;  // 15/16 way through
+    uint32_t count  = 0;
+    uint32_t buffer = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
 
     uint8_t  ii          = 0;  // loop variable for cumulative sum
     uint32_t result      = 0;
     uint32_t b17         = 0;
     uint32_t masked_buff = 0;
     uint32_t poly        = 0b10111111000000100;
-    while (buffer != end_buffer0)  // do until buffer reaches one of the saved states
+    while (buffer != _end_buffers[1][0])  // do until buffer reaches one of the saved states
     {
         b17         = buffer & 0x00000001;           // save the "newest" bit of the buffer
         buffer      = (buffer & (0x0001FFFE)) >> 1;  // shift the buffer right, backwards in time
@@ -1008,65 +1045,65 @@ uint32_t _reverse_count_p1(uint32_t bits) {
         buffer = buffer | (result << 16);  // update buffer w/ result
         result = 0;                        // reset result
         count++;
-        if ((buffer ^ end_buffer1) == 0x00000000) {
+        if ((buffer ^ _end_buffers[1][1]) == 0x00000000) {
             count  = count + 8192 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[1][0];
         }
-        if ((buffer ^ end_buffer2) == 0x00000000) {
+        if ((buffer ^ _end_buffers[1][2]) == 0x00000000) {
             count  = count + 16384 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[1][0];
         }
-        if ((buffer ^ end_buffer3) == 0x00000000) {
+        if ((buffer ^ _end_buffers[1][3]) == 0x00000000) {
             count  = count + 24576 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[1][0];
         }
-        if ((buffer ^ end_buffer4) == 0x00000000) {
+        if ((buffer ^ _end_buffers[1][4]) == 0x00000000) {
             count  = count + 32768 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[1][0];
         }
-        if ((buffer ^ end_buffer5) == 0x00000000) {
+        if ((buffer ^ _end_buffers[1][5]) == 0x00000000) {
             count  = count + 40960 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[1][0];
         }
-        if ((buffer ^ end_buffer6) == 0x00000000) {
+        if ((buffer ^ _end_buffers[1][6]) == 0x00000000) {
             count  = count + 49152 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[1][0];
         }
-        if ((buffer ^ end_buffer7) == 0x00000000) {
+        if ((buffer ^ _end_buffers[1][7]) == 0x00000000) {
             count  = count + 57344 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[1][0];
         }
-        if ((buffer ^ end_buffer8) == 0x00000000) {
+        if ((buffer ^ _end_buffers[1][8]) == 0x00000000) {
             count  = count + 65536 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[1][0];
         }
-        if ((buffer ^ end_buffer9) == 0x00000000) {
+        if ((buffer ^ _end_buffers[1][9]) == 0x00000000) {
             count  = count + 73728 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[1][0];
         }
-        if ((buffer ^ end_buffer10) == 0x00000000) {
+        if ((buffer ^ _end_buffers[1][10]) == 0x00000000) {
             count  = count + 81920 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[1][0];
         }
-        if ((buffer ^ end_buffer11) == 0x00000000) {
+        if ((buffer ^ _end_buffers[1][11]) == 0x00000000) {
             count  = count + 90112 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[1][0];
         }
-        if ((buffer ^ end_buffer12) == 0x00000000) {
+        if ((buffer ^ _end_buffers[1][12]) == 0x00000000) {
             count  = count + 98304 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[1][0];
         }
-        if ((buffer ^ end_buffer13) == 0x00000000) {
+        if ((buffer ^ _end_buffers[1][13]) == 0x00000000) {
             count  = count + 106496 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[1][0];
         }
-        if ((buffer ^ end_buffer14) == 0x00000000) {
+        if ((buffer ^ _end_buffers[1][14]) == 0x00000000) {
             count  = count + 114688 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[1][0];
         }
-        if ((buffer ^ end_buffer15) == 0x00000000) {
+        if ((buffer ^ _end_buffers[1][15]) == 0x00000000) {
             count  = count + 122880 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[1][0];
         }
     }
     return count;
@@ -1080,31 +1117,15 @@ uint32_t _reverse_count_p1(uint32_t bits) {
  * @return count: location of the sequence
  */
 uint32_t _reverse_count_p2(uint32_t bits) {
-    uint32_t count        = 0;
-    uint32_t buffer       = bits & 0x0001FFFFF;   // initialize buffer to initial bits, masked
-    uint32_t end_buffer0  = 0x00000000000000001;  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
-    uint32_t end_buffer1  = 0b00011011011000100;  // 1/16 way through
-    uint32_t end_buffer2  = 0b01011101010010110;  // 2/16 way through
-    uint32_t end_buffer3  = 0b11001011001101010;  // 3/16 way through
-    uint32_t end_buffer4  = 0b01110001111011010;  // 4/16 way through
-    uint32_t end_buffer5  = 0b10110110011111010;  // 5/16 way through
-    uint32_t end_buffer6  = 0b10110001110000001;  // 6/16 way through
-    uint32_t end_buffer7  = 0b10001001011101001;  // 7/16 way through
-    uint32_t end_buffer8  = 0b00000010011101011;  // 8/16 way through
-    uint32_t end_buffer9  = 0b01100010101111011;  // 9/16 way through
-    uint32_t end_buffer10 = 0b00111000001101111;  // 10/16 way through
-    uint32_t end_buffer11 = 0b10101011100111000;  // 11/16 way through
-    uint32_t end_buffer12 = 0b01111110101111111;  // 12/16 way through
-    uint32_t end_buffer13 = 0b01000011110101010;  // 13/16 way through
-    uint32_t end_buffer14 = 0b01001011100000011;  // 14/16 way through
-    uint32_t end_buffer15 = 0b00010110111101110;  // 15/16 way through
+    uint32_t count  = 0;
+    uint32_t buffer = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
 
     uint8_t  ii          = 0;  // loop variable for cumulative sum
     uint32_t result      = 0;
     uint32_t b17         = 0;
     uint32_t masked_buff = 0;
     uint32_t poly        = 0b11111111101101011;
-    while (buffer != end_buffer0)  // do until buffer reaches one of the saved states
+    while (buffer != _end_buffers[2][0])  // do until buffer reaches one of the saved states
     {
         b17         = buffer & 0x00000001;           // save the "newest" bit of the buffer
         buffer      = (buffer & (0x0001FFFE)) >> 1;  // shift the buffer right, backwards in time
@@ -1116,65 +1137,65 @@ uint32_t _reverse_count_p2(uint32_t bits) {
         buffer = buffer | (result << 16);  // update buffer w/ result
         result = 0;                        // reset result
         count++;
-        if ((buffer ^ end_buffer1) == 0x00000000) {
+        if ((buffer ^ _end_buffers[2][1]) == 0x00000000) {
             count  = count + 8192 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[2][0];
         }
-        if ((buffer ^ end_buffer2) == 0x00000000) {
+        if ((buffer ^ _end_buffers[2][2]) == 0x00000000) {
             count  = count + 16384 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[2][0];
         }
-        if ((buffer ^ end_buffer3) == 0x00000000) {
+        if ((buffer ^ _end_buffers[2][3]) == 0x00000000) {
             count  = count + 24576 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[2][0];
         }
-        if ((buffer ^ end_buffer4) == 0x00000000) {
+        if ((buffer ^ _end_buffers[2][4]) == 0x00000000) {
             count  = count + 32768 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[2][0];
         }
-        if ((buffer ^ end_buffer5) == 0x00000000) {
+        if ((buffer ^ _end_buffers[2][5]) == 0x00000000) {
             count  = count + 40960 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[2][0];
         }
-        if ((buffer ^ end_buffer6) == 0x00000000) {
+        if ((buffer ^ _end_buffers[2][6]) == 0x00000000) {
             count  = count + 49152 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[2][0];
         }
-        if ((buffer ^ end_buffer7) == 0x00000000) {
+        if ((buffer ^ _end_buffers[2][7]) == 0x00000000) {
             count  = count + 57344 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[2][0];
         }
-        if ((buffer ^ end_buffer8) == 0x00000000) {
+        if ((buffer ^ _end_buffers[2][8]) == 0x00000000) {
             count  = count + 65536 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[2][0];
         }
-        if ((buffer ^ end_buffer9) == 0x00000000) {
+        if ((buffer ^ _end_buffers[2][9]) == 0x00000000) {
             count  = count + 73728 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[2][0];
         }
-        if ((buffer ^ end_buffer10) == 0x00000000) {
+        if ((buffer ^ _end_buffers[2][10]) == 0x00000000) {
             count  = count + 81920 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[2][0];
         }
-        if ((buffer ^ end_buffer11) == 0x00000000) {
+        if ((buffer ^ _end_buffers[2][11]) == 0x00000000) {
             count  = count + 90112 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[2][0];
         }
-        if ((buffer ^ end_buffer12) == 0x00000000) {
+        if ((buffer ^ _end_buffers[2][12]) == 0x00000000) {
             count  = count + 98304 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[2][0];
         }
-        if ((buffer ^ end_buffer13) == 0x00000000) {
+        if ((buffer ^ _end_buffers[2][13]) == 0x00000000) {
             count  = count + 106496 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[2][0];
         }
-        if ((buffer ^ end_buffer14) == 0x00000000) {
+        if ((buffer ^ _end_buffers[2][14]) == 0x00000000) {
             count  = count + 114688 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[2][0];
         }
-        if ((buffer ^ end_buffer15) == 0x00000000) {
+        if ((buffer ^ _end_buffers[2][15]) == 0x00000000) {
             count  = count + 122880 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[2][0];
         }
     }
     return count;
@@ -1188,31 +1209,15 @@ uint32_t _reverse_count_p2(uint32_t bits) {
  * @return count: location of the sequence
  */
 uint32_t _reverse_count_p3(uint32_t bits) {
-    uint32_t count        = 0;
-    uint32_t buffer       = bits & 0x0001FFFFF;   // initialize buffer to initial bits, masked
-    uint32_t end_buffer0  = 0x00000000000000001;  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
-    uint32_t end_buffer1  = 0b11011011110010110;  // 1/16 way through
-    uint32_t end_buffer2  = 0b11000100000001101;  // 2/16 way through
-    uint32_t end_buffer3  = 0b11100011000010110;  // 3/16 way through
-    uint32_t end_buffer4  = 0b00011111010001100;  // 4/16 way through
-    uint32_t end_buffer5  = 0b11000001011110011;  // 5/16 way through
-    uint32_t end_buffer6  = 0b10011101110001010;  // 6/16 way through
-    uint32_t end_buffer7  = 0b00001011001111000;  // 7/16 way through
-    uint32_t end_buffer8  = 0b00111100010000101;  // 8/16 way through
-    uint32_t end_buffer9  = 0b01001111001010100;  // 9/16 way through
-    uint32_t end_buffer10 = 0b01011010010110011;  // 10/16 way through
-    uint32_t end_buffer11 = 0b11111101010001100;  // 11/16 way through
-    uint32_t end_buffer12 = 0b00110101011011111;  // 12/16 way through
-    uint32_t end_buffer13 = 0b01110110010101011;  // 13/16 way through
-    uint32_t end_buffer14 = 0b00010000110100010;  // 14/16 way through
-    uint32_t end_buffer15 = 0b00010111110101110;  // 15/16 way through
+    uint32_t count  = 0;
+    uint32_t buffer = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
 
     uint8_t  ii          = 0;  // loop variable for cumulative sum
     uint32_t result      = 0;
     uint32_t b17         = 0;
     uint32_t masked_buff = 0;
     uint32_t poly        = 0b10011111101100111;
-    while (buffer != end_buffer0)  // do until buffer reaches one of the saved states
+    while (buffer != _end_buffers[3][0])  // do until buffer reaches one of the saved states
     {
         b17         = buffer & 0x00000001;           // save the "newest" bit of the buffer
         buffer      = (buffer & (0x0001FFFE)) >> 1;  // shift the buffer right, backwards in time
@@ -1224,65 +1229,65 @@ uint32_t _reverse_count_p3(uint32_t bits) {
         buffer = buffer | (result << 16);  // update buffer w/ result
         result = 0;                        // reset result
         count++;
-        if ((buffer ^ end_buffer1) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][1]) == 0x00000000) {
             count  = count + 8192 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer2) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][2]) == 0x00000000) {
             count  = count + 16384 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer3) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][3]) == 0x00000000) {
             count  = count + 24576 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer4) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][4]) == 0x00000000) {
             count  = count + 32768 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer5) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][5]) == 0x00000000) {
             count  = count + 40960 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer6) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][6]) == 0x00000000) {
             count  = count + 49152 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer7) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][7]) == 0x00000000) {
             count  = count + 57344 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer8) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][8]) == 0x00000000) {
             count  = count + 65536 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer9) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][9]) == 0x00000000) {
             count  = count + 73728 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer10) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][10]) == 0x00000000) {
             count  = count + 81920 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer11) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][11]) == 0x00000000) {
             count  = count + 90112 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer12) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][12]) == 0x00000000) {
             count  = count + 98304 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer13) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][13]) == 0x00000000) {
             count  = count + 106496 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer14) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][14]) == 0x00000000) {
             count  = count + 114688 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer15) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][15]) == 0x00000000) {
             count  = count + 122880 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
     }
     return count;
@@ -1382,29 +1387,25 @@ void _spi3_setup(void) {
                            1 << SPIM_PSEL_MOSI_PORT_Pos |
                            SPIM_PSEL_MOSI_CONNECT_Connected << SPIM_PSEL_MOSI_CONNECT_Pos;
 
+    // Configure the Interruptions
+    NVIC_ClearPendingIRQ(SPIM3_IRQn);
+    NVIC_DisableIRQ(SPIM3_IRQn);  // Disable interruptions while configuring
+
     // Configure the SPIM peripheral
     NRF_SPIM3->FREQUENCY = SPIM_FREQUENCY_FREQUENCY_M32;                         // Set SPI frequency to 32MHz
     NRF_SPIM3->CONFIG    = SPIM_CONFIG_ORDER_MsbFirst << SPIM_CONFIG_ORDER_Pos;  // Set MsB out first
 
-    // Configure the EasyDMA channel
-    // Configuring the READER channel
-    NRF_SPIM3->RXD.MAXCNT = SPI3_BUFFER_SIZE;    // Set the size of the input buffer.
-    NRF_SPIM3->RXD.PTR    = (uint32_t)m_rx_buf;  // Set the input buffer pointer.
-    // Configure the WRITER channel
-    NRF_SPIM3->TXD.MAXCNT = SPI3_BUFFER_SIZE;    // Set the size of the output buffer.
-    NRF_SPIM3->TXD.PTR    = (uint32_t)m_tx_buf;  // Set the output buffer pointer.
-
-    // Enable the SPIM pripheral
-    NRF_SPIM3->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
-
-    // Configure the Interruptions
-    NVIC_DisableIRQ(SPIM3_IRQn);  // Disable interruptions while configuring
+    // Configure the EasyDMA channel, only using RX
+    NRF_SPIM3->RXD.MAXCNT = SPI3_BUFFER_SIZE;                   // Set the size of the input buffer.
+    NRF_SPIM3->RXD.PTR    = (uint32_t)_lh2_vars.spi_rx_buffer;  // Set the input buffer pointer.
 
     NRF_SPIM3->INTENSET = SPIM_INTENSET_END_Enabled << SPIM_INTENSET_END_Pos;  // Enable interruption for when a packet arrives
     NVIC_SetPriority(SPIM3_IRQn, SPIM3_INTERRUPT_PRIORITY);                    // Set priority for Radio interrupts to 1
-    NVIC_ClearPendingIRQ(SPIM3_IRQn);
     // Enable SPIM interruptions
     NVIC_EnableIRQ(SPIM3_IRQn);
+
+    // Enable the SPIM peripheral
+    NRF_SPIM3->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
 }
 
 /**
@@ -1427,44 +1428,24 @@ void _timer2_setup(void) {
  *
  */
 void SPIM3_IRQHandler(void) {
-    NVIC_ClearPendingIRQ(SPIM3_IRQn);
-
-    _lh2_vars.transfer_counter++;
-
-    int32_t lp = 0;  // temporary loop variable to go through each byte of the SPI buffer
-
     // Check if the interrupt was caused by a fully send package
     if (NRF_SPIM3->EVENTS_END) {
-
         // Clear the Interrupt flag
         NRF_SPIM3->EVENTS_END = 0;
-
-        // load global SPI buffer (m_rx_buf) into four local arrays (stored_buff_1 ... stored_buff_4)
+        _lh2_vars.transfer_counter++;
+        // load global SPI buffer (_lh2_vars.spi_rx_buffer) into four local arrays (stored_buff_1 ... stored_buff_4)
         if (_lh2_vars.transfer_counter == 1) {
-            for (lp = 0; lp < SPI3_BUFFER_SIZE; lp++) {
-                stored_buff_1[lp] = m_rx_buf[lp];
-                m_rx_buf[lp]      = 0x00;
-            }
+            memcpy(stored_buff_1, _lh2_vars.spi_rx_buffer, SPI3_BUFFER_SIZE);
             LH2_envelope_duration_1 = NRF_TIMER2->CC[0];
         } else if (_lh2_vars.transfer_counter == 2) {
-            for (lp = 0; lp < SPI3_BUFFER_SIZE; lp++) {
-                stored_buff_2[lp] = m_rx_buf[lp];
-                m_rx_buf[lp]      = 0x00;
-            }
+            memcpy(stored_buff_2, _lh2_vars.spi_rx_buffer, SPI3_BUFFER_SIZE);
             LH2_envelope_duration_2 = NRF_TIMER2->CC[0];
         } else if (_lh2_vars.transfer_counter == 3) {
-            for (lp = 0; lp < SPI3_BUFFER_SIZE; lp++) {
-                stored_buff_3[lp] = m_rx_buf[lp];
-                m_rx_buf[lp]      = 0x00;
-            }
+            memcpy(stored_buff_3, _lh2_vars.spi_rx_buffer, SPI3_BUFFER_SIZE);
             LH2_envelope_duration_3 = NRF_TIMER2->CC[0];
         } else if (_lh2_vars.transfer_counter == 4) {
-            for (lp = 0; lp < SPI3_BUFFER_SIZE; lp++) {
-                stored_buff_4[lp] = m_rx_buf[lp];
-                m_rx_buf[lp]      = 0x00;
-            }
+            memcpy(stored_buff_4, _lh2_vars.spi_rx_buffer, SPI3_BUFFER_SIZE);
             LH2_envelope_duration_4 = NRF_TIMER2->CC[0];
-            db_lh2_stop_transfer();
             _lh2_vars.buffers_ready = true;
         }
     }

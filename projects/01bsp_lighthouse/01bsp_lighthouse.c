@@ -43,7 +43,9 @@ int main(void) {
 
         // wait until the packet is ready
         if (packet_ready) {
+            db_lh2_stop_transfer();
             db_lh2_get_current_location(current_loc_p);
+            db_lh2_start_transfer();
             __NOP();
         }
     }
