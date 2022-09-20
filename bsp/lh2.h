@@ -13,59 +13,48 @@
  */
 
 #include <nrf.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <stdint.h>
 #include <stdbool.h>
 
-//=========================== defines =========================================
+#include "gpio.h"
 
-//=========================== variables =========================================
+//=========================== defines ==========================================
 
-//=========================== public ==========================================
+#define LH2_LOCATIONS_COUNT 4                        ///< Number of computed locations
+#define LH2_RESULTS_SIZE    LH2_LOCATIONS_COUNT * 2  ///< Size of the location result array
 
-// initialization function
-void lh2_init(void);
+typedef enum {
+    DB_LH2_RUNNING,  ///< the lh2 engine is running
+    DB_LH2_READY,    ///< some lh2 location is ready to be read
+} db_lh2_state_t;
 
-// do fil's stuff
-bool get_black_magic(void);
+typedef struct {
+    db_lh2_state_t state;                      ///< current state of the lh2 engine
+    uint32_t       results[LH2_RESULTS_SIZE];  ///< buffer holding the location data
+} db_lh2_t;
 
-// test function
-bool get_black_magic_2(void);
+//=========================== public ===========================================
 
-// function for the dotbot to get hold of the current location packet when it is ready
-uint32_t *get_current_location(void);
+/**
+ * @brief Initialize LH2
+ *
+ * @param[in]   gpio_d  pointer to gpio data
+ * @param[in]   gpio_e  pointer to gpio event
+ */
+void db_lh2_init(const gpio_t *gpio_d, const gpio_t *gpio_e);
 
-// function to restart SPM3
-void start_transfer(void);
+/**
+ * @brief Compute the location based on available frames
+ *
+ * @param[in]   lh2 pointer to the lh2 instance
+ */
+void db_lh2_process_location(db_lh2_t *lh2);
 
-void restart_lh2(void);
-
-//=========================== private ==========================================
-
-// these functions are called in the order written to perform the LH2 localization
-void LH2_initialize_TS4231(void);
-
-uint64_t LH2_demodulate_light(uint8_t *sample_buffer);
-
-uint64_t poly_check(uint32_t poly, uint32_t bits, uint8_t numbits);
-int      LH2_determine_polynomial(uint64_t chipsH1, int *start_val);
-
-uint64_t hamming_weight(uint64_t bits_in);
-
-uint32_t reverse_count_p0(uint32_t bits);
-uint32_t reverse_count_p1(uint32_t bits);
-uint32_t reverse_count_p2(uint32_t bits);
-uint32_t reverse_count_p3(uint32_t bits);
-
-// setup the PPI
-void ppi_setup(void);
-void timer2_setup(void);
-void gpiote_setup(void);
-
-// Said Set-Up
-void lh2_pin_set_input(uint8_t pin);
-void lh2_pin_set_output(uint8_t pin);
-void lh2_wait_timer_config(void);
-void lh2_wait_usec(uint32_t usec);
+/**
+ * @brief Reset the lh2 internal state so new location computation can be made
+ *
+ * @param[in]   lh2 pointer to the lh2 instance
+ */
+void db_lh2_reset(db_lh2_t *lh2);
 
 #endif /* LH2_H_ */

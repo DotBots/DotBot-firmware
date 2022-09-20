@@ -15,483 +15,524 @@
 #include <stdbool.h>
 #include <nrf.h>
 
-#include <lh2.h>
+#include "gpio.h"
+#include "lh2.h"
+#include "timer_hf.h"
 
 //=========================== defines =========================================
 
-// Interrupt priority, as high as it will go.
-#define SPIM3_INTERRUPT_PRIORITY 1
+#define SPIM3_INTERRUPT_PRIORITY               1           ///< Interrupt priority, as high as it will go
+#define SPI3_BUFFER_SIZE                       64          ///< Size of buffers used for SPI communications
+#define SPI3_FAKE_SCK_PIN                      6           ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
+#define SPI3_FAKE_SCK_PORT                     1           ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
+#define FUZZY_CHIP                             0xFF        ///< not sure what this is about
+#define LH2_LOCATION_ERROR_INDICATOR           0xFFFFFFFF  ///< indicate the location value is false
+#define LH2_POLYNOMIAL_ERROR_INDICATOR         0xFF        ///< indicate the polynomial index is invalid
+#define POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD 4           ///< initial threshold of polynomial error
+#define LH2_BUFFER_SIZE                        128         ///< buffer size containing lh2 frames
+#define GPIOTE_CH_IN_ENV_HiToLo                1           ///< falling edge gpio channel
+#define GPIOTE_CH_IN_ENV_LoToHi                2           ///< rising edge gpio channel
 
-// magic number definitions
-#define LH2_PACKET_SIZE 5
+typedef struct {
+    uint64_t bits_sweep;               ///< bits sweep is the result of the demodulation, sweep_N indicates which SPI transfer those bits are associated with
+    uint8_t  selected_polynomial;      ///< selected poly is the polyomial # (between 0 and 31) that the demodulation code thinks the demodulated bits are a part of, initialize to error state
+    int8_t   bit_offset;               ///< bit_offset indicates an offset between the start of the packet, as indicated by envelope dropping, and the 17-bit sequence that is verified to be in a known LFSR sequence
+    uint32_t lfsr_location;            ///< LFSR location is the position in a given polynomial's LFSR that the decoded data is, initialize to error state
+    uint32_t envelope_duration;        ///< initialize envelope duration storage variables
+    uint8_t  buffer[LH2_BUFFER_SIZE];  ///< arrays of bits for local storage, contents of SPI transfer are copied into this
+} lh2_demodulation_data_t;
 
-// THIS ROBOT IS NUMBER
-#define I_AM_ROBOT 420
+typedef struct {
+    uint8_t                 transfer_counter;                 ///< counter of spi transfer in the current cycle
+    uint8_t                 spi_rx_buffer[SPI3_BUFFER_SIZE];  ///< buffer where data coming from SPI are stored
+    bool                    buffers_ready;                    ///< specify when data buffers are ready to be process
+    lh2_demodulation_data_t data[LH2_LOCATIONS_COUNT];        ///< array containing demodulation data of each locations
+} lh2_vars_t;
 
-#define D_pin 29
-#define E_pin 30
+//=========================== variables ========================================
 
-#define flag 26
+static const uint32_t _polynomials[4] = {
+    0x0001D258,
+    0x00017E04,
+    0x0001FF6B,
+    0x00013F67,
+};
 
-#define FUZZY_CHIP 0xFF
+static const uint32_t _end_buffers[4][16] = {
+    {
+        // p0
+        0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
+        0b10101010110011101,  // 1/16 way through
+        0b10001010101011010,  // 2/16 way through
+        0b11001100100000010,  // 3/16 way through
+        0b01100101100011111,  // 4/16 way through
+        0b10010001101011110,  // 5/16 way through
+        0b10100011001011111,  // 6/16 way through
+        0b11110001010110001,  // 7/16 way through
+        0b10111000110011011,  // 8/16 way through
+        0b10100110100011110,  // 9/16 way through
+        0b11001101100010000,  // 10/16 way through
+        0b01000101110011111,  // 11/16 way through
+        0b11100101011110101,  // 12/16 way through
+        0b01001001110110111,  // 13/16 way through
+        0b11011100110011101,  // 14/16 way through
+        0b10000110101101011,  // 15/16 way through
+    },
+    {
+        // p1
+        0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
+        0b11010000110111110,  // 1/16 way through
+        0b10110111100111100,  // 2/16 way through
+        0b11000010101101111,  // 3/16 way through
+        0b00101110001101110,  // 4/16 way through
+        0b01000011000110100,  // 5/16 way through
+        0b00010001010011110,  // 6/16 way through
+        0b10100101111010001,  // 7/16 way through
+        0b10011000000100001,  // 8/16 way through
+        0b01110011011010110,  // 9/16 way through
+        0b00100011101000011,  // 10/16 way through
+        0b10111011010000101,  // 11/16 way through
+        0b00110010100110110,  // 12/16 way through
+        0b01000111111100110,  // 13/16 way through
+        0b10001101000111011,  // 14/16 way through
+        0b00111100110011100,  // 15/16 way through
+    },
+    {
+        // p2
+        0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
+        0b00011011011000100,  // 1/16 way through
+        0b01011101010010110,  // 2/16 way through
+        0b11001011001101010,  // 3/16 way through
+        0b01110001111011010,  // 4/16 way through
+        0b10110110011111010,  // 5/16 way through
+        0b10110001110000001,  // 6/16 way through
+        0b10001001011101001,  // 7/16 way through
+        0b00000010011101011,  // 8/16 way through
+        0b01100010101111011,  // 9/16 way through
+        0b00111000001101111,  // 10/16 way through
+        0b10101011100111000,  // 11/16 way through
+        0b01111110101111111,  // 12/16 way through
+        0b01000011110101010,  // 13/16 way through
+        0b01001011100000011,  // 14/16 way through
+        0b00010110111101110,  // 15/16 way through
+    },
+    {
+        // p3
+        0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
+        0b11011011110010110,  // 1/16 way through
+        0b11000100000001101,  // 2/16 way through
+        0b11100011000010110,  // 3/16 way through
+        0b00011111010001100,  // 4/16 way through
+        0b11000001011110011,  // 5/16 way through
+        0b10011101110001010,  // 6/16 way through
+        0b00001011001111000,  // 7/16 way through
+        0b00111100010000101,  // 8/16 way through
+        0b01001111001010100,  // 9/16 way through
+        0b01011010010110011,  // 10/16 way through
+        0b11111101010001100,  // 11/16 way through
+        0b00110101011011111,  // 12/16 way through
+        0b01110110010101011,  // 13/16 way through
+        0b00010000110100010,  // 14/16 way through
+        0b00010111110101110,  // 15/16 way through
+    },
+};
 
-#define LH2_LOCATION_ERROR_INDICATOR                         0xFFFFFFFF
-#define LH2_POLYNOMIAL_ERROR_INDICATOR                       255
-#define LH2_DETERMINE_POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD 4
+///! NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module
+static const gpio_t _lh2_spi_fake_sck_gpio = {
+    .port = 1,
+    .pin  = 6,
+};
 
-// gpiote definitions
-#define GPIOTE_CH_OUT           0
-#define GPIOTE_CH_IN_ENV_HiToLo 1
-#define GPIOTE_CH_IN_ENV_LoToHi 2
+static lh2_vars_t _lh2_vars;  ///< local data of the LH2 driver
 
-#define OUTPUT_PIN_NUMBER 31
-#define OUTPUT_PIN_PORT   0UL
-#define INPUT_PIN_NUMBER  30
-#define INPUT_PIN_PORT    0UL
+//=========================== prototypes =======================================
 
-// SPI pin definitions
-#define FAKE_SCK_PIN 6  // NOTE: SPIM needs an SCK pin to be defined, otherwise it doesn't work. \
-                        // nRF52840 P1.6 is used because it's not an available pin in the BCM module.
-
-// Define SPI interface
-#define SPI_INSTANCE 3  // absolutely necessary to use #3, it is the only one that is able to run at 32MHz clock
-// static const nrfx_spim_t spi = NRFX_SPIM_INSTANCE(SPI_INSTANCE); /**< SPI instance. */
-
-#define LH2_PACKET_SIZE_IN_BYTES sizeof(lh2_packet)  // should be 4*5 = 20 bytes
-
-//=========================== variables =========================================
-
-volatile bool spi_xfer_done;
-
-volatile bool TRANSFER_HAPPENED;
-volatile int  TRANSFER_COUNTER;
-
-// variable where location packet is stored
-uint32_t lh2_packet[LH2_PACKET_SIZE];
-
-uint32_t lh2_results[8];
-
-// please show me my variables?
-volatile uint64_t temp1;
-volatile uint64_t temp2;
-volatile uint64_t temp3;
-volatile uint64_t temp4;
-
-// initialize LH2 demodulation variables
-// bits sweep is the result of the demodulation, sweep_N indicates which SPI transfer those bits are associated with
-volatile uint64_t LH2_bits_sweep_1 = 0;
-volatile uint64_t LH2_bits_sweep_2 = 0;
-volatile uint64_t LH2_bits_sweep_3 = 0;
-volatile uint64_t LH2_bits_sweep_4 = 0;
-
-// selected poly is the polyomial # (between 0 and 31) that the demodulation code thinks the demodulated bits are a part of, initialize to error state
-volatile int LH2_selected_poly_1 = LH2_POLYNOMIAL_ERROR_INDICATOR;
-volatile int LH2_selected_poly_2 = LH2_POLYNOMIAL_ERROR_INDICATOR;
-volatile int LH2_selected_poly_3 = LH2_POLYNOMIAL_ERROR_INDICATOR;
-volatile int LH2_selected_poly_4 = LH2_POLYNOMIAL_ERROR_INDICATOR;
-
-// bit_offset indicates an offset between the start of the packet, as indicated by envelope dropping, and the 17-bit sequence that is verified to be in a known LFSR sequence
-int LH2_bit_offset_1 = 0;
-int LH2_bit_offset_2 = 0;
-int LH2_bit_offset_3 = 0;
-int LH2_bit_offset_4 = 0;
-
-// LFSR location is the position in a given polynomial's LFSR that the decoded data is, initialize to error state
-volatile uint32_t LH2_LFSR_location_1 = LH2_LOCATION_ERROR_INDICATOR;  // mark as all Fs, so that if the receiver gets a -1 (signed) it knows something went horribly wrong
-volatile uint32_t LH2_LFSR_location_2 = LH2_LOCATION_ERROR_INDICATOR;
-volatile uint32_t LH2_LFSR_location_3 = LH2_LOCATION_ERROR_INDICATOR;
-volatile uint32_t LH2_LFSR_location_4 = LH2_LOCATION_ERROR_INDICATOR;
-
-// initialize envelope duration storage variables
-volatile uint32_t LH2_envelope_duration_1 = 0xFFFFFFFF;  // initialize to all 1s, error state
-volatile uint32_t LH2_envelope_duration_2 = 0xFFFFFFFF;
-volatile uint32_t LH2_envelope_duration_3 = 0xFFFFFFFF;
-volatile uint32_t LH2_envelope_duration_4 = 0xFFFFFFFF;
-
-// Define SPI buffer
-uint8_t          m_tx_buf[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-uint8_t          m_rx_buf[sizeof(m_tx_buf) + 1];
-const uint8_t    m_length = sizeof(m_tx_buf);
-volatile uint8_t spi_storage[sizeof(m_tx_buf) + 1];
-
-// arrays of bits for local storage, contents of SPI transfer are copied into this
-uint8_t stored_buff[128];  // TODO: make these local variables inside of main - no reason for them to be glob
-uint8_t stored_buff_1[128];
-uint8_t stored_buff_2[128];
-uint8_t stored_buff_3[128];
-uint8_t stored_buff_4[128];
-
-// please show me my variables?
-volatile uint64_t temp1;
-volatile uint64_t temp2;
-volatile uint64_t temp3;
-volatile uint64_t temp4;
-
-// other variables
-bool ready         = false;
-bool buffers_ready = false;
-
-//=========================== public ==========================================
-void lh2_init(void) {
-    // Initialize the TS4231 on power-up - this is only necessary when power-cycling
-    LH2_initialize_TS4231();
-
-    // Configure the necessary Pins in the GPIO peripheral  (MOSI and CS not needed)
-    lh2_pin_set_input(D_pin);          // Data_pin will become the MISO pin
-    lh2_pin_set_output(FAKE_SCK_PIN);  // set SCK as Output.
-
-    // Define the necessary Pins in the SPIM peripheral
-    NRF_SPIM3->PSEL.MISO = D_pin << SPIM_PSEL_MISO_PIN_Pos |                                // Define pin number for MISO pin
-                           0 << SPIM_PSEL_MISO_PORT_Pos |                                   // Define pin port for MISO pin
-                           SPIM_PSEL_MISO_CONNECT_Connected << SPIM_PSEL_MISO_CONNECT_Pos;  // Enable the MISO pin
-
-    NRF_SPIM3->PSEL.SCK = FAKE_SCK_PIN << SPIM_PSEL_SCK_PIN_Pos |                        // Define pin number for SCK pin
-                          1 << SPIM_PSEL_SCK_PORT_Pos |                                  // Define pin port for SCK pin
-                          SPIM_PSEL_SCK_CONNECT_Connected << SPIM_PSEL_SCK_CONNECT_Pos;  // Enable the SCK pin
-
-    NRF_SPIM3->PSEL.MOSI = (4UL) << SPIM_PSEL_MOSI_PIN_Pos |
-                           1 << SPIM_PSEL_MOSI_PORT_Pos |
-                           SPIM_PSEL_MOSI_CONNECT_Connected << SPIM_PSEL_MOSI_CONNECT_Pos;
-
-    // Configure the SPIM peripheral
-    NRF_SPIM3->FREQUENCY = SPIM_FREQUENCY_FREQUENCY_M32;                         // Set SPI frequency to 32MHz
-    NRF_SPIM3->CONFIG    = SPIM_CONFIG_ORDER_MsbFirst << SPIM_CONFIG_ORDER_Pos;  // Set MsB out first
-
-    // Configure the EasyDMA channel
-    // Configuring the READER channel
-    NRF_SPIM3->RXD.MAXCNT = m_length;            // Set the size of the input buffer.
-    NRF_SPIM3->RXD.PTR    = (uint32_t)m_rx_buf;  // Set the input buffer pointer.
-    // Configure the WRITER channel
-    NRF_SPIM3->TXD.MAXCNT = m_length;            // Set the size of the output buffer.
-    NRF_SPIM3->TXD.PTR    = (uint32_t)m_tx_buf;  // Set the output buffer pointer.
-
-    // Enable the SPIM pripheral
-    NRF_SPIM3->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
-
-    // Configure the Interruptions
-    NVIC_DisableIRQ(SPIM3_IRQn);  // Disable interruptions while configuring
-
-    NRF_SPIM3->INTENSET = SPIM_INTENSET_END_Enabled << SPIM_INTENSET_END_Pos;  // Enable interruption for when a packet arrives
-    NVIC_SetPriority(SPIM3_IRQn, SPIM3_INTERRUPT_PRIORITY);                    // Set priority for Radio interrupts to 1
-    NVIC_ClearPendingIRQ(SPIM3_IRQn);
-    // Enable SPIM interruptions
-    NVIC_EnableIRQ(SPIM3_IRQn);
-
-    // Empty the receive buffer
-    memset(m_rx_buf, 0, m_length);
-    // Reset the Transfer Counter
-    TRANSFER_COUNTER = 0;
-
-    // initialize GPIOTEs
-    gpiote_setup();
-    // initialize timer(s)
-    timer2_setup();
-    // initialize PPI
-    ppi_setup();
-}
-
-bool get_black_magic(void) {
-    uint8_t i;
-    uint8_t j;
-    // invalid packet detection:
-    int8_t invalid_packet_counter;
-
-    if (buffers_ready) {
-        NRF_P0->OUTCLR = 1 << 20;
-
-        buffers_ready = false;
-
-        LH2_bits_sweep_1 = 0;
-        LH2_bits_sweep_2 = 0;
-        LH2_bits_sweep_3 = 0;
-        LH2_bits_sweep_4 = 0;
-
-        // perform the demodulation + poly search on the received packets
-        // convert the SPI reading to bits via zero-crossing counter demodulation and differential/biphasic manchester decoding
-        LH2_bits_sweep_1 = LH2_demodulate_light(stored_buff_1);
-        LH2_bits_sweep_2 = LH2_demodulate_light(stored_buff_2);
-        LH2_bits_sweep_3 = LH2_demodulate_light(stored_buff_3);
-        LH2_bits_sweep_4 = LH2_demodulate_light(stored_buff_4);
-
-        // figure out which polynomial each one of the two samples come from.
-        LH2_selected_poly_1 = LH2_determine_polynomial(LH2_bits_sweep_1, &LH2_bit_offset_1);
-        LH2_selected_poly_2 = LH2_determine_polynomial(LH2_bits_sweep_2, &LH2_bit_offset_2);
-        LH2_selected_poly_3 = LH2_determine_polynomial(LH2_bits_sweep_3, &LH2_bit_offset_3);
-        LH2_selected_poly_4 = LH2_determine_polynomial(LH2_bits_sweep_4, &LH2_bit_offset_4);
-
-        temp1 = LH2_selected_poly_1;  // "temp" are global variables used for debugging purposes
-        temp2 = LH2_selected_poly_2;
-        temp3 = LH2_bit_offset_1;
-        temp4 = LH2_bit_offset_2;
-
-        if ((LH2_selected_poly_1 == LH2_POLYNOMIAL_ERROR_INDICATOR) |
-            (LH2_selected_poly_2 == LH2_POLYNOMIAL_ERROR_INDICATOR) |
-            (LH2_selected_poly_3 == LH2_POLYNOMIAL_ERROR_INDICATOR) |
-            (LH2_selected_poly_4 == LH2_POLYNOMIAL_ERROR_INDICATOR)) {  // failure to find one of the two polynomials - start from scratch and grab another capture
-            TRANSFER_COUNTER = 0;
-            start_transfer();
-            return false;
-        } else {
-            // find location of the first data set by counting the LFSR backwards
-            if (LH2_selected_poly_1 == 0) {  // TODO: functionalize this nested if statement to clean up the main/applet code
-                LH2_LFSR_location_1 = reverse_count_p0(LH2_bits_sweep_1 >> (47 - LH2_bit_offset_1)) - LH2_bit_offset_1;
-            } else if (LH2_selected_poly_1 == 1) {
-                LH2_LFSR_location_1 = reverse_count_p1(LH2_bits_sweep_1 >> (47 - LH2_bit_offset_1)) - LH2_bit_offset_1;
-            } else if (LH2_selected_poly_1 == 2) {
-                LH2_LFSR_location_1 = reverse_count_p2(LH2_bits_sweep_1 >> (47 - LH2_bit_offset_1)) - LH2_bit_offset_1;
-            } else if (LH2_selected_poly_1 == 3) {
-                LH2_LFSR_location_1 = reverse_count_p3(LH2_bits_sweep_1 >> (47 - LH2_bit_offset_1)) - LH2_bit_offset_1;
-            }
-            // find location of the second data set
-            if (LH2_selected_poly_2 == 0) {
-                LH2_LFSR_location_2 = reverse_count_p0(LH2_bits_sweep_2 >> (47 - LH2_bit_offset_2)) - LH2_bit_offset_2;
-            } else if (LH2_selected_poly_2 == 1) {
-                LH2_LFSR_location_2 = reverse_count_p1(LH2_bits_sweep_2 >> (47 - LH2_bit_offset_2)) - LH2_bit_offset_2;
-            } else if (LH2_selected_poly_2 == 2) {
-                LH2_LFSR_location_2 = reverse_count_p2(LH2_bits_sweep_2 >> (47 - LH2_bit_offset_2)) - LH2_bit_offset_2;
-            } else if (LH2_selected_poly_2 == 3) {
-                LH2_LFSR_location_2 = reverse_count_p3(LH2_bits_sweep_2 >> (47 - LH2_bit_offset_2)) - LH2_bit_offset_2;
-            }
-
-            // find location of the third data set
-            if (LH2_selected_poly_3 == 0) {
-                LH2_LFSR_location_3 = reverse_count_p0(LH2_bits_sweep_3 >> (47 - LH2_bit_offset_3)) - LH2_bit_offset_3;
-            } else if (LH2_selected_poly_3 == 1) {
-                LH2_LFSR_location_3 = reverse_count_p1(LH2_bits_sweep_3 >> (47 - LH2_bit_offset_3)) - LH2_bit_offset_3;
-            } else if (LH2_selected_poly_3 == 2) {
-                LH2_LFSR_location_3 = reverse_count_p2(LH2_bits_sweep_3 >> (47 - LH2_bit_offset_3)) - LH2_bit_offset_3;
-            } else if (LH2_selected_poly_3 == 3) {
-                LH2_LFSR_location_3 = reverse_count_p3(LH2_bits_sweep_3 >> (47 - LH2_bit_offset_3)) - LH2_bit_offset_3;
-            }
-
-            // find location of the fourth data set
-            if (LH2_selected_poly_4 == 0) {
-                LH2_LFSR_location_4 = reverse_count_p0(LH2_bits_sweep_4 >> (47 - LH2_bit_offset_4)) - LH2_bit_offset_4;
-            } else if (LH2_selected_poly_4 == 1) {
-                LH2_LFSR_location_4 = reverse_count_p1(LH2_bits_sweep_4 >> (47 - LH2_bit_offset_4)) - LH2_bit_offset_4;
-            } else if (LH2_selected_poly_4 == 2) {
-                LH2_LFSR_location_4 = reverse_count_p2(LH2_bits_sweep_4 >> (47 - LH2_bit_offset_4)) - LH2_bit_offset_4;
-            } else if (LH2_selected_poly_4 == 3) {
-                LH2_LFSR_location_4 = reverse_count_p3(LH2_bits_sweep_4 >> (47 - LH2_bit_offset_4)) - LH2_bit_offset_4;
-            }
-        }
-
-        // SEND A PACKET???
-        spi_xfer_done = 0;  // TODO: figure out if this does anything... I'm not convinced that this does anything
-
-        // packet structure:
-        // packet[0] is the robot #
-        // packet[1-4] are the results from the four sweeps organized in 32-bit chunks as follows:
-        //        env. duration                    poly #                             location in LFSR
-        // [  -  -  -  -  -  -  -  -  -  -  |  -  -  -  -  -  |  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  ]
-        //           10 bits                       5 bits                               17 bits (max)
-        //
-        lh2_packet[0] = I_AM_ROBOT;
-        lh2_packet[1] = ((LH2_envelope_duration_1 & 0x000003FF) << 22) | ((LH2_selected_poly_1 & 0x0000001F) << 17) | ((LH2_LFSR_location_1 & 0x0001FFFF));
-        lh2_packet[2] = ((LH2_envelope_duration_2 & 0x000003FF) << 22) | ((LH2_selected_poly_2 & 0x0000001F) << 17) | ((LH2_LFSR_location_2 & 0x0001FFFF));
-        lh2_packet[3] = ((LH2_envelope_duration_3 & 0x000003FF) << 22) | ((LH2_selected_poly_3 & 0x0000001F) << 17) | ((LH2_LFSR_location_3 & 0x0001FFFF));
-        lh2_packet[4] = ((LH2_envelope_duration_4 & 0x000003FF) << 22) | ((LH2_selected_poly_4 & 0x0000001F) << 17) | ((LH2_LFSR_location_4 & 0x0001FFFF));
-
-        lh2_results[0] = (uint32_t)LH2_selected_poly_1;
-        lh2_results[2] = (uint32_t)LH2_selected_poly_2;
-        lh2_results[4] = (uint32_t)LH2_selected_poly_3;
-        lh2_results[6] = (uint32_t)LH2_selected_poly_4;
-        lh2_results[1] = LH2_LFSR_location_1;
-        lh2_results[3] = LH2_LFSR_location_2;
-        lh2_results[5] = LH2_LFSR_location_3;
-        lh2_results[7] = LH2_LFSR_location_4;
-
-        // detect invalid packets
-        invalid_packet_counter = 0;
-        for (i = 0; i < 7; i += 2) {
-            if ((lh2_results[i] == 0) | (lh2_results[i] == 1)) {
-                invalid_packet_counter++;  // from LHA
-            } else if ((lh2_results[i] == 2) | (lh2_results[i] == 3)) {
-                invalid_packet_counter--;  // from LHB
-            }
-        }
-        if ((invalid_packet_counter == 1) | (invalid_packet_counter == -1)) {
-            return false;  // odd # of packets from 1 LH, erroneous result
-        }
-
-        if ((invalid_packet_counter == 4) | (invalid_packet_counter == -4)) {
-            // results from one LH2 were discovered - sort the two pairs
-            if (LH2_LFSR_location_1 > LH2_LFSR_location_2) {
-                lh2_results[0] = (uint32_t)LH2_selected_poly_2;
-                lh2_results[2] = (uint32_t)LH2_selected_poly_1;
-                lh2_results[1] = LH2_LFSR_location_2;
-                lh2_results[3] = LH2_LFSR_location_1;
-            } else {
-                lh2_results[0] = (uint32_t)LH2_selected_poly_1;
-                lh2_results[2] = (uint32_t)LH2_selected_poly_2;
-                lh2_results[1] = LH2_LFSR_location_1;
-                lh2_results[3] = LH2_LFSR_location_2;
-            }
-            if (LH2_LFSR_location_3 > LH2_LFSR_location_4) {
-                lh2_results[0] = (uint32_t)LH2_selected_poly_4;
-                lh2_results[2] = (uint32_t)LH2_selected_poly_3;
-                lh2_results[1] = LH2_LFSR_location_4;
-                lh2_results[3] = LH2_LFSR_location_3;
-            } else {
-                lh2_results[0] = (uint32_t)LH2_selected_poly_3;
-                lh2_results[2] = (uint32_t)LH2_selected_poly_4;
-                lh2_results[1] = LH2_LFSR_location_3;
-                lh2_results[3] = LH2_LFSR_location_4;
-            }
-        }
-
-        memset(stored_buff_1, 0, sizeof(stored_buff_1));
-        memset(stored_buff_2, 0, sizeof(stored_buff_2));
-        memset(stored_buff_3, 0, sizeof(stored_buff_3));
-        memset(stored_buff_4, 0, sizeof(stored_buff_4));
-
-        return true;
-    }
-    return false;
-}
-
-uint32_t *get_current_location(void) {
-    TRANSFER_COUNTER = 0;
-    ready            = false;
-    start_transfer();
-    return lh2_results;
-}
-
-void start_transfer(void) {
-    NRF_PPI->CHENSET = (PPI_CHENSET_CH2_Enabled << PPI_CHENSET_CH2_Pos) |
-                       //(PPI_CHENSET_CH3_Enabled << PPI_CHENSET_CH3_Pos);
-                       (PPI_CHENSET_CH4_Enabled << PPI_CHENSET_CH4_Pos) |
-                       (PPI_CHENSET_CH5_Enabled << PPI_CHENSET_CH5_Pos);
-}
-
-//=========================== private =========================================
-
+// these functions are called in the order written to perform the LH2 localization
 /**
  * @brief wiggle the data and envelope lines in a magical way to configure the TS4231 to continuously read for LH2 sweep signals.
  *
+ * @param[in]   gpio_d  pointer to gpio data
+ * @param[in]   gpio_e  pointer to gpio event
  */
-void LH2_initialize_TS4231(void) {
-
-    // Configure the wait timer
-    lh2_wait_timer_config();
-
-    // Filip's code define these pins as inputs, and then changes them quickly to outputs. Not sure why, but it works.
-    lh2_pin_set_input(D_pin);
-    lh2_pin_set_input(E_pin);
-
-    // start the TS4231 initialization
-    // Wiggle the Envelope and Data pins
-    lh2_pin_set_output(E_pin);
-    lh2_wait_usec(1);
-    NRF_P0->OUTSET = 1 << E_pin;  // set pin HIGH
-    lh2_wait_usec(1);
-    NRF_P0->OUTCLR = 1 << E_pin;  // set pin LOW
-    lh2_wait_usec(1);
-    NRF_P0->OUTSET = 1 << E_pin;
-    lh2_wait_usec(1);
-    lh2_pin_set_output(D_pin);
-    lh2_wait_usec(1);
-    NRF_P0->OUTSET = 1 << D_pin;
-    lh2_wait_usec(1);
-    // Turn the pins back to inputs
-    lh2_pin_set_input(D_pin);
-    lh2_pin_set_input(E_pin);
-    // finally, wait 1 milisecond
-    lh2_wait_usec(1000);
-
-    // Send the configuration magic number/sequence
-    uint16_t config_val = 0x392B;
-    // Turn the Data and Envelope lines back to outputs and clear them.
-    lh2_pin_set_output(E_pin);
-    lh2_pin_set_output(D_pin);
-    lh2_wait_usec(1);
-    NRF_P0->OUTCLR = 1 << D_pin;
-    lh2_wait_usec(1);
-    NRF_P0->OUTCLR = 1 << E_pin;
-    lh2_wait_usec(1);
-    // Send the magic configuration value, MSB first.
-    for (uint8_t i = 0; i < 15; i++) {
-
-        config_val = config_val << 1;
-        if ((config_val & 0x8000) > 0)
-            NRF_P0->OUTSET = 1 << D_pin;
-        else
-            NRF_P0->OUTCLR = 1 << D_pin;
-
-        // Toggle the Envelope line as a clock.
-        lh2_wait_usec(1);
-        NRF_P0->OUTSET = 1 << E_pin;
-        lh2_wait_usec(1);
-        NRF_P0->OUTCLR = 1 << E_pin;
-        lh2_wait_usec(1);
-    }
-    // Finish send sequence and turn pins into inputs again.
-    NRF_P0->OUTCLR = 1 << D_pin;
-    lh2_wait_usec(1);
-    NRF_P0->OUTSET = 1 << E_pin;
-    lh2_wait_usec(1);
-    NRF_P0->OUTSET = 1 << D_pin;
-    lh2_wait_usec(1);
-    lh2_pin_set_input(D_pin);
-    lh2_pin_set_input(E_pin);
-    // Finish by waiting 10usec
-    lh2_wait_usec(10);
-
-    // Now read back the sequence that the TS4231 answers.
-    lh2_pin_set_output(E_pin);
-    lh2_pin_set_output(D_pin);
-    lh2_wait_usec(1);
-    NRF_P0->OUTCLR = 1 << D_pin;
-    lh2_wait_usec(1);
-    NRF_P0->OUTCLR = 1 << E_pin;
-    lh2_wait_usec(1);
-    NRF_P0->OUTSET = 1 << D_pin;
-    lh2_wait_usec(1);
-    NRF_P0->OUTSET = 1 << E_pin;
-    lh2_wait_usec(1);
-    // Set Data pin as an input, to receive the data
-    lh2_pin_set_input(D_pin);
-    lh2_wait_usec(1);
-    NRF_P0->OUTCLR = 1 << E_pin;
-    lh2_wait_usec(1);
-    // Use the Envelope pin to output a clock while the data arrives.
-    for (uint8_t i = 0; i < 14; i++) {
-
-        NRF_P0->OUTSET = 1 << E_pin;
-        lh2_wait_usec(1);
-        NRF_P0->OUTCLR = 1 << E_pin;
-        lh2_wait_usec(1);
-    }
-
-    // Finish the configuration procedure
-    lh2_pin_set_output(D_pin);
-    lh2_wait_usec(1);
-    NRF_P0->OUTSET = 1 << E_pin;
-    lh2_wait_usec(1);
-    NRF_P0->OUTSET = 1 << D_pin;
-    lh2_wait_usec(1);
-
-    NRF_P0->OUTCLR = 1 << E_pin;
-    lh2_wait_usec(1);
-    NRF_P0->OUTCLR = 1 << D_pin;
-    lh2_wait_usec(1);
-    NRF_P0->OUTSET = 1 << E_pin;
-    lh2_wait_usec(1);
-
-    lh2_pin_set_input(D_pin);
-    lh2_pin_set_input(E_pin);
-
-    lh2_wait_usec(50000);
-
-    NRF_TIMER3->TASKS_STOP = (1UL);
-}
+void _initialize_ts4231(const gpio_t *gpio_d, const gpio_t *gpio_e);
 
 /**
  * @brief
  * @param sample_buffer: SPI samples loaded into a local buffer
  * @return chipsH: 64-bits of demodulated data
  */
-uint64_t LH2_demodulate_light(uint8_t *sample_buffer) {  // bad input variable name!!
+uint64_t _demodulate_light(uint8_t *sample_buffer);
+
+/**
+ * @brief from a 17-bit sequence and a polynomial, generate up to 64-17=47 bits as if the LFSR specified by poly were run forwards for numbits cycles, all little endian
+ *
+ * @param poly: 17-bit polynomial
+ * @param bits_in: starting seed
+ * @param numbits: number of bits
+ *
+ * @return sequence of bits resulting from running the LFSR forward
+ */
+uint64_t _poly_check(uint32_t poly, uint32_t bits, uint8_t numbits);
+
+/**
+ * @brief find out which LFSR polynomial the bit sequence is a member of
+ *
+ * @param[in] chipsH1: input sequences of bits from demodulation
+ * @param[in] start_val: number of bits between the envelope falling edge and the beginning of the sequence where valid data has been found
+ *
+ * @return polynomial, indicating which polynomial was found, or FF for error (polynomial not found).
+ */
+uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val);
+
+/**
+ * @brief counts the number of 1s in a 64-bit
+ *
+ * @param bits_in, arbitrary bits
+ *
+ * @return cumulative number of 1s inside of bits_in
+ */
+uint64_t _hamming_weight(uint64_t bits_in);
+
+/**
+ * @brief finds the position of a 17-bit sequence (bits) in the sequence generated by polynomial3 with initial seed 1
+ *
+ * @param bits: 17-bit sequence
+ *
+ * @return count: location of the sequence
+ */
+uint32_t _reverse_count_p(uint8_t index, uint32_t bits);
+
+/**
+ * @brief Set a gpio as an INPUT with no pull-up or pull-down
+ * @param[in] gpio: pin to configure as input [0-31]
+ */
+void _lh2_pin_set_input(const gpio_t *gpio);
+
+/**
+ * @brief Set a gpio as an OUTPUT with standard drive
+ * @param[in] gpio: gpio to configure as input [0-31]
+ */
+void _lh2_pin_set_output(const gpio_t *gpio);
+
+/**
+ * @brief set-up GPIOTE so that events are configured for falling (GPIOTE_CH_IN) and rising edges (GPIOTE_CH_IN_ENV_HiToLo) of the envelope signal
+ *
+ * @param[in]   gpio_e  pointer to gpio event
+ */
+void _gpiote_setup(const gpio_t *gpio_e);
+
+/**
+ * @brief start SPI3 at falling edge of envelope, start timer2 at falling edge of envelope, stop/capture timer2 at rising edge of envelope
+ */
+void _ppi_setup(void);
+
+/**
+ * @brief spi3 setup
+ *
+ * @param[in]   gpio_d  pointer to gpio data
+ */
+void _spi3_setup(const gpio_t *gpio_d);
+
+/**
+ * @brief timer2 setup, in _ppi_setup() this timer will CLEAR/START at falling edge of envelop signal and STOP/CAPTURE at rising edge of envelope signal
+ */
+void _timer2_setup(void);
+
+//=========================== public ===========================================
+
+void db_lh2_init(const gpio_t *gpio_d, const gpio_t *gpio_e) {
+    // Initialize the TS4231 on power-up - this is only necessary when power-cycling
+    _initialize_ts4231(gpio_d, gpio_e);
+
+    // Configure the necessary Pins in the GPIO peripheral  (MOSI and CS not needed)
+    _lh2_pin_set_input(gpio_d);                    // Data_pin will become the MISO pin
+    _lh2_pin_set_output(&_lh2_spi_fake_sck_gpio);  // set SCK as Output.
+
+    _spi3_setup(gpio_d);
+
+    // Setup the LH2 local variables
+    memset(_lh2_vars.spi_rx_buffer, 0, SPI3_BUFFER_SIZE);
+    _lh2_vars.transfer_counter = 0;
+    _lh2_vars.buffers_ready    = false;
+
+    // Setup LH2 data
+    for (uint8_t location = 0; location < LH2_LOCATIONS_COUNT; location++) {
+        _lh2_vars.data[location].bits_sweep          = 0;
+        _lh2_vars.data[location].selected_polynomial = LH2_POLYNOMIAL_ERROR_INDICATOR;
+        _lh2_vars.data[location].bit_offset          = 0;
+        _lh2_vars.data[location].lfsr_location       = LH2_LOCATION_ERROR_INDICATOR;
+        _lh2_vars.data[location].envelope_duration   = 0xFFFFFFFF;
+        memset(_lh2_vars.data[location].buffer, 0, LH2_BUFFER_SIZE);
+    }
+
+    // initialize GPIOTEs
+    _gpiote_setup(gpio_e);
+    // initialize timer(s)
+    _timer2_setup();
+    // initialize PPI
+    _ppi_setup();
+}
+
+void db_lh2_reset(db_lh2_t *lh2) {
+    _lh2_vars.transfer_counter = 0;
+    _lh2_vars.buffers_ready    = false;
+    lh2->state                 = DB_LH2_RUNNING;
+}
+
+void db_lh2_process_location(db_lh2_t *lh2) {
+    uint8_t i;
+    uint8_t j;
+    // invalid packet detection:
+    int8_t invalid_packet_counter;
+
+    if (!_lh2_vars.buffers_ready) {
+        return;
+    }
+
+    _lh2_vars.buffers_ready = false;
+
+    _lh2_vars.data[0].bits_sweep = 0;
+    _lh2_vars.data[1].bits_sweep = 0;
+    _lh2_vars.data[2].bits_sweep = 0;
+    _lh2_vars.data[3].bits_sweep = 0;
+
+    // perform the demodulation + poly search on the received packets
+    // convert the SPI reading to bits via zero-crossing counter demodulation and differential/biphasic manchester decoding
+    _lh2_vars.data[0].bits_sweep = _demodulate_light(_lh2_vars.data[0].buffer);
+    _lh2_vars.data[1].bits_sweep = _demodulate_light(_lh2_vars.data[1].buffer);
+    _lh2_vars.data[2].bits_sweep = _demodulate_light(_lh2_vars.data[2].buffer);
+    _lh2_vars.data[3].bits_sweep = _demodulate_light(_lh2_vars.data[3].buffer);
+
+    // figure out which polynomial each one of the two samples come from.
+    _lh2_vars.data[0].selected_polynomial = _determine_polynomial(_lh2_vars.data[0].bits_sweep, &_lh2_vars.data[0].bit_offset);
+    _lh2_vars.data[1].selected_polynomial = _determine_polynomial(_lh2_vars.data[1].bits_sweep, &_lh2_vars.data[1].bit_offset);
+    _lh2_vars.data[2].selected_polynomial = _determine_polynomial(_lh2_vars.data[2].bits_sweep, &_lh2_vars.data[2].bit_offset);
+    _lh2_vars.data[3].selected_polynomial = _determine_polynomial(_lh2_vars.data[3].bits_sweep, &_lh2_vars.data[3].bit_offset);
+
+    if ((_lh2_vars.data[0].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) |
+        (_lh2_vars.data[1].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) |
+        (_lh2_vars.data[2].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) |
+        (_lh2_vars.data[3].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR)) {  // failure to find one of the two polynomials - start from scratch and grab another capture
+        db_lh2_reset(lh2);
+        return;
+    }
+
+    // find location of the first data set by counting the LFSR backwards
+    if (_lh2_vars.data[0].selected_polynomial == 0) {  // TODO: functionalize this nested if statement to clean up the main/applet code
+        _lh2_vars.data[0].lfsr_location = _reverse_count_p(0, _lh2_vars.data[0].bits_sweep >> (47 - _lh2_vars.data[0].bit_offset)) - _lh2_vars.data[0].bit_offset;
+    } else if (_lh2_vars.data[0].selected_polynomial == 1) {
+        _lh2_vars.data[0].lfsr_location = _reverse_count_p(1, _lh2_vars.data[0].bits_sweep >> (47 - _lh2_vars.data[0].bit_offset)) - _lh2_vars.data[0].bit_offset;
+    } else if (_lh2_vars.data[0].selected_polynomial == 2) {
+        _lh2_vars.data[0].lfsr_location = _reverse_count_p(2, _lh2_vars.data[0].bits_sweep >> (47 - _lh2_vars.data[0].bit_offset)) - _lh2_vars.data[0].bit_offset;
+    } else if (_lh2_vars.data[0].selected_polynomial == 3) {
+        _lh2_vars.data[0].lfsr_location = _reverse_count_p(3, _lh2_vars.data[0].bits_sweep >> (47 - _lh2_vars.data[0].bit_offset)) - _lh2_vars.data[0].bit_offset;
+    }
+    // find location of the second data set
+    if (_lh2_vars.data[1].selected_polynomial == 0) {
+        _lh2_vars.data[1].lfsr_location = _reverse_count_p(0, _lh2_vars.data[1].bits_sweep >> (47 - _lh2_vars.data[1].bit_offset)) - _lh2_vars.data[1].bit_offset;
+    } else if (_lh2_vars.data[1].selected_polynomial == 1) {
+        _lh2_vars.data[1].lfsr_location = _reverse_count_p(1, _lh2_vars.data[1].bits_sweep >> (47 - _lh2_vars.data[1].bit_offset)) - _lh2_vars.data[1].bit_offset;
+    } else if (_lh2_vars.data[1].selected_polynomial == 2) {
+        _lh2_vars.data[1].lfsr_location = _reverse_count_p(2, _lh2_vars.data[1].bits_sweep >> (47 - _lh2_vars.data[1].bit_offset)) - _lh2_vars.data[1].bit_offset;
+    } else if (_lh2_vars.data[1].selected_polynomial == 3) {
+        _lh2_vars.data[1].lfsr_location = _reverse_count_p(3, _lh2_vars.data[1].bits_sweep >> (47 - _lh2_vars.data[1].bit_offset)) - _lh2_vars.data[1].bit_offset;
+    }
+
+    // find location of the third data set
+    if (_lh2_vars.data[2].selected_polynomial == 0) {
+        _lh2_vars.data[2].lfsr_location = _reverse_count_p(0, _lh2_vars.data[2].bits_sweep >> (47 - _lh2_vars.data[2].bit_offset)) - _lh2_vars.data[2].bit_offset;
+    } else if (_lh2_vars.data[2].selected_polynomial == 1) {
+        _lh2_vars.data[2].lfsr_location = _reverse_count_p(1, _lh2_vars.data[2].bits_sweep >> (47 - _lh2_vars.data[2].bit_offset)) - _lh2_vars.data[2].bit_offset;
+    } else if (_lh2_vars.data[2].selected_polynomial == 2) {
+        _lh2_vars.data[2].lfsr_location = _reverse_count_p(2, _lh2_vars.data[2].bits_sweep >> (47 - _lh2_vars.data[2].bit_offset)) - _lh2_vars.data[2].bit_offset;
+    } else if (_lh2_vars.data[2].selected_polynomial == 3) {
+        _lh2_vars.data[2].lfsr_location = _reverse_count_p(3, _lh2_vars.data[2].bits_sweep >> (47 - _lh2_vars.data[2].bit_offset)) - _lh2_vars.data[2].bit_offset;
+    }
+
+    // find location of the fourth data set
+    if (_lh2_vars.data[3].selected_polynomial == 0) {
+        _lh2_vars.data[3].lfsr_location = _reverse_count_p(0, _lh2_vars.data[3].bits_sweep >> (47 - _lh2_vars.data[3].bit_offset)) - _lh2_vars.data[3].bit_offset;
+    } else if (_lh2_vars.data[3].selected_polynomial == 1) {
+        _lh2_vars.data[3].lfsr_location = _reverse_count_p(1, _lh2_vars.data[3].bits_sweep >> (47 - _lh2_vars.data[3].bit_offset)) - _lh2_vars.data[3].bit_offset;
+    } else if (_lh2_vars.data[3].selected_polynomial == 2) {
+        _lh2_vars.data[3].lfsr_location = _reverse_count_p(2, _lh2_vars.data[3].bits_sweep >> (47 - _lh2_vars.data[3].bit_offset)) - _lh2_vars.data[3].bit_offset;
+    } else if (_lh2_vars.data[3].selected_polynomial == 3) {
+        _lh2_vars.data[3].lfsr_location = _reverse_count_p(3, _lh2_vars.data[3].bits_sweep >> (47 - _lh2_vars.data[3].bit_offset)) - _lh2_vars.data[3].bit_offset;
+    }
+
+    lh2->results[0] = (uint32_t)_lh2_vars.data[0].selected_polynomial;
+    lh2->results[2] = (uint32_t)_lh2_vars.data[1].selected_polynomial;
+    lh2->results[4] = (uint32_t)_lh2_vars.data[2].selected_polynomial;
+    lh2->results[6] = (uint32_t)_lh2_vars.data[3].selected_polynomial;
+    lh2->results[1] = _lh2_vars.data[0].lfsr_location;
+    lh2->results[3] = _lh2_vars.data[1].lfsr_location;
+    lh2->results[5] = _lh2_vars.data[2].lfsr_location;
+    lh2->results[7] = _lh2_vars.data[3].lfsr_location;
+
+    // detect invalid packets
+    invalid_packet_counter = 0;
+    for (i = 0; i < 7; i += 2) {
+        if ((lh2->results[i] == 0) || (lh2->results[i] == 1)) {
+            invalid_packet_counter++;  // from LHA
+        } else if ((lh2->results[i] == 2) || (lh2->results[i] == 3)) {
+            invalid_packet_counter--;  // from LHB
+        }
+    }
+    if ((invalid_packet_counter == 1) || (invalid_packet_counter == -1)) {
+        db_lh2_reset(lh2);
+        return;  // odd # of packets from 1 LH, erroneous result
+    }
+
+    if ((invalid_packet_counter == 4) || (invalid_packet_counter == -4)) {
+        // results from one LH2 were discovered - sort the two pairs
+        if (_lh2_vars.data[0].lfsr_location > _lh2_vars.data[1].lfsr_location) {
+            lh2->results[0] = (uint32_t)_lh2_vars.data[1].selected_polynomial;
+            lh2->results[2] = (uint32_t)_lh2_vars.data[0].selected_polynomial;
+            lh2->results[1] = _lh2_vars.data[1].lfsr_location;
+            lh2->results[3] = _lh2_vars.data[0].lfsr_location;
+        } else {
+            lh2->results[0] = (uint32_t)_lh2_vars.data[0].selected_polynomial;
+            lh2->results[2] = (uint32_t)_lh2_vars.data[1].selected_polynomial;
+            lh2->results[1] = _lh2_vars.data[0].lfsr_location;
+            lh2->results[3] = _lh2_vars.data[1].lfsr_location;
+        }
+        if (_lh2_vars.data[2].lfsr_location > _lh2_vars.data[3].lfsr_location) {
+            lh2->results[0] = (uint32_t)_lh2_vars.data[3].selected_polynomial;
+            lh2->results[2] = (uint32_t)_lh2_vars.data[2].selected_polynomial;
+            lh2->results[1] = _lh2_vars.data[3].lfsr_location;
+            lh2->results[3] = _lh2_vars.data[2].lfsr_location;
+        } else {
+            lh2->results[0] = (uint32_t)_lh2_vars.data[2].selected_polynomial;
+            lh2->results[2] = (uint32_t)_lh2_vars.data[3].selected_polynomial;
+            lh2->results[1] = _lh2_vars.data[2].lfsr_location;
+            lh2->results[3] = _lh2_vars.data[3].lfsr_location;
+        }
+    }
+
+    memset(_lh2_vars.data[0].buffer, 0, sizeof(_lh2_vars.data[0].buffer));
+    memset(_lh2_vars.data[1].buffer, 0, sizeof(_lh2_vars.data[1].buffer));
+    memset(_lh2_vars.data[2].buffer, 0, sizeof(_lh2_vars.data[2].buffer));
+    memset(_lh2_vars.data[3].buffer, 0, sizeof(_lh2_vars.data[3].buffer));
+    lh2->state = DB_LH2_READY;
+}
+
+//=========================== private ==========================================
+
+void _initialize_ts4231(const gpio_t *gpio_d, const gpio_t *gpio_e) {
+
+    // Configure the wait timer
+    db_timer_hf_init();
+
+    // Filip's code define these pins as inputs, and then changes them quickly to outputs. Not sure why, but it works.
+    _lh2_pin_set_input(gpio_d);
+    _lh2_pin_set_input(gpio_e);
+
+    // start the TS4231 initialization
+    // Wiggle the Envelope and Data pins
+    _lh2_pin_set_output(gpio_e);
+    db_timer_hf_delay_us(10);
+    nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;  // set pin HIGH
+    db_timer_hf_delay_us(10);
+    nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;  // set pin LOW
+    db_timer_hf_delay_us(10);
+    nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
+    db_timer_hf_delay_us(10);
+    _lh2_pin_set_output(gpio_d);
+    db_timer_hf_delay_us(10);
+    nrf_port[gpio_d->port]->OUTSET = 1 << gpio_d->pin;
+    db_timer_hf_delay_us(10);
+    // Turn the pins back to inputs
+    _lh2_pin_set_input(gpio_d);
+    _lh2_pin_set_input(gpio_e);
+    // finally, wait 1 milisecond
+    db_timer_hf_delay_us(1000);
+
+    // Send the configuration magic number/sequence
+    uint16_t config_val = 0x392B;
+    // Turn the Data and Envelope lines back to outputs and clear them.
+    _lh2_pin_set_output(gpio_e);
+    _lh2_pin_set_output(gpio_d);
+    db_timer_hf_delay_us(10);
+    nrf_port[gpio_d->port]->OUTCLR = 1 << gpio_d->pin;
+    db_timer_hf_delay_us(10);
+    nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;
+    db_timer_hf_delay_us(10);
+    // Send the magic configuration value, MSB first.
+    for (uint8_t i = 0; i < 15; i++) {
+
+        config_val = config_val << 1;
+        if ((config_val & 0x8000) > 0) {
+            nrf_port[gpio_d->port]->OUTSET = 1 << gpio_d->pin;
+        } else {
+            nrf_port[gpio_d->port]->OUTCLR = 1 << gpio_d->pin;
+        }
+
+        // Toggle the Envelope line as a clock.
+        db_timer_hf_delay_us(10);
+        nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
+        db_timer_hf_delay_us(10);
+        nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;
+        db_timer_hf_delay_us(10);
+    }
+    // Finish send sequence and turn pins into inputs again.
+    nrf_port[gpio_d->port]->OUTCLR = 1 << gpio_d->pin;
+    db_timer_hf_delay_us(10);
+    nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
+    db_timer_hf_delay_us(10);
+    nrf_port[gpio_d->port]->OUTSET = 1 << gpio_d->pin;
+    db_timer_hf_delay_us(10);
+    _lh2_pin_set_input(gpio_d);
+    _lh2_pin_set_input(gpio_e);
+    // Finish by waiting 10usec
+    db_timer_hf_delay_us(10);
+
+    // Now read back the sequence that the TS4231 answers.
+    _lh2_pin_set_output(gpio_e);
+    _lh2_pin_set_output(gpio_d);
+    db_timer_hf_delay_us(10);
+    nrf_port[gpio_d->port]->OUTCLR = 1 << gpio_d->pin;
+    db_timer_hf_delay_us(10);
+    nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;
+    db_timer_hf_delay_us(10);
+    nrf_port[gpio_d->port]->OUTSET = 1 << gpio_d->pin;
+    db_timer_hf_delay_us(10);
+    nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
+    db_timer_hf_delay_us(10);
+    // Set Data pin as an input, to receive the data
+    _lh2_pin_set_input(gpio_d);
+    db_timer_hf_delay_us(10);
+    nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;
+    db_timer_hf_delay_us(10);
+    // Use the Envelope pin to output a clock while the data arrives.
+    for (uint8_t i = 0; i < 14; i++) {
+        nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
+        db_timer_hf_delay_us(10);
+        nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;
+        db_timer_hf_delay_us(10);
+    }
+
+    // Finish the configuration procedure
+    _lh2_pin_set_output(gpio_d);
+    db_timer_hf_delay_us(10);
+    nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
+    db_timer_hf_delay_us(10);
+    nrf_port[gpio_d->port]->OUTSET = 1 << gpio_d->pin;
+    db_timer_hf_delay_us(10);
+
+    nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;
+    db_timer_hf_delay_us(10);
+    nrf_port[gpio_d->port]->OUTCLR = 1 << gpio_d->pin;
+    db_timer_hf_delay_us(10);
+    nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
+    db_timer_hf_delay_us(10);
+
+    _lh2_pin_set_input(gpio_d);
+    _lh2_pin_set_input(gpio_e);
+
+    db_timer_hf_delay_us(50000);
+}
+
+uint64_t _demodulate_light(uint8_t *sample_buffer) {  // bad input variable name!!
     // TODO: rename sample_buffer
     // TODO: make it a void and have chips be a modified pointer thingie
     // FIXME: there is an edge case where I throw away an initial "1" and do not count it in the bit-shift offset, resulting in an incorrect error of 1 in the LFSR location
@@ -754,16 +795,7 @@ uint64_t LH2_demodulate_light(uint8_t *sample_buffer) {  // bad input variable n
     return chipsH1;
 }
 
-/**
- * @brief from a 17-bit sequence and a polynomial, generate up to 64-17=47 bits as if the LFSR specified by poly were run forwards for numbits cycles, all little endian
- *
- * @param poly: 17-bit polynomial
- * @param bits_in: starting seed
- * @param numbits: number of bits
- *
- * @return sequence of bits resulting from running the LFSR forward
- */
-uint64_t poly_check(uint32_t poly, uint32_t bits, uint8_t numbits) {
+uint64_t _poly_check(uint32_t poly, uint32_t bits, uint8_t numbits) {
     uint64_t bits_out      = 0;
     uint8_t  shift_counter = 1;
     uint8_t  result        = 0;
@@ -789,36 +821,17 @@ uint64_t poly_check(uint32_t poly, uint32_t bits, uint8_t numbits) {
     return bits_out;
 }
 
-/**
- * @brief find out which LFSR polynomial the bit sequence is a member of
- *
- * @param[in] chipsH1: input sequences of bits from demodulation
- * @param[in] start_val: number of bits between the envelope falling edge and the beginning of the sequence where valid data has been found
- *
- * @return polynomial, indicating which polynomial was found, or FF for error (polynomial not found).
- */
-int LH2_determine_polynomial(uint64_t chipsH1, int *start_val) {
+uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
     // check which polynomial the bit sequence is part of
     // TODO: make function a void and modify memory directly
     // TODO: rename chipsH1 to something relevant... like bits?
-    volatile uint32_t poly0           = 0b11101001001011000;
-    volatile uint32_t poly1           = 0b10111111000000100;  // TODO: change this back to hex
-    volatile uint32_t poly2           = 0x0001FF6B;
-    volatile uint32_t poly3           = 0x00013F67;  // TODO: no more magic #s here, move this to #defines
-    volatile int      bits_N_for_comp = 47;
-    volatile int      match1          = 0;
-    volatile uint32_t bit_buffer1     = (uint32_t)(((0xFFFF800000000000) & chipsH1) >> 47);
-    volatile uint64_t bits_from_poly0 = 0;
-    volatile uint64_t bits_from_poly1 = 0;
-    volatile uint64_t bits_from_poly2 = 0;
-    volatile uint64_t bits_from_poly3 = 0;
-    volatile uint64_t weight0         = 0xFFFFFFFFFFFFFFFF;
-    volatile uint64_t weight1         = 0xFFFFFFFFFFFFFFFF;
-    volatile uint64_t weight2         = 0xFFFFFFFFFFFFFFFF;
-    volatile uint64_t weight3         = 0xFFFFFFFFFFFFFFFF;
-    volatile int      selected_poly_1 = LH2_POLYNOMIAL_ERROR_INDICATOR;  // initialize to error condition
-    volatile uint64_t bits_to_compare = 0;
-    volatile int      threshold       = LH2_DETERMINE_POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
+    int32_t  bits_N_for_comp                     = 47;
+    uint32_t bit_buffer1                         = (uint32_t)(((0xFFFF800000000000) & chipsH1) >> 47);
+    uint64_t bits_from_poly[LH2_LOCATIONS_COUNT] = { 0 };
+    uint64_t weights[LH2_LOCATIONS_COUNT]        = { 0xFFFFFFFFFFFFFFFF };
+    uint8_t  selected_poly                       = LH2_POLYNOMIAL_ERROR_INDICATOR;  // initialize to error condition
+    uint64_t bits_to_compare                     = 0;
+    int32_t  threshold                           = POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
 
     *start_val = 0;  // TODO: remove this? possible that I modify start value during the demodulation process
 
@@ -830,35 +843,35 @@ int LH2_determine_polynomial(uint64_t chipsH1, int *start_val) {
     // removing bits reduces the threshold correspondingly, as incorrect packet detection will cause a significant delay in location estimate
 
     // run polynomial search on the first capture
-    while (match1 == 0) {
+    while (1) {
         // TODO: do this math stuff in multiple operations to: (a) make it readable (b) ensure order-of-execution
-        bit_buffer1     = (uint32_t)(((0xFFFF800000000000 >> (*start_val)) & chipsH1) >> (64 - 17 - (*start_val)));
-        bits_from_poly0 = (((poly_check(poly0, bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
-        bits_from_poly1 = (((poly_check(poly1, bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
-        bits_from_poly2 = (((poly_check(poly2, bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
-        bits_from_poly3 = (((poly_check(poly3, bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
-        bits_to_compare = (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - 17 - (*start_val) - bits_N_for_comp)));
-        weight0         = hamming_weight(bits_from_poly0 ^ bits_to_compare);
-        weight1         = hamming_weight(bits_from_poly1 ^ bits_to_compare);
-        weight2         = hamming_weight(bits_from_poly2 ^ bits_to_compare);
-        weight3         = hamming_weight(bits_from_poly3 ^ bits_to_compare);
-        if (bits_N_for_comp < 10) {                            // too few bits to reliably compare, give up
-            selected_poly_1 = LH2_POLYNOMIAL_ERROR_INDICATOR;  // mark the poly as "wrong"
-            match1          = 1;
+        bit_buffer1       = (uint32_t)(((0xFFFF800000000000 >> (*start_val)) & chipsH1) >> (64 - 17 - (*start_val)));
+        bits_from_poly[0] = (((_poly_check(_polynomials[0], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
+        bits_from_poly[1] = (((_poly_check(_polynomials[1], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
+        bits_from_poly[2] = (((_poly_check(_polynomials[2], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
+        bits_from_poly[3] = (((_poly_check(_polynomials[3], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
+        bits_to_compare   = (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - 17 - (*start_val) - bits_N_for_comp)));
+        weights[0]        = _hamming_weight(bits_from_poly[0] ^ bits_to_compare);
+        weights[1]        = _hamming_weight(bits_from_poly[1] ^ bits_to_compare);
+        weights[2]        = _hamming_weight(bits_from_poly[2] ^ bits_to_compare);
+        weights[3]        = _hamming_weight(bits_from_poly[3] ^ bits_to_compare);
+        if (bits_N_for_comp < 10) {                          // too few bits to reliably compare, give up
+            selected_poly = LH2_POLYNOMIAL_ERROR_INDICATOR;  // mark the poly as "wrong"
+            break;
         }  // TODO: implement sorting network for efficiency?
-        if ((weight0 <= threshold) | (weight1 <= threshold) | (weight2 <= threshold) | (weight3 <= threshold)) {
-            if ((weight0 < weight1) & (weight0 < weight2) & (weight0 < weight3)) {  // weight0 is the smallest
-                selected_poly_1 = 0;
-                match1          = 1;
-            } else if ((weight1 < weight0) & (weight1 < weight2) & (weight1 < weight3)) {  // weight1 is the smallest
-                selected_poly_1 = 1;
-                match1          = 1;
-            } else if ((weight2 < weight0) & (weight2 < weight1) & (weight2 < weight3)) {  // weight2 is the smallest
-                selected_poly_1 = 2;
-                match1          = 1;
-            } else if ((weight3 < weight0) & (weight3 < weight1) & (weight3 < weight2)) {  // weight3 is the smallest
-                selected_poly_1 = 3;
-                match1          = 1;
+        if ((weights[0] <= threshold) | (weights[1] <= threshold) | (weights[2] <= threshold) | (weights[3] <= threshold)) {
+            if ((weights[0] < weights[1]) & (weights[0] < weights[2]) & (weights[0] < weights[3])) {  // weight0 is the smallest
+                selected_poly = 0;
+                break;
+            } else if ((weights[1] < weights[0]) & (weights[1] < weights[2]) & (weights[1] < weights[3])) {  // weight1 is the smallest
+                selected_poly = 1;
+                break;
+            } else if ((weights[2] < weights[0]) & (weights[2] < weights[1]) & (weights[2] < weights[3])) {  // weight2 is the smallest
+                selected_poly = 2;
+                break;
+            } else if ((weights[3] < weights[0]) & (weights[3] < weights[1]) & (weights[3] < weights[2])) {  // weight3 is the smallest
+                selected_poly = 3;
+                break;
             }
         } else if (*start_val > 8) {  // match failed, try again removing bits from the end
             *start_val      = 0;
@@ -873,17 +886,10 @@ int LH2_determine_polynomial(uint64_t chipsH1, int *start_val) {
             bits_N_for_comp = bits_N_for_comp - 1;
         }
     }
-    return selected_poly_1;
+    return selected_poly;
 }
 
-/**
- * @brief counts the number of 1s in a 64-bit
- *
- * @param bits_in, arbitrary bits
- *
- * @return cumulative number of 1s inside of bits_in
- */
-uint64_t hamming_weight(uint64_t bits_in) {  // TODO: bad name for function? or is it, it might be a good name for a function, because it describes exactly what it does
+uint64_t _hamming_weight(uint64_t bits_in) {  // TODO: bad name for function? or is it, it might be a good name for a function, because it describes exactly what it does
     uint64_t weight = bits_in;
     weight          = weight - ((weight >> 1) & 0x5555555555555555);                         // find # of 1s in every 2-bit block
     weight          = (weight & 0x3333333333333333) + ((weight >> 2) & 0x3333333333333333);  // find # of 1s in every 4-bit block
@@ -895,43 +901,18 @@ uint64_t hamming_weight(uint64_t bits_in) {  // TODO: bad name for function? or 
     return weight;
 }
 
-/**
- * @brief finds the position of a 17-bit sequence (bits) in the sequence generated by polynomial0 with initial seed 1
- *
- * @param bits: 17-bit sequence
- *
- * @return count: location of the sequence
- */
-uint32_t reverse_count_p0(uint32_t bits) {
-    uint32_t count        = 0;
-    uint32_t buffer       = bits & 0x0001FFFFF;   // initialize buffer to initial bits, masked
-    uint32_t end_buffer0  = 0x00000000000000001;  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
-    uint32_t end_buffer1  = 0b10101010110011101;  // 1/16 way through
-    uint32_t end_buffer2  = 0b10001010101011010;  // 2/16 way through
-    uint32_t end_buffer3  = 0b11001100100000010;  // 3/16 way through
-    uint32_t end_buffer4  = 0b01100101100011111;  // 4/16 way through
-    uint32_t end_buffer5  = 0b10010001101011110;  // 5/16 way through
-    uint32_t end_buffer6  = 0b10100011001011111;  // 6/16 way through
-    uint32_t end_buffer7  = 0b11110001010110001;  // 7/16 way through
-    uint32_t end_buffer8  = 0b10111000110011011;  // 8/16 way through
-    uint32_t end_buffer9  = 0b10100110100011110;  // 9/16 way through
-    uint32_t end_buffer10 = 0b11001101100010000;  // 10/16 way through
-    uint32_t end_buffer11 = 0b01000101110011111;  // 11/16 way through
-    uint32_t end_buffer12 = 0b11100101011110101;  // 12/16 way through
-    uint32_t end_buffer13 = 0b01001001110110111;  // 13/16 way through
-    uint32_t end_buffer14 = 0b11011100110011101;  // 14/16 way through
-    uint32_t end_buffer15 = 0b10000110101101011;  // 15/16 way through
-
-    uint8_t  ii          = 0;  // loop variable for cumulative sum
+uint32_t _reverse_count_p(uint8_t index, uint32_t bits) {
+    uint32_t count       = 0;
+    uint32_t buffer      = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
+    uint8_t  ii          = 0;                   // loop variable for cumulative sum
     uint32_t result      = 0;
     uint32_t b17         = 0;
     uint32_t masked_buff = 0;
-    uint32_t poly        = 0b11101001001011000;
-    while (buffer != end_buffer0)  // do until buffer reaches one of the saved states
+    while (buffer != _end_buffers[index][0])  // do until buffer reaches one of the saved states
     {
-        b17         = buffer & 0x00000001;           // save the "newest" bit of the buffer
-        buffer      = (buffer & (0x0001FFFE)) >> 1;  // shift the buffer right, backwards in time
-        masked_buff = (buffer) & (poly);             // mask the buffer w/ the selected polynomial
+        b17         = buffer & 0x00000001;               // save the "newest" bit of the buffer
+        buffer      = (buffer & (0x0001FFFE)) >> 1;      // shift the buffer right, backwards in time
+        masked_buff = (buffer) & (_polynomials[index]);  // mask the buffer w/ the selected polynomial
         for (ii = 0; ii < 17; ii++) {
             result = result ^ (((masked_buff) >> ii) & (0x00000001));  // cumulative sum of buffer&poly
         }
@@ -939,107 +920,83 @@ uint32_t reverse_count_p0(uint32_t bits) {
         buffer = buffer | (result << 16);  // update buffer w/ result
         result = 0;                        // reset result
         count++;
-        if ((buffer ^ end_buffer1) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][1]) == 0x00000000) {
             count  = count + 8192 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ end_buffer2) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][2]) == 0x00000000) {
             count  = count + 16384 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ end_buffer3) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][3]) == 0x00000000) {
             count  = count + 24576 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ end_buffer4) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][4]) == 0x00000000) {
             count  = count + 32768 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ end_buffer5) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][5]) == 0x00000000) {
             count  = count + 40960 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ end_buffer6) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][6]) == 0x00000000) {
             count  = count + 49152 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ end_buffer7) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][7]) == 0x00000000) {
             count  = count + 57344 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ end_buffer8) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][8]) == 0x00000000) {
             count  = count + 65536 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ end_buffer9) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][9]) == 0x00000000) {
             count  = count + 73728 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ end_buffer10) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][10]) == 0x00000000) {
             count  = count + 81920 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ end_buffer11) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][11]) == 0x00000000) {
             count  = count + 90112 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ end_buffer12) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][12]) == 0x00000000) {
             count  = count + 98304 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ end_buffer13) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][13]) == 0x00000000) {
             count  = count + 106496 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ end_buffer14) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][14]) == 0x00000000) {
             count  = count + 114688 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[index][0];
         }
-        if ((buffer ^ end_buffer15) == 0x00000000) {
+        if ((buffer ^ _end_buffers[index][15]) == 0x00000000) {
             count  = count + 122880 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[index][0];
         }
     }
     return count;
 }
 
-/**
- * @brief finds the position of a 17-bit sequence (bits) in the sequence generated by polynomial1 with initial seed 1
- *
- * @param bits: 17-bit sequence
-
- * @return count: location of the sequence
-*/
-uint32_t reverse_count_p1(uint32_t bits) {
-    uint32_t count        = 0;
-    uint32_t buffer       = bits & 0x0001FFFFF;   // initialize buffer to initial bits, masked
-    uint32_t end_buffer0  = 0x00000000000000001;  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
-    uint32_t end_buffer1  = 0b11010000110111110;  // 1/16 way through
-    uint32_t end_buffer2  = 0b10110111100111100;  // 2/16 way through
-    uint32_t end_buffer3  = 0b11000010101101111;  // 3/16 way through
-    uint32_t end_buffer4  = 0b00101110001101110;  // 4/16 way through
-    uint32_t end_buffer5  = 0b01000011000110100;  // 5/16 way through
-    uint32_t end_buffer6  = 0b00010001010011110;  // 6/16 way through
-    uint32_t end_buffer7  = 0b10100101111010001;  // 7/16 way through
-    uint32_t end_buffer8  = 0b10011000000100001;  // 8/16 way through
-    uint32_t end_buffer9  = 0b01110011011010110;  // 9/16 way through
-    uint32_t end_buffer10 = 0b00100011101000011;  // 10/16 way through
-    uint32_t end_buffer11 = 0b10111011010000101;  // 11/16 way through
-    uint32_t end_buffer12 = 0b00110010100110110;  // 12/16 way through
-    uint32_t end_buffer13 = 0b01000111111100110;  // 13/16 way through
-    uint32_t end_buffer14 = 0b10001101000111011;  // 14/16 way through
-    uint32_t end_buffer15 = 0b00111100110011100;  // 15/16 way through
+uint32_t _reverse_count_p3(uint32_t bits) {
+    uint32_t count  = 0;
+    uint32_t buffer = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
 
     uint8_t  ii          = 0;  // loop variable for cumulative sum
     uint32_t result      = 0;
     uint32_t b17         = 0;
     uint32_t masked_buff = 0;
-    uint32_t poly        = 0b10111111000000100;
-    while (buffer != end_buffer0)  // do until buffer reaches one of the saved states
+    while (buffer != _end_buffers[3][0])  // do until buffer reaches one of the saved states
     {
         b17         = buffer & 0x00000001;           // save the "newest" bit of the buffer
         buffer      = (buffer & (0x0001FFFE)) >> 1;  // shift the buffer right, backwards in time
-        masked_buff = (buffer) & (poly);             // mask the buffer w/ the selected polynomial
+        masked_buff = (buffer) & (_polynomials[3]);  // mask the buffer w/ the selected polynomial
         for (ii = 0; ii < 17; ii++) {
             result = result ^ (((masked_buff) >> ii) & (0x00000001));  // cumulative sum of buffer&poly
         }
@@ -1047,293 +1004,96 @@ uint32_t reverse_count_p1(uint32_t bits) {
         buffer = buffer | (result << 16);  // update buffer w/ result
         result = 0;                        // reset result
         count++;
-        if ((buffer ^ end_buffer1) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][1]) == 0x00000000) {
             count  = count + 8192 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer2) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][2]) == 0x00000000) {
             count  = count + 16384 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer3) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][3]) == 0x00000000) {
             count  = count + 24576 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer4) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][4]) == 0x00000000) {
             count  = count + 32768 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer5) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][5]) == 0x00000000) {
             count  = count + 40960 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer6) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][6]) == 0x00000000) {
             count  = count + 49152 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer7) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][7]) == 0x00000000) {
             count  = count + 57344 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer8) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][8]) == 0x00000000) {
             count  = count + 65536 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer9) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][9]) == 0x00000000) {
             count  = count + 73728 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer10) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][10]) == 0x00000000) {
             count  = count + 81920 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer11) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][11]) == 0x00000000) {
             count  = count + 90112 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer12) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][12]) == 0x00000000) {
             count  = count + 98304 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer13) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][13]) == 0x00000000) {
             count  = count + 106496 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer14) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][14]) == 0x00000000) {
             count  = count + 114688 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
-        if ((buffer ^ end_buffer15) == 0x00000000) {
+        if ((buffer ^ _end_buffers[3][15]) == 0x00000000) {
             count  = count + 122880 - 1;
-            buffer = end_buffer0;
+            buffer = _end_buffers[3][0];
         }
     }
     return count;
 }
 
-/**
- * @brief finds the position of a 17-bit sequence (bits) in the sequence generated by polynomial2 with initial seed 1
- *
- * @param bits: 17-bit sequence
- *
- * @return count: location of the sequence
- */
-uint32_t reverse_count_p2(uint32_t bits) {
-    uint32_t count        = 0;
-    uint32_t buffer       = bits & 0x0001FFFFF;   // initialize buffer to initial bits, masked
-    uint32_t end_buffer0  = 0x00000000000000001;  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
-    uint32_t end_buffer1  = 0b00011011011000100;  // 1/16 way through
-    uint32_t end_buffer2  = 0b01011101010010110;  // 2/16 way through
-    uint32_t end_buffer3  = 0b11001011001101010;  // 3/16 way through
-    uint32_t end_buffer4  = 0b01110001111011010;  // 4/16 way through
-    uint32_t end_buffer5  = 0b10110110011111010;  // 5/16 way through
-    uint32_t end_buffer6  = 0b10110001110000001;  // 6/16 way through
-    uint32_t end_buffer7  = 0b10001001011101001;  // 7/16 way through
-    uint32_t end_buffer8  = 0b00000010011101011;  // 8/16 way through
-    uint32_t end_buffer9  = 0b01100010101111011;  // 9/16 way through
-    uint32_t end_buffer10 = 0b00111000001101111;  // 10/16 way through
-    uint32_t end_buffer11 = 0b10101011100111000;  // 11/16 way through
-    uint32_t end_buffer12 = 0b01111110101111111;  // 12/16 way through
-    uint32_t end_buffer13 = 0b01000011110101010;  // 13/16 way through
-    uint32_t end_buffer14 = 0b01001011100000011;  // 14/16 way through
-    uint32_t end_buffer15 = 0b00010110111101110;  // 15/16 way through
-
-    uint8_t  ii          = 0;  // loop variable for cumulative sum
-    uint32_t result      = 0;
-    uint32_t b17         = 0;
-    uint32_t masked_buff = 0;
-    uint32_t poly        = 0b11111111101101011;
-    while (buffer != end_buffer0)  // do until buffer reaches one of the saved states
-    {
-        b17         = buffer & 0x00000001;           // save the "newest" bit of the buffer
-        buffer      = (buffer & (0x0001FFFE)) >> 1;  // shift the buffer right, backwards in time
-        masked_buff = (buffer) & (poly);             // mask the buffer w/ the selected polynomial
-        for (ii = 0; ii < 17; ii++) {
-            result = result ^ (((masked_buff) >> ii) & (0x00000001));  // cumulative sum of buffer&poly
-        }
-        result = result ^ b17;
-        buffer = buffer | (result << 16);  // update buffer w/ result
-        result = 0;                        // reset result
-        count++;
-        if ((buffer ^ end_buffer1) == 0x00000000) {
-            count  = count + 8192 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer2) == 0x00000000) {
-            count  = count + 16384 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer3) == 0x00000000) {
-            count  = count + 24576 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer4) == 0x00000000) {
-            count  = count + 32768 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer5) == 0x00000000) {
-            count  = count + 40960 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer6) == 0x00000000) {
-            count  = count + 49152 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer7) == 0x00000000) {
-            count  = count + 57344 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer8) == 0x00000000) {
-            count  = count + 65536 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer9) == 0x00000000) {
-            count  = count + 73728 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer10) == 0x00000000) {
-            count  = count + 81920 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer11) == 0x00000000) {
-            count  = count + 90112 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer12) == 0x00000000) {
-            count  = count + 98304 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer13) == 0x00000000) {
-            count  = count + 106496 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer14) == 0x00000000) {
-            count  = count + 114688 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer15) == 0x00000000) {
-            count  = count + 122880 - 1;
-            buffer = end_buffer0;
-        }
-    }
-    return count;
+void _lh2_pin_set_input(const gpio_t *gpio) {
+    // Configure Data pin as INPUT, with no pullup or pull down.
+    nrf_port[gpio->port]->PIN_CNF[gpio->pin] = (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos) |
+                                               (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos) |
+                                               (GPIO_PIN_CNF_PULL_Disabled << GPIO_PIN_CNF_PULL_Pos);
 }
 
-/**
- * @brief finds the position of a 17-bit sequence (bits) in the sequence generated by polynomial3 with initial seed 1
- *
- * @param bits: 17-bit sequence
- *
- * @return count: location of the sequence
- */
-uint32_t reverse_count_p3(uint32_t bits) {
-    uint32_t count        = 0;
-    uint32_t buffer       = bits & 0x0001FFFFF;   // initialize buffer to initial bits, masked
-    uint32_t end_buffer0  = 0x00000000000000001;  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
-    uint32_t end_buffer1  = 0b11011011110010110;  // 1/16 way through
-    uint32_t end_buffer2  = 0b11000100000001101;  // 2/16 way through
-    uint32_t end_buffer3  = 0b11100011000010110;  // 3/16 way through
-    uint32_t end_buffer4  = 0b00011111010001100;  // 4/16 way through
-    uint32_t end_buffer5  = 0b11000001011110011;  // 5/16 way through
-    uint32_t end_buffer6  = 0b10011101110001010;  // 6/16 way through
-    uint32_t end_buffer7  = 0b00001011001111000;  // 7/16 way through
-    uint32_t end_buffer8  = 0b00111100010000101;  // 8/16 way through
-    uint32_t end_buffer9  = 0b01001111001010100;  // 9/16 way through
-    uint32_t end_buffer10 = 0b01011010010110011;  // 10/16 way through
-    uint32_t end_buffer11 = 0b11111101010001100;  // 11/16 way through
-    uint32_t end_buffer12 = 0b00110101011011111;  // 12/16 way through
-    uint32_t end_buffer13 = 0b01110110010101011;  // 13/16 way through
-    uint32_t end_buffer14 = 0b00010000110100010;  // 14/16 way through
-    uint32_t end_buffer15 = 0b00010111110101110;  // 15/16 way through
-
-    uint8_t  ii          = 0;  // loop variable for cumulative sum
-    uint32_t result      = 0;
-    uint32_t b17         = 0;
-    uint32_t masked_buff = 0;
-    uint32_t poly        = 0b10011111101100111;
-    while (buffer != end_buffer0)  // do until buffer reaches one of the saved states
-    {
-        b17         = buffer & 0x00000001;           // save the "newest" bit of the buffer
-        buffer      = (buffer & (0x0001FFFE)) >> 1;  // shift the buffer right, backwards in time
-        masked_buff = (buffer) & (poly);             // mask the buffer w/ the selected polynomial
-        for (ii = 0; ii < 17; ii++) {
-            result = result ^ (((masked_buff) >> ii) & (0x00000001));  // cumulative sum of buffer&poly
-        }
-        result = result ^ b17;
-        buffer = buffer | (result << 16);  // update buffer w/ result
-        result = 0;                        // reset result
-        count++;
-        if ((buffer ^ end_buffer1) == 0x00000000) {
-            count  = count + 8192 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer2) == 0x00000000) {
-            count  = count + 16384 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer3) == 0x00000000) {
-            count  = count + 24576 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer4) == 0x00000000) {
-            count  = count + 32768 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer5) == 0x00000000) {
-            count  = count + 40960 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer6) == 0x00000000) {
-            count  = count + 49152 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer7) == 0x00000000) {
-            count  = count + 57344 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer8) == 0x00000000) {
-            count  = count + 65536 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer9) == 0x00000000) {
-            count  = count + 73728 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer10) == 0x00000000) {
-            count  = count + 81920 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer11) == 0x00000000) {
-            count  = count + 90112 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer12) == 0x00000000) {
-            count  = count + 98304 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer13) == 0x00000000) {
-            count  = count + 106496 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer14) == 0x00000000) {
-            count  = count + 114688 - 1;
-            buffer = end_buffer0;
-        }
-        if ((buffer ^ end_buffer15) == 0x00000000) {
-            count  = count + 122880 - 1;
-            buffer = end_buffer0;
-        }
-    }
-    return count;
+void _lh2_pin_set_output(const gpio_t *gpio) {
+    // Configure Data pin as OUTPUT, with standar power drive current.
+    nrf_port[gpio->port]->PIN_CNF[gpio->pin] = (GPIO_PIN_CNF_DIR_Output << GPIO_PIN_CNF_DIR_Pos) |   // Set Pin as output
+                                               (GPIO_PIN_CNF_DRIVE_S0S1 << GPIO_PIN_CNF_DRIVE_Pos);  // Activate high current gpio mode.
 }
 
-// setup the PPI
-/**
- * @brief start SPI3 at falling edge of envelope, start timer2 at falling edge of envelope, stop/capture timer2 at rising edge of envelope
- *
- */
-void ppi_setup(void) {
-    // uint32_t gpiote_output_task_addr  = (uint32_t)&NRF_GPIOTE->TASKS_OUT[GPIOTE_CH_OUT];
+void _gpiote_setup(const gpio_t *gpio_e) {
+    NRF_GPIOTE->CONFIG[GPIOTE_CH_IN_ENV_HiToLo] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
+                                                  (gpio_e->pin << GPIOTE_CONFIG_PSEL_Pos) |
+                                                  (gpio_e->port << GPIOTE_CONFIG_PORT_Pos) |
+                                                  (GPIOTE_CONFIG_POLARITY_HiToLo << GPIOTE_CONFIG_POLARITY_Pos);
+
+    NRF_GPIOTE->CONFIG[GPIOTE_CH_IN_ENV_LoToHi] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
+                                                  (gpio_e->pin << GPIOTE_CONFIG_PSEL_Pos) |
+                                                  (gpio_e->port << GPIOTE_CONFIG_PORT_Pos) |
+                                                  (GPIOTE_CONFIG_POLARITY_LoToHi << GPIOTE_CONFIG_POLARITY_Pos);
+}
+
+void _ppi_setup(void) {
     uint32_t gpiote_input_task_addr   = (uint32_t)&NRF_GPIOTE->EVENTS_IN[GPIOTE_CH_IN_ENV_HiToLo];
     uint32_t envelope_input_LoToHi    = (uint32_t)&NRF_GPIOTE->EVENTS_IN[GPIOTE_CH_IN_ENV_LoToHi];
     uint32_t spi3_start_task_addr     = (uint32_t)&NRF_SPIM3->TASKS_START;
@@ -1357,13 +1117,49 @@ void ppi_setup(void) {
     NRF_PPI->CH[5].EEP   = envelope_input_LoToHi;
     NRF_PPI->CH[5].TEP   = timer2_clear_task_addr;  // clear timer
     NRF_PPI->FORK[5].TEP = spi3_stop_task_addr;     // stop spi3 transfer
+
+    NRF_PPI->CHENSET = (PPI_CHENSET_CH2_Enabled << PPI_CHENSET_CH2_Pos) |
+                       //(PPI_CHENSET_CH3_Enabled << PPI_CHENSET_CH3_Pos);
+                       (PPI_CHENSET_CH4_Enabled << PPI_CHENSET_CH4_Pos) |
+                       (PPI_CHENSET_CH5_Enabled << PPI_CHENSET_CH5_Pos);
 }
 
-/**
- * @brief timer2 setup, in ppi_setup() this timer will CLEAR/START at falling edge of envelop signal and STOP/CAPTURE at rising edge of envelope signal
- *
- */
-void timer2_setup(void) {
+void _spi3_setup(const gpio_t *gpio_d) {
+    // Define the necessary Pins in the SPIM peripheral
+    NRF_SPIM3->PSEL.MISO = gpio_d->pin << SPIM_PSEL_MISO_PIN_Pos |                          // Define pin number for MISO pin
+                           gpio_d->port << SPIM_PSEL_MISO_PORT_Pos |                        // Define pin port for MISO pin
+                           SPIM_PSEL_MISO_CONNECT_Connected << SPIM_PSEL_MISO_CONNECT_Pos;  // Enable the MISO pin
+
+    NRF_SPIM3->PSEL.SCK = _lh2_spi_fake_sck_gpio.pin << SPIM_PSEL_SCK_PIN_Pos |          // Define pin number for SCK pin
+                          _lh2_spi_fake_sck_gpio.port << SPIM_PSEL_SCK_PORT_Pos |        // Define pin port for SCK pin
+                          SPIM_PSEL_SCK_CONNECT_Connected << SPIM_PSEL_SCK_CONNECT_Pos;  // Enable the SCK pin
+
+    NRF_SPIM3->PSEL.MOSI = (4UL) << SPIM_PSEL_MOSI_PIN_Pos |
+                           1 << SPIM_PSEL_MOSI_PORT_Pos |
+                           SPIM_PSEL_MOSI_CONNECT_Connected << SPIM_PSEL_MOSI_CONNECT_Pos;
+
+    // Configure the Interruptions
+    NVIC_ClearPendingIRQ(SPIM3_IRQn);
+    NVIC_DisableIRQ(SPIM3_IRQn);  // Disable interruptions while configuring
+
+    // Configure the SPIM peripheral
+    NRF_SPIM3->FREQUENCY = SPIM_FREQUENCY_FREQUENCY_M32;                         // Set SPI frequency to 32MHz
+    NRF_SPIM3->CONFIG    = SPIM_CONFIG_ORDER_MsbFirst << SPIM_CONFIG_ORDER_Pos;  // Set MsB out first
+
+    // Configure the EasyDMA channel, only using RX
+    NRF_SPIM3->RXD.MAXCNT = SPI3_BUFFER_SIZE;                   // Set the size of the input buffer.
+    NRF_SPIM3->RXD.PTR    = (uint32_t)_lh2_vars.spi_rx_buffer;  // Set the input buffer pointer.
+
+    NRF_SPIM3->INTENSET = SPIM_INTENSET_END_Enabled << SPIM_INTENSET_END_Pos;  // Enable interruption for when a packet arrives
+    NVIC_SetPriority(SPIM3_IRQn, SPIM3_INTERRUPT_PRIORITY);                    // Set priority for Radio interrupts to 1
+    // Enable SPIM interruptions
+    NVIC_EnableIRQ(SPIM3_IRQn);
+
+    // Enable the SPIM peripheral
+    NRF_SPIM3->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
+}
+
+void _timer2_setup(void) {
     NRF_TIMER2->BITMODE   = TIMER_BITMODE_BITMODE_32Bit;
     NRF_TIMER2->PRESCALER = (0UL);  // 16 MHz clock counter
 
@@ -1372,141 +1168,28 @@ void timer2_setup(void) {
     // it is the processor's responsibility to read this timer's count value and reset it
 }
 
-/**
- * @brief SPIM3 interrupt handler
- *
- */
+//=========================== interrupts =======================================
+
 void SPIM3_IRQHandler(void) {
-    NVIC_ClearPendingIRQ(SPIM3_IRQn);
-
-    spi_xfer_done = true;
-    ready         = false;
-    TRANSFER_COUNTER++;
-
-    volatile int lp = 0;  // temporary loop variable to go through each byte of the SPI buffer
-
     // Check if the interrupt was caused by a fully send package
     if (NRF_SPIM3->EVENTS_END) {
-
         // Clear the Interrupt flag
         NRF_SPIM3->EVENTS_END = 0;
-
-        // load global SPI buffer (m_rx_buf) into four local arrays (stored_buff_1 ... stored_buff_4)
-        if (TRANSFER_COUNTER == 1) {
-            for (lp = 0; lp < m_length; lp++) {
-                stored_buff_1[lp] = m_rx_buf[lp];
-                m_rx_buf[lp]      = 0x00;
-            }
-            LH2_envelope_duration_1 = NRF_TIMER2->CC[0];
-        } else if (TRANSFER_COUNTER == 2) {
-            for (lp = 0; lp < m_length; lp++) {
-                stored_buff_2[lp] = m_rx_buf[lp];
-                m_rx_buf[lp]      = 0x00;
-            }
-            LH2_envelope_duration_2 = NRF_TIMER2->CC[0];
-        } else if (TRANSFER_COUNTER == 3) {
-            for (lp = 0; lp < m_length; lp++) {
-                stored_buff_3[lp] = m_rx_buf[lp];
-                m_rx_buf[lp]      = 0x00;
-            }
-            LH2_envelope_duration_3 = NRF_TIMER2->CC[0];
-        } else if (TRANSFER_COUNTER == 4) {
-            for (lp = 0; lp < m_length; lp++) {
-                stored_buff_4[lp] = m_rx_buf[lp];
-                m_rx_buf[lp]      = 0x00;
-            }
-            LH2_envelope_duration_4 = NRF_TIMER2->CC[0];
-            NRF_PPI->CHENCLR        = (PPI_CHENCLR_CH2_Enabled << PPI_CHENCLR_CH2_Pos) |
-                               //(PPI_CHENCLR_CH3_Enabled << PPI_CHENCLR_CH3_Pos);
-                               (PPI_CHENCLR_CH4_Enabled << PPI_CHENCLR_CH4_Pos) |
-                               (PPI_CHENCLR_CH5_Enabled << PPI_CHENCLR_CH5_Pos);  // stop receiving data while it thinks
-            buffers_ready = true;
+        _lh2_vars.transfer_counter++;
+        // load global SPI buffer (_lh2_vars.spi_rx_buffer) into four local arrays (_lh2_vars.data[0].buffer ... _lh2_vars.data[3].buffer)
+        if (_lh2_vars.transfer_counter == 1) {
+            memcpy(_lh2_vars.data[0].buffer, _lh2_vars.spi_rx_buffer, SPI3_BUFFER_SIZE);
+            _lh2_vars.data[0].envelope_duration = NRF_TIMER2->CC[0];
+        } else if (_lh2_vars.transfer_counter == 2) {
+            memcpy(_lh2_vars.data[1].buffer, _lh2_vars.spi_rx_buffer, SPI3_BUFFER_SIZE);
+            _lh2_vars.data[1].envelope_duration = NRF_TIMER2->CC[0];
+        } else if (_lh2_vars.transfer_counter == 3) {
+            memcpy(_lh2_vars.data[2].buffer, _lh2_vars.spi_rx_buffer, SPI3_BUFFER_SIZE);
+            _lh2_vars.data[2].envelope_duration = NRF_TIMER2->CC[0];
+        } else if (_lh2_vars.transfer_counter == 4) {
+            memcpy(_lh2_vars.data[3].buffer, _lh2_vars.spi_rx_buffer, SPI3_BUFFER_SIZE);
+            _lh2_vars.data[3].envelope_duration = NRF_TIMER2->CC[0];
+            _lh2_vars.buffers_ready             = true;
         }
     }
-}
-
-/**
- * @brief set-up GPIOTE so that events are configured for falling (GPIOTE_CH_IN) and rising edges (GPIOTE_CH_IN_ENV_HiToLo) of the envelope signal
- *
- */
-void gpiote_setup(void) {
-
-    // NRF_GPIOTE->CONFIG[GPIOTE_CH_OUT] =           (GPIOTE_CONFIG_MODE_Task        << GPIOTE_CONFIG_MODE_Pos) | // TODO: remove this event, it exists for debug purposes
-    //                                               (OUTPUT_PIN_NUMBER              << GPIOTE_CONFIG_PSEL_Pos) |
-    //                                               (OUTPUT_PIN_PORT                << GPIOTE_CONFIG_PORT_Pos) |
-    //                                               (GPIOTE_CONFIG_POLARITY_Toggle  << GPIOTE_CONFIG_POLARITY_Pos) |
-    //                                               (GPIOTE_CONFIG_OUTINIT_High     << GPIOTE_CONFIG_OUTINIT_Pos);
-
-    NRF_GPIOTE->CONFIG[GPIOTE_CH_IN_ENV_HiToLo] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
-                                                  (INPUT_PIN_NUMBER << GPIOTE_CONFIG_PSEL_Pos) |
-                                                  (INPUT_PIN_PORT << GPIOTE_CONFIG_PORT_Pos) |
-                                                  (GPIOTE_CONFIG_POLARITY_HiToLo << GPIOTE_CONFIG_POLARITY_Pos);
-
-    NRF_GPIOTE->CONFIG[GPIOTE_CH_IN_ENV_LoToHi] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
-                                                  (INPUT_PIN_NUMBER << GPIOTE_CONFIG_PSEL_Pos) |
-                                                  (INPUT_PIN_PORT << GPIOTE_CONFIG_PORT_Pos) |
-                                                  (GPIOTE_CONFIG_POLARITY_LoToHi << GPIOTE_CONFIG_POLARITY_Pos);
-}
-
-/**
- * @brief Set a pin of port 0 as an INPUT with no pull-up or pull-down
- * @param[in] pin: port 0 pin to configure as input [0-31]
- *
- */
-void lh2_pin_set_input(uint8_t pin) {
-
-    // Configure Data pin as INPUT, with no pullup or pull down.
-    NRF_P0->PIN_CNF[pin] = (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos) |
-                           (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos) |
-                           (GPIO_PIN_CNF_PULL_Disabled << GPIO_PIN_CNF_PULL_Pos);
-}
-
-/**
- * @brief Set a pin of port 0 as an OUTPUT with standard drive
- * @param[in] pin: port 0 pin to configure as input [0-31]
- *
- */
-void lh2_pin_set_output(uint8_t pin) {
-
-    // Configure Data pin as OUTPUT, with standar power drive current.
-    NRF_P0->PIN_CNF[pin] = (GPIO_PIN_CNF_DIR_Output << GPIO_PIN_CNF_DIR_Pos) |   // Set Pin as output
-                           (GPIO_PIN_CNF_DRIVE_S0S1 << GPIO_PIN_CNF_DRIVE_Pos);  // Activate high current gpio mode.
-}
-
-/**
- * @brief Configure TIMER3 to function as a bloacking wait timer
- *
- * The Compare events will be used to signal when enough time has passed
- * And the Shorcuts take care of stoping and reseting the timers.
- *
- */
-void lh2_wait_timer_config(void) {
-
-    // activate the external HFClock. (to help with accurate pulse timming for the LH2 initialization)
-    NRF_CLOCK->EVENTS_HFCLKSTARTED = 0x00;          // Clear the flag
-    NRF_CLOCK->TASKS_HFCLKSTART    = 0x01;          // Start the clock
-    while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) {}  // Wait for the clock to actually start.
-
-    // Innitialize TIMER 3, it's used time busy wait (to help with accurate pulse timming for the LH2 initialization)
-    NRF_TIMER3->PRESCALER = (0UL);                                         // 16 MHz clock counter
-    NRF_TIMER3->BITMODE   = TIMER_BITMODE_BITMODE_32Bit;                   // 32 bit counter (max count value ~4.5min)
-    NRF_TIMER3->MODE      = TIMER_MODE_MODE_Timer << TIMER_MODE_MODE_Pos;  // Timer mode set to "Timer"
-    NRF_TIMER3->SHORTS    = 0x01 << TIMER_SHORTS_COMPARE0_STOP_Pos |
-                         0x01 << TIMER_SHORTS_COMPARE0_CLEAR_Pos;  // Stop the Timer as soon as the target value is achieved.
-    NRF_TIMER3->CC[0] = 16;                                        // count up to 16 (1us wait)
-}
-
-/**
- * @brief Blocking wait in microseconds
- * @param[in] usec: number of microseconds to wait
- *
- */
-void lh2_wait_usec(uint32_t usec) {
-
-    // Load the wait time into the compare register.
-    NRF_TIMER3->CC[0] = 16 * usec;  // TIMER clock is running at 16MHz, 1 usec is 16 clock cycles.
-
-    NRF_TIMER3->EVENTS_COMPARE[0] = 0;             // Clear the compare flag.
-    NRF_TIMER3->TASKS_START       = 0x01;          // Start the timer
-    while (NRF_TIMER3->EVENTS_COMPARE[0] == 0) {}  // Wait for the clock to actually start.
 }
