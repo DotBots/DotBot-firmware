@@ -16,13 +16,23 @@
 #include "board.h"
 #include "lh2.h"
 
-//=========================== defines =========================================
-
-//=========================== variables =========================================
+//=========================== variables ========================================
 
 static db_lh2_t _lh2;
 
-//=========================== main =========================================
+///! LH2 event gpio
+static const gpio_t _lh2_e_gpio = {
+    .port = 0,
+    .pin  = 30,
+};
+
+///! LH2 data gpio
+static const gpio_t _lh2_d_gpio = {
+    .port = 0,
+    .pin  = 29,
+};
+
+//=========================== main =============================================
 
 /**
  *  @brief The program starts executing here.
@@ -32,7 +42,7 @@ int main(void) {
     db_board_init();
 
     // Initialize the LH2
-    db_lh2_init();
+    db_lh2_init(&_lh2_d_gpio, &_lh2_e_gpio);
 
     while (1) {
         // wait until something happens e.g. an SPI interrupt

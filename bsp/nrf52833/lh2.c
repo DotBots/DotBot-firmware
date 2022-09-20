@@ -137,18 +137,6 @@ static const uint32_t _end_buffers[4][16] = {
     },
 };
 
-///! LH2 event gpio
-static const gpio_t _lh2_e_gpio = {
-    .port = 0,
-    .pin  = 30,
-};
-
-///! LH2 data gpio
-static const gpio_t _lh2_d_gpio = {
-    .port = 0,
-    .pin  = 29,
-};
-
 ///! NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module
 static const gpio_t _lh2_spi_fake_sck_gpio = {
     .port = 1,
@@ -163,8 +151,10 @@ static lh2_vars_t _lh2_vars;  ///< local data of the LH2 driver
 /**
  * @brief wiggle the data and envelope lines in a magical way to configure the TS4231 to continuously read for LH2 sweep signals.
  *
+ * @param[in]   gpio_d  pointer to gpio data
+ * @param[in]   gpio_e  pointer to gpio event
  */
-void _initialize_ts4231(void);
+void _initialize_ts4231(const gpio_t *gpio_d, const gpio_t *gpio_e);
 
 /**
  * @brief
@@ -226,8 +216,10 @@ void _lh2_pin_set_output(const gpio_t *gpio);
 
 /**
  * @brief set-up GPIOTE so that events are configured for falling (GPIOTE_CH_IN) and rising edges (GPIOTE_CH_IN_ENV_HiToLo) of the envelope signal
+ *
+ * @param[in]   gpio_e  pointer to gpio event
  */
-void _gpiote_setup(void);
+void _gpiote_setup(const gpio_t *gpio_e);
 
 /**
  * @brief start SPI3 at falling edge of envelope, start timer2 at falling edge of envelope, stop/capture timer2 at rising edge of envelope
@@ -236,8 +228,10 @@ void _ppi_setup(void);
 
 /**
  * @brief spi3 setup
+ *
+ * @param[in]   gpio_d  pointer to gpio data
  */
-void _spi3_setup(void);
+void _spi3_setup(const gpio_t *gpio_d);
 
 /**
  * @brief timer2 setup, in _ppi_setup() this timer will CLEAR/START at falling edge of envelop signal and STOP/CAPTURE at rising edge of envelope signal
@@ -246,15 +240,15 @@ void _timer2_setup(void);
 
 //=========================== public ===========================================
 
-void db_lh2_init(void) {
+void db_lh2_init(const gpio_t *gpio_d, const gpio_t *gpio_e) {
     // Initialize the TS4231 on power-up - this is only necessary when power-cycling
-    _initialize_ts4231();
+    _initialize_ts4231(gpio_d, gpio_e);
 
     // Configure the necessary Pins in the GPIO peripheral  (MOSI and CS not needed)
-    _lh2_pin_set_input(&_lh2_d_gpio);              // Data_pin will become the MISO pin
+    _lh2_pin_set_input(gpio_d);                    // Data_pin will become the MISO pin
     _lh2_pin_set_output(&_lh2_spi_fake_sck_gpio);  // set SCK as Output.
 
-    _spi3_setup();
+    _spi3_setup(gpio_d);
 
     // Setup the LH2 local variables
     memset(_lh2_vars.spi_rx_buffer, 0, SPI3_BUFFER_SIZE);
@@ -272,7 +266,7 @@ void db_lh2_init(void) {
     }
 
     // initialize GPIOTEs
-    _gpiote_setup();
+    _gpiote_setup(gpio_e);
     // initialize timer(s)
     _timer2_setup();
     // initialize PPI
@@ -424,116 +418,116 @@ void db_lh2_process_location(db_lh2_t *lh2) {
 
 //=========================== private ==========================================
 
-void _initialize_ts4231(void) {
+void _initialize_ts4231(const gpio_t *gpio_d, const gpio_t *gpio_e) {
 
     // Configure the wait timer
     db_timer_hf_init();
 
     // Filip's code define these pins as inputs, and then changes them quickly to outputs. Not sure why, but it works.
-    _lh2_pin_set_input(&_lh2_d_gpio);
-    _lh2_pin_set_input(&_lh2_e_gpio);
+    _lh2_pin_set_input(gpio_d);
+    _lh2_pin_set_input(gpio_e);
 
     // start the TS4231 initialization
     // Wiggle the Envelope and Data pins
-    _lh2_pin_set_output(&_lh2_e_gpio);
+    _lh2_pin_set_output(gpio_e);
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << _lh2_e_gpio.pin;  // set pin HIGH
+    nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;  // set pin HIGH
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << _lh2_e_gpio.pin;  // set pin LOW
+    nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;  // set pin LOW
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << _lh2_e_gpio.pin;
+    nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
     db_timer_hf_delay_us(10);
-    _lh2_pin_set_output(&_lh2_d_gpio);
+    _lh2_pin_set_output(gpio_d);
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << _lh2_d_gpio.pin;
+    nrf_port[gpio_d->port]->OUTSET = 1 << gpio_d->pin;
     db_timer_hf_delay_us(10);
     // Turn the pins back to inputs
-    _lh2_pin_set_input(&_lh2_d_gpio);
-    _lh2_pin_set_input(&_lh2_e_gpio);
+    _lh2_pin_set_input(gpio_d);
+    _lh2_pin_set_input(gpio_e);
     // finally, wait 1 milisecond
     db_timer_hf_delay_us(1000);
 
     // Send the configuration magic number/sequence
     uint16_t config_val = 0x392B;
     // Turn the Data and Envelope lines back to outputs and clear them.
-    _lh2_pin_set_output(&_lh2_e_gpio);
-    _lh2_pin_set_output(&_lh2_d_gpio);
+    _lh2_pin_set_output(gpio_e);
+    _lh2_pin_set_output(gpio_d);
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << _lh2_d_gpio.pin;
+    nrf_port[gpio_d->port]->OUTCLR = 1 << gpio_d->pin;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << _lh2_e_gpio.pin;
+    nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;
     db_timer_hf_delay_us(10);
     // Send the magic configuration value, MSB first.
     for (uint8_t i = 0; i < 15; i++) {
 
         config_val = config_val << 1;
         if ((config_val & 0x8000) > 0) {
-            NRF_P0->OUTSET = 1 << _lh2_d_gpio.pin;
+            nrf_port[gpio_d->port]->OUTSET = 1 << gpio_d->pin;
         } else {
-            NRF_P0->OUTCLR = 1 << _lh2_d_gpio.pin;
+            nrf_port[gpio_d->port]->OUTCLR = 1 << gpio_d->pin;
         }
 
         // Toggle the Envelope line as a clock.
         db_timer_hf_delay_us(10);
-        NRF_P0->OUTSET = 1 << _lh2_e_gpio.pin;
+        nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
         db_timer_hf_delay_us(10);
-        NRF_P0->OUTCLR = 1 << _lh2_e_gpio.pin;
+        nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;
         db_timer_hf_delay_us(10);
     }
     // Finish send sequence and turn pins into inputs again.
-    NRF_P0->OUTCLR = 1 << _lh2_d_gpio.pin;
+    nrf_port[gpio_d->port]->OUTCLR = 1 << gpio_d->pin;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << _lh2_e_gpio.pin;
+    nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << _lh2_d_gpio.pin;
+    nrf_port[gpio_d->port]->OUTSET = 1 << gpio_d->pin;
     db_timer_hf_delay_us(10);
-    _lh2_pin_set_input(&_lh2_d_gpio);
-    _lh2_pin_set_input(&_lh2_e_gpio);
+    _lh2_pin_set_input(gpio_d);
+    _lh2_pin_set_input(gpio_e);
     // Finish by waiting 10usec
     db_timer_hf_delay_us(10);
 
     // Now read back the sequence that the TS4231 answers.
-    _lh2_pin_set_output(&_lh2_e_gpio);
-    _lh2_pin_set_output(&_lh2_d_gpio);
+    _lh2_pin_set_output(gpio_e);
+    _lh2_pin_set_output(gpio_d);
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << _lh2_d_gpio.pin;
+    nrf_port[gpio_d->port]->OUTCLR = 1 << gpio_d->pin;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << _lh2_e_gpio.pin;
+    nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << _lh2_d_gpio.pin;
+    nrf_port[gpio_d->port]->OUTSET = 1 << gpio_d->pin;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << _lh2_e_gpio.pin;
+    nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
     db_timer_hf_delay_us(10);
     // Set Data pin as an input, to receive the data
-    _lh2_pin_set_input(&_lh2_d_gpio);
+    _lh2_pin_set_input(gpio_d);
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << _lh2_e_gpio.pin;
+    nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;
     db_timer_hf_delay_us(10);
     // Use the Envelope pin to output a clock while the data arrives.
     for (uint8_t i = 0; i < 14; i++) {
-        NRF_P0->OUTSET = 1 << _lh2_e_gpio.pin;
+        nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
         db_timer_hf_delay_us(10);
-        NRF_P0->OUTCLR = 1 << _lh2_e_gpio.pin;
+        nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;
         db_timer_hf_delay_us(10);
     }
 
     // Finish the configuration procedure
-    _lh2_pin_set_output(&_lh2_d_gpio);
+    _lh2_pin_set_output(gpio_d);
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << _lh2_e_gpio.pin;
+    nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
     db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << _lh2_d_gpio.pin;
-    db_timer_hf_delay_us(10);
-
-    NRF_P0->OUTCLR = 1 << _lh2_e_gpio.pin;
-    db_timer_hf_delay_us(10);
-    NRF_P0->OUTCLR = 1 << _lh2_d_gpio.pin;
-    db_timer_hf_delay_us(10);
-    NRF_P0->OUTSET = 1 << _lh2_e_gpio.pin;
+    nrf_port[gpio_d->port]->OUTSET = 1 << gpio_d->pin;
     db_timer_hf_delay_us(10);
 
-    _lh2_pin_set_input(&_lh2_d_gpio);
-    _lh2_pin_set_input(&_lh2_e_gpio);
+    nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;
+    db_timer_hf_delay_us(10);
+    nrf_port[gpio_d->port]->OUTCLR = 1 << gpio_d->pin;
+    db_timer_hf_delay_us(10);
+    nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
+    db_timer_hf_delay_us(10);
+
+    _lh2_pin_set_input(gpio_d);
+    _lh2_pin_set_input(gpio_e);
 
     db_timer_hf_delay_us(50000);
 }
@@ -1087,15 +1081,15 @@ void _lh2_pin_set_output(const gpio_t *gpio) {
                                                (GPIO_PIN_CNF_DRIVE_S0S1 << GPIO_PIN_CNF_DRIVE_Pos);  // Activate high current gpio mode.
 }
 
-void _gpiote_setup(void) {
+void _gpiote_setup(const gpio_t *gpio_e) {
     NRF_GPIOTE->CONFIG[GPIOTE_CH_IN_ENV_HiToLo] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
-                                                  (_lh2_e_gpio.pin << GPIOTE_CONFIG_PSEL_Pos) |
-                                                  (_lh2_e_gpio.port << GPIOTE_CONFIG_PORT_Pos) |
+                                                  (gpio_e->pin << GPIOTE_CONFIG_PSEL_Pos) |
+                                                  (gpio_e->port << GPIOTE_CONFIG_PORT_Pos) |
                                                   (GPIOTE_CONFIG_POLARITY_HiToLo << GPIOTE_CONFIG_POLARITY_Pos);
 
     NRF_GPIOTE->CONFIG[GPIOTE_CH_IN_ENV_LoToHi] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
-                                                  (_lh2_e_gpio.pin << GPIOTE_CONFIG_PSEL_Pos) |
-                                                  (_lh2_e_gpio.port << GPIOTE_CONFIG_PORT_Pos) |
+                                                  (gpio_e->pin << GPIOTE_CONFIG_PSEL_Pos) |
+                                                  (gpio_e->port << GPIOTE_CONFIG_PORT_Pos) |
                                                   (GPIOTE_CONFIG_POLARITY_LoToHi << GPIOTE_CONFIG_POLARITY_Pos);
 }
 
@@ -1130,10 +1124,10 @@ void _ppi_setup(void) {
                        (PPI_CHENSET_CH5_Enabled << PPI_CHENSET_CH5_Pos);
 }
 
-void _spi3_setup(void) {
+void _spi3_setup(const gpio_t *gpio_d) {
     // Define the necessary Pins in the SPIM peripheral
-    NRF_SPIM3->PSEL.MISO = _lh2_d_gpio.pin << SPIM_PSEL_MISO_PIN_Pos |                      // Define pin number for MISO pin
-                           _lh2_d_gpio.port << SPIM_PSEL_MISO_PORT_Pos |                    // Define pin port for MISO pin
+    NRF_SPIM3->PSEL.MISO = gpio_d->pin << SPIM_PSEL_MISO_PIN_Pos |                          // Define pin number for MISO pin
+                           gpio_d->port << SPIM_PSEL_MISO_PORT_Pos |                        // Define pin port for MISO pin
                            SPIM_PSEL_MISO_CONNECT_Connected << SPIM_PSEL_MISO_CONNECT_Pos;  // Enable the MISO pin
 
     NRF_SPIM3->PSEL.SCK = _lh2_spi_fake_sck_gpio.pin << SPIM_PSEL_SCK_PIN_Pos |          // Define pin number for SCK pin

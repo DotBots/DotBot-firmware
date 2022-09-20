@@ -16,6 +16,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "gpio.h"
+
 //=========================== defines ==========================================
 
 #define LH2_LOCATIONS_COUNT 4                        ///< Number of computed locations
@@ -35,8 +37,11 @@ typedef struct {
 
 /**
  * @brief Initialize LH2
+ *
+ * @param[in]   gpio_d  pointer to gpio data
+ * @param[in]   gpio_e  pointer to gpio event
  */
-void db_lh2_init(void);
+void db_lh2_init(const gpio_t *gpio_d, const gpio_t *gpio_e);
 
 /**
  * @brief Compute the location based on available frames
