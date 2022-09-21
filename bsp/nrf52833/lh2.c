@@ -276,17 +276,10 @@ void db_lh2_reset(db_lh2_t *lh2) {
     lh2->state                 = DB_LH2_RUNNING;
 }
 
-void db_lh2_process_location(db_lh2_t *lh2) {
-    uint8_t i;
-    uint8_t j;
-    // invalid packet detection:
-    int8_t invalid_packet_counter;
-
+void db_lh2_process_raw_data(db_lh2_t *lh2) {
     if (!_lh2_vars.buffers_ready) {
         return;
     }
-
-    _lh2_vars.buffers_ready = false;
 
     for (uint8_t location = 0; location < LH2_LOCATIONS_COUNT; location++) {
         lh2->raw_data[location].bits_sweep = 0;
@@ -305,8 +298,16 @@ void db_lh2_process_location(db_lh2_t *lh2) {
         return;
     }
 
+    lh2->state = DB_LH2_RAW_DATA_READY;
+}
+
+void db_lh2_process_location(db_lh2_t *lh2) {
+    if (lh2->state != DB_LH2_RAW_DATA_READY) {
+        return;
+    }
+
     // compute LFSR locations and detect invalid packets
-    invalid_packet_counter = 0;
+    int8_t invalid_packet_counter = 0;
     for (uint8_t location = 0; location < LH2_LOCATIONS_COUNT; location++) {
         if (lh2->raw_data[location].selected_polynomial > 3) {
             continue;
@@ -364,7 +365,7 @@ void db_lh2_process_location(db_lh2_t *lh2) {
     for (uint8_t location = 0; location < LH2_LOCATIONS_COUNT; location++) {
         memset(_lh2_vars.data[location].buffer, 0, LH2_BUFFER_SIZE);
     }
-    lh2->state = DB_LH2_READY;
+    lh2->state = DB_LH2_LOCATION_READY;
 }
 
 //=========================== private ==========================================

@@ -16,6 +16,10 @@
 #include "board.h"
 #include "lh2.h"
 
+//=========================== defines ==========================================
+
+#define DB2_LH2_FULL_COMPUTATION 1
+
 //=========================== variables ========================================
 
 static db_lh2_t _lh2;
@@ -47,14 +51,21 @@ int main(void) {
     while (1) {
         // wait until something happens e.g. an SPI interrupt
         __WFE();
+        db_lh2_process_raw_data(&_lh2);
 
-        // the location function has to be running all the time
-        db_lh2_process_location(&_lh2);
+        if (_lh2.state == DB_LH2_RAW_DATA_READY) {
+            if (DB2_LH2_FULL_COMPUTATION) {
+                // the location function has to be running all the time
+                db_lh2_process_location(&_lh2);
 
-        // Reset the LH2 driver if a packet is ready. At this point, locations
-        // can be read from lh2.results array
-        if (_lh2.state == DB_LH2_READY) {
-            db_lh2_reset(&_lh2);
+                // Reset the LH2 driver if a packet is ready. At this point, locations
+                // can be read from lh2.results array
+                if (_lh2.state == DB_LH2_LOCATION_READY) {
+                    db_lh2_reset(&_lh2);
+                }
+            } else {
+                db_lh2_reset(&_lh2);
+            }
         }
     }
 

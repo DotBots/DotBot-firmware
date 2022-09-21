@@ -23,8 +23,9 @@
 #define LH2_LOCATIONS_COUNT 4  ///< Number of computed locations
 
 typedef enum {
-    DB_LH2_RUNNING,  ///< the lh2 engine is running
-    DB_LH2_READY,    ///< some lh2 location is ready to be read
+    DB_LH2_RUNNING,         ///< the lh2 engine is running
+    DB_LH2_RAW_DATA_READY,  ///< some lh2 raw data is available
+    DB_LH2_LOCATION_READY,  ///< some lh2 location is ready to be read
 } db_lh2_state_t;
 
 typedef struct {
@@ -56,7 +57,14 @@ typedef struct {
 void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e);
 
 /**
- * @brief Compute the location based on available frames
+ * @brief Process raw data coming from the lighthouse
+ *
+ * @param[in]   lh2 pointer to the lh2 instance
+ */
+void db_lh2_process_raw_data(db_lh2_t *lh2);
+
+/**
+ * @brief Compute the location based on available raw data
  *
  * @param[in]   lh2 pointer to the lh2 instance
  */
