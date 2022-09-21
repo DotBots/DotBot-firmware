@@ -42,7 +42,7 @@ int main(void) {
     db_board_init();
 
     // Initialize the LH2
-    db_lh2_init(&_lh2_d_gpio, &_lh2_e_gpio);
+    db_lh2_init(&_lh2, &_lh2_d_gpio, &_lh2_e_gpio);
 
     while (1) {
         // wait until something happens e.g. an SPI interrupt

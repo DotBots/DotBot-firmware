@@ -28,13 +28,20 @@ typedef enum {
 } db_lh2_state_t;
 
 typedef struct {
-    uint8_t  selected_polynomial;  ///< selected polynomial
-    uint32_t lfsr_location;        ///< lfsr location
-} db_lh2_result_t;
+    uint64_t bits_sweep;           ///< bits sweep is the result of the demodulation, sweep_N indicates which SPI transfer those bits are associated with
+    uint8_t  selected_polynomial;  ///< selected poly is the polyomial # (between 0 and 31) that the demodulation code thinks the demodulated bits are a part of, initialize to error state
+    int8_t   bit_offset;           ///< bit_offset indicates an offset between the start of the packet, as indicated by envelope dropping, and the 17-bit sequence that is verified to be in a known LFSR sequence
+} db_lh2_raw_data_t;
 
 typedef struct {
-    db_lh2_state_t  state;                         ///< current state of the lh2 engine
-    db_lh2_result_t results[LH2_LOCATIONS_COUNT];  ///< buffer holding the location data
+    uint8_t  selected_polynomial;  ///< selected poly is the polyomial # (between 0 and 31) that the demodulation code thinks the demodulated bits are a part of, initialize to error state
+    uint32_t lfsr_location;        ///< LFSR location is the position in a given polynomial's LFSR that the decoded data is, initialize to error state
+} db_lh2_location_t;
+
+typedef struct {
+    db_lh2_state_t    state;                           ///< current state of the lh2 engine
+    db_lh2_raw_data_t raw_data[LH2_LOCATIONS_COUNT];   ///< raw data decoded from the lighthouse
+    db_lh2_location_t locations[LH2_LOCATIONS_COUNT];  ///< buffer holding the computed locations
 } db_lh2_t;
 
 //=========================== public ===========================================
@@ -42,10 +49,11 @@ typedef struct {
 /**
  * @brief Initialize LH2
  *
+ * @param[in]   lh2 pointer to the lh2 instance
  * @param[in]   gpio_d  pointer to gpio data
  * @param[in]   gpio_e  pointer to gpio event
  */
-void db_lh2_init(const gpio_t *gpio_d, const gpio_t *gpio_e);
+void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e);
 
 /**
  * @brief Compute the location based on available frames
