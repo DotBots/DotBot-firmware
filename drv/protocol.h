@@ -26,20 +26,20 @@ typedef enum {
 typedef struct __attribute__((packed)) {
     uint8_t        version;  ///< Version of the protocol
     command_type_t type;     ///< Type of command following this header
-} protocol_header_ht;
+} protocol_header_t;
 
 typedef struct __attribute__((packed)) {
     int8_t left_x;   ///< Horizontal coordinate for left side
     int8_t left_y;   ///< Vertical coordinate for left side
     int8_t right_x;  ///< Horizontal coordinate for right side
     int8_t right_y;  ///< Vertical coordinate for right side
-} protocol_move_raw_command_ht;
+} protocol_move_raw_command_t;
 
 typedef struct __attribute__((packed)) {
     uint8_t r;  ///< Red component value
     uint8_t g;  ///< Green component value
     uint8_t b;  ///< Blue component value
-} protocol_rgbled_command_ht;
+} protocol_rgbled_command_t;
 
 //=========================== public ===========================================
 
@@ -49,7 +49,7 @@ typedef struct __attribute__((packed)) {
  * @param[out]  buffer      Bytes array to write to
  * @param[in]   command     Pointer to the move raw command
  */
-void db_protocol_cmd_move_raw_to_buffer(uint8_t *buffer, protocol_move_raw_command_ht *command);
+void db_protocol_cmd_move_raw_to_buffer(uint8_t *buffer, protocol_move_raw_command_t *command);
 
 /**
  * @brief   Write an rgbled command in a buffer
@@ -57,6 +57,6 @@ void db_protocol_cmd_move_raw_to_buffer(uint8_t *buffer, protocol_move_raw_comma
  * @param[out]  buffer      Bytes array to write to
  * @param[in]   command     Pointer to the rgbled command
  */
-void db_protocol_cmd_rgbled_to_buffer(uint8_t *buffer, protocol_rgbled_command_ht *command);
+void db_protocol_cmd_rgbled_to_buffer(uint8_t *buffer, protocol_rgbled_command_t *command);
 
 #endif

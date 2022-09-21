@@ -82,7 +82,7 @@ int main(void) {
     _init_buttons();
 
     while (1) {
-        protocol_move_raw_command_ht command;
+        protocol_move_raw_command_t command;
         _gw_vars.buttons = NRF_P0->IN;
         // Read Button 1 (P0.11)
         if (!(_gw_vars.buttons & GPIO_IN_PIN11_Msk)) {
@@ -104,7 +104,7 @@ int main(void) {
 
         if (command.left_y != 0 || command.right_y != 0) {
             db_protocol_cmd_move_raw_to_buffer(_gw_vars.tx_buffer, &command);
-            db_radio_tx(_gw_vars.tx_buffer, 2 + sizeof(protocol_move_raw_command_ht));
+            db_radio_tx(_gw_vars.tx_buffer, 2 + sizeof(protocol_move_raw_command_t));
         }
         db_timer_delay_ms(20);
     }
