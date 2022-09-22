@@ -43,6 +43,8 @@ typedef struct {
     uint8_t    spi_rx_buffer[SPI3_BUFFER_SIZE];  ///< buffer where data coming from SPI are stored
     bool       buffers_ready;                    ///< specify when data buffers are ready to be process
     lh2_data_t data[LH2_LOCATIONS_COUNT];        ///< array containing demodulation data of each locations
+    uint8_t    lha_packet_counter;               ///< number of packet received from LHA
+    uint8_t    lhb_packet_counter;               ///< number of packet received from LHB
 } lh2_vars_t;
 
 //=========================== variables ========================================
@@ -248,8 +250,10 @@ void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
 
     // Setup the LH2 local variables
     memset(_lh2_vars.spi_rx_buffer, 0, SPI3_BUFFER_SIZE);
-    _lh2_vars.transfer_counter = 0;
-    _lh2_vars.buffers_ready    = false;
+    _lh2_vars.transfer_counter   = 0;
+    _lh2_vars.lha_packet_counter = 0;
+    _lh2_vars.lhb_packet_counter = 0;
+    _lh2_vars.buffers_ready      = false;
 
     // Setup LH2 data
     for (uint8_t location = 0; location < LH2_LOCATIONS_COUNT; location++) {
@@ -271,9 +275,11 @@ void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
 }
 
 void db_lh2_reset(db_lh2_t *lh2) {
-    _lh2_vars.transfer_counter = 0;
-    _lh2_vars.buffers_ready    = false;
-    lh2->state                 = DB_LH2_RUNNING;
+    _lh2_vars.transfer_counter   = 0;
+    _lh2_vars.lha_packet_counter = 0;
+    _lh2_vars.lhb_packet_counter = 0;
+    _lh2_vars.buffers_ready      = false;
+    lh2->state                   = DB_LH2_RUNNING;
 }
 
 void db_lh2_process_raw_data(db_lh2_t *lh2) {
@@ -290,12 +296,26 @@ void db_lh2_process_raw_data(db_lh2_t *lh2) {
         lh2->raw_data[location].selected_polynomial = _determine_polynomial(lh2->raw_data[location].bits_sweep, &lh2->raw_data[location].bit_offset);
     }
 
-    if ((lh2->raw_data[0].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) |
-        (lh2->raw_data[1].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) |
-        (lh2->raw_data[2].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) |
+    if ((lh2->raw_data[0].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) ||
+        (lh2->raw_data[1].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) ||
+        (lh2->raw_data[2].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) ||
         (lh2->raw_data[3].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR)) {  // failure to find one of the two polynomials - start from scratch and grab another capture
         db_lh2_reset(lh2);
         return;
+    }
+
+    for (uint8_t location = 0; location < LH2_LOCATIONS_COUNT; location++) {
+        if ((lh2->raw_data[location].selected_polynomial == 0) || (lh2->raw_data[location].selected_polynomial == 1)) {
+            _lh2_vars.lha_packet_counter++;  // from LHA
+        }
+        if ((lh2->raw_data[location].selected_polynomial == 2) || (lh2->raw_data[location].selected_polynomial == 3)) {
+            _lh2_vars.lhb_packet_counter++;  // from LHB
+        }
+    }
+
+    if ((_lh2_vars.lha_packet_counter == 1) || (_lh2_vars.lhb_packet_counter == 1)) {
+        db_lh2_reset(lh2);
+        return;  // odd # of packets from 1 LH, erroneous result
     }
 
     lh2->state = DB_LH2_RAW_DATA_READY;
@@ -309,57 +329,31 @@ void db_lh2_process_location(db_lh2_t *lh2) {
     // compute LFSR locations and detect invalid packets
     int8_t invalid_packet_counter = 0;
     for (uint8_t location = 0; location < LH2_LOCATIONS_COUNT; location++) {
-        if (lh2->raw_data[location].selected_polynomial > 3) {
-            continue;
-        }
         lh2->locations[location].selected_polynomial = lh2->raw_data[location].selected_polynomial;
         // find location of the first data set by counting the LFSR backwards
         lh2->locations[location].lfsr_location = _reverse_count_p(
                                                      lh2->raw_data[location].selected_polynomial,
                                                      lh2->raw_data[location].bits_sweep >> (47 - lh2->raw_data[location].bit_offset)) -
                                                  lh2->raw_data[location].bit_offset;
-
-        if ((lh2->raw_data[location].selected_polynomial == 0) || (lh2->raw_data[location].selected_polynomial == 1)) {
-            invalid_packet_counter++;  // from LHA
-        } else if ((lh2->raw_data[location].selected_polynomial == 2) || (lh2->raw_data[location].selected_polynomial == 3)) {
-            invalid_packet_counter--;  // from LHB
-        }
     }
 
-    if ((invalid_packet_counter == 1) || (invalid_packet_counter == -1)) {
-        db_lh2_reset(lh2);
-        return;  // odd # of packets from 1 LH, erroneous result
+    uint32_t tmp_locations[LH2_LOCATIONS_COUNT] = { 0 };
+    for (uint8_t location = 0; location < LH2_LOCATIONS_COUNT; location++) {
+        tmp_locations[location] = lh2->locations[location].lfsr_location;
     }
 
-    if ((invalid_packet_counter == 4) || (invalid_packet_counter == -4)) {
-        uint32_t tmp_locations[4];
-        for (uint8_t location = 0; location < LH2_LOCATIONS_COUNT; location++) {
-            tmp_locations[location] = lh2->locations[0].lfsr_location;
-        }
-
-        // results from one LH2 were discovered - sort the two pairs
-        if (lh2->locations[0].lfsr_location > lh2->locations[1].lfsr_location) {
-            lh2->locations[0].selected_polynomial = lh2->raw_data[1].selected_polynomial;
-            lh2->locations[0].lfsr_location       = tmp_locations[1];
-            lh2->locations[1].selected_polynomial = lh2->raw_data[0].selected_polynomial;
-            lh2->locations[1].lfsr_location       = tmp_locations[0];
-        } else {
-            lh2->locations[0].selected_polynomial = lh2->raw_data[0].selected_polynomial;
-            lh2->locations[0].lfsr_location       = tmp_locations[0];
-            lh2->locations[1].selected_polynomial = lh2->raw_data[1].selected_polynomial;
-            lh2->locations[1].lfsr_location       = tmp_locations[1];
-        }
-        if (lh2->locations[2].lfsr_location > lh2->locations[3].lfsr_location) {
-            lh2->locations[0].selected_polynomial = lh2->raw_data[3].selected_polynomial;
-            lh2->locations[0].lfsr_location       = tmp_locations[3];
-            lh2->locations[1].selected_polynomial = lh2->raw_data[2].selected_polynomial;
-            lh2->locations[1].lfsr_location       = tmp_locations[2];
-        } else {
-            lh2->locations[0].selected_polynomial = lh2->raw_data[2].selected_polynomial;
-            lh2->locations[0].lfsr_location       = tmp_locations[2];
-            lh2->locations[1].selected_polynomial = lh2->raw_data[3].selected_polynomial;
-            lh2->locations[1].lfsr_location       = tmp_locations[3];
-        }
+    // results from 2 LH2 were discovered - sort the two pairs
+    if (lh2->locations[0].lfsr_location > lh2->locations[1].lfsr_location) {
+        lh2->locations[0].selected_polynomial = lh2->raw_data[1].selected_polynomial;
+        lh2->locations[0].lfsr_location       = tmp_locations[1];
+        lh2->locations[1].selected_polynomial = lh2->raw_data[0].selected_polynomial;
+        lh2->locations[1].lfsr_location       = tmp_locations[0];
+    }
+    if (lh2->locations[2].lfsr_location > lh2->locations[3].lfsr_location) {
+        lh2->locations[3].selected_polynomial = lh2->raw_data[2].selected_polynomial;
+        lh2->locations[3].lfsr_location       = tmp_locations[2];
+        lh2->locations[2].selected_polynomial = lh2->raw_data[3].selected_polynomial;
+        lh2->locations[2].lfsr_location       = tmp_locations[3];
     }
 
     for (uint8_t location = 0; location < LH2_LOCATIONS_COUNT; location++) {
