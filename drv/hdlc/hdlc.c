@@ -161,7 +161,7 @@ size_t db_hdlc_encode(const uint8_t *input, size_t input_len, uint8_t *frame) {
 
     // Write the FCS in the frame
     frame[frame_len++] = (fcs & 0xFF);
-    frame[frame_len++] = (fcs & 0xFF00 >> 8);
+    frame[frame_len++] = ((fcs & 0xFF00) >> 8);
 
     // End flag
     frame[frame_len++] = DB_HDLC_FLAG;
