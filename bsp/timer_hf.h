@@ -1,8 +1,8 @@
-#ifndef __TIMER_H
-#define __TIMER_H
+#ifndef __TIMER_HF_H
+#define __TIMER_HF_H
 
 /**
- * @file timer.h
+ * @file timer_hf.h
  * @addtogroup BSP
  *
  * @brief  Cross-platform declaration "timer hf" bsp module.
