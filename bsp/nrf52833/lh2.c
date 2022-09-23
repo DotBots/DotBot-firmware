@@ -272,6 +272,25 @@ void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
     _timer2_setup();
     // initialize PPI
     _ppi_setup();
+
+    lh2->state = DB_LH2_IDLE;
+}
+
+void db_lh2_start(db_lh2_t *lh2) {
+    db_lh2_reset(lh2);
+    NRF_PPI->CHENSET = (PPI_CHENSET_CH2_Enabled << PPI_CHENSET_CH2_Pos) |
+                       //(PPI_CHENSET_CH3_Enabled << PPI_CHENSET_CH3_Pos);
+                       (PPI_CHENSET_CH4_Enabled << PPI_CHENSET_CH4_Pos) |
+                       (PPI_CHENSET_CH5_Enabled << PPI_CHENSET_CH5_Pos);
+    lh2->state = DB_LH2_RUNNING;
+}
+
+void db_lh2_stop(db_lh2_t *lh2) {
+    NRF_PPI->CHENCLR = (PPI_CHENSET_CH2_Enabled << PPI_CHENSET_CH2_Pos) |
+                       //(PPI_CHENSET_CH3_Enabled << PPI_CHENSET_CH3_Pos);
+                       (PPI_CHENSET_CH4_Enabled << PPI_CHENSET_CH4_Pos) |
+                       (PPI_CHENSET_CH5_Enabled << PPI_CHENSET_CH5_Pos);
+    lh2->state = DB_LH2_IDLE;
 }
 
 void db_lh2_reset(db_lh2_t *lh2) {
@@ -1063,11 +1082,6 @@ void _ppi_setup(void) {
     NRF_PPI->CH[5].EEP   = envelope_input_LoToHi;
     NRF_PPI->CH[5].TEP   = timer2_clear_task_addr;  // clear timer
     NRF_PPI->FORK[5].TEP = spi3_stop_task_addr;     // stop spi3 transfer
-
-    NRF_PPI->CHENSET = (PPI_CHENSET_CH2_Enabled << PPI_CHENSET_CH2_Pos) |
-                       //(PPI_CHENSET_CH3_Enabled << PPI_CHENSET_CH3_Pos);
-                       (PPI_CHENSET_CH4_Enabled << PPI_CHENSET_CH4_Pos) |
-                       (PPI_CHENSET_CH5_Enabled << PPI_CHENSET_CH5_Pos);
 }
 
 void _spi3_setup(const gpio_t *gpio_d) {

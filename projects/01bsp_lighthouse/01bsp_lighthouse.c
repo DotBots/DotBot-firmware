@@ -47,6 +47,7 @@ int main(void) {
 
     // Initialize the LH2
     db_lh2_init(&_lh2, &_lh2_d_gpio, &_lh2_e_gpio);
+    db_lh2_start(&_lh2);
 
     while (1) {
         // wait until something happens e.g. an SPI interrupt
@@ -54,18 +55,15 @@ int main(void) {
         db_lh2_process_raw_data(&_lh2);
 
         if (_lh2.state == DB_LH2_RAW_DATA_READY) {
+            // Stop the LH2 internal engine before doing other computations/sending radio packets, etc
+            db_lh2_stop(&_lh2);
+
             if (DB2_LH2_FULL_COMPUTATION) {
                 // the location function has to be running all the time
                 db_lh2_process_location(&_lh2);
-
-                // Reset the LH2 driver if a packet is ready. At this point, locations
-                // can be read from lh2.results array
-                if (_lh2.state == DB_LH2_LOCATION_READY) {
-                    db_lh2_reset(&_lh2);
-                }
-            } else {
-                db_lh2_reset(&_lh2);
             }
+
+            db_lh2_start(&_lh2);
         }
     }
 

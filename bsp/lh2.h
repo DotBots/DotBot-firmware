@@ -23,6 +23,7 @@
 #define LH2_LOCATIONS_COUNT 4  ///< Number of computed locations
 
 typedef enum {
+    DB_LH2_IDLE,            ///< the lh2 engine is idle
     DB_LH2_RUNNING,         ///< the lh2 engine is running
     DB_LH2_RAW_DATA_READY,  ///< some lh2 raw data is available
     DB_LH2_LOCATION_READY,  ///< some lh2 location is ready to be read
@@ -69,6 +70,20 @@ void db_lh2_process_raw_data(db_lh2_t *lh2);
  * @param[in]   lh2 pointer to the lh2 instance
  */
 void db_lh2_process_location(db_lh2_t *lh2);
+
+/**
+ * @brief Start the LH2 frame acquisition
+ *
+ * @param[in]   lh2 pointer to the lh2 instance
+ */
+void db_lh2_start(db_lh2_t *lh2);
+
+/**
+ * @brief Stop the LH2 frame acquisition
+ *
+ * @param[in]   lh2 pointer to the lh2 instance
+ */
+void db_lh2_stop(db_lh2_t *lh2);
 
 /**
  * @brief Reset the lh2 internal state so new location computation can be made
