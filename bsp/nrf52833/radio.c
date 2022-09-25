@@ -28,10 +28,8 @@
 //=========================== variables ========================================
 
 typedef struct {
-    uint8_t packet[NUMBER_OF_BYTES_IN_PACKET];     // Variable that stores the radio packets that arrives and the radio packets that are about to be sent.
-    uint8_t rx_buffer[NUMBER_OF_BYTES_IN_PACKET];  // Intermediate variable to store an arriving packet before sending it to the callback function.
-
-    radio_cb_t callback;  // Function pointer, stores the callback to use in the RADIO_Irq handler.
+    uint8_t    packet[NUMBER_OF_BYTES_IN_PACKET];  // Variable that stores the radio packets that arrives and the radio packets that are about to be sent.
+    radio_cb_t callback;                           // Function pointer, stores the callback to use in the RADIO_Irq handler.
 } radio_vars_t;
 
 static radio_vars_t radio_vars = { 0 };
@@ -200,14 +198,11 @@ void RADIO_IRQHandler(void) {
         NRF_RADIO->EVENTS_CRCOK = 0;
 
         if (radio_vars.callback) {
-            // Copy packet into the buffer, before sending it to the callback.
-            memcpy(radio_vars.rx_buffer, radio_vars.packet, NUMBER_OF_BYTES_IN_PACKET);
-
             // Call callback defined by user.
-            radio_vars.callback(radio_vars.rx_buffer, NUMBER_OF_BYTES_IN_PACKET);
+            radio_vars.callback(radio_vars.packet, NUMBER_OF_BYTES_IN_PACKET);
 
             // Clear the rx_buffer.
-            memset(radio_vars.rx_buffer, 0, NUMBER_OF_BYTES_IN_PACKET);
+            memset(radio_vars.packet, 0, NUMBER_OF_BYTES_IN_PACKET);
         }
     }
 }
