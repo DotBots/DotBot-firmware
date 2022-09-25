@@ -168,10 +168,11 @@ void radio_init_common(radio_cb_t callback) {
     db_hfclk_init();
 
     // Configure the Interruptions
-    NVIC_DisableIRQ(RADIO_IRQn);                                                 // Disable interruptions while configuring
-    NRF_RADIO->INTENSET = RADIO_INTENSET_END_Enabled << RADIO_INTENSET_END_Pos;  // Enable interruption for when a packet arrives
-    NVIC_SetPriority(RADIO_IRQn, RADIO_INTERRUPT_PRIORITY);                      // Set priority for Radio interrupts to 1
-    NVIC_ClearPendingIRQ(RADIO_IRQn);                                            // Clear the flag for any pending radio interrupt
+    NVIC_DisableIRQ(RADIO_IRQn);  // Disable interruptions while configuring
+    NRF_RADIO->INTENSET = (RADIO_INTENSET_END_Enabled << RADIO_INTENSET_END_Pos |
+                           RADIO_INTENSET_CRCOK_Enabled << RADIO_INTENSET_CRCOK_Pos);  // Enable interruption for when a valid packet arrives
+    NVIC_SetPriority(RADIO_IRQn, RADIO_INTERRUPT_PRIORITY);                            // Set priority for Radio interrupts to 1
+    NVIC_ClearPendingIRQ(RADIO_IRQn);                                                  // Clear the flag for any pending radio interrupt
 }
 
 //=========================== interrupt handlers ===============================
@@ -188,11 +189,15 @@ void RADIO_IRQHandler(void) {
 
     NVIC_ClearPendingIRQ(RADIO_IRQn);
 
-    // Check if the interrupt was caused by a fully received package
     if (NRF_RADIO->EVENTS_END) {
+        NRF_RADIO->EVENTS_END = 0;
+    }
+
+    // Check if the interrupt was caused by a fully received package
+    if (NRF_RADIO->EVENTS_CRCOK) {
 
         // Clear the Interrupt flag
-        NRF_RADIO->EVENTS_END = 0;
+        NRF_RADIO->EVENTS_CRCOK = 0;
 
         if (radio_vars.callback) {
             // Copy packet into the buffer, before sending it to the callback.
