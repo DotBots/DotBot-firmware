@@ -26,6 +26,13 @@ typedef void (*timer_cb_t)(void);
 void db_timer_init(void);
 
 /**
+ * @brief Returns the number of ticks since timer initialization
+ *
+ * @return number of ticks (1 tick ~ 30us)
+ */
+uint32_t db_timer_ticks(void);
+
+/**
  * @brief Set a callback to be called periodically
  *
  * @param[in] channel   RTC channel used
