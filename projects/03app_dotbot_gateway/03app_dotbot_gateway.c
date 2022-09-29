@@ -57,6 +57,7 @@ static void uart_callback(uint8_t data) {
         {
             size_t msg_len = db_hdlc_decode(_gw_vars.hdlc_rx_buffer);
             if (msg_len) {
+                _gw_vars.hdlc_state = DB_HDLC_STATE_IDLE;
                 db_radio_rx_disable();
                 db_radio_tx(_gw_vars.hdlc_rx_buffer, msg_len);
                 db_radio_rx_enable();

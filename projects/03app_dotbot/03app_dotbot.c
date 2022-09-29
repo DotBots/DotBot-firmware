@@ -25,7 +25,7 @@
 
 //=========================== defines ==========================================
 
-#define TIMEOUT_CHECK_DELAY_TICKS (12000)  ///< ~400 ms delay between packet received timeout checks
+#define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
 #define DB_LH2_FULL_COMPUTATION   (0)
 #define DB_BUFFER_MAX_BYTES       (64U)  ///< Max bytes in UART receive buffer
 
@@ -132,7 +132,7 @@ int main(void) {
             }
             db_lh2_start(&_dotbot_vars.lh2);
         }
-        db_timer_delay_ms(100);
+        db_timer_delay_ms(50);
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
