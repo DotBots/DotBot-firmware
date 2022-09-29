@@ -25,11 +25,12 @@
 #define DB_UART_BAUDRATE    (1000000UL)  ///< UART baudrate used by the gateway
 
 typedef struct {
-    db_hdlc_state_t hdlc_state;                           ///< Current state of the HDLC decoding engine
-    uint8_t         hdlc_buffer[DB_BUFFER_MAX_BYTES];     ///< Buffer where message received on UART is stored
-    uint8_t         hdlc_tx_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer used for sending serial HDLC frames
-    uint32_t        buttons;                              ///< Buttons state (one byte per button)
-    uint8_t         tx_buffer[DB_BUFFER_MAX_BYTES];       ///< Internal buffer that contains the command to send (from buttons)
+    db_hdlc_state_t hdlc_state;                               ///< Current state of the HDLC decoding engine
+    uint8_t         hdlc_rx_buffer[DB_BUFFER_MAX_BYTES * 2];  ///< Buffer where message received on UART is stored
+    uint8_t         hdlc_tx_buffer[DB_BUFFER_MAX_BYTES * 2];  ///< Internal buffer used for sending serial HDLC frames
+    uint32_t        buttons;                                  ///< Buttons state (one byte per button)
+    uint8_t         radio_tx_buffer[DB_BUFFER_MAX_BYTES];     ///< Internal buffer that contains the command to send (from buttons)
+    uint8_t         radio_rx_buffer[DB_BUFFER_MAX_BYTES];     ///< Internal buffer that contains the command to send (from buttons)
 } gateway_vars_t;
 
 //=========================== variables ========================================
@@ -54,10 +55,10 @@ static void uart_callback(uint8_t data) {
             break;
         case DB_HDLC_STATE_READY:
         {
-            size_t msg_len = db_hdlc_decode(_gw_vars.hdlc_buffer);
+            size_t msg_len = db_hdlc_decode(_gw_vars.hdlc_rx_buffer);
             if (msg_len) {
                 db_radio_rx_disable();
-                db_radio_tx(_gw_vars.hdlc_buffer, msg_len);
+                db_radio_tx(_gw_vars.hdlc_rx_buffer, msg_len);
                 db_radio_rx_enable();
             }
         } break;
@@ -112,9 +113,9 @@ int main(void) {
         }
 
         if (command.left_y != 0 || command.right_y != 0) {
-            db_protocol_cmd_move_raw_to_buffer(_gw_vars.tx_buffer, DB_BROADCAST_ADDRESS, &command);
+            db_protocol_cmd_move_raw_to_buffer(_gw_vars.radio_tx_buffer, DB_BROADCAST_ADDRESS, &command);
             db_radio_rx_disable();
-            db_radio_tx(_gw_vars.tx_buffer, sizeof(protocol_header_t) + sizeof(protocol_move_raw_command_t));
+            db_radio_tx(_gw_vars.radio_tx_buffer, sizeof(protocol_header_t) + sizeof(protocol_move_raw_command_t));
             db_radio_rx_enable();
         }
         db_timer_delay_ms(20);
