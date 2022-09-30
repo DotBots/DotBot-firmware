@@ -28,10 +28,8 @@
 //=========================== variables ========================================
 
 typedef struct {
-    uint8_t packet[NUMBER_OF_BYTES_IN_PACKET];     // Variable that stores the radio packets that arrives and the radio packets that are about to be sent.
-    uint8_t rx_buffer[NUMBER_OF_BYTES_IN_PACKET];  // Intermediate variable to store an arriving packet before sending it to the callback function.
-
-    radio_cb_t callback;  // Function pointer, stores the callback to use in the RADIO_Irq handler.
+    uint8_t    packet[NUMBER_OF_BYTES_IN_PACKET];  // Variable that stores the radio packets that arrives and the radio packets that are about to be sent.
+    radio_cb_t callback;                           // Function pointer, stores the callback to use in the RADIO_Irq handler.
 } radio_vars_t;
 
 static radio_vars_t radio_vars = { 0 };
@@ -168,10 +166,11 @@ void radio_init_common(radio_cb_t callback) {
     db_hfclk_init();
 
     // Configure the Interruptions
-    NVIC_DisableIRQ(RADIO_IRQn);                                                 // Disable interruptions while configuring
-    NRF_RADIO->INTENSET = RADIO_INTENSET_END_Enabled << RADIO_INTENSET_END_Pos;  // Enable interruption for when a packet arrives
-    NVIC_SetPriority(RADIO_IRQn, RADIO_INTERRUPT_PRIORITY);                      // Set priority for Radio interrupts to 1
-    NVIC_ClearPendingIRQ(RADIO_IRQn);                                            // Clear the flag for any pending radio interrupt
+    NVIC_DisableIRQ(RADIO_IRQn);  // Disable interruptions while configuring
+    NRF_RADIO->INTENSET = (RADIO_INTENSET_END_Enabled << RADIO_INTENSET_END_Pos |
+                           RADIO_INTENSET_CRCOK_Enabled << RADIO_INTENSET_CRCOK_Pos);  // Enable interruption for when a valid packet arrives
+    NVIC_SetPriority(RADIO_IRQn, RADIO_INTERRUPT_PRIORITY);                            // Set priority for Radio interrupts to 1
+    NVIC_ClearPendingIRQ(RADIO_IRQn);                                                  // Clear the flag for any pending radio interrupt
 }
 
 //=========================== interrupt handlers ===============================
@@ -188,21 +187,22 @@ void RADIO_IRQHandler(void) {
 
     NVIC_ClearPendingIRQ(RADIO_IRQn);
 
-    // Check if the interrupt was caused by a fully received package
     if (NRF_RADIO->EVENTS_END) {
+        NRF_RADIO->EVENTS_END = 0;
+    }
+
+    // Check if the interrupt was caused by a fully received package
+    if (NRF_RADIO->EVENTS_CRCOK) {
 
         // Clear the Interrupt flag
-        NRF_RADIO->EVENTS_END = 0;
+        NRF_RADIO->EVENTS_CRCOK = 0;
 
         if (radio_vars.callback) {
-            // Copy packet into the buffer, before sending it to the callback.
-            memcpy(radio_vars.rx_buffer, radio_vars.packet, NUMBER_OF_BYTES_IN_PACKET);
-
             // Call callback defined by user.
-            radio_vars.callback(radio_vars.rx_buffer, NUMBER_OF_BYTES_IN_PACKET);
+            radio_vars.callback(radio_vars.packet, NUMBER_OF_BYTES_IN_PACKET);
 
             // Clear the rx_buffer.
-            memset(radio_vars.rx_buffer, 0, NUMBER_OF_BYTES_IN_PACKET);
+            memset(radio_vars.packet, 0, NUMBER_OF_BYTES_IN_PACKET);
         }
     }
 }
