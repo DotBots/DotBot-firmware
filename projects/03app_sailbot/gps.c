@@ -23,6 +23,7 @@ typedef struct {
     uint8_t      buffer[GPS_UART_MAX_BYTES];  ///< buffer where message received on UART is stored
     uint8_t      pos;                         ///< current position in the UART buffer
     nmea_gprmc_t gps_position;
+    gps_rx_cb_t  callback;
 } gps_vars_t;
 
 //=========================== variables ========================================
@@ -47,6 +48,11 @@ static void uart_callback(uint8_t byte) {
 
         if (memcmp(_gps_vars.buffer, "$GPRMC", 6) == 0) {
             nmea_parse_gprmc_sentence(_gps_vars.buffer, &_gps_vars.gps_position);
+        }
+
+        // invoke the callback
+        if (_gps_vars.callback != NULL) {
+            _gps_vars.callback(&_gps_vars.gps_position);
         }
 
         // reset the position for the next sentence
@@ -161,13 +167,15 @@ void nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
 /**
  *  @brief Initialization routine of the GPS module.
  */
-void gps_init() {
+void gps_init(gps_rx_cb_t callback) {
     // Turn ON the GPS module
     NRF_P0->DIRSET = 1 << 31;  // set pin as output
     NRF_P0->OUTSET = 1 << 31;  // set pin HIGH
 
     // configure UART at 9600 bauds
     db_uart_init(&_rx_pin, &_tx_pin, 9600, &uart_callback);
+
+    _gps_vars.callback = callback;
 }
 
 nmea_gprmc_t *gps_last_known_position(void) {

@@ -33,9 +33,10 @@ typedef struct {
     uint8_t mode;
 } nmea_gprmc_t;
 
-//=========================== public ======================================
+typedef void (*gps_rx_cb_t)(nmea_gprmc_t *data);  ///< Callback function prototype, it is called on each $GPRMC sentence received
 
-void          gps_init(void);
+//=========================== public ======================================
+void          gps_init(gps_rx_cb_t callback);
 nmea_gprmc_t *gps_last_known_position(void);
 
 #endif

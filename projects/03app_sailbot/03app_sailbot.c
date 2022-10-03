@@ -39,6 +39,7 @@ static sailbot_vars_t _sailbot_vars;
 //=========================== prototypes =========================================
 
 void        radio_callback(uint8_t *packet, uint8_t length);
+void        gps_callback(nmea_gprmc_t *last_position);
 static void _timeout_check(void);
 
 //=========================== main =========================================
@@ -61,7 +62,7 @@ int main(void) {
     servos_init();
 
     // Configure GPS
-    gps_init();
+    gps_init(gps_callback);
 
     // Wait for radio packets to arrive/
     while (1) {
@@ -122,6 +123,10 @@ void radio_callback(uint8_t *packet, uint8_t length) {
 
     // set the servos
     servos_set(command->left_x, _sailbot_vars.sail_trim);
+}
+
+void gps_callback(nmea_gprmc_t *last_position) {
+    // TODO implement the control loop
 }
 
 static void _timeout_check(void) {
