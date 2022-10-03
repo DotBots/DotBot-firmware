@@ -21,5 +21,6 @@
 void servos_init(void);
 void servos_rudder_turn(int8_t angle);
 void servos_sail_turn(int8_t angle);
+void servos_set(int8_t rudder_angle, int8_t sail_angle);
 
 #endif
