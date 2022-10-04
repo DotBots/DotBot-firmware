@@ -1,5 +1,5 @@
 /**
- * @file 03app_dotbot.c
+ * @file 01drv_pid.c
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  * @brief This is the main DotBot app.
  *
@@ -46,8 +46,6 @@ static const pid_gains_t _pid_params = {
  *  @brief The program starts executing here.
  */
 int main(void) {
-    puts("Starting DotBot RPM application");
-
     // Initialize high frequency timer used to loop sample time delays
     db_timer_hf_init();
 
