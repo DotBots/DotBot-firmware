@@ -19,9 +19,9 @@
 void db_protocol_header_to_buffer(uint8_t *buffer, uint64_t dst, command_type_t type) {
     uint32_t          src    = db_device_id();
     protocol_header_t header = {
-        .version = DB_PROTOCOL_VERSION,
         .dst     = dst,
         .src     = src,
+        .version = DB_FIRMWARE_VERSION,
         .type    = type,
     };
     memcpy(buffer, &header, sizeof(protocol_header_t));

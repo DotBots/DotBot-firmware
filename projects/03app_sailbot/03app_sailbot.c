@@ -127,13 +127,13 @@ void radio_callback(uint8_t *packet, uint8_t length) {
         return;
     }
 
-    // Check version is compatible
-    if (header->version != DB_PROTOCOL_VERSION) {
+    // Check destination address matches
+    if (header->dst != DB_BROADCAST_ADDRESS && header->dst != db_device_id()) {
         return;
     }
 
-    // Check destination address matches
-    if (header->dst != DB_BROADCAST_ADDRESS && header->dst != db_device_id()) {
+    // Check version is compatible
+    if (header->version != DB_FIRMWARE_VERSION) {
         return;
     }
 

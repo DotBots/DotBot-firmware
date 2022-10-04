@@ -44,13 +44,13 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
     do {
         uint8_t *          ptk_ptr = pkt;
         protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
-        // Check version is supported
-        if (header->version != DB_PROTOCOL_VERSION) {
+        // Check destination address matches
+        if (header->dst != DB_BROADCAST_ADDRESS && header->dst != db_device_id()) {
             break;
         }
 
-        // Check destination address matches
-        if (header->dst != DB_BROADCAST_ADDRESS && header->dst != db_device_id()) {
+        // Check version is supported
+        if (header->version != DB_FIRMWARE_VERSION) {
             break;
         }
 
