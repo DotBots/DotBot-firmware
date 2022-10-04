@@ -22,7 +22,7 @@
 typedef struct {
     uint32_t rpm;    ///<  Rotation per minute
     uint32_t rps;    ///<  Rotation per second
-    uint32_t speed;  ///<  Speed in cm/s
+    float    speed;  ///<  Speed in cm/s
 } rpm_side_values_t;
 
 /**

@@ -32,21 +32,21 @@
 /**
  * Helper macro to compute speed in cm/s
  *
- * computed from the number of cycles measured within the last 125ms (one rotation is 3.77mm distance of the wheel)
+ * computed from the number of cycles measured within the last 50ms (one rotation is 3.77mm distance of the wheel)
  */
-#define RPM_CYCLES_TO_SPEED(cycles) (uint32_t)(37.7 * cycles * RPM_UPDATE_PERIOD_MS / 1000)
+#define RPM_CYCLES_TO_SPEED(cycles) (float)(377.0 * cycles / RPM_UPDATE_PERIOD_MS)
 
 /**
  * Helper macro to compute rotation per minute
  *
- * 1 cycle corresponds to one rotation, so convert to the number of minutes, given the RTC frequency of 125ms
+ * 1 cycle corresponds to one rotation, so convert to the number of minutes, given the RTC frequency of 50ms
  */
 #define RPM_CYCLES_TO_RPM(cycles) (60 * 1000 * cycles / RPM_UPDATE_PERIOD_MS)
 
 /**
  * Helper macro to compute rotation per second
  *
- * 1 cycle corresponds to one rotation, so convert to the number of seconds, given the RTC frequency of 125ms
+ * 1 cycle corresponds to one rotation, so convert to the number of seconds, given the RTC frequency of 50ms
  */
 #define RPM_CYCLES_TO_RPS(cycles) (cycles * 1000 / RPM_UPDATE_PERIOD_MS)
 
@@ -64,20 +64,20 @@ typedef struct {
 
 /*
  * Global variable used to store cycle counts at the beginning and at the end of
- * an RTC timeframe (125ms), for each side
+ * an RTC timeframe (50ms), for each side
  */
 static rpm_vars_t _rpm_vars;
 
 //=========================== prototypes =======================================
 
 /**
- * Compute the number of the left encoder cycles during the last 125ms time
+ * Compute the number of the left encoder cycles during the last 50ms time
  * frame. The function takes into account timer overflows.
  */
 static uint32_t _db_rpm_left_cycles(void);
 
 /**
- * Compute the number of the right encoder cycles during the last 125ms time
+ * Compute the number of the right encoder cycles during the last 50ms time
  * frame. The function takes into account timer overflows.
  */
 static uint32_t _db_rpm_right_cycles(void);
