@@ -44,7 +44,7 @@ void db_radio_init(radio_cb_t callback) {
     NRF_RADIO->MODE    = (RADIO_MODE_MODE_Ble_1Mbit << RADIO_MODE_MODE_Pos);         // Use BLE 1Mbit/s protocol
 
     NRF_RADIO->PCNF1 = (NUMBER_OF_BYTES_IN_PACKET << RADIO_PCNF1_MAXLEN_Pos) |     // The Payload maximum size is 32 bytes
-                       (NUMBER_OF_BYTES_IN_PACKET << RADIO_PCNF1_STATLEN_Pos) |    // Since the LENGHT field is not set, this specifies the lenght of the payload
+                       (NUMBER_OF_BYTES_IN_PACKET << RADIO_PCNF1_STATLEN_Pos) |    // Since the LENGTH field is not set, this specifies the lenght of the payload
                        (4UL << RADIO_PCNF1_BALEN_Pos) |                            // The base address is 4 Bytes long
                        (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |     // Make the on air packet be little endian (this enables some useful features)
                        (RADIO_PCNF1_WHITEEN_Disabled << RADIO_PCNF1_WHITEEN_Pos);  // Disable the package whitening feature.

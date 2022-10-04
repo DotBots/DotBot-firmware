@@ -71,7 +71,7 @@ int main(void) {
     NRF_RADIO->PCNF0 = 0UL;  // not really interested in these
 
     NRF_RADIO->PCNF1 = (32UL << RADIO_PCNF1_MAXLEN_Pos) |
-                       (32UL << RADIO_PCNF1_STATLEN_Pos) |  // since the LENGHT field is not set, this specifies the lenght of the payload
+                       (32UL << RADIO_PCNF1_STATLEN_Pos) |  // since the LENGTH field is not set, this specifies the lenght of the payload
                        (4UL << RADIO_PCNF1_BALEN_Pos) |
                        (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |
                        (RADIO_PCNF1_WHITEEN_Disabled << RADIO_PCNF1_WHITEEN_Pos);
