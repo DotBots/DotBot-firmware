@@ -21,10 +21,6 @@
 #define NUMBER_OF_BYTES_IN_PACKET 32
 #define RADIO_INTERRUPT_PRIORITY  1
 
-// On-air radio addresses, these are completely arbitrary numbers.
-#define RADIO_BASE_ADDRESS_0 0x12345678UL
-#define RADIO_BASE_ADDRESS_1 0xFEDCBA98UL
-
 //=========================== variables ========================================
 
 typedef struct {
@@ -37,6 +33,7 @@ static radio_vars_t radio_vars = { 0 };
 //========================== prototypes ========================================
 
 static void radio_init_common(radio_cb_t callback);
+static void radio_init_addresses(void);
 
 //=========================== public ===========================================
 
@@ -52,11 +49,7 @@ void db_radio_init(radio_cb_t callback) {
                        (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |     // Make the on air packet be little endian (this enables some useful features)
                        (RADIO_PCNF1_WHITEEN_Disabled << RADIO_PCNF1_WHITEEN_Pos);  // Disable the package whitening feature.
 
-    // Configuring the on-air radio address
-    NRF_RADIO->BASE0       = RADIO_BASE_ADDRESS_0;                                              // base address for prefix 0
-    NRF_RADIO->BASE1       = RADIO_BASE_ADDRESS_1;                                              // base address for prefix 1-7
-    NRF_RADIO->TXADDRESS   = 0UL;                                                               // set device address 0 to use when transmitting (must match RXADDRESSES)
-    NRF_RADIO->RXADDRESSES = (RADIO_RXADDRESSES_ADDR0_Enabled << RADIO_RXADDRESSES_ADDR0_Pos);  // receive from address 0 (must match TXADDRESSES)
+    radio_init_addresses();
 
     // Initialize Common Radio Configuration
     radio_init_common(callback);
@@ -82,12 +75,7 @@ void db_radio_init_lr(radio_cb_t callback) {
                        (0 << RADIO_PCNF1_STATLEN_Pos) |
                        (NUMBER_OF_BYTES_IN_PACKET << RADIO_PCNF1_MAXLEN_Pos);
 
-    // Configuring the on-air radio address
-    NRF_RADIO->BASE0 = RADIO_BASE_ADDRESS_0;  // base address for prefix 0
-    NRF_RADIO->BASE1 = RADIO_BASE_ADDRESS_1;  // base address for prefix 1-7
-
-    NRF_RADIO->RXADDRESSES = RADIO_RXADDRESSES_ADDR0_Enabled << RADIO_RXADDRESSES_ADDR0_Pos;
-    NRF_RADIO->TXADDRESS   = (0 << RADIO_TXADDRESS_TXADDRESS_Pos) & RADIO_TXADDRESS_TXADDRESS_Msk;
+    radio_init_addresses();
 
     // Initialize Common Radio Configuration
     radio_init_common(callback);
@@ -96,6 +84,10 @@ void db_radio_init_lr(radio_cb_t callback) {
 void db_radio_set_frequency(uint8_t freq) {
 
     NRF_RADIO->FREQUENCY = freq << RADIO_FREQUENCY_FREQUENCY_Pos;
+}
+
+void db_radio_set_network_address(uint32_t addr) {
+    NRF_RADIO->BASE0 = addr;
 }
 
 void db_radio_tx(uint8_t *tx_buffer, uint8_t length) {
@@ -144,6 +136,16 @@ void db_radio_rx_disable(void) {
 
 //=========================== private ==========================================
 
+static void radio_init_addresses(void) {
+    // Configuring the on-air radio address.
+    NRF_RADIO->BASE0 = DEFAULT_NETWORK_ADDRESS;
+
+    // only send using logical address 0
+    NRF_RADIO->TXADDRESS = 0UL;
+    // only receive from logical address 0
+    NRF_RADIO->RXADDRESSES = (RADIO_RXADDRESSES_ADDR0_Enabled << RADIO_RXADDRESSES_ADDR0_Pos);
+}
+
 /**
  * @brief This function is private and it sets the common configurations for the radio
  *
@@ -187,6 +189,7 @@ void RADIO_IRQHandler(void) {
 
     NVIC_ClearPendingIRQ(RADIO_IRQn);
 
+    // Check if the interrupt was caused by a fully received package
     if (NRF_RADIO->EVENTS_END) {
         NRF_RADIO->EVENTS_END = 0;
     }

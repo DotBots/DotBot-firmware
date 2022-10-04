@@ -16,6 +16,10 @@
 
 //=========================== defines ==========================================
 
+#ifndef DEFAULT_NETWORK_ADDRESS
+#define DEFAULT_NETWORK_ADDRESS 0x12345678UL  ///< Default network address
+#endif
+
 typedef void (*radio_cb_t)(uint8_t *packet, uint8_t length);  ///< Function pointer to the callback function called on packet receive
 
 //=========================== public ===========================================
@@ -50,6 +54,13 @@ void db_radio_init_lr(radio_cb_t callback);
  * @param[in] freq Frequency of the radio [0, 100]
  */
 void db_radio_set_frequency(uint8_t freq);
+
+/**
+ * @brief Set the network address used to send/receive radio packets
+ *
+ * @param[in] addr Network address
+ */
+void db_radio_set_network_address(uint32_t addr);
 
 /**
  * @brief Sends a single packet through the Radio

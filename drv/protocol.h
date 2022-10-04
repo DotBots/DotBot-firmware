@@ -16,7 +16,9 @@
 
 //=========================== defines ==========================================
 
-#define DB_PROTOCOL_VERSION (0)  ///< Version of the command protocol
+#define DB_FIRMWARE_VERSION  (1)                   ///< Version of the command protocol
+#define DB_BROADCAST_ADDRESS 0xffffffffffffffffUL  ///< Broadcast address
+#define DB_GATEWAY_ADDRESS   0x0000000000000000UL  ///< Gateway address
 
 typedef enum {
     DB_PROTOCOL_CMD_MOVE_RAW = 0,  ///< Move raw command type
@@ -24,6 +26,8 @@ typedef enum {
 } command_type_t;
 
 typedef struct __attribute__((packed)) {
+    uint64_t       dst;      ///< Destination address of this packet
+    uint64_t       src;      ///< Source address of this packet
     uint8_t        version;  ///< Version of the protocol
     command_type_t type;     ///< Type of command following this header
 } protocol_header_t;
@@ -44,19 +48,30 @@ typedef struct __attribute__((packed)) {
 //=========================== public ===========================================
 
 /**
+ * @brief   Write the protocol header in a buffer
+ *
+ * @param[out]  buffer      Bytes array to write to
+ * @param[in]   dst         Destination address written in the header
+ * @param[in]   type        Command type that follows this header
+ */
+void db_protocol_header_to_buffer(uint8_t *buffer, uint64_t dst, command_type_t type);
+
+/**
  * @brief   Write a move raw command in a buffer
  *
  * @param[out]  buffer      Bytes array to write to
+ * @param[in]   dst         Destination address written in the header
  * @param[in]   command     Pointer to the move raw command
  */
-void db_protocol_cmd_move_raw_to_buffer(uint8_t *buffer, protocol_move_raw_command_t *command);
+void db_protocol_cmd_move_raw_to_buffer(uint8_t *buffer, uint64_t dst, protocol_move_raw_command_t *command);
 
 /**
  * @brief   Write an rgbled command in a buffer
  *
  * @param[out]  buffer      Bytes array to write to
+ * @param[in]   dst         Destination address written in the header
  * @param[in]   command     Pointer to the rgbled command
  */
-void db_protocol_cmd_rgbled_to_buffer(uint8_t *buffer, protocol_rgbled_command_t *command);
+void db_protocol_cmd_rgbled_to_buffer(uint8_t *buffer, uint64_t dst, protocol_rgbled_command_t *command);
 
 #endif
