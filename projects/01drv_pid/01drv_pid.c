@@ -33,8 +33,8 @@ static pid_t             _pid_left   = { 0 };
 static pid_t             _pid_right  = { 0 };
 static rpm_values_t      _rpm        = { 0 };
 static const pid_gains_t _pid_params = {
-    .kp = 2,
-    .ki = 5,
+    .kp = 1.5,
+    .ki = 2,
     .kd = 0,
 };
 
