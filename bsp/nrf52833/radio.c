@@ -9,6 +9,7 @@
  * @copyright Inria, 2022
  */
 #include <nrf.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,14 +19,21 @@
 
 //=========================== defines ==========================================
 
-#define NUMBER_OF_BYTES_IN_PACKET 32
-#define RADIO_INTERRUPT_PRIORITY  1
+#define PAYLOAD_MAX_LENGTH       UINT8_MAX
+#define PACKET_MAX_LENGTH        (PAYLOAD_MAX_LENGTH + 2)
+#define RADIO_INTERRUPT_PRIORITY 1
 
 //=========================== variables ========================================
 
 typedef struct {
-    uint8_t    packet[NUMBER_OF_BYTES_IN_PACKET];  // Variable that stores the radio packets that arrives and the radio packets that are about to be sent.
-    radio_cb_t callback;                           // Function pointer, stores the callback to use in the RADIO_Irq handler.
+    uint8_t header;                       ///< PDU header (depends on the type of PDU - advertising physical channel or Data physical channel)
+    uint8_t length;                       ///< Length of the payload + MIC (if any)
+    uint8_t payload[PAYLOAD_MAX_LENGTH];  ///< Payload + MIC (if any)
+} ble_radio_pdu_t;
+
+typedef struct {
+    ble_radio_pdu_t pdu;       ///< Variable that stores the radio PDU (protocol data unit) that arrives and the radio packets that are about to be sent.
+    radio_cb_t      callback;  ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
 } radio_vars_t;
 
 static radio_vars_t radio_vars = { 0 };
@@ -43,9 +51,14 @@ void db_radio_init(radio_cb_t callback) {
     NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_0dBm << RADIO_TXPOWER_TXPOWER_Pos);  // 0dBm == 1mW Power output
     NRF_RADIO->MODE    = (RADIO_MODE_MODE_Ble_1Mbit << RADIO_MODE_MODE_Pos);         // Use BLE 1Mbit/s protocol
 
-    NRF_RADIO->PCNF1 = (NUMBER_OF_BYTES_IN_PACKET << RADIO_PCNF1_MAXLEN_Pos) |     // The Payload maximum size is 32 bytes
-                       (NUMBER_OF_BYTES_IN_PACKET << RADIO_PCNF1_STATLEN_Pos) |    // Since the LENGTH field is not set, this specifies the length of the payload
-                       (4UL << RADIO_PCNF1_BALEN_Pos) |                            // The base address is 4 Bytes long
+    NRF_RADIO->PCNF0 = (0 << RADIO_PCNF0_S1LEN_Pos) |                    // S1 field length in bits
+                       (1 << RADIO_PCNF0_S0LEN_Pos) |                    // S0 field length in bytes
+                       (8 << RADIO_PCNF0_LFLEN_Pos) |                    // LENGTH field length in bits
+                       (RADIO_PCNF0_PLEN_8bit << RADIO_PCNF0_PLEN_Pos);  // PREAMBLE length is 1 byte in BLE 1Mbit/s and 2Mbit/s
+
+    NRF_RADIO->PCNF1 = (4UL << RADIO_PCNF1_BALEN_Pos) |  // The base address is 4 Bytes long
+                       (PACKET_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos) |
+                       (0 << RADIO_PCNF1_STATLEN_Pos) |
                        (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |     // Make the on air packet be little endian (this enables some useful features)
                        (RADIO_PCNF1_WHITEEN_Disabled << RADIO_PCNF1_WHITEEN_Pos);  // Disable the package whitening feature.
 
@@ -73,7 +86,7 @@ void db_radio_init_lr(radio_cb_t callback) {
                        (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |
                        (3 << RADIO_PCNF1_BALEN_Pos) |
                        (0 << RADIO_PCNF1_STATLEN_Pos) |
-                       (NUMBER_OF_BYTES_IN_PACKET << RADIO_PCNF1_MAXLEN_Pos);
+                       (PACKET_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos);
 
     radio_init_addresses();
 
@@ -93,7 +106,8 @@ void db_radio_set_network_address(uint32_t addr) {
 void db_radio_tx(uint8_t *tx_buffer, uint8_t length) {
 
     // Load the tx_buffer into memory.
-    memcpy(radio_vars.packet, tx_buffer, length);
+    radio_vars.pdu.length = length;
+    memcpy(radio_vars.pdu.payload, tx_buffer, length);
 
     // Configure the Short to expedite the packet transmission
     NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Enabled << RADIO_SHORTS_READY_START_Pos) |  // yeet the packet as soon as the radio is ready - slow startup transmitters are for nerds, scumdog for l4f3
@@ -104,9 +118,6 @@ void db_radio_tx(uint8_t *tx_buffer, uint8_t length) {
     NRF_RADIO->TASKS_TXEN      = RADIO_TASKS_TXEN_TASKS_TXEN_Trigger;  // Enable the Radio and let the shortcuts deal with all the
                                                                        // steps to send the packet and disable the radio
     while (NRF_RADIO->EVENTS_DISABLED == 0) {}                         // Wait for the radio to actually send the package.
-
-    // Clear the packet.
-    memset(radio_vars.packet, 0, NUMBER_OF_BYTES_IN_PACKET);
 }
 
 void db_radio_rx_enable(void) {
@@ -159,7 +170,7 @@ void radio_init_common(radio_cb_t callback) {
     NRF_RADIO->CRCPOLY = 0x11021UL;                                       // CRC poly: x^16 + x^12^x^5 + 1
 
     // pointer to packet payload
-    NRF_RADIO->PACKETPTR = (uint32_t)radio_vars.packet;
+    NRF_RADIO->PACKETPTR = (uint32_t)&radio_vars.pdu;
 
     // Assign the callback function that will be called when a radio packet is received.
     radio_vars.callback = callback;
@@ -202,10 +213,7 @@ void RADIO_IRQHandler(void) {
 
         if (radio_vars.callback) {
             // Call callback defined by user.
-            radio_vars.callback(radio_vars.packet, NUMBER_OF_BYTES_IN_PACKET);
-
-            // Clear the rx_buffer.
-            memset(radio_vars.packet, 0, NUMBER_OF_BYTES_IN_PACKET);
+            radio_vars.callback(radio_vars.pdu.payload, radio_vars.pdu.length);
         }
     }
 }
