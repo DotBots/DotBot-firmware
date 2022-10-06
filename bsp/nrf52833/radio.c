@@ -23,8 +23,6 @@
 #define PACKET_MAX_LENGTH        (PAYLOAD_MAX_LENGTH + 2)
 #define RADIO_INTERRUPT_PRIORITY 1
 
-//=========================== variables ========================================
-
 typedef struct {
     uint8_t header;                       ///< PDU header (depends on the type of PDU - advertising physical channel or Data physical channel)
     uint8_t length;                       ///< Length of the payload + MIC (if any)
@@ -35,6 +33,20 @@ typedef struct {
     ble_radio_pdu_t pdu;       ///< Variable that stores the radio PDU (protocol data unit) that arrives and the radio packets that are about to be sent.
     radio_cb_t      callback;  ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
 } radio_vars_t;
+
+//=========================== variables ========================================
+
+static const uint8_t _chan_to_freq[40] = {
+    4, 6, 8,
+    10, 12, 14, 16, 18,
+    20, 22, 24, 28,
+    30, 32, 34, 36, 38,
+    40, 42, 44, 46, 48,
+    50, 52, 54, 56, 58,
+    60, 62, 64, 66, 68,
+    70, 72, 74, 76, 78,
+    2, 26, 80   // Advertising channels
+};
 
 static radio_vars_t radio_vars = { 0 };
 
@@ -97,6 +109,10 @@ void db_radio_init_lr(radio_cb_t callback) {
 void db_radio_set_frequency(uint8_t freq) {
 
     NRF_RADIO->FREQUENCY = freq << RADIO_FREQUENCY_FREQUENCY_Pos;
+}
+
+void db_radio_set_channel(uint8_t channel) {
+    NRF_RADIO->FREQUENCY = (_chan_to_freq[channel] << RADIO_FREQUENCY_FREQUENCY_Pos);
 }
 
 void db_radio_set_network_address(uint32_t addr) {
