@@ -56,6 +56,15 @@ void db_radio_init_lr(radio_cb_t callback);
 void db_radio_set_frequency(uint8_t freq);
 
 /**
+ * @brief Set the physical channel used of the radio
+ *
+ * Channels 37, 38 and 39 are BLE advertising channels.
+ *
+ * @param[in] channel BLE channel used by the radio [0-39]
+ */
+void db_radio_set_channel(uint8_t channel);
+
+/**
  * @brief Set the network address used to send/receive radio packets
  *
  * @param[in] addr Network address
