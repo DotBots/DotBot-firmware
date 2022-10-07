@@ -20,10 +20,9 @@
 //=========================== defines ==========================================
 
 #define PAYLOAD_MAX_LENGTH       UINT8_MAX
-#define PACKET_MAX_LENGTH        (PAYLOAD_MAX_LENGTH + 2)
 #define RADIO_INTERRUPT_PRIORITY 1
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     uint8_t header;                       ///< PDU header (depends on the type of PDU - advertising physical channel or Data physical channel)
     uint8_t length;                       ///< Length of the payload + MIC (if any)
     uint8_t payload[PAYLOAD_MAX_LENGTH];  ///< Payload + MIC (if any)
@@ -69,7 +68,7 @@ void db_radio_init(radio_cb_t callback) {
                        (RADIO_PCNF0_PLEN_8bit << RADIO_PCNF0_PLEN_Pos);  // PREAMBLE length is 1 byte in BLE 1Mbit/s and 2Mbit/s
 
     NRF_RADIO->PCNF1 = (4UL << RADIO_PCNF1_BALEN_Pos) |  // The base address is 4 Bytes long
-                       (PACKET_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos) |
+                       (PAYLOAD_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos) |
                        (0 << RADIO_PCNF1_STATLEN_Pos) |
                        (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |     // Make the on air packet be little endian (this enables some useful features)
                        (RADIO_PCNF1_WHITEEN_Disabled << RADIO_PCNF1_WHITEEN_Pos);  // Disable the package whitening feature.
@@ -98,7 +97,7 @@ void db_radio_init_lr(radio_cb_t callback) {
                        (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |
                        (3 << RADIO_PCNF1_BALEN_Pos) |
                        (0 << RADIO_PCNF1_STATLEN_Pos) |
-                       (PACKET_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos);
+                       (PAYLOAD_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos);
 
     radio_init_addresses();
 
