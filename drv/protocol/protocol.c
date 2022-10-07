@@ -21,6 +21,7 @@ void db_protocol_header_to_buffer(uint8_t *buffer, uint64_t dst, command_type_t 
     protocol_header_t header = {
         .dst     = dst,
         .src     = src,
+        .swarm_id = DB_SWARM_ID,
         .version = DB_FIRMWARE_VERSION,
         .type    = type,
     };

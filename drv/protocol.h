@@ -17,6 +17,7 @@
 //=========================== defines ==========================================
 
 #define DB_FIRMWARE_VERSION  (1)                   ///< Version of the command protocol
+#define DB_SWARM_ID          (0x0000)              ///< Default swarm ID
 #define DB_BROADCAST_ADDRESS 0xffffffffffffffffUL  ///< Broadcast address
 #define DB_GATEWAY_ADDRESS   0x0000000000000000UL  ///< Gateway address
 
@@ -28,6 +29,7 @@ typedef enum {
 typedef struct __attribute__((packed)) {
     uint64_t       dst;      ///< Destination address of this packet
     uint64_t       src;      ///< Source address of this packet
+    uint16_t       swarm_id; ///< Swarm ID
     uint8_t        version;  ///< Version of the protocol
     command_type_t type;     ///< Type of command following this header
 } protocol_header_t;
