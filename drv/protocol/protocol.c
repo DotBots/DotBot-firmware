@@ -19,11 +19,11 @@
 void db_protocol_header_to_buffer(uint8_t *buffer, uint64_t dst, command_type_t type) {
     uint32_t          src    = db_device_id();
     protocol_header_t header = {
-        .dst     = dst,
-        .src     = src,
+        .dst      = dst,
+        .src      = src,
         .swarm_id = DB_SWARM_ID,
-        .version = DB_FIRMWARE_VERSION,
-        .type    = type,
+        .version  = DB_FIRMWARE_VERSION,
+        .type     = type,
     };
     memcpy(buffer, &header, sizeof(protocol_header_t));
 }

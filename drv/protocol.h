@@ -27,11 +27,11 @@ typedef enum {
 } command_type_t;
 
 typedef struct __attribute__((packed)) {
-    uint64_t       dst;      ///< Destination address of this packet
-    uint64_t       src;      ///< Source address of this packet
-    uint16_t       swarm_id; ///< Swarm ID
-    uint8_t        version;  ///< Version of the protocol
-    command_type_t type;     ///< Type of command following this header
+    uint64_t       dst;       ///< Destination address of this packet
+    uint64_t       src;       ///< Source address of this packet
+    uint16_t       swarm_id;  ///< Swarm ID
+    uint8_t        version;   ///< Version of the protocol
+    command_type_t type;      ///< Type of command following this header
 } protocol_header_t;
 
 typedef struct __attribute__((packed)) {
