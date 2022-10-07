@@ -44,7 +44,7 @@ static const uint8_t _chan_to_freq[40] = {
     50, 52, 54, 56, 58,
     60, 62, 64, 66, 68,
     70, 72, 74, 76, 78,
-    2, 26, 80   // Advertising channels
+    2, 26, 80  // Advertising channels
 };
 
 static radio_vars_t radio_vars = { 0 };
