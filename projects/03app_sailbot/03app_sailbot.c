@@ -86,9 +86,8 @@ void radio_callback(uint8_t *packet, uint8_t length) {
     // timestamp the arrival of the packet
     _sailbot_vars.ts_last_packet_received = db_timer_hf_now();
 
-    // we filter out all packets other than MOVE_RAW command of length 6 in total
-    // FIXME packet sent by BotController is 32 bytes in length
-    if (length != 32) {
+    // we filter out all packets other than MOVE_RAW command
+    if (header->type != DB_PROTOCOL_CMD_MOVE_RAW) {
         return;
     }
 
