@@ -19,38 +19,26 @@
 #include "radio.h"
 #include "servos.h"
 #include "protocol.h"
+#include "timer_hf.h"
 
 //=========================== defines =========================================
 
-#define NUM_COMMANDS_FIFO 20
-
-typedef enum command {
-    COMMAND_NONE   = 0,
-    COMMAND_RUDDER = 1,
-    COMMAND_SAILS  = 2,
-} sailbot_command_type_t;
+#define SAIL_TRIM_ANGLE_UNIT_STEP (10)          // unit step increase/decrease when trimming the sails
+#define TIMEOUT_CHECK_DELAY_US    (100 * 1000)  ///< 100 ms delay between packet received timeout checks
 
 typedef struct {
-    sailbot_command_type_t command;
-    int8_t                 angle;
-} sailbot_command_t;
-
-typedef struct queue {
-    sailbot_command_t commands[NUM_COMMANDS_FIFO];
-    int               head;
-    int               tail;
-} queue_t;
+    uint32_t ts_last_packet_received;  ///< Last timestamp in microseconds a control packet was received
+    int8_t   sail_trim;
+} sailbot_vars_t;
 
 //=========================== variables =========================================
 
-queue_t queue;
+static sailbot_vars_t _sailbot_vars;
 
 //=========================== prototypes =========================================
 
-void fifo_init();
-int  fifo_write(sailbot_command_t val);
-void fifo_read(sailbot_command_t *command);
-void radio_callback(uint8_t *packet, uint8_t length);
+void        radio_callback(uint8_t *packet, uint8_t length);
+static void _timeout_check(void);
 
 //=========================== main =========================================
 
@@ -58,40 +46,22 @@ void radio_callback(uint8_t *packet, uint8_t length);
  *  @brief The program starts executing here.
  */
 int main(void) {
-    sailbot_command_t received_command;
-    uint32_t          command;
-    uint16_t          duration;
-
-    received_command.command = COMMAND_NONE;
+    _sailbot_vars.sail_trim               = 0;
+    _sailbot_vars.ts_last_packet_received = 0;
 
     // Configure Radio as a receiver
     db_radio_init(&radio_callback);  // Set the callback function.
     db_radio_set_frequency(8);       // Set the RX frequency to 2408 MHz.
     db_radio_rx_enable();            // Start receiving packets.
+    db_timer_hf_init();
+    db_timer_hf_set_periodic_us(0, TIMEOUT_CHECK_DELAY_US, &_timeout_check);
 
     // Configure Motors
     servos_init();
     // Wait for radio packets to arrive/
     while (1) {
-        // prepare to execute a burst of commands
-
         // processor idle until an interrupt occurs and is handled
         __WFE();
-
-        do {
-            // check if there is something to consume
-            fifo_read(&received_command);
-            switch (received_command.command) {
-                case COMMAND_RUDDER:
-                    servos_rudder_turn(received_command.angle);
-                    break;
-                case COMMAND_SAILS:
-                    servos_sail_turn(received_command.angle);
-                    break;
-                default:
-                    break;
-            }
-        } while (1);
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
@@ -110,20 +80,14 @@ int main(void) {
  *
  */
 void radio_callback(uint8_t *packet, uint8_t length) {
-
-    uint8_t            type;
-    int8_t             left_x;
-    int8_t             left_y;
-    int8_t             right_x;
-    int8_t             right_y;
-    static int8_t      right_y_last_position = 0;
-    sailbot_command_t  new_command;
     uint8_t *          ptk_ptr = packet;
     protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
 
-    // we filter out all packets other than MOVE_RAW command of length 6 in total
-    // FIXME packet sent by BotController is 32 bytes in length
-    if (length != 32) {
+    // timestamp the arrival of the packet
+    _sailbot_vars.ts_last_packet_received = db_timer_hf_now();
+
+    // we filter out all packets other than MOVE_RAW command
+    if (header->type != DB_PROTOCOL_CMD_MOVE_RAW) {
         return;
     }
 
@@ -145,43 +109,20 @@ void radio_callback(uint8_t *packet, uint8_t length) {
     // Read the DotBot command
     protocol_move_raw_command_t *command = (protocol_move_raw_command_t *)(ptk_ptr + sizeof(protocol_header_t));
 
-    if (right_y_last_position + command->right_y >= 127) {
-        right_y_last_position = 127;
-    } else if (right_y_last_position + command->right_y <= -127) {
-        right_y_last_position = -127;
-    } else {
-        right_y_last_position += command->right_y / 3;
+    if (command->right_y > 0 && ((int16_t)_sailbot_vars.sail_trim + SAIL_TRIM_ANGLE_UNIT_STEP < 127)) {
+        _sailbot_vars.sail_trim += SAIL_TRIM_ANGLE_UNIT_STEP;
+    } else if (command->right_y < 0 && ((int16_t)_sailbot_vars.sail_trim - SAIL_TRIM_ANGLE_UNIT_STEP > 0)) {
+        _sailbot_vars.sail_trim -= SAIL_TRIM_ANGLE_UNIT_STEP;
     }
 
-    // add the commands to the fifo
-    new_command.command = COMMAND_RUDDER;
-    new_command.angle   = command->left_x;
-    fifo_write(new_command);
-
-    new_command.command = COMMAND_SAILS;
-    new_command.angle   = right_y_last_position;
-    fifo_write(new_command);
+    // set the servos
+    servos_set(command->left_x, _sailbot_vars.sail_trim);
 }
 
-void fifo_read(sailbot_command_t *ret) {
-    ret->command = COMMAND_NONE;
-    if (queue.tail == queue.head) {
-        return;
+static void _timeout_check(void) {
+    uint32_t now = db_timer_hf_now();
+    if (now > _sailbot_vars.ts_last_packet_received + TIMEOUT_CHECK_DELAY_US) {
+        // set the servos
+        servos_set(0, _sailbot_vars.sail_trim);
     }
-    queue.head = (queue.head + 1) % NUM_COMMANDS_FIFO;
-    *ret       = queue.commands[queue.head];
-}
-
-int fifo_write(sailbot_command_t val) {
-    if (queue.tail - queue.head == NUM_COMMANDS_FIFO - 1) {
-        return -1;
-    }
-    queue.tail                 = (queue.tail + 1) % NUM_COMMANDS_FIFO;
-    queue.commands[queue.tail] = val;
-    return 0;
-}
-
-void fifo_init() {
-    queue.tail = 0;
-    queue.head = 0;
 }
