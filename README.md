@@ -1,5 +1,5 @@
 # DotBot: easy-to-use micro-robot for education and research purposes
-
+ 
 
 <p align="center">
   <img src="static/03app_dotbot.gif" alt="dotbot app demo"/>
