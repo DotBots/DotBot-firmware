@@ -22,8 +22,11 @@
 #define DB_GATEWAY_ADDRESS   0x0000000000000000UL  ///< Gateway address
 
 typedef enum {
-    DB_PROTOCOL_CMD_MOVE_RAW = 0,  ///< Move raw command type
-    DB_PROTOCOL_CMD_RGB_LED  = 1,  ///< RGB LED command type
+    DB_PROTOCOL_CMD_MOVE_RAW  = 0,  ///< Move raw command type
+    DB_PROTOCOL_CMD_RGB_LED   = 1,  ///< RGB LED command type
+    DB_PROTOCOL_LH2_RAW_DATA  = 2,  ///< Lighthouse 2 raw data
+    DB_PROTOCOL_LH2_LOCATION  = 3,  ///< Lighthouse processed locations
+    DB_PROTOCOL_ADVERTISEMENT = 4,  ///< DotBot advertisements
 } command_type_t;
 
 typedef struct __attribute__((packed)) {
