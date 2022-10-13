@@ -34,24 +34,36 @@ static const gpio_t _en_pin   = { .pin = 31, .port = 0 };
 static gps_vars_t   _gps_vars = { 0 };
 
 //=========================== prototypes ========================================
+
 uint8_t *strtok_new(uint8_t *string, uint8_t const *delimiter);
-void     nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position);
+int      nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position);
 
 //=========================== callbacks ========================================
 
 static void uart_callback(uint8_t byte) {
+    int parsing_error;
+
+    // initialize to error
+    parsing_error = -1;
+
     _gps_vars.buffer[_gps_vars.pos] = byte;
     _gps_vars.pos++;
     if (byte == '\n' || _gps_vars.pos == GPS_UART_MAX_BYTES - 1) {  // parse GPS NMEA sentences
         // null-terminate the string so that we can use string.h functions
         _gps_vars.buffer[_gps_vars.pos] = NULL;
 
-        if (memcmp(_gps_vars.buffer, "$GPRMC", 6) == 0) {
-            nmea_parse_gprmc_sentence(_gps_vars.buffer, &_gps_vars.gps_position);
+        // if not $GPRMC return
+        if (memcmp(_gps_vars.buffer, "$GPRMC", 6) != 0) {
+            // reset the position for the next sentence
+            _gps_vars.pos = 0;
+            return;
         }
 
-        // invoke the callback
-        if (_gps_vars.callback != NULL) {
+        // parse the $GPRMC sentence
+        parsing_error = nmea_parse_gprmc_sentence(_gps_vars.buffer, &_gps_vars.gps_position);
+
+        // invoke the callback if parsing succeeded
+        if (_gps_vars.callback != NULL && parsing_error == 0) {
             _gps_vars.callback(&_gps_vars.gps_position);
         }
 
@@ -85,7 +97,7 @@ uint8_t *strtok_new(uint8_t *string, uint8_t const *delimiter) {
 }
 
 // buffer is a NULL-terminated string
-void nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
+int nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
     uint8_t  coordinate_degrees[4];
     uint8_t *current_value;
     uint8_t  current_position;
@@ -157,20 +169,18 @@ void nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
                 // TODO verify checksum
                 break;
             default:
-                return;
+                return -1;
         }
         current_position++;
         current_value = strtok_new(NULL, ",*\n");
     }
+    return 0;
 }
 
-/**
- *  @brief Initialization routine of the GPS module.
- */
 void gps_init(gps_rx_cb_t callback) {
     // Turn ON the GPS module
-    NRF_P0->DIRSET = 1 << 31;  // set pin as output
-    NRF_P0->OUTSET = 1 << 31;  // set pin HIGH
+    NRF_P0->DIRSET = 1 << _en_pin.pin;  // set pin as output
+    NRF_P0->OUTSET = 1 << _en_pin.pin;  // set pin HIGH
 
     // configure UART at 9600 bauds
     db_uart_init(&_rx_pin, &_tx_pin, 9600, &uart_callback);

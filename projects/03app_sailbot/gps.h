@@ -36,7 +36,16 @@ typedef struct {
 typedef void (*gps_rx_cb_t)(nmea_gprmc_t *data);  ///< Callback function prototype, it is called on each $GPRMC sentence received
 
 //=========================== public ======================================
-void          gps_init(gps_rx_cb_t callback);
+
+/**
+ *  @brief Initialization routine of the GPS module.
+ */
+void gps_init(gps_rx_cb_t callback);
+
+/**
+ *  @brief Routine that returns the last known position of the GPS module.
+ *  @return Last known position.
+ */
 nmea_gprmc_t *gps_last_known_position(void);
 
 #endif
