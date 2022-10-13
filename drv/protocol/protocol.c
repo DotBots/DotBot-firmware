@@ -17,7 +17,7 @@
 //=========================== prototypes =======================================
 
 void db_protocol_header_to_buffer(uint8_t *buffer, uint64_t dst, command_type_t type) {
-    uint32_t          src    = db_device_id();
+    uint64_t          src    = db_device_id();
     protocol_header_t header = {
         .dst      = dst,
         .src      = src,
