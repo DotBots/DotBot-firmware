@@ -15,5 +15,6 @@
 #include <stdlib.h>
 #include <nrf.h>
 
+void imu_init(void);
 
 #endif

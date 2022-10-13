@@ -19,6 +19,7 @@
 #include "radio.h"
 #include "servos.h"
 #include "gps.h"
+#include "imu.h"
 #include "protocol.h"
 #include "timer.h"
 
@@ -63,6 +64,9 @@ int main(void) {
     db_timer_init();
     db_timer_set_periodic_ms(0, TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
     db_timer_set_periodic_ms(1, ADVERTISEMENT_PERIOD_MS, &_advertise);
+
+    // Init the IMU
+    imu_init();
 
     // Configure Motors
     servos_init();
