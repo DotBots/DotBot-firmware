@@ -22,8 +22,8 @@
 typedef struct {
     uint8_t      buffer[GPS_UART_MAX_BYTES];  ///< buffer where message received on UART is stored
     uint8_t      pos;                         ///< current position in the UART buffer
-    nmea_gprmc_t gps_position;
-    gps_rx_cb_t  callback;
+    nmea_gprmc_t gps_position;                ///< last parsed RMC sentence containing the position
+    gps_rx_cb_t  callback;                    ///< GPS callback function configured by the application
 } gps_vars_t;
 
 //=========================== variables ========================================
