@@ -27,27 +27,70 @@
 
 //=========================== defines =========================================
 
-#define SAIL_TRIM_ANGLE_UNIT_STEP (10)     // unit step increase/decrease when trimming the sails
+#define SAIL_TRIM_ANGLE_UNIT_STEP (10)          // unit step increase/decrease when trimming the sails
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
-#define TIMEOUT_CHECK_DELAY_MS    (200)    ///< 200 ms delay between packet received timeout checks
-#define ADVERTISEMENT_PERIOD_MS   (500)    ///< send an advertisement every 500 ms
-#define DB_BUFFER_MAX_BYTES       (64U)    ///< Max bytes in UART receive buffer
+#define TIMEOUT_CHECK_DELAY_MS    (200)  ///< 200 ms delay between packet received timeout checks
+#define ADVERTISEMENT_PERIOD_MS   (500)  ///< send an advertisement every 500 ms
+#define DB_BUFFER_MAX_BYTES       (64U)  ///< Max bytes in UART receive buffer
+#define MAX_WAYPOINTS             (10)
+
+#define CONST_PI                       (3.14159265359F)        // pi
+#define CONST_EARTH_RADIUS_KM          (6371.0F)               // 6371 km
+#define CONST_COS_PHI_0_INRIA_PARIS    (0.658139837F)          // cos(0.85245092073) where 0.85245092073 represent radians latitude of Inria Paris
+#define CONST_COS_PHI_0_UFF            (0.92114562603F)        // cos(0.3997826147759739) where 0.3997826147759739 represents radians latitude of UFF
+#define CONST_METRO_LIBERTE_LAT        (48.825908013055255F)   // coordinates of Metro Liberte subway station in Paris
+#define CONST_METRO_LIBERTE_LONG       (2.4064333460310094F)   // coordinates of Metro Liberte subway station in Paris
+#define CONST_NOTRE_DAME_DE_PARIS_LAT  (48.85443748F)          // coordinates of Notre Dame de Paris
+#define CONST_NOTRE_DAME_DE_PARIS_LONG (2.350162268F)          // coordinates of Notre Dame de Paris
+#define CONST_ESCOLA_NAVAL_LAT         (-22.913357509339527F)  // coordinates of Escola Naval in Rio
+#define CONST_ESCOLA_NAVAL_LONG        (-43.15753771789026F)   // coordinates of Escola Naval in Rio
+
+// user-select defines
+// make sure CONST_COS_PHI_0 latitude is approximately at the middle of the map
+#define CONST_ORIGIN_COORD_SYSTEM_LAT  CONST_METRO_LIBERTE_LAT
+#define CONST_ORIGIN_COORD_SYSTEM_LONG CONST_METRO_LIBERTE_LONG
+#define CONST_COS_PHI_0                CONST_COS_PHI_0_INRIA_PARIS
 
 typedef struct {
-    uint32_t ts_last_packet_received;  ///< Last timestamp in microseconds a control packet was received
-    int8_t   sail_trim;
+    uint8_t valid;
+    float   latitude;
+    float   longitude;
+} waypoint_t;
+
+typedef struct {
+    float x;
+    float y;
+} cartesian_coordinate_t;
+
+typedef struct {
+    uint32_t   ts_last_packet_received;  ///< Last timestamp in microseconds a control packet was received
+    int8_t     sail_trim;
+    waypoint_t waypoints[MAX_WAYPOINTS];
     uint8_t  radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
 } sailbot_vars_t;
 
 //=========================== variables =========================================
 
-static sailbot_vars_t _sailbot_vars;
 static const gpio_t   _led1_pin = { .pin = 15, .port = 0 };
+static sailbot_vars_t _sailbot_vars = { 0, 0, {
+                                                  // waypoints
+                                                  { 1, 48.83257712, 2.409900427 },  // waypoint 1
+                                                  { 1, 48.86116982, 2.3378439 },    // waypoint 2
+                                                  { 1, 48.84411394, 2.318446164 },  // waypoint 3
+                                                  { 0, 0, 0 },                      // waypoint 4
+                                                  { 0, 0, 0 },                      // waypoint 5
+                                                  { 0, 0, 0 },                      // waypoint 6
+                                                  { 0, 0, 0 },                      // waypoint 7
+                                                  { 0, 0, 0 },                      // waypoint 8
+                                                  { 0, 0, 0 },                      // waypoint 9
+                                                  { 0, 0, 0 },                      // waypoint 10
+                                              } };
 
 //=========================== prototypes =========================================
 
 void        radio_callback(uint8_t *packet, uint8_t length);
 void        gps_callback(nmea_gprmc_t *last_position);
+static void convert_geographical_to_cartesian(cartesian_coordinate_t *out, waypoint_t *in);
 static void _timeout_check(void);
 static void _advertise(void);
 
@@ -57,8 +100,7 @@ static void _advertise(void);
  *  @brief The program starts executing here.
  */
 int main(void) {
-    _sailbot_vars.sail_trim               = 0;
-    _sailbot_vars.ts_last_packet_received = 0;
+    cartesian_coordinate_t temp;
 
     // Turn ON the LED1
     NRF_P0->DIRSET = 1 << _led1_pin.pin;  // set pin as output
@@ -81,7 +123,16 @@ int main(void) {
     // Configure GPS
     gps_init(gps_callback);
 
-    // Wait for radio packets to arrive/
+    // convenience dump of the pre-programmed waypoints and their conversion
+    for (int i = 0; i < MAX_WAYPOINTS; i++) {
+        if (_sailbot_vars.waypoints[i].valid) {
+            printf("Pre-programmed waypoint %d: %f %f; ", i, _sailbot_vars.waypoints[i].latitude, _sailbot_vars.waypoints[i].longitude);
+            convert_geographical_to_cartesian(&temp, &_sailbot_vars.waypoints[i]);
+            printf("converted: %f %f\n", temp.x, temp.y);
+        }
+    }
+
+    // Wait for radio packets to arrive
     while (1) {
         // processor idle until an interrupt occurs and is handled
         __WFE();
@@ -160,4 +211,19 @@ static void _advertise(void) {
     db_radio_rx_disable();
     db_radio_tx(_sailbot_vars.radio_buffer, length);
     db_radio_rx_enable();
+}
+
+static void convert_geographical_to_cartesian(cartesian_coordinate_t *out, waypoint_t *in) {
+    // x = R*(longitude - longitude_at_origin) * cos(PHI_0)
+    out->x = (in->longitude - CONST_ORIGIN_COORD_SYSTEM_LONG) * CONST_EARTH_RADIUS_KM;
+    out->x *= CONST_COS_PHI_0;
+    // account for longitude in degrees by converting to radians and then to meters (from km)
+    out->x *= CONST_PI;
+    out->x = out->x * 100.0 / 18.0;  // multiply by 1000, divide by 180
+
+    // y = R(latitude - latitude_at_origin))
+    out->y = (in->latitude - CONST_ORIGIN_COORD_SYSTEM_LAT) * CONST_EARTH_RADIUS_KM;
+    // account for latitude in degrees by converting to radians and then to meters (from km)
+    out->y *= CONST_PI;
+    out->y = out->y * 100.0 / 18.0;
 }
