@@ -24,6 +24,7 @@
 #include "protocol.h"
 #include "timer.h"
 #include "gpio.h"
+#include "assert.h"
 
 //=========================== defines =========================================
 
@@ -214,6 +215,10 @@ static void _advertise(void) {
 }
 
 static void convert_geographical_to_cartesian(cartesian_coordinate_t *out, waypoint_t *in) {
+    assert(in->valid > 0);
+    assert(in->latitude <= 90.0 && in->latitude >= -90.0);
+    assert(in->longitude <= 180.0 && in->longitude >= -180);
+
     // x = R*(longitude - longitude_at_origin) * cos(PHI_0)
     out->x = (in->longitude - CONST_ORIGIN_COORD_SYSTEM_LONG) * CONST_EARTH_RADIUS_KM;
     out->x *= CONST_COS_PHI_0;
