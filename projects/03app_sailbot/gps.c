@@ -148,7 +148,9 @@ int nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
                 }
                 break;
             case 4:  // Latitude N/S
-                position->latitude_N_S = *current_value;
+                if (strcmp(current_value, "S") == 0) {
+                    position->latitude *= (-1);  // for south of Equator, use negative latitude
+                }
                 break;
             case 5:  // Longitude
                 position->longitude = 0;
@@ -162,7 +164,9 @@ int nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
                 }
                 break;
             case 6:  // Longitude E/W
-                position->longitude_E_W = *current_value;
+                if (strcmp(current_value, "W") == 0) {
+                    position->longitude *= (-1);  // for west of Greenwich, use negative longitude
+                }
                 break;
             case 7:  // Speed over ground in knots
                 position->velocity = atof(current_value);
@@ -177,7 +181,9 @@ int nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
                 position->variation = atof(current_value);
                 break;
             case 11:  // Magnetic variation E/W
-                position->variation_E_W = *current_value;
+                if (strcmp(current_value, "W") == 0) {
+                    position->variation *= (-1);  // for west of Greenwich, use negative variation
+                }
                 break;
             case 12:  // Mode indicator
                 position->mode = *current_value;

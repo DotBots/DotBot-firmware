@@ -22,14 +22,11 @@ typedef struct {
     uint8_t timestamp[11];
     uint8_t valid;
     float   latitude;
-    uint8_t latitude_N_S;
     float   longitude;
-    uint8_t longitude_E_W;
     float   velocity;
     float   course;
     uint8_t datestamp[7];
     float   variation;
-    uint8_t variation_E_W;
     uint8_t mode;
 } nmea_gprmc_t;
 
