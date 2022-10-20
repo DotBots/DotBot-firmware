@@ -25,14 +25,18 @@
 #include "timer.h"
 #include "gpio.h"
 #include "assert.h"
+#include "math.h"
 
 //=========================== defines =========================================
 
-#define SAIL_TRIM_ANGLE_UNIT_STEP (10)     // unit step increase/decrease when trimming the sails
-#define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
-#define TIMEOUT_CHECK_DELAY_MS    (200)    ///< 200 ms delay between packet received timeout checks
-#define ADVERTISEMENT_PERIOD_MS   (500)    ///< send an advertisement every 500 ms
-#define DB_BUFFER_MAX_BYTES       (64U)    ///< Max bytes in UART receive buffer
+#define PATH_PLANNER_PERIOD_MS    (500)   // path planner period
+#define CONTROL_LOOP_PERIOD_MS    (100)   // control loop period
+
+#define SAIL_TRIM_ANGLE_UNIT_STEP (10)    // unit step increase/decrease when trimming the sails
+#define TIMEOUT_CHECK_DELAY_TICKS (17000) ///< ~500 ms delay between packet received timeout checks
+#define TIMEOUT_CHECK_DELAY_MS    (200)   ///< 200 ms delay between packet received timeout checks
+#define ADVERTISEMENT_PERIOD_MS   (500)   ///< send an advertisement every 500 ms
+#define DB_BUFFER_MAX_BYTES       (64U)   ///< Max bytes in UART receive buffer
 #define MAX_WAYPOINTS             (10)
 
 #define CONST_PI                       (3.14159265359F)        // pi
@@ -67,6 +71,7 @@ typedef struct {
     uint32_t   ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
     int8_t     sail_trim;                          ///< Last angle of the servo controlling sail trim
     waypoint_t waypoints[MAX_WAYPOINTS];           ///< Array containing pre-programmed waypoints
+    waypoint_t next_waypoint;                      ///< The next waypoint SailBot is going to traverse
     uint8_t    radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
 } sailbot_vars_t;
 
@@ -91,6 +96,8 @@ static sailbot_vars_t _sailbot_vars = { 0, 0, {
 
 void        radio_callback(uint8_t *packet, uint8_t length);
 void        gps_callback(nmea_gprmc_t *last_position);
+void        path_planner_callback(void);
+void        control_loop_callback(void);
 static void convert_geographical_to_cartesian(cartesian_coordinate_t *out, waypoint_t *in);
 static void _timeout_check(void);
 static void _advertise(void);
@@ -111,9 +118,6 @@ int main(void) {
     db_radio_init(&radio_callback);  // Set the callback function.
     db_radio_set_frequency(8);       // Set the RX frequency to 2408 MHz.
     db_radio_rx_enable();            // Start receiving packets.
-    db_timer_init();
-    db_timer_set_periodic_ms(0, TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
-    db_timer_set_periodic_ms(1, ADVERTISEMENT_PERIOD_MS, &_advertise);
 
     // Init the IMU
     lis2mdl_init(NULL);
@@ -121,8 +125,15 @@ int main(void) {
     // Configure Motors
     servos_init();
 
-    // Configure GPS
-    gps_init(gps_callback);
+    // Configure GPS without callback
+    gps_init(NULL);
+
+    db_timer_init();
+    // set timer callbacks
+    db_timer_set_periodic_ms(0, TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
+    db_timer_set_periodic_ms(1, ADVERTISEMENT_PERIOD_MS, &_advertise);
+    db_timer_set_periodic_ms(2, PATH_PLANNER_PERIOD_MS, &path_planner_callback);
+    db_timer_set_periodic_ms(3, CONTROL_LOOP_PERIOD_MS, &control_loop_callback);
 
     // convenience dump of the pre-programmed waypoints and their conversion
     for (uint8_t i = 0; i < MAX_WAYPOINTS; i++) {
@@ -194,8 +205,57 @@ void radio_callback(uint8_t *packet, uint8_t length) {
     servos_set(command->left_x, _sailbot_vars.sail_trim);
 }
 
-void gps_callback(nmea_gprmc_t *last_position) {
-    // TODO implement the control loop
+// set _sailbot_vars.next_waypoint
+void path_planner_callback(void) {
+    uint8_t i;
+
+    // TODO
+    // check if we have reached the current waypoint before updating the next one
+    // if reached, invalidate the current waypoint
+
+    // TODO
+    // path plan the sailing route given wind conditions
+
+    // update the next_waypoint
+    for (i = 0; i < MAX_WAYPOINTS; i++) {
+        if (_sailbot_vars.waypoints[i].valid) {
+            // copy the first found valid waypoint into the next_waypoint
+            memcpy(&_sailbot_vars.next_waypoint, &_sailbot_vars.waypoints[i], sizeof(waypoint_t));
+        }
+    }
+}
+
+void control_loop_callback(void) {
+    nmea_gprmc_t *         gps_data;
+    waypoint_t             current_position_gps;
+    cartesian_coordinate_t target;
+    cartesian_coordinate_t position;
+    float                  theta;
+    float                  psi;
+    float                  error;
+
+    gps_data = gps_last_known_position();
+    if (gps_data->valid && _sailbot_vars.next_waypoint.valid) {
+        // convert the next_waypoint to local coordinate system (and copy to stack to avoid concurrency issues)
+        convert_geographical_to_cartesian(&target, &_sailbot_vars.next_waypoint);
+
+        // save the current GPS position on stack to avoid concurrency issues between control_loop_callback() and the GPS module
+        current_position_gps.latitude  = gps_data->latitude;
+        current_position_gps.longitude = gps_data->longitude;
+        current_position_gps.valid     = 1;
+
+        // convert geographical data given by GPS to our local coordinate system
+        convert_geographical_to_cartesian(&position, &current_position_gps);
+
+        // calculate the angle theta, which is the angle between myself and the waypoint relative to the x axis
+        theta = atan2f(target.y - position.y, target.x - position.x);
+
+        // FIXME use heading provided by the IMU, not the GPS
+        psi = gps_data->course * CONST_PI / 180.0;  // convert GPS heading to radians
+
+        // calculate the error
+        error = theta - psi;
+    }
 }
 
 static void _timeout_check(void) {
