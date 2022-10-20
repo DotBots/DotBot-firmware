@@ -86,7 +86,7 @@ db_hdlc_state_t db_hdlc_rx_byte(uint8_t byte) {
         _hdlc_vars.buffer_pos = 0;
         _hdlc_vars.fcs        = DB_HDLC_FCS_INIT;
         _hdlc_vars.state      = DB_HDLC_STATE_RECEIVING;
-    } else if (_hdlc_vars.state == DB_HDLC_STATE_RECEIVING && byte == DB_HDLC_FLAG) {
+    } else if (_hdlc_vars.buffer_pos > 0 && _hdlc_vars.state == DB_HDLC_STATE_RECEIVING && byte == DB_HDLC_FLAG) {
         // End of frame
         if (_hdlc_vars.fcs != DB_HDLC_FCS_OK) {
             // Invalid FCS

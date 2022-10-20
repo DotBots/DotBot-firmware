@@ -21,14 +21,16 @@
 
 //=========================== defines ==========================================
 
-#define DB_BUFFER_MAX_BYTES (32U)        ///< Max bytes in UART receive buffer
+#define DB_BUFFER_MAX_BYTES (64U)        ///< Max bytes in UART receive buffer
 #define DB_UART_BAUDRATE    (1000000UL)  ///< UART baudrate used by the gateway
 
 typedef struct {
-    db_hdlc_state_t hdlc_state;                        ///< Current state of the HDLC decoding engine
-    uint8_t         hdlc_buffer[DB_BUFFER_MAX_BYTES];  ///< Buffer where message received on UART is stored
-    uint32_t        buttons;                           ///< Buttons state (one byte per button)
-    uint8_t         tx_buffer[DB_BUFFER_MAX_BYTES];    ///< Internal buffer that contains the command to send (from buttons)
+    db_hdlc_state_t hdlc_state;                               ///< Current state of the HDLC decoding engine
+    uint8_t         hdlc_rx_buffer[DB_BUFFER_MAX_BYTES * 2];  ///< Buffer where message received on UART is stored
+    uint8_t         hdlc_tx_buffer[DB_BUFFER_MAX_BYTES * 2];  ///< Internal buffer used for sending serial HDLC frames
+    uint32_t        buttons;                                  ///< Buttons state (one byte per button)
+    uint8_t         radio_tx_buffer[DB_BUFFER_MAX_BYTES];     ///< Internal buffer that contains the command to send (from buttons)
+    uint8_t         radio_rx_buffer[DB_BUFFER_MAX_BYTES];     ///< Internal buffer that contains the command to send (from buttons)
 } gateway_vars_t;
 
 //=========================== variables ========================================
@@ -53,14 +55,22 @@ static void uart_callback(uint8_t data) {
             break;
         case DB_HDLC_STATE_READY:
         {
-            size_t msg_len = db_hdlc_decode(_gw_vars.hdlc_buffer);
+            size_t msg_len = db_hdlc_decode(_gw_vars.hdlc_rx_buffer);
             if (msg_len) {
-                db_radio_tx(_gw_vars.hdlc_buffer, msg_len);
+                _gw_vars.hdlc_state = DB_HDLC_STATE_IDLE;
+                db_radio_rx_disable();
+                db_radio_tx(_gw_vars.hdlc_rx_buffer, msg_len);
+                db_radio_rx_enable();
             }
         } break;
         default:
             break;
     }
+}
+
+void radio_callback(uint8_t *packet, uint8_t length) {
+    size_t frame_len = db_hdlc_encode(packet, length, _gw_vars.hdlc_tx_buffer);
+    db_uart_write(_gw_vars.hdlc_tx_buffer, frame_len);
 }
 
 //=========================== main =============================================
@@ -73,12 +83,13 @@ int main(void) {
     db_timer_init();
 
     // Configure Radio as transmitter
-    db_radio_init(NULL);        // The radio callback is not used since the gateway doesn't handle paquet received
-    db_radio_set_frequency(8);  // Set the radio frequency to 2408 MHz.
+    db_radio_init(radio_callback);  // All RX packets received are forwarded in an HDLC frame over UART
+    db_radio_set_frequency(8);      // Set the radio frequency to 2408 MHz.
     // Initialize the gateway context
     _gw_vars.buttons = 0x0000;
     db_uart_init(&_rx_pin, &_tx_pin, DB_UART_BAUDRATE, &uart_callback);
 
+    db_radio_rx_enable();
     _init_buttons();
 
     while (1) {
@@ -103,8 +114,10 @@ int main(void) {
         }
 
         if (command.left_y != 0 || command.right_y != 0) {
-            db_protocol_cmd_move_raw_to_buffer(_gw_vars.tx_buffer, DB_BROADCAST_ADDRESS, &command);
-            db_radio_tx(_gw_vars.tx_buffer, sizeof(protocol_header_t) + sizeof(protocol_move_raw_command_t));
+            db_protocol_cmd_move_raw_to_buffer(_gw_vars.radio_tx_buffer, DB_BROADCAST_ADDRESS, &command);
+            db_radio_rx_disable();
+            db_radio_tx(_gw_vars.radio_tx_buffer, sizeof(protocol_header_t) + sizeof(protocol_move_raw_command_t));
+            db_radio_rx_enable();
         }
         db_timer_delay_ms(20);
     }

@@ -63,6 +63,10 @@ void db_timer_init(void) {
     TIMER_RTC->TASKS_START = 1;
 }
 
+uint32_t db_timer_ticks(void) {
+    return TIMER_RTC->COUNTER;
+}
+
 void db_timer_set_periodic_ms(uint8_t channel, uint32_t ms, timer_cb_t cb) {
     assert(channel >= 0 && channel < TIMER_RTC_CB_CHANS);  // Make sure the required channel is correct
     assert(cb);                                            // Make sure the callback function is valid

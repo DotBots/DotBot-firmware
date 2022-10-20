@@ -12,24 +12,42 @@
  */
 #include <nrf.h>
 #include <stdlib.h>
+#include <string.h>
 // Include BSP headers
 #include "board.h"
 #include "device.h"
+#include "lh2.h"
 #include "protocol.h"
 #include "motors.h"
 #include "radio.h"
 #include "rgbled.h"
-#include "timer_hf.h"
+#include "timer.h"
 
 //=========================== defines ==========================================
 
-#define TIMEOUT_CHECK_DELAY_US (100 * 1000)  ///< 100 ms delay between packet received timeout checks
+#define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
+#define DB_LH2_FULL_COMPUTATION   (0)
+#define DB_BUFFER_MAX_BYTES       (64U)  ///< Max bytes in UART receive buffer
 
 typedef struct {
-    uint32_t ts_last_packet_received;  ///< Last timestamp in microseconds a control packet was received
+    uint32_t ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
+    db_lh2_t lh2;                                ///< LH2 device descriptor
+    uint8_t  radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
 } dotbot_vars_t;
 
 //=========================== variables ========================================
+
+///! LH2 event gpio
+static const gpio_t _lh2_e_gpio = {
+    .port = 0,
+    .pin  = 30,
+};
+
+///! LH2 data gpio
+static const gpio_t _lh2_d_gpio = {
+    .port = 0,
+    .pin  = 29,
+};
 
 static dotbot_vars_t _dotbot_vars;
 
@@ -40,7 +58,7 @@ static void _timeout_check(void);
 //=========================== callbacks ========================================
 
 static void radio_callback(uint8_t *pkt, uint8_t len) {
-    _dotbot_vars.ts_last_packet_received = db_timer_hf_now();
+    _dotbot_vars.ts_last_packet_received = db_timer_ticks();
     do {
         uint8_t *          ptk_ptr = pkt;
         protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
@@ -69,6 +87,8 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
                 protocol_rgbled_command_t *command = (protocol_rgbled_command_t *)cmd_ptr;
                 db_rgbled_set(command->r, command->g, command->b);
             } break;
+            default:
+                break;
         }
     } while (0);
 }
@@ -85,11 +105,34 @@ int main(void) {
     db_radio_init(&radio_callback);
     db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
     db_radio_rx_enable();       // Start receiving packets.
-    db_timer_hf_init();
-    db_timer_hf_set_periodic_us(0, TIMEOUT_CHECK_DELAY_US, &_timeout_check);
+    db_timer_init();
+    db_timer_set_periodic_ms(0, 200, &_timeout_check);
+    db_lh2_init(&_dotbot_vars.lh2, &_lh2_d_gpio, &_lh2_e_gpio);
+    db_lh2_start(&_dotbot_vars.lh2);
 
     while (1) {
-        __WFE();  // Enter a low power state while waiting.
+        db_lh2_process_raw_data(&_dotbot_vars.lh2);
+        if (_dotbot_vars.lh2.state == DB_LH2_RAW_DATA_READY) {
+            db_lh2_stop(&_dotbot_vars.lh2);
+            db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DB_PROTOCOL_LH2_RAW_DATA);
+            memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t), _dotbot_vars.lh2.raw_data, sizeof(db_lh2_raw_data_t) * LH2_LOCATIONS_COUNT);
+            size_t length = sizeof(protocol_header_t) + sizeof(db_lh2_raw_data_t) * LH2_LOCATIONS_COUNT;
+            db_radio_rx_disable();
+            db_radio_tx(_dotbot_vars.radio_buffer, length);
+            db_radio_rx_enable();
+            if (DB_LH2_FULL_COMPUTATION) {
+                // the location function has to be running all the time
+                db_lh2_process_location(&_dotbot_vars.lh2);
+
+                // Reset the LH2 driver if a packet is ready. At this point, locations
+                // can be read from lh2.results array
+                if (_dotbot_vars.lh2.state == DB_LH2_LOCATION_READY) {
+                    __NOP();  // Add this no-op to allow setting a breakpoint here
+                }
+            }
+            db_lh2_start(&_dotbot_vars.lh2);
+        }
+        db_timer_delay_ms(50);
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
@@ -99,8 +142,8 @@ int main(void) {
 //=========================== private functions ================================
 
 static void _timeout_check(void) {
-    uint32_t now = db_timer_hf_now();
-    if (now > _dotbot_vars.ts_last_packet_received + TIMEOUT_CHECK_DELAY_US) {
+    uint32_t ticks = db_timer_ticks();
+    if (ticks > _dotbot_vars.ts_last_packet_received + TIMEOUT_CHECK_DELAY_TICKS) {
         db_motors_set_speed(0, 0);
     }
 }

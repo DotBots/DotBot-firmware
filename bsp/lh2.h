@@ -29,13 +29,13 @@ typedef enum {
     DB_LH2_LOCATION_READY,  ///< some lh2 location is ready to be read
 } db_lh2_state_t;
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     uint64_t bits_sweep;           ///< bits sweep is the result of the demodulation, sweep_N indicates which SPI transfer those bits are associated with
     uint8_t  selected_polynomial;  ///< selected poly is the polyomial # (between 0 and 31) that the demodulation code thinks the demodulated bits are a part of, initialize to error state
     int8_t   bit_offset;           ///< bit_offset indicates an offset between the start of the packet, as indicated by envelope dropping, and the 17-bit sequence that is verified to be in a known LFSR sequence
 } db_lh2_raw_data_t;
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     uint8_t  selected_polynomial;  ///< selected poly is the polyomial # (between 0 and 31) that the demodulation code thinks the demodulated bits are a part of, initialize to error state
     uint32_t lfsr_location;        ///< LFSR location is the position in a given polynomial's LFSR that the decoded data is, initialize to error state
 } db_lh2_location_t;
