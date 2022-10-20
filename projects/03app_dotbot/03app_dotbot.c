@@ -54,6 +54,7 @@ static dotbot_vars_t _dotbot_vars;
 //=========================== prototypes =======================================
 
 static void _timeout_check(void);
+static void _advertise(void);
 
 //=========================== callbacks ========================================
 
@@ -107,6 +108,7 @@ int main(void) {
     db_radio_rx_enable();       // Start receiving packets.
     db_timer_init();
     db_timer_set_periodic_ms(0, 200, &_timeout_check);
+    db_timer_set_periodic_ms(1, 500, &_advertise);
     db_lh2_init(&_dotbot_vars.lh2, &_lh2_d_gpio, &_lh2_e_gpio);
     db_lh2_start(&_dotbot_vars.lh2);
 
@@ -146,4 +148,12 @@ static void _timeout_check(void) {
     if (ticks > _dotbot_vars.ts_last_packet_received + TIMEOUT_CHECK_DELAY_TICKS) {
         db_motors_set_speed(0, 0);
     }
+}
+
+static void _advertise(void) {
+    db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DB_PROTOCOL_ADVERTISEMENT);
+    size_t length = sizeof(protocol_header_t);
+    db_radio_rx_disable();
+    db_radio_tx(_dotbot_vars.radio_buffer, length);
+    db_radio_rx_enable();
 }
