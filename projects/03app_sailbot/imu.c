@@ -7,6 +7,7 @@
  *
  */
 
+#include "math.h"
 #include "gpio.h"
 #include "assert.h"
 #include "i2c.h"
@@ -37,6 +38,9 @@ static const gpio_t mag_int = { .port = 0, .pin = 17 };
 
 #define LIS3MDL_WHO_AM_I_VAL (0x3D)
 
+// 1 / 6842, where 6842 is sensitivy from the datasheet
+#define LIS3MDL_SENSITIVITY_4_GAUSS 0.0146156f
+
 typedef struct {
     bool data_ready;
 } imu_vars_t;
@@ -56,27 +60,29 @@ void imu_init(void) {
     db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_WHO_AM_I_REG, &who_am_i, 1);
     assert(who_am_i == LIS3MDL_WHO_AM_I_VAL);
 
-    // set full scale +- 12 Hz
-    tmp = 0x40;
-    db_i2c_write_regs(LIS3MDL_ADDR, LIS3MDL_CTRL_REG2_REG, &tmp, 1);
-    // set HP mode on the X/Y axes, ODR at 10 Hz and activate temperature sensor
-    tmp = 0xd0;
+    // set ultra-high-performance mode on the X/Y axes, output data rate at 10 Hz
+    tmp = 0x70;
     db_i2c_write_regs(LIS3MDL_ADDR, LIS3MDL_CTRL_REG1_REG, &tmp, 1);
-    // set ultra high-performance mode on the Z-axis
-    tmp = 0x0c;
-    db_i2c_write_regs(LIS3MDL_ADDR, LIS3MDL_CTRL_REG4_REG, &tmp, 1);
+    // set full scale +- 4 gauss
+    tmp = 0x00;
+    db_i2c_write_regs(LIS3MDL_ADDR, LIS3MDL_CTRL_REG2_REG, &tmp, 1);
     // set continous-measurement mode
     tmp = 0x00;
     db_i2c_write_regs(LIS3MDL_ADDR, LIS3MDL_CTRL_REG3_REG, &tmp, 1);
+    // set ultra high-performance mode on the Z-axis
+    tmp = 0x0c;
+    db_i2c_write_regs(LIS3MDL_ADDR, LIS3MDL_CTRL_REG4_REG, &tmp, 1);
 
+    // poll until first data is available
     do {
         db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_STATUS_REG, &tmp, 1);
-    } while ((tmp & 0x8) == 0);  // poll until first data is available
+    } while ((tmp & 0x8) == 0);
 
     _imu_vars.data_ready = true;
 
     db_i2c_end();
 
+    // Configure DATARDY GPIO as input and generate an interrupt on rising edge
     NRF_P0->PIN_CNF[mag_int.pin] = (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos) |        // Set Pin as input
                                    (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos) |  // Activate the input
                                    (GPIO_PIN_CNF_PULL_Pulldown << GPIO_PIN_CNF_PULL_Pos) |   // Activate the Pull-up resistor
@@ -93,29 +99,43 @@ void imu_init(void) {
     NVIC_ClearPendingIRQ(GPIOTE_IRQn);
 }
 
-void imu_read_heading(lis3mdl_compass_data_t *out) {
-    uint8_t tmp;
+float imu_read_heading() {
+    lis3mdl_compass_data_t raw_data;
+    uint8_t                tmp;
+    float                  x;
+    float                  y;
+
+    if (!_imu_vars.data_ready) {
+        return 0;
+    }
 
     db_i2c_begin();
 
     db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_OUT_X_L_REG, &tmp, 1);
-    out->x = tmp;
+    raw_data.x = (int16_t)tmp;
     db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_OUT_X_H_REG, &tmp, 1);
-    out->x |= tmp << 8;
+    raw_data.x |= (int16_t)tmp << 8;
 
     db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_OUT_Y_L_REG, &tmp, 1);
-    out->y = tmp;
+    raw_data.y = (int16_t)tmp;
     db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_OUT_Y_H_REG, &tmp, 1);
-    out->y |= tmp << 8;
+    raw_data.y |= (int16_t)tmp << 8;
 
     db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_OUT_Z_L_REG, &tmp, 1);
-    out->z = tmp;
+    raw_data.z = (int16_t)tmp;
     db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_OUT_Z_H_REG, &tmp, 1);
-    out->z |= tmp << 8;
-
+    raw_data.z |= (int16_t)tmp << 8;
+    _imu_vars.data_ready = false;
     db_i2c_end();
 
-    _imu_vars.data_ready = false;
+    // convert to heading
+
+    // convert raw data to uT
+    x = (float)raw_data.x * LIS3MDL_SENSITIVITY_4_GAUSS;
+    y = (float)raw_data.y * LIS3MDL_SENSITIVITY_4_GAUSS;
+
+    // atan2(x,y) for north-clockwise convention
+    return atan2f(x, y);
 }
 
 bool imu_data_ready(void) {
