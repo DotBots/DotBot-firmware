@@ -30,14 +30,14 @@
 
 //=========================== defines =========================================
 
-#define PATH_PLANNER_PERIOD_MS    (500)   // path planner period
-#define CONTROL_LOOP_PERIOD_MS    (100)   // control loop period
+#define PATH_PLANNER_PERIOD_MS (500)  // path planner period
+#define CONTROL_LOOP_PERIOD_MS (100)  // control loop period
 
-#define SAIL_TRIM_ANGLE_UNIT_STEP (10)    // unit step increase/decrease when trimming the sails
-#define TIMEOUT_CHECK_DELAY_TICKS (17000) ///< ~500 ms delay between packet received timeout checks
-#define TIMEOUT_CHECK_DELAY_MS    (200)   ///< 200 ms delay between packet received timeout checks
-#define ADVERTISEMENT_PERIOD_MS   (500)   ///< send an advertisement every 500 ms
-#define DB_BUFFER_MAX_BYTES       (64U)   ///< Max bytes in UART receive buffer
+#define SAIL_TRIM_ANGLE_UNIT_STEP (10)     // unit step increase/decrease when trimming the sails
+#define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
+#define TIMEOUT_CHECK_DELAY_MS    (200)    ///< 200 ms delay between packet received timeout checks
+#define ADVERTISEMENT_PERIOD_MS   (500)    ///< send an advertisement every 500 ms
+#define DB_BUFFER_MAX_BYTES       (64U)    ///< Max bytes in UART receive buffer
 #define MAX_WAYPOINTS             (10)
 
 #define CONST_PI                       (3.14159265359F)        // pi
