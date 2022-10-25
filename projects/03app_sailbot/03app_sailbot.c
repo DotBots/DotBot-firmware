@@ -23,6 +23,7 @@
 #include "lis2mdl.h"
 #include "protocol.h"
 #include "timer.h"
+#include "timer_hf.h"
 #include "gpio.h"
 #include "assert.h"
 #include "math.h"
@@ -129,11 +130,12 @@ int main(void) {
     gps_init(NULL);
 
     db_timer_init();
+    db_timer_hf_init();
     // set timer callbacks
     db_timer_set_periodic_ms(0, TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
     db_timer_set_periodic_ms(1, ADVERTISEMENT_PERIOD_MS, &_advertise);
     db_timer_set_periodic_ms(2, PATH_PLANNER_PERIOD_MS, &path_planner_callback);
-    db_timer_set_periodic_ms(3, CONTROL_LOOP_PERIOD_MS, &control_loop_callback);
+    db_timer_hf_set_periodic_us(0, CONTROL_LOOP_PERIOD_MS * 1000, &control_loop_callback);
 
     // convenience dump of the pre-programmed waypoints and their conversion
     for (uint8_t i = 0; i < MAX_WAYPOINTS; i++) {
