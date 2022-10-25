@@ -24,11 +24,11 @@
 
 //=========================== defines =========================================
 
-#define SAIL_TRIM_ANGLE_UNIT_STEP (10)          // unit step increase/decrease when trimming the sails
+#define SAIL_TRIM_ANGLE_UNIT_STEP (10)     // unit step increase/decrease when trimming the sails
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
-#define TIMEOUT_CHECK_DELAY_MS    (200)  ///< 200 ms delay between packet received timeout checks
-#define ADVERTISEMENT_PERIOD_MS   (500)  ///< send an advertisement every 500 ms
-#define DB_BUFFER_MAX_BYTES       (64U)  ///< Max bytes in UART receive buffer
+#define TIMEOUT_CHECK_DELAY_MS    (200)    ///< 200 ms delay between packet received timeout checks
+#define ADVERTISEMENT_PERIOD_MS   (500)    ///< send an advertisement every 500 ms
+#define DB_BUFFER_MAX_BYTES       (64U)    ///< Max bytes in UART receive buffer
 
 typedef struct {
     uint32_t ts_last_packet_received;  ///< Last timestamp in microseconds a control packet was received
