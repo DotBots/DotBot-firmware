@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <nrf.h>
+#include <stdbool.h>
 
 // Include BSP packages
 
@@ -21,12 +22,20 @@
 
 //=========================== defines =========================================
 
-#define CALIBRATION_PROCEDURE (0u)
+#define CALIBRATION_PROCEDURE (1)
 #define CONST_PI              (3.14159265359f)
+
+typedef struct {
+    bool data_ready;
+} drv_imu_vars_t;
 
 //=========================== variables =========================================
 
+drv_imu_vars_t _drv_imu_vars;
+
 //=========================== prototypes =========================================
+
+static void imu_data_ready_cb(void);
 
 //=========================== main =========================================
 
@@ -35,7 +44,7 @@
  */
 int main(void) {
     // Init the IMU
-    imu_init();
+    imu_init(&imu_data_ready_cb);
 
 #if CALIBRATION_PROCEDURE
     float offset_x;
@@ -52,10 +61,12 @@ int main(void) {
 
     while (1) {
         // processor idle until an interrupt occurs and is handled
-        if (imu_data_ready()) {
+        if (_drv_imu_vars.data_ready) {
             heading = imu_read_heading() * 180 / CONST_PI;
+            _drv_imu_vars.data_ready = false;
             printf("heading: %f\n", heading);
         }
+        __WFE();
     }
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
     __NOP();
@@ -63,3 +74,7 @@ int main(void) {
 }
 
 //=========================== functions =========================================
+
+static void imu_data_ready_cb(void) {
+    _drv_imu_vars.data_ready = true;
+}

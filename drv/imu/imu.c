@@ -47,11 +47,8 @@ static const gpio_t button_2 = { .port = 0, .pin = 12 };
 #define LIS3MDL_SENSITIVITY_4_GAUSS 0.0146156f
 
 typedef struct {
-    bool                   data_ready;
-    bool                   calibrate;
-    uint32_t               pins;
-    lis3mdl_compass_data_t max;
-    lis3mdl_compass_data_t min;
+    imu_data_ready_cb_t callback;
+    bool                calibrate;
 } imu_vars_t;
 
 //=========================== variables ========================================
@@ -64,9 +61,11 @@ void imu_i2c_read_magnetometer(lis3mdl_compass_data_t *out);
 
 //============================== public ========================================
 
-void imu_init(void) {
+void imu_init(imu_data_ready_cb_t callback) {
     uint8_t who_am_i;
     uint8_t tmp;
+
+    _imu_vars.callback = callback;
 
     db_i2c_init(&scl, &sda);
     db_i2c_begin();
@@ -85,13 +84,6 @@ void imu_init(void) {
     // set ultra high-performance mode on the Z-axis
     tmp = 0x0c;
     db_i2c_write_regs(LIS3MDL_ADDR, LIS3MDL_CTRL_REG4_REG, &tmp, 1);
-
-    // poll until first data is available
-    do {
-        db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_STATUS_REG, &tmp, 1);
-    } while ((tmp & 0x8) == 0);
-
-    _imu_vars.data_ready = true;
 
     db_i2c_end();
 
@@ -112,14 +104,16 @@ void imu_init(void) {
     NVIC_ClearPendingIRQ(GPIOTE_IRQn);
 }
 
+// function should be invoked only upon DATA RDY interrupt, outside of the interrupt context
 void imu_i2c_read_magnetometer(lis3mdl_compass_data_t *out) {
     uint8_t tmp;
 
-    if (!_imu_vars.data_ready) {
-        return;
-    }
-
     db_i2c_begin();
+
+    // make sure that data is ready for read
+    db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_STATUS_REG, &tmp, 1);
+    assert((tmp & 0x8) != 0);
+
     db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_OUT_X_L_REG, &tmp, 1);
     out->x = (int16_t)tmp;
     db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_OUT_X_H_REG, &tmp, 1);
@@ -134,11 +128,11 @@ void imu_i2c_read_magnetometer(lis3mdl_compass_data_t *out) {
     out->z = (int16_t)tmp;
     db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_OUT_Z_H_REG, &tmp, 1);
     out->z |= (int16_t)tmp << 8;
-    _imu_vars.data_ready = false;
     db_i2c_end();
 }
 
 void imu_magnetometer_calibrate(float *offset_x, float *offset_y, float *offset_z) {
+    uint8_t                tmp;
     lis3mdl_compass_data_t current;
     lis3mdl_compass_data_t max = { 0, 0, 0 };
     lis3mdl_compass_data_t min = { 0, 0, 0 };
@@ -157,32 +151,39 @@ void imu_magnetometer_calibrate(float *offset_x, float *offset_y, float *offset_
                             (GPIOTE_CONFIG_POLARITY_HiToLo << GPIOTE_CONFIG_POLARITY_Pos);
 
     printf("Starting calibration...\n");
-    while (_imu_vars.calibrate) {
-        if (imu_data_ready()) {
-            // until button is pressed, loop and save max and min values
-            imu_i2c_read_magnetometer(&current);
-            printf("%d, %d, %d\n", current.x, current.y, current.z);
 
-            if (current.x > max.x) {
-                max.x = current.x;
-            }
-            if (current.x < min.x) {
-                min.x = current.x;
-            }
-            if (current.y > max.y) {
-                max.y = current.y;
-            }
-            if (current.y < min.y) {
-                min.x = current.x;
-            }
-            if (current.z > max.z) {
-                max.z = current.z;
-            }
-            if (current.z < min.z) {
-                min.z = current.z;
-            }
+    // loop until Button 2 is pressed
+    while (_imu_vars.calibrate) {
+
+        // poll until data is available
+        db_i2c_begin();
+        do {
+            db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_STATUS_REG, &tmp, 1);
+        } while ((tmp & 0x8) == 0);
+        db_i2c_end();
+
+        // save max and min values
+        imu_i2c_read_magnetometer(&current);
+        printf("%d, %d, %d\n", current.x, current.y, current.z);
+
+        if (current.x > max.x) {
+            max.x = current.x;
         }
-        __WFE();
+        if (current.x < min.x) {
+            min.x = current.x;
+        }
+        if (current.y > max.y) {
+            max.y = current.y;
+        }
+        if (current.y < min.y) {
+            min.x = current.x;
+        }
+        if (current.z > max.z) {
+            max.z = current.z;
+        }
+        if (current.z < min.z) {
+            min.z = current.z;
+        }
     }
 
     *offset_x = (float)(max.x + min.x) / 2.0;
@@ -208,10 +209,6 @@ float imu_read_heading() {
     return atan2f(x, y);
 }
 
-bool imu_data_ready(void) {
-    return _imu_vars.data_ready;
-}
-
 //============================== interrupts ====================================
 
 void GPIOTE_IRQHandler(void) {
@@ -221,7 +218,9 @@ void GPIOTE_IRQHandler(void) {
     if (NRF_GPIOTE->EVENTS_PORT) {
         NRF_GPIOTE->EVENTS_PORT = 0;
         if (pins & GPIO_IN_PIN17_Msk) {  // if pin 17 is high, data is ready
-            _imu_vars.data_ready = true;
+            if (_imu_vars.callback != NULL) {
+                _imu_vars.callback();
+            }
         } else if (!(pins & GPIO_IN_PIN12_Msk)) {  // if pin 12 is low, stop calibration
             _imu_vars.calibrate = false;
         }
