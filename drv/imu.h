@@ -26,5 +26,6 @@ typedef struct {
 void  imu_init(void);
 bool  imu_data_ready(void);
 float imu_read_heading();
+void  imu_magnetometer_calibrate(float *offset_x, float *offset_y, float *offset_z);
 
 #endif
