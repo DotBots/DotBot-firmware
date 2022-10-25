@@ -21,7 +21,7 @@
 
 //=========================== defines =========================================
 
-#define CALIBRATION_PROCEDURE (1u)
+#define CALIBRATION_PROCEDURE (0u)
 #define CONST_PI              (3.14159265359f)
 
 //=========================== variables =========================================

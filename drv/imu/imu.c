@@ -39,9 +39,9 @@ static const gpio_t button_2 = { .port = 0, .pin = 12 };
 
 #define LIS3MDL_WHO_AM_I_VAL (0x3D)
 
-#define SAILBOT_REV01_OFFSET_X (-142)
-#define SAILBOT_REV01_OFFSET_Y (576)
-#define SAILBOT_REV01_OFFSET_Z (-326)
+#define SAILBOT_REV01_OFFSET_X (-758)
+#define SAILBOT_REV01_OFFSET_Y (322)
+#define SAILBOT_REV01_OFFSET_Z (-1528)
 
 // 1 / 6842, where 6842 is sensitivy from the datasheet
 #define LIS3MDL_SENSITIVITY_4_GAUSS 0.0146156f
@@ -200,7 +200,7 @@ float imu_read_heading() {
 
     // convert to heading
 
-    // convert raw data to uT
+    // convert raw data to uT and account for offset
     x = (float)(raw_data.x - SAILBOT_REV01_OFFSET_X) * LIS3MDL_SENSITIVITY_4_GAUSS;
     y = (float)(raw_data.y - SAILBOT_REV01_OFFSET_Y) * LIS3MDL_SENSITIVITY_4_GAUSS;
 
