@@ -1,11 +1,10 @@
 /**
  * @file 03app_sailbot.c
  * @author Mališa Vučinić <malisa.vucinic@inria.fr>
- * @brief This is the radio-controlled SailBot app.
+ * @brief This is an example on how to use the IMU driver.
  *
- * Load this program on your board. Now the SailBot can be remotely controlled
- * from a nearby nRF52840-DK.
- *
+ * Load this program on your board, set CALIBRATION_PROCEDURE to 1 if calibration is needed.
+ * With CALIBRATION_PROCEDURE set to 0, compass heading is printed as debug output.
  *
  * @copyright Inria, 2022
  *
@@ -22,7 +21,7 @@
 
 //=========================== defines =========================================
 
-#define CALIBRATION_PROCEDURE (1)
+#define CALIBRATION_PROCEDURE (0)
 #define CONST_PI              (3.14159265359f)
 
 typedef struct {
@@ -62,7 +61,7 @@ int main(void) {
     while (1) {
         // processor idle until an interrupt occurs and is handled
         if (_drv_imu_vars.data_ready) {
-            heading = imu_read_heading() * 180 / CONST_PI;
+            heading                  = imu_read_heading() * 180 / CONST_PI + 180;
             _drv_imu_vars.data_ready = false;
             printf("heading: %f\n", heading);
         }
