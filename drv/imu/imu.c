@@ -21,30 +21,35 @@ static const gpio_t sda      = { .port = 0, .pin = 11 };
 static const gpio_t mag_int  = { .port = 0, .pin = 17 };
 static const gpio_t button_2 = { .port = 0, .pin = 12 };
 
-#define LIS3MDL_ADDR           (0x1C)
-#define LIS3MDL_WHO_AM_I_REG   (0x0F)
-#define LIS3MDL_CTRL_REG1_REG  (0x20)
-#define LIS3MDL_CTRL_REG2_REG  (0x21)
-#define LIS3MDL_CTRL_REG3_REG  (0x22)
-#define LIS3MDL_CTRL_REG4_REG  (0x23)
-#define LIS3MDL_STATUS_REG     (0x27)
-#define LIS3MDL_OUT_X_L_REG    (0x28)
-#define LIS3MDL_OUT_X_H_REG    (0x29)
-#define LIS3MDL_OUT_Y_L_REG    (0x2a)
-#define LIS3MDL_OUT_Y_H_REG    (0x2b)
-#define LIS3MDL_OUT_Z_L_REG    (0x2c)
-#define LIS3MDL_OUT_Z_H_REG    (0x2d)
-#define LIS3MDL_TEMP_OUT_L_REG (0x2e)
-#define LIS3MDL_TEMP_OUT_H_REG (0x2f)
+#define LIS2MDL_ADDR           (0x1E)
+#define LIS2MDL_OFFSET_X_REG_L (0x45)
+#define LIS2MDL_OFFSET_X_REG_H (0x46)
+#define LIS2MDL_OFFSET_Y_REG_L (0x47)
+#define LIS2MDL_OFFSET_Y_REG_H (0x48)
+#define LIS2MDL_OFFSET_Z_REG_L (0x49)
+#define LIS2MDL_OFFSET_Z_REG_H (0x4a)
+#define LIS2MDL_WHO_AM_I_REG   (0x4F)
+#define LIS2MDL_CFG_REG_A_REG  (0x60)
+#define LIS2MDL_CFG_REG_B_REG  (0x61)
+#define LIS2MDL_CFG_REG_C_REG  (0x62)
+#define LIS2MDL_INT_CRTL_REG   (0x63)
+#define LIS2MDL_INT_SOURCE_REG (0x64)
+#define LIS2MDL_STATUS_REG     (0x67)
+#define LIS2MDL_OUTX_L_REG     (0x68)
+#define LIS2MDL_OUTX_H_REG     (0x69)
+#define LIS2MDL_OUTY_L_REG     (0x6a)
+#define LIS2MDL_OUTY_H_REG     (0x6b)
+#define LIS2MDL_OUTZ_L_REG     (0x6c)
+#define LIS2MDL_OUTZ_H_REG     (0x6d)
 
-#define LIS3MDL_WHO_AM_I_VAL (0x3D)
+#define LIS2MDL_WHO_AM_I_VAL (0x40)
 
-#define SAILBOT_REV01_OFFSET_X (-758)
-#define SAILBOT_REV01_OFFSET_Y (322)
-#define SAILBOT_REV01_OFFSET_Z (-1528)
+#define SAILBOT_REV10_OFFSET_X (135)
+#define SAILBOT_REV10_OFFSET_Y (2)
+#define SAILBOT_REV10_OFFSET_Z (-306)
 
 // 1 / 6842, where 6842 is sensitivy from the datasheet
-#define LIS3MDL_SENSITIVITY_4_GAUSS 0.0146156f
+#define LIS2MDL_SENSITIVITY 1.5f
 
 typedef struct {
     imu_data_ready_cb_t callback;
@@ -69,29 +74,26 @@ void imu_init(imu_data_ready_cb_t callback) {
 
     db_i2c_init(&scl, &sda);
     db_i2c_begin();
-    db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_WHO_AM_I_REG, &who_am_i, 1);
-    assert(who_am_i == LIS3MDL_WHO_AM_I_VAL);
+    db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_WHO_AM_I_REG, &who_am_i, 1);
+    assert(who_am_i == LIS2MDL_WHO_AM_I_VAL);
 
-    // set ultra-high-performance mode on the X/Y axes, output data rate at 10 Hz
-    tmp = 0x70;
-    db_i2c_write_regs(LIS3MDL_ADDR, LIS3MDL_CTRL_REG1_REG, &tmp, 1);
-    // set full scale +- 4 gauss
+    // set continous mode, output data rate at 10 Hz
     tmp = 0x00;
-    db_i2c_write_regs(LIS3MDL_ADDR, LIS3MDL_CTRL_REG2_REG, &tmp, 1);
-    // set continous-measurement mode
+    db_i2c_write_regs(LIS2MDL_ADDR, LIS2MDL_CFG_REG_A_REG, &tmp, 1);
+    // keep default values of REG_B
     tmp = 0x00;
-    db_i2c_write_regs(LIS3MDL_ADDR, LIS3MDL_CTRL_REG3_REG, &tmp, 1);
-    // set ultra high-performance mode on the Z-axis
-    tmp = 0x0c;
-    db_i2c_write_regs(LIS3MDL_ADDR, LIS3MDL_CTRL_REG4_REG, &tmp, 1);
+    db_i2c_write_regs(LIS2MDL_ADDR, LIS2MDL_CFG_REG_B_REG, &tmp, 1);
+    // set DRDY_on_PIN bit
+    tmp = 0x01;
+    db_i2c_write_regs(LIS2MDL_ADDR, LIS2MDL_CFG_REG_C_REG, &tmp, 1);
 
     db_i2c_end();
 
     // Configure DATARDY GPIO as input and generate an interrupt on rising edge
     NRF_P0->PIN_CNF[mag_int.pin] = (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos) |        // Set Pin as input
                                    (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos) |  // Activate the input
-                                   (GPIO_PIN_CNF_PULL_Pulldown << GPIO_PIN_CNF_PULL_Pos) |   // Activate the Pull-up resistor
-                                   (GPIO_PIN_CNF_SENSE_High << GPIO_PIN_CNF_SENSE_Pos);      // Sense for low level
+                                   (GPIO_PIN_CNF_PULL_Pulldown << GPIO_PIN_CNF_PULL_Pos) |   // Activate the Pull-down resistor
+                                   (GPIO_PIN_CNF_SENSE_High << GPIO_PIN_CNF_SENSE_Pos);      // Sense for high level
 
     NRF_GPIOTE->CONFIG[0] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
                             (mag_int.pin << GPIOTE_CONFIG_PSEL_Pos) |
@@ -111,22 +113,22 @@ void imu_i2c_read_magnetometer(lis3mdl_compass_data_t *out) {
     db_i2c_begin();
 
     // make sure that data is ready for read
-    db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_STATUS_REG, &tmp, 1);
+    db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_STATUS_REG, &tmp, 1);
     assert((tmp & 0x8) != 0);
 
-    db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_OUT_X_L_REG, &tmp, 1);
+    db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_OUTX_L_REG, &tmp, 1);
     out->x = (int16_t)tmp;
-    db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_OUT_X_H_REG, &tmp, 1);
+    db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_OUTX_H_REG, &tmp, 1);
     out->x |= (int16_t)tmp << 8;
 
-    db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_OUT_Y_L_REG, &tmp, 1);
+    db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_OUTY_L_REG, &tmp, 1);
     out->y = (int16_t)tmp;
-    db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_OUT_Y_H_REG, &tmp, 1);
+    db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_OUTY_H_REG, &tmp, 1);
     out->y |= (int16_t)tmp << 8;
 
-    db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_OUT_Z_L_REG, &tmp, 1);
+    db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_OUTZ_L_REG, &tmp, 1);
     out->z = (int16_t)tmp;
-    db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_OUT_Z_H_REG, &tmp, 1);
+    db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_OUTZ_H_REG, &tmp, 1);
     out->z |= (int16_t)tmp << 8;
     db_i2c_end();
 }
@@ -142,13 +144,13 @@ void imu_magnetometer_calibrate(float *offset_x, float *offset_y, float *offset_
     // Configure BUTTON2 as input and generate an interrupt on falling edge
     NRF_P0->PIN_CNF[button_2.pin] = (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos) |        // Set Pin as input
                                     (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos) |  // Activate the input
-                                    (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos) |     // Activate the Pull-up resistor
-                                    (GPIO_PIN_CNF_SENSE_Low << GPIO_PIN_CNF_SENSE_Pos);       // Sense for low level
+                                    (GPIO_PIN_CNF_PULL_Pulldown << GPIO_PIN_CNF_PULL_Pos) |   // Activate the Pull-up resistor
+                                    (GPIO_PIN_CNF_SENSE_High << GPIO_PIN_CNF_SENSE_Pos);      // Sense for low level
 
     NRF_GPIOTE->CONFIG[0] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
                             (button_2.pin << GPIOTE_CONFIG_PSEL_Pos) |
                             (button_2.port << GPIOTE_CONFIG_PORT_Pos) |
-                            (GPIOTE_CONFIG_POLARITY_HiToLo << GPIOTE_CONFIG_POLARITY_Pos);
+                            (GPIOTE_CONFIG_POLARITY_LoToHi << GPIOTE_CONFIG_POLARITY_Pos);
 
     printf("Starting calibration...\n");
 
@@ -158,13 +160,12 @@ void imu_magnetometer_calibrate(float *offset_x, float *offset_y, float *offset_
         // poll until data is available
         db_i2c_begin();
         do {
-            db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_STATUS_REG, &tmp, 1);
+            db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_STATUS_REG, &tmp, 1);
         } while ((tmp & 0x8) == 0);
         db_i2c_end();
 
         // save max and min values
         imu_i2c_read_magnetometer(&current);
-        printf("%d, %d, %d\n", current.x, current.y, current.z);
 
         if (current.x > max.x) {
             max.x = current.x;
@@ -184,11 +185,14 @@ void imu_magnetometer_calibrate(float *offset_x, float *offset_y, float *offset_
         if (current.z < min.z) {
             min.z = current.z;
         }
+
+        *offset_x = (float)(max.x + min.x) / 2.0;
+        *offset_y = (float)(max.y + min.y) / 2.0;
+        *offset_z = (float)(max.z + min.z) / 2.0;
+
+        printf("Offset: %f, %f, %f\n", *offset_x, *offset_y, *offset_z);
     }
 
-    *offset_x = (float)(max.x + min.x) / 2.0;
-    *offset_y = (float)(max.y + min.y) / 2.0;
-    *offset_z = (float)(max.z + min.z) / 2.0;
     return;
 }
 
@@ -202,8 +206,8 @@ float imu_read_heading() {
     // convert to heading
 
     // convert raw data to uT and account for offset
-    x = (float)(raw_data.x - SAILBOT_REV01_OFFSET_X) * LIS3MDL_SENSITIVITY_4_GAUSS;
-    y = (float)(raw_data.y - SAILBOT_REV01_OFFSET_Y) * LIS3MDL_SENSITIVITY_4_GAUSS;
+    x = (float)(raw_data.x - SAILBOT_REV10_OFFSET_X) * LIS2MDL_SENSITIVITY;
+    y = (float)(raw_data.y - SAILBOT_REV10_OFFSET_Y) * LIS2MDL_SENSITIVITY;
 
     // atan2(x,y) for north-clockwise convention
     return atan2f(x, y);
