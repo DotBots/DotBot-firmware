@@ -23,6 +23,7 @@
 #include "imu.h"
 #include "protocol.h"
 #include "timer.h"
+#include "gpio.h"
 
 //=========================== defines =========================================
 
@@ -42,6 +43,7 @@ typedef struct {
 //=========================== variables =========================================
 
 static sailbot_vars_t _sailbot_vars;
+static const gpio_t _led1_pin   = { .pin = 15, .port = 0 };
 
 //=========================== prototypes =========================================
 
@@ -59,6 +61,10 @@ static void _advertise(void);
 int main(void) {
     _sailbot_vars.sail_trim               = 0;
     _sailbot_vars.ts_last_packet_received = 0;
+
+    // Turn ON the LED1
+    NRF_P0->DIRSET = 1 << _led1_pin.pin;  // set pin as output
+    NRF_P0->OUTSET = 0 << _led1_pin.pin;  // set pin LOW
 
     // Configure Radio as a receiver
     db_radio_init(&radio_callback);  // Set the callback function.
