@@ -177,7 +177,7 @@ void imu_magnetometer_calibrate(float *offset_x, float *offset_y, float *offset_
             max.y = current.y;
         }
         if (current.y < min.y) {
-            min.x = current.x;
+            min.y = current.y;
         }
         if (current.z > max.z) {
             max.z = current.z;
