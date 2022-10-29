@@ -53,7 +53,6 @@ static const gpio_t button_2 = { .port = 0, .pin = 12 };
 
 typedef struct {
     imu_data_ready_cb_t callback;
-    bool                calibrate;
 } imu_vars_t;
 
 //=========================== variables ========================================
@@ -139,23 +138,10 @@ void imu_magnetometer_calibrate(float *offset_x, float *offset_y, float *offset_
     lis3mdl_compass_data_t max = { 0, 0, 0 };
     lis3mdl_compass_data_t min = { 0, 0, 0 };
 
-    _imu_vars.calibrate = true;
+    printf("Starting calibration\n");
 
-    // Configure BUTTON2 as input and generate an interrupt on falling edge
-    NRF_P0->PIN_CNF[button_2.pin] = (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos) |        // Set Pin as input
-                                    (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos) |  // Activate the input
-                                    (GPIO_PIN_CNF_PULL_Pulldown << GPIO_PIN_CNF_PULL_Pos) |   // Activate the Pull-up resistor
-                                    (GPIO_PIN_CNF_SENSE_High << GPIO_PIN_CNF_SENSE_Pos);      // Sense for low level
-
-    NRF_GPIOTE->CONFIG[0] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
-                            (button_2.pin << GPIOTE_CONFIG_PSEL_Pos) |
-                            (button_2.port << GPIOTE_CONFIG_PORT_Pos) |
-                            (GPIOTE_CONFIG_POLARITY_LoToHi << GPIOTE_CONFIG_POLARITY_Pos);
-
-    printf("Starting calibration...\n");
-
-    // loop until Button 2 is pressed
-    while (_imu_vars.calibrate) {
+    // loop forever
+    while (1) {
 
         // poll until data is available
         db_i2c_begin();
@@ -225,8 +211,6 @@ void GPIOTE_IRQHandler(void) {
             if (_imu_vars.callback != NULL) {
                 _imu_vars.callback();
             }
-        } else if (!(pins & GPIO_IN_PIN12_Msk)) {  // if pin 12 is low, stop calibration
-            _imu_vars.calibrate = false;
         }
     }
 }
