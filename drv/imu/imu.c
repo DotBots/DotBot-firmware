@@ -61,7 +61,7 @@ imu_vars_t _imu_vars;
 
 //=========================== prototypes ========================================
 
-void imu_i2c_read_magnetometer(lis3mdl_compass_data_t *out);
+void imu_i2c_read_magnetometer(lis2mdl_compass_data_t *out);
 
 //============================== public ========================================
 
@@ -106,7 +106,7 @@ void imu_init(imu_data_ready_cb_t callback) {
 }
 
 // function should be invoked only upon DATA RDY interrupt, outside of the interrupt context
-void imu_i2c_read_magnetometer(lis3mdl_compass_data_t *out) {
+void imu_i2c_read_magnetometer(lis2mdl_compass_data_t *out) {
     uint8_t tmp;
 
     db_i2c_begin();
@@ -134,9 +134,9 @@ void imu_i2c_read_magnetometer(lis3mdl_compass_data_t *out) {
 
 void imu_magnetometer_calibrate(float *offset_x, float *offset_y, float *offset_z) {
     uint8_t                tmp;
-    lis3mdl_compass_data_t current;
-    lis3mdl_compass_data_t max = { 0, 0, 0 };
-    lis3mdl_compass_data_t min = { 0, 0, 0 };
+    lis2mdl_compass_data_t current;
+    lis2mdl_compass_data_t max = { 0, 0, 0 };
+    lis2mdl_compass_data_t min = { 0, 0, 0 };
 
     printf("Starting calibration\n");
 
@@ -183,7 +183,7 @@ void imu_magnetometer_calibrate(float *offset_x, float *offset_y, float *offset_
 }
 
 float imu_read_heading() {
-    lis3mdl_compass_data_t raw_data;
+    lis2mdl_compass_data_t raw_data;
     float                  x;
     float                  y;
 

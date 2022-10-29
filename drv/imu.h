@@ -21,7 +21,7 @@ typedef struct {
     int16_t x;  ///< X axis
     int16_t y;  ///< Y axis
     int16_t z;  ///< Z axis
-} lis3mdl_compass_data_t;
+} lis2mdl_compass_data_t;
 
 typedef void (*imu_data_ready_cb_t)(void);  ///< Callback function prototype, it is called on each available sample
 
