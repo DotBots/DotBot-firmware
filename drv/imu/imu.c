@@ -44,9 +44,9 @@ static const gpio_t button_2 = { .port = 0, .pin = 12 };
 
 #define LIS2MDL_WHO_AM_I_VAL (0x40)
 
-#define SAILBOT_REV10_OFFSET_X (135)
-#define SAILBOT_REV10_OFFSET_Y (2)
-#define SAILBOT_REV10_OFFSET_Z (-306)
+#define SAILBOT_REV10_OFFSET_X (-315)
+#define SAILBOT_REV10_OFFSET_Y (251)
+#define SAILBOT_REV10_OFFSET_Z (326)
 
 // 1 / 6842, where 6842 is sensitivy from the datasheet
 #define LIS2MDL_SENSITIVITY 1.5f
