@@ -1405,6 +1405,9 @@
         <configuration Name="Common" file_type="Assembly" />
       </file>
     </folder>
-    <configuration Name="Debug" linker_printf_fp_enabled="Float" />
+    <configuration
+      Name="Debug"
+      debug_terminal_log_file="magnetometer.csv"
+      linker_printf_fp_enabled="Float" />
   </project>
 </solution>
