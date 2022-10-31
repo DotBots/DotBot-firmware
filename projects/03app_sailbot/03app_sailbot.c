@@ -48,13 +48,15 @@
 #define CONST_METRO_LIBERTE_LONG       (2.4064333460310094F)   // coordinates of Metro Liberte subway station in Paris
 #define CONST_NOTRE_DAME_DE_PARIS_LAT  (48.85443748F)          // coordinates of Notre Dame de Paris
 #define CONST_NOTRE_DAME_DE_PARIS_LONG (2.350162268F)          // coordinates of Notre Dame de Paris
+#define CONST_METRO_BERCY_LAT          (48.840280818580354F)   // coordinates of Metro Bercy subway station in Paris
+#define CONST_METRO_BERCY_LONG         (2.379762322245707F)    // coordinates of Metro Bercy subway station in Paris
 #define CONST_ESCOLA_NAVAL_LAT         (-22.913357509339527F)  // coordinates of Escola Naval in Rio
 #define CONST_ESCOLA_NAVAL_LONG        (-43.15753771789026F)   // coordinates of Escola Naval in Rio
 
 // user-select defines
 // make sure CONST_COS_PHI_0 latitude is approximately at the middle of the map
-#define CONST_ORIGIN_COORD_SYSTEM_LAT  CONST_METRO_LIBERTE_LAT
-#define CONST_ORIGIN_COORD_SYSTEM_LONG CONST_METRO_LIBERTE_LONG
+#define CONST_ORIGIN_COORD_SYSTEM_LAT  CONST_METRO_BERCY_LAT
+#define CONST_ORIGIN_COORD_SYSTEM_LONG CONST_METRO_BERCY_LONG
 #define CONST_COS_PHI_0                CONST_COS_PHI_0_INRIA_PARIS
 
 typedef struct {
