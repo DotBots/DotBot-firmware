@@ -43,12 +43,9 @@ int main(void) {
     imu_init(NULL);
 
 #if CALIBRATION_PROCEDURE
-    float offset_x;
-    float offset_y;
-    float offset_z;
+    lis2mdl_compass_data_t offset;
 
-    imu_magnetometer_calibrate(&offset_x, &offset_y, &offset_z);
-    printf("offset_x: %f offset_y: %f offset_z: %f\n", offset_x, offset_y, offset_z);
+    imu_magnetometer_calibrate(&offset);
     while (1) {
         ;
     }
@@ -59,7 +56,7 @@ int main(void) {
         // processor idle until an interrupt occurs and is handled
         if (imu_data_ready()) {
             imu_read_heading();
-            heading                  = imu_last_heading() * 180 / CONST_PI;
+            heading = imu_last_heading() * 180 / CONST_PI;
             printf("heading: %f\n", heading);
         }
         __WFE();

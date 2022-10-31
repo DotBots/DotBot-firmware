@@ -29,6 +29,6 @@ void  imu_init(imu_data_ready_cb_t callback);
 bool  imu_data_ready();
 void  imu_read_heading();
 float imu_last_heading();
-void  imu_magnetometer_calibrate(float *offset_x, float *offset_y, float *offset_z);
+void  imu_magnetometer_calibrate(lis2mdl_compass_data_t *offset);
 
 #endif

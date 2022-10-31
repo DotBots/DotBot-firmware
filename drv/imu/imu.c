@@ -136,51 +136,20 @@ void imu_i2c_read_magnetometer(lis2mdl_compass_data_t *out) {
     _imu_vars.data_ready = false;
 }
 
-void imu_magnetometer_calibrate(float *offset_x, float *offset_y, float *offset_z) {
-    uint8_t                tmp;
+void imu_magnetometer_calibrate(lis2mdl_compass_data_t *offset) {
     lis2mdl_compass_data_t current;
-    lis2mdl_compass_data_t max = { 0, 0, 0 };
-    lis2mdl_compass_data_t min = { 0, 0, 0 };
 
-    printf("Starting calibration\n");
+    printf("X,Y,Z\n");
 
     // loop forever
     while (1) {
 
-        // poll until data is available
-        db_i2c_begin();
-        do {
-            db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_STATUS_REG, &tmp, 1);
-        } while ((tmp & 0x8) == 0);
-        db_i2c_end();
-
         // save max and min values
-        imu_i2c_read_magnetometer(&current);
-
-        if (current.x > max.x) {
-            max.x = current.x;
+        if (imu_data_ready()) {
+            imu_i2c_read_magnetometer(&current);
+            printf("%d,%d,%d\n", current.x, current.y, current.z);
         }
-        if (current.x < min.x) {
-            min.x = current.x;
-        }
-        if (current.y > max.y) {
-            max.y = current.y;
-        }
-        if (current.y < min.y) {
-            min.y = current.y;
-        }
-        if (current.z > max.z) {
-            max.z = current.z;
-        }
-        if (current.z < min.z) {
-            min.z = current.z;
-        }
-
-        *offset_x = (float)(max.x + min.x) / 2.0;
-        *offset_y = (float)(max.y + min.y) / 2.0;
-        *offset_z = (float)(max.z + min.z) / 2.0;
-
-        printf("Offset: %f, %f, %f\n", *offset_x, *offset_y, *offset_z);
+        __WFE();
     }
 
     return;
