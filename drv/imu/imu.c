@@ -195,8 +195,8 @@ float imu_read_heading() {
     x = (float)(raw_data.x - SAILBOT_REV10_OFFSET_X) * LIS2MDL_SENSITIVITY;
     y = (float)(raw_data.y - SAILBOT_REV10_OFFSET_Y) * LIS2MDL_SENSITIVITY;
 
-    // atan2(x,y) for north-clockwise convention
-    return atan2f(x, y);
+    // atan2(x,y) for north-clockwise convention, + Pi for 0 to 2PI heading
+    return atan2f(x, y) + M_PI;
 }
 
 //============================== interrupts ====================================
