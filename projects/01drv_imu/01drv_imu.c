@@ -61,7 +61,8 @@ int main(void) {
     while (1) {
         // processor idle until an interrupt occurs and is handled
         if (_drv_imu_vars.data_ready) {
-            heading                  = imu_read_heading() * 180 / CONST_PI;
+            imu_read_heading();
+            heading                  = imu_last_heading() * 180 / CONST_PI;
             _drv_imu_vars.data_ready = false;
             printf("heading: %f\n", heading);
         }

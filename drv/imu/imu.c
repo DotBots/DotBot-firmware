@@ -53,6 +53,7 @@ static const gpio_t button_2 = { .port = 0, .pin = 12 };
 
 typedef struct {
     imu_data_ready_cb_t callback;
+    float               heading;
 } imu_vars_t;
 
 //=========================== variables ========================================
@@ -182,7 +183,7 @@ void imu_magnetometer_calibrate(float *offset_x, float *offset_y, float *offset_
     return;
 }
 
-float imu_read_heading() {
+void imu_read_heading() {
     lis2mdl_compass_data_t raw_data;
     float                  x;
     float                  y;
@@ -196,7 +197,12 @@ float imu_read_heading() {
     y = (float)(raw_data.y - SAILBOT_REV10_OFFSET_Y) * LIS2MDL_SENSITIVITY;
 
     // atan2(x,y) for north-clockwise convention, + Pi for 0 to 2PI heading
-    return atan2f(x, y) + M_PI;
+    _imu_vars.heading = atan2f(x, y) + M_PI;
+    return;
+}
+
+float imu_last_heading() {
+    return _imu_vars.heading;
 }
 
 //============================== interrupts ====================================

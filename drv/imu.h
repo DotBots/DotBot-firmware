@@ -26,7 +26,8 @@ typedef struct {
 typedef void (*imu_data_ready_cb_t)(void);  ///< Callback function prototype, it is called on each available sample
 
 void  imu_init(imu_data_ready_cb_t callback);
-float imu_read_heading();
+void  imu_read_heading();
+float imu_last_heading();
 void  imu_magnetometer_calibrate(float *offset_x, float *offset_y, float *offset_z);
 
 #endif
