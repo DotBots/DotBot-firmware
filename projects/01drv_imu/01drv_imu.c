@@ -25,7 +25,6 @@
 #define CONST_PI              (3.14159265359f)
 
 typedef struct {
-    bool data_ready;
 } drv_imu_vars_t;
 
 //=========================== variables =========================================
@@ -34,8 +33,6 @@ drv_imu_vars_t _drv_imu_vars;
 
 //=========================== prototypes =========================================
 
-static void imu_data_ready_cb(void);
-
 //=========================== main =========================================
 
 /**
@@ -43,7 +40,7 @@ static void imu_data_ready_cb(void);
  */
 int main(void) {
     // Init the IMU
-    imu_init(&imu_data_ready_cb);
+    imu_init(NULL);
 
 #if CALIBRATION_PROCEDURE
     float offset_x;
@@ -60,10 +57,9 @@ int main(void) {
 
     while (1) {
         // processor idle until an interrupt occurs and is handled
-        if (_drv_imu_vars.data_ready) {
+        if (imu_data_ready()) {
             imu_read_heading();
             heading                  = imu_last_heading() * 180 / CONST_PI;
-            _drv_imu_vars.data_ready = false;
             printf("heading: %f\n", heading);
         }
         __WFE();
@@ -74,7 +70,3 @@ int main(void) {
 }
 
 //=========================== functions =========================================
-
-static void imu_data_ready_cb(void) {
-    _drv_imu_vars.data_ready = true;
-}
