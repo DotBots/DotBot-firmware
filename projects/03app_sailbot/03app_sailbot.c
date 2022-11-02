@@ -42,7 +42,7 @@ typedef struct {
 //=========================== variables =========================================
 
 static sailbot_vars_t _sailbot_vars;
-static const gpio_t _led1_pin   = { .pin = 15, .port = 0 };
+static const gpio_t   _led1_pin = { .pin = 15, .port = 0 };
 
 //=========================== prototypes =========================================
 

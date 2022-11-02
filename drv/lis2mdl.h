@@ -1,5 +1,5 @@
-#ifndef __IMU_H
-#define __IMU_H
+#ifndef __LIS2MDL_H
+#define __LIS2MDL_H
 
 /**
  * @file lis2mdl.h

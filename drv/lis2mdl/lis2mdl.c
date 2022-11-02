@@ -53,8 +53,8 @@ static const gpio_t button_2 = { .port = 0, .pin = 12 };
 
 typedef struct {
     lis2mdl_data_ready_cb_t callback;
-    bool                data_ready;
-    float               heading;
+    bool                    data_ready;
+    float                   heading;
 } lis2mdl_vars_t;
 
 //=========================== variables ========================================
