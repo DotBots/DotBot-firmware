@@ -37,6 +37,7 @@ static gps_vars_t   _gps_vars = { 0 };
 
 uint8_t *strtok_new(uint8_t *string, uint8_t const *delimiter);
 int      nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position);
+uint8_t  nmea_calculate_checksum(uint8_t *buffer);
 
 //=========================== callbacks ========================================
 
@@ -175,6 +176,25 @@ int nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
         current_value = strtok_new(NULL, ",*\n");
     }
     return 0;
+}
+
+uint8_t nmea_calculate_checksum(uint8_t *buffer) {
+    uint8_t  checksum;
+    uint16_t len;
+    uint16_t i;
+
+    checksum = 0;
+    len      = strlen(buffer);
+
+    if (buffer[0] != '$') {
+        return 0;
+    }
+
+    for (i = 1; i < len - 5; i++) {
+        checksum ^= buffer[i];
+    }
+
+    return checksum;
 }
 
 void gps_init(gps_rx_cb_t callback) {
