@@ -130,11 +130,13 @@ int main(void) {
     servos_init();
     servos_set(0, _sailbot_vars.sail_trim);
 
+    // init the timers
+    db_timer_init();
+    db_timer_hf_init();
+
     // Configure GPS without callback
     gps_init(NULL);
 
-    db_timer_init();
-    db_timer_hf_init();
     // set timer callbacks
     db_timer_set_periodic_ms(0, TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
     db_timer_set_periodic_ms(1, ADVERTISEMENT_PERIOD_MS, &_advertise);
