@@ -100,11 +100,26 @@ uint8_t *strtok_new(uint8_t *string, uint8_t const *delimiter) {
 
 // buffer is a NULL-terminated string
 int nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
+    uint8_t  calculated_checksum;
+    uint8_t  rcvd_checksum;
+    uint8_t  rcvd_checksum_buf[3];
     uint8_t  coordinate_degrees[4];
     uint8_t *current_value;
     uint8_t  current_position;
 
     current_position = 0;
+
+    calculated_checksum  = nmea_calculate_checksum(buffer);
+    rcvd_checksum_buf[0] = buffer[strlen(buffer) - 4];
+    rcvd_checksum_buf[1] = buffer[strlen(buffer) - 3];
+    rcvd_checksum_buf[2] = NULL;
+    rcvd_checksum        = strtol(rcvd_checksum_buf, NULL, 16);
+
+    if (rcvd_checksum != calculated_checksum) {
+        printf("gps: Invalid checksum. Sentence: %s \n", buffer);
+        position->valid = 0;
+        return -1;
+    }
 
     current_value = strtok_new(buffer, ",*\n");
     while (current_value != NULL) {
@@ -168,7 +183,7 @@ int nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
                 position->mode = *current_value;
                 break;
             case 13:
-                // TODO verify checksum
+                // checksum checked before entering the parsing routine
                 break;
             default:
                 return -1;
@@ -191,6 +206,7 @@ uint8_t nmea_calculate_checksum(uint8_t *buffer) {
         return 0;
     }
 
+    // disregard '\n', '\r', 2 chars for received checksum and '*'
     for (i = 1; i < len - 5; i++) {
         checksum ^= buffer[i];
     }
