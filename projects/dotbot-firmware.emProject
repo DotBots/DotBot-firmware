@@ -150,13 +150,13 @@
     <file file_name="pid.c" />
     <file file_name="../pid.h" />
   </project>
-  <project Name="00drv_imu">
+  <project Name="00drv_lis2mdl">
     <configuration
       Name="Common"
-      project_directory="../drv/imu"
+      project_directory="../drv/lis2mdl"
       project_type="Library" />
-    <file file_name="imu.c" />
-    <file file_name="../imu.h" />
+    <file file_name="lis2mdl.c" />
+    <file file_name="../lis2mdl.h" />
   </project>
   <project Name="00std_motors">
     <configuration
@@ -1238,7 +1238,7 @@
       linker_printf_fp_enabled="Float"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      project_dependencies="00bsp_radio;00bsp_uart;00drv_dotbot_protocol;00bsp_pwm;00bsp_timer;00bsp_i2c;00drv_imu"
+      project_dependencies="00bsp_radio;00bsp_uart;00drv_dotbot_protocol;00bsp_pwm;00bsp_timer;00bsp_i2c;00drv_lis2mdl"
       project_directory="03app_sailbot"
       project_type="Executable"
       target_reset_script="Reset();"
@@ -1343,7 +1343,7 @@
       </file>
     </folder>
   </project>
-  <project Name="01drv_imu">
+  <project Name="01drv_lis2mdl">
     <configuration
       Name="Common"
       Placement="Flash"
@@ -1367,8 +1367,8 @@
       linker_printf_fp_enabled="Float"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      project_dependencies="00bsp_i2c;00drv_imu"
-      project_directory="01drv_imu"
+      project_dependencies="00bsp_i2c;00drv_lis2mdl"
+      project_directory="01drv_lis2mdl"
       project_type="Executable"
       target_reset_script="Reset();"
       target_script_file="$(ProjectDir)/nRF_Target.js"
@@ -1396,7 +1396,7 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="01drv_imu.c" />
+      <file file_name="01drv_lis2mdl.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />

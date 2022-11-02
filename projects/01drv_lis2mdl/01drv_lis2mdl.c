@@ -16,7 +16,7 @@
 
 // Include BSP packages
 
-#include "imu.h"
+#include "lis2mdl.h"
 #include "gpio.h"
 
 //=========================== defines =========================================
@@ -25,11 +25,11 @@
 #define CONST_PI              (3.14159265359f)
 
 typedef struct {
-} drv_imu_vars_t;
+} drv_lis2mdl_vars_t;
 
 //=========================== variables =========================================
 
-drv_imu_vars_t _drv_imu_vars;
+drv_lis2mdl_vars_t _drv_lis2mdl_vars;
 
 //=========================== prototypes =========================================
 
@@ -40,12 +40,12 @@ drv_imu_vars_t _drv_imu_vars;
  */
 int main(void) {
     // Init the IMU
-    imu_init(NULL);
+    lis2mdl_init(NULL);
 
 #if CALIBRATION_PROCEDURE
     lis2mdl_compass_data_t offset;
 
-    imu_magnetometer_calibrate(&offset);
+    lis2mdl_magnetometer_calibrate(&offset);
     while (1) {
         ;
     }
@@ -54,9 +54,9 @@ int main(void) {
 
     while (1) {
         // processor idle until an interrupt occurs and is handled
-        if (imu_data_ready()) {
-            imu_read_heading();
-            heading = imu_last_heading() * 180 / CONST_PI;
+        if (lis2mdl_data_ready()) {
+            lis2mdl_read_heading();
+            heading = lis2mdl_last_heading() * 180 / CONST_PI;
             printf("heading: %f\n", heading);
         }
         __WFE();

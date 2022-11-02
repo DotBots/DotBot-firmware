@@ -1,5 +1,5 @@
 /**
- * @file imu.c
+ * @file lis2mdl.c
  * @author Mališa Vučinić <malisa.vucinic@inria.fr>
  * @brief Module for controlling the IMU on Kyosho Fortune 612 SailBot.
  *
@@ -11,7 +11,7 @@
 #include "gpio.h"
 #include "assert.h"
 #include "i2c.h"
-#include "imu.h"
+#include "lis2mdl.h"
 #include "timer_hf.h"
 
 //=========================== defines ==========================================
@@ -52,26 +52,26 @@ static const gpio_t button_2 = { .port = 0, .pin = 12 };
 #define LIS2MDL_SENSITIVITY 1.5f
 
 typedef struct {
-    imu_data_ready_cb_t callback;
+    lis2mdl_data_ready_cb_t callback;
     bool                data_ready;
     float               heading;
-} imu_vars_t;
+} lis2mdl_vars_t;
 
 //=========================== variables ========================================
 
-imu_vars_t _imu_vars;
+lis2mdl_vars_t _lis2mdl_vars;
 
 //=========================== prototypes ========================================
 
-void imu_i2c_read_magnetometer(lis2mdl_compass_data_t *out);
+void lis2mdl_i2c_read_magnetometer(lis2mdl_compass_data_t *out);
 
 //============================== public ========================================
 
-void imu_init(imu_data_ready_cb_t callback) {
+void lis2mdl_init(lis2mdl_data_ready_cb_t callback) {
     uint8_t who_am_i;
     uint8_t tmp;
 
-    _imu_vars.callback = callback;
+    _lis2mdl_vars.callback = callback;
 
     db_i2c_init(&scl, &sda);
     db_i2c_begin();
@@ -108,7 +108,7 @@ void imu_init(imu_data_ready_cb_t callback) {
 }
 
 // function should be invoked only upon DATA RDY interrupt, outside of the interrupt context
-void imu_i2c_read_magnetometer(lis2mdl_compass_data_t *out) {
+void lis2mdl_i2c_read_magnetometer(lis2mdl_compass_data_t *out) {
     uint8_t tmp;
 
     db_i2c_begin();
@@ -133,10 +133,10 @@ void imu_i2c_read_magnetometer(lis2mdl_compass_data_t *out) {
     out->z |= (int16_t)tmp << 8;
     db_i2c_end();
 
-    _imu_vars.data_ready = false;
+    _lis2mdl_vars.data_ready = false;
 }
 
-void imu_magnetometer_calibrate(lis2mdl_compass_data_t *offset) {
+void lis2mdl_magnetometer_calibrate(lis2mdl_compass_data_t *offset) {
     lis2mdl_compass_data_t current;
 
     printf("X,Y,Z\n");
@@ -145,8 +145,8 @@ void imu_magnetometer_calibrate(lis2mdl_compass_data_t *offset) {
     while (1) {
 
         // save max and min values
-        if (imu_data_ready()) {
-            imu_i2c_read_magnetometer(&current);
+        if (lis2mdl_data_ready()) {
+            lis2mdl_i2c_read_magnetometer(&current);
             printf("%d,%d,%d\n", current.x, current.y, current.z);
         }
         __WFE();
@@ -155,12 +155,12 @@ void imu_magnetometer_calibrate(lis2mdl_compass_data_t *offset) {
     return;
 }
 
-void imu_read_heading() {
+void lis2mdl_read_heading(void) {
     lis2mdl_compass_data_t raw_data;
     float                  x;
     float                  y;
 
-    imu_i2c_read_magnetometer(&raw_data);
+    lis2mdl_i2c_read_magnetometer(&raw_data);
 
     // convert to heading
 
@@ -169,16 +169,16 @@ void imu_read_heading() {
     y = (float)(raw_data.y - SAILBOT_REV10_OFFSET_Y) * LIS2MDL_SENSITIVITY;
 
     // atan2(x,y) for north-clockwise convention, + Pi for 0 to 2PI heading
-    _imu_vars.heading = atan2f(x, y) + M_PI;
+    _lis2mdl_vars.heading = atan2f(x, y) + M_PI;
     return;
 }
 
-float imu_last_heading() {
-    return _imu_vars.heading;
+float lis2mdl_last_heading(void) {
+    return _lis2mdl_vars.heading;
 }
 
-bool imu_data_ready() {
-    return _imu_vars.data_ready;
+bool lis2mdl_data_ready(void) {
+    return _lis2mdl_vars.data_ready;
 }
 
 //============================== interrupts ====================================
@@ -191,10 +191,10 @@ void GPIOTE_IRQHandler(void) {
         NRF_GPIOTE->EVENTS_PORT = 0;
         if (pins & GPIO_IN_PIN17_Msk) {  // if pin 17 is high, data is ready
             // set data_ready to true
-            _imu_vars.data_ready = true;
+            _lis2mdl_vars.data_ready = true;
             // invoke application callback if initialized
-            if (_imu_vars.callback != NULL) {
-                _imu_vars.callback();
+            if (_lis2mdl_vars.callback != NULL) {
+                _lis2mdl_vars.callback();
             }
         }
     }
