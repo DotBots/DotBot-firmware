@@ -20,7 +20,7 @@
 #include "radio.h"
 #include "servos.h"
 #include "gps.h"
-#include "imu.h"
+#include "lis2mdl.h"
 #include "protocol.h"
 #include "timer.h"
 #include "gpio.h"
@@ -37,7 +37,6 @@ typedef struct {
     uint32_t ts_last_packet_received;  ///< Last timestamp in microseconds a control packet was received
     int8_t   sail_trim;
     uint8_t  radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
-    bool     imu_data_ready;
 } sailbot_vars_t;
 
 //=========================== variables =========================================
@@ -49,7 +48,6 @@ static const gpio_t _led1_pin   = { .pin = 15, .port = 0 };
 
 void        radio_callback(uint8_t *packet, uint8_t length);
 void        gps_callback(nmea_gprmc_t *last_position);
-void        imu_data_ready_callback(void);
 static void _timeout_check(void);
 static void _advertise(void);
 
@@ -75,7 +73,7 @@ int main(void) {
     db_timer_set_periodic_ms(1, ADVERTISEMENT_PERIOD_MS, &_advertise);
 
     // Init the IMU
-    imu_init(&imu_data_ready_callback);
+    lis2mdl_init(NULL);
 
     // Configure Motors
     servos_init();
@@ -146,11 +144,6 @@ void radio_callback(uint8_t *packet, uint8_t length) {
 
 void gps_callback(nmea_gprmc_t *last_position) {
     // TODO implement the control loop
-}
-
-void imu_data_ready_callback(void) {
-    // set the flag that data is ready
-    _sailbot_vars.imu_data_ready = true;
 }
 
 static void _timeout_check(void) {
