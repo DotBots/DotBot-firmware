@@ -59,7 +59,7 @@ typedef struct {
 
 //=========================== variables ========================================
 
-lis2mdl_vars_t _lis2mdl_vars;
+static lis2mdl_vars_t _lis2mdl_vars;
 
 //=========================== prototypes ========================================
 

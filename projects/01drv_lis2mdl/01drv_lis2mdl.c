@@ -29,7 +29,7 @@ typedef struct {
 
 //=========================== variables =========================================
 
-drv_lis2mdl_vars_t _drv_lis2mdl_vars;
+static drv_lis2mdl_vars_t _drv_lis2mdl_vars;
 
 //=========================== prototypes =========================================
 
