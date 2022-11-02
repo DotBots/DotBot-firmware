@@ -12,7 +12,6 @@
 #include "assert.h"
 #include "i2c.h"
 #include "lis2mdl.h"
-#include "timer_hf.h"
 
 //=========================== defines ==========================================
 

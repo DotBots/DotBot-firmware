@@ -17,7 +17,6 @@
 // Include BSP packages
 
 #include "lis2mdl.h"
-#include "gpio.h"
 
 //=========================== defines =========================================
 
