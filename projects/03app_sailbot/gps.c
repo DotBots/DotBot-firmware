@@ -14,6 +14,7 @@
 #include "gpio.h"
 #include "uart.h"
 #include "gps.h"
+#include "timer.h"
 
 //=========================== defines ==========================================
 
@@ -200,8 +201,8 @@ uint8_t nmea_calculate_checksum(uint8_t *buffer) {
 void gps_init(gps_rx_cb_t callback) {
     // configure the module to output rate of 10 Hz
     uint8_t nmea_cmd_set_10hz_data_rate[] = "$PMTK220,100*2F\r\n";
-    // configure the module at 38400 bauds
-    uint8_t nmea_cmd_set_baud_rate_38400[] = "$PMTK251,38400*27\r\n";
+    // configure the module at 115200 bauds
+    uint8_t nmea_cmd_set_baud_rate_115200[] = "$PMTK251,115200*1F\r\n";
     // enable only GPRMC sentences
     uint8_t nmea_cmd_set_nmea_output[] = "$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n";
 
@@ -211,23 +212,17 @@ void gps_init(gps_rx_cb_t callback) {
 
     // configure UART at 9600 bauds
     db_uart_init(&_rx_pin, &_tx_pin, 9600, &uart_callback);
-    for (int i = 0; i < 100000; i++) {
-        ;
-    }
+    db_timer_delay_ms(10);
 
     // command the module to increase the baud rate to 38400
-    db_uart_write(nmea_cmd_set_baud_rate_38400, 19);
+    db_uart_write(nmea_cmd_set_baud_rate_115200, 20);
 
     // reinit myself at 38400 bauds
-    db_uart_init(&_rx_pin, &_tx_pin, 38400, &uart_callback);
-    for (int i = 0; i < 100000; i++) {
-        ;
-    }
+    db_uart_init(&_rx_pin, &_tx_pin, 115200, &uart_callback);
+    db_timer_delay_ms(10);
 
     db_uart_write(nmea_cmd_set_nmea_output, 51);
-    for (int i = 0; i < 100000; i++) {
-        ;
-    }
+    db_timer_delay_ms(10);
 
     // command to module to use 10hz output data rate
     db_uart_write(nmea_cmd_set_10hz_data_rate, 17);
