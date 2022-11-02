@@ -83,9 +83,9 @@ typedef struct {
 static const gpio_t   _led1_pin     = { .pin = 15, .port = 0 };
 static sailbot_vars_t _sailbot_vars = { 0, 0, {
                                                   // waypoints
-                                                  { 1, 48.83257712, 2.409900427 },  // waypoint 1
-                                                  { 1, 48.86116982, 2.3378439 },    // waypoint 2
-                                                  { 1, 48.84411394, 2.318446164 },  // waypoint 3
+                                                  { 1, 48.84226853349436, 2.38764801698452 },  // waypoint 1 jardin de reuilly
+                                                  { 0, 48.85292599987966, 2.3691622320143892 },    // waypoint 2 bastille
+                                                  { 0, 48.84411394, 2.318446164 },  // waypoint 3
                                                   { 0, 0, 0 },                      // waypoint 4
                                                   { 0, 0, 0 },                      // waypoint 5
                                                   { 0, 0, 0 },                      // waypoint 6
@@ -98,7 +98,6 @@ static sailbot_vars_t _sailbot_vars = { 0, 0, {
 //=========================== prototypes =========================================
 
 void        radio_callback(uint8_t *packet, uint8_t length);
-void        gps_callback(nmea_gprmc_t *last_position);
 void        path_planner_callback(void);
 void        control_loop_callback(void);
 static void convert_geographical_to_cartesian(cartesian_coordinate_t *out, waypoint_t *in);
@@ -154,6 +153,10 @@ int main(void) {
     // Wait for radio packets to arrive
     while (1) {
         // processor idle until an interrupt occurs and is handled
+        // if IMU data is ready, trigger the I2C transfer from outside the interrupt context
+        if (lis2mdl_data_ready()) {
+            lis2mdl_read_heading();
+        }
         __WFE();
     }
 
@@ -240,8 +243,10 @@ void control_loop_callback(void) {
     float                  theta;
     float                  psi;
     float                  error;
+    float                  heading;
 
     gps_data = gps_last_known_position();
+    heading = lis2mdl_last_heading();
     if (gps_data->valid && _sailbot_vars.next_waypoint.valid) {
         // convert the next_waypoint to local coordinate system (and copy to stack to avoid concurrency issues)
         convert_geographical_to_cartesian(&target, &_sailbot_vars.next_waypoint);
@@ -254,14 +259,16 @@ void control_loop_callback(void) {
         // convert geographical data given by GPS to our local coordinate system
         convert_geographical_to_cartesian(&position, &current_position_gps);
 
-        // calculate the angle theta, which is the angle between myself and the waypoint relative to the x axis
-        theta = atan2f(target.y - position.y, target.x - position.x);
-
-        // FIXME use heading provided by the IMU, not the GPS
-        psi = gps_data->course * CONST_PI / 180.0;  // convert GPS heading to radians
+        // calculate the angle theta, which is the angle between myself and the waypoint relative to the y axis
+        theta = atan2f(target.x - position.x, target.y - position.y); // north clockwise convention
+        if (theta < 0) {
+            theta += M_PI * 2;
+        }
 
         // calculate the error
-        error = theta - psi;
+        error = heading - theta;
+
+        // TODO convert error in radians to rudder angle
     }
 }
 
