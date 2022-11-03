@@ -78,6 +78,7 @@ typedef struct {
     waypoint_t next_waypoint;                      ///< The next waypoint SailBot is going to traverse
     uint8_t    radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
     bool       autonomous_operation;               ///< Flag used to enable/disable autonomous operation
+    bool       radio_override;                     ///< Flag used to override autonomous operation when radio-controlled
 } sailbot_vars_t;
 
 //=========================== variables =========================================
@@ -121,6 +122,7 @@ int main(void) {
     NRF_P0->OUTSET = 0 << _led1_pin.pin;  // set pin LOW
 
     _sailbot_vars.autonomous_operation = AUTONOMOUS_OPERATION;
+    _sailbot_vars.radio_override       = false;
     _sailbot_vars.sail_trim            = 50;
 
     // Configure Radio as a receiver
@@ -145,6 +147,7 @@ int main(void) {
     // set timer callbacks
     db_timer_set_periodic_ms(0, TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
     db_timer_set_periodic_ms(1, ADVERTISEMENT_PERIOD_MS, &_advertise);
+
     if (_sailbot_vars.autonomous_operation) {
         db_timer_set_periodic_ms(2, PATH_PLANNER_PERIOD_MS, &path_planner_callback);
         db_timer_hf_set_periodic_us(0, CONTROL_LOOP_PERIOD_MS * 1000, &control_loop_callback);
@@ -190,6 +193,7 @@ void radio_callback(uint8_t *packet, uint8_t length) {
 
     // timestamp the arrival of the packet
     _sailbot_vars.ts_last_packet_received = db_timer_ticks();
+    _sailbot_vars.radio_override = true;
 
     // we filter out all packets other than MOVE_RAW command
     if (header->type != DB_PROTOCOL_CMD_MOVE_RAW) {
@@ -276,13 +280,15 @@ void control_loop_callback(void) {
         }
 
         // calculate the error
-        //error = theta - heading;
         error = calculate_error(heading, theta);
 
         // convert error in radians to rudder angle
         rudder_angle = map_error_to_rudder_angle(error);
 
-        servos_rudder_turn(rudder_angle);
+        // set the rudder servo
+        if (!_sailbot_vars.radio_override) {
+            servos_rudder_turn(rudder_angle);
+        }
     }
 }
 
@@ -317,6 +323,7 @@ static float calculate_error(float heading, float bearing) {
 static void _timeout_check(void) {
     uint32_t ticks = db_timer_ticks();
     if (ticks > _sailbot_vars.ts_last_packet_received + TIMEOUT_CHECK_DELAY_TICKS && _sailbot_vars.ts_last_packet_received > 0) {
+        _sailbot_vars.radio_override = false;
         // set the servos
         servos_set(0, _sailbot_vars.sail_trim);
     }
