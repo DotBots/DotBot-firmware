@@ -14,6 +14,7 @@
 #include "gpio.h"
 #include "uart.h"
 #include "gps.h"
+#include "timer.h"
 
 //=========================== defines ==========================================
 
@@ -37,6 +38,7 @@ static gps_vars_t   _gps_vars = { 0 };
 
 uint8_t *strtok_new(uint8_t *string, uint8_t const *delimiter);
 int      nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position);
+uint8_t  nmea_calculate_checksum(uint8_t *buffer);
 
 //=========================== callbacks ========================================
 
@@ -98,11 +100,26 @@ uint8_t *strtok_new(uint8_t *string, uint8_t const *delimiter) {
 
 // buffer is a NULL-terminated string
 int nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
+    uint8_t  calculated_checksum;
+    uint8_t  rcvd_checksum;
+    uint8_t  rcvd_checksum_buf[3];
     uint8_t  coordinate_degrees[4];
     uint8_t *current_value;
     uint8_t  current_position;
 
     current_position = 0;
+
+    calculated_checksum  = nmea_calculate_checksum(buffer);
+    rcvd_checksum_buf[0] = buffer[strlen(buffer) - 4];
+    rcvd_checksum_buf[1] = buffer[strlen(buffer) - 3];
+    rcvd_checksum_buf[2] = NULL;
+    rcvd_checksum        = strtol(rcvd_checksum_buf, NULL, 16);
+
+    if (rcvd_checksum != calculated_checksum) {
+        printf("gps: Invalid checksum. Sentence: %s \n", buffer);
+        position->valid = 0;
+        return -1;
+    }
 
     current_value = strtok_new(buffer, ",*\n");
     while (current_value != NULL) {
@@ -131,7 +148,9 @@ int nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
                 }
                 break;
             case 4:  // Latitude N/S
-                position->latitude_N_S = *current_value;
+                if (strcmp(current_value, "S") == 0) {
+                    position->latitude *= (-1);  // for south of Equator, use negative latitude
+                }
                 break;
             case 5:  // Longitude
                 position->longitude = 0;
@@ -145,7 +164,9 @@ int nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
                 }
                 break;
             case 6:  // Longitude E/W
-                position->longitude_E_W = *current_value;
+                if (strcmp(current_value, "W") == 0) {
+                    position->longitude *= (-1);  // for west of Greenwich, use negative longitude
+                }
                 break;
             case 7:  // Speed over ground in knots
                 position->velocity = atof(current_value);
@@ -160,13 +181,15 @@ int nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
                 position->variation = atof(current_value);
                 break;
             case 11:  // Magnetic variation E/W
-                position->variation_E_W = *current_value;
+                if (strcmp(current_value, "W") == 0) {
+                    position->variation *= (-1);  // for west of Greenwich, use negative variation
+                }
                 break;
             case 12:  // Mode indicator
                 position->mode = *current_value;
                 break;
             case 13:
-                // TODO verify checksum
+                // checksum checked before entering the parsing routine
                 break;
             default:
                 return -1;
@@ -177,13 +200,50 @@ int nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
     return 0;
 }
 
+uint8_t nmea_calculate_checksum(uint8_t *buffer) {
+    uint8_t  checksum = 0;
+    uint16_t len      = strlen(buffer);
+
+    if (buffer[0] != '$') {
+        return 0;
+    }
+
+    // disregard '\n', '\r', 2 chars for received checksum and '*'
+    for (uint16_t i = 1; i < len - 5; i++) {
+        checksum ^= buffer[i];
+    }
+
+    return checksum;
+}
+
 void gps_init(gps_rx_cb_t callback) {
+    // configure the module to output rate of 10 Hz
+    uint8_t nmea_cmd_set_10hz_data_rate[] = "$PMTK220,100*2F\r\n";
+    // configure the module at 115200 bauds
+    uint8_t nmea_cmd_set_baud_rate_115200[] = "$PMTK251,115200*1F\r\n";
+    // enable only GPRMC sentences
+    uint8_t nmea_cmd_set_nmea_output[] = "$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n";
+
     // Turn ON the GPS module
     NRF_P0->DIRSET = 1 << _en_pin.pin;  // set pin as output
     NRF_P0->OUTSET = 1 << _en_pin.pin;  // set pin HIGH
 
     // configure UART at 9600 bauds
     db_uart_init(&_rx_pin, &_tx_pin, 9600, &uart_callback);
+    db_timer_delay_ms(10);
+
+    // command the module to increase the baud rate to 38400
+    db_uart_write(nmea_cmd_set_baud_rate_115200, 20);
+
+    // reinit myself at 38400 bauds
+    db_uart_init(&_rx_pin, &_tx_pin, 115200, &uart_callback);
+    db_timer_delay_ms(10);
+
+    db_uart_write(nmea_cmd_set_nmea_output, 51);
+    db_timer_delay_ms(10);
+
+    // command to module to use 10hz output data rate
+    db_uart_write(nmea_cmd_set_10hz_data_rate, 17);
 
     _gps_vars.callback = callback;
 }
