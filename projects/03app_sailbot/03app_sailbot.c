@@ -97,12 +97,14 @@ static sailbot_vars_t _sailbot_vars = { 0, 0, {
 
 //=========================== prototypes =========================================
 
-void        radio_callback(uint8_t *packet, uint8_t length);
-void        path_planner_callback(void);
-void        control_loop_callback(void);
-static void convert_geographical_to_cartesian(cartesian_coordinate_t *out, waypoint_t *in);
-static void _timeout_check(void);
-static void _advertise(void);
+void          radio_callback(uint8_t *packet, uint8_t length);
+void          path_planner_callback(void);
+void          control_loop_callback(void);
+static void   convert_geographical_to_cartesian(cartesian_coordinate_t *out, waypoint_t *in);
+static float  calculate_error(float heading, float bearing);
+static int8_t map_error_to_rudder_angle(float error);
+static void   _timeout_check(void);
+static void   _advertise(void);
 
 //=========================== main =========================================
 
@@ -246,9 +248,10 @@ void control_loop_callback(void) {
     float                  psi;
     float                  error;
     float                  heading;
+    int8_t                 rudder_angle;
 
     gps_data = gps_last_known_position();
-    heading = lis2mdl_last_heading();
+    heading  = lis2mdl_last_heading();
     if (gps_data->valid && _sailbot_vars.next_waypoint.valid) {
         // convert the next_waypoint to local coordinate system (and copy to stack to avoid concurrency issues)
         convert_geographical_to_cartesian(&target, &_sailbot_vars.next_waypoint);
@@ -262,16 +265,48 @@ void control_loop_callback(void) {
         convert_geographical_to_cartesian(&position, &current_position_gps);
 
         // calculate the angle theta, which is the angle between myself and the waypoint relative to the y axis
-        theta = atan2f(target.x - position.x, target.y - position.y); // north clockwise convention
+        theta = atan2f(target.x - position.x, target.y - position.y);  // north clockwise convention
         if (theta < 0) {
             theta += M_PI * 2;
         }
 
         // calculate the error
-        error = heading - theta;
+        //error = theta - heading;
+        error = calculate_error(heading, theta);
 
-        // TODO convert error in radians to rudder angle
+        // convert error in radians to rudder angle
+        rudder_angle = map_error_to_rudder_angle(error);
+
+        servos_rudder_turn(rudder_angle);
     }
+}
+
+static int8_t map_error_to_rudder_angle(float error) {
+    float converted;
+
+    converted = 255.0 * error / M_PI / 2.0;
+
+    if (converted > 127) {
+        return 127;
+    }
+    if (converted < -128) {
+        return -128;
+    }
+    return (int8_t)converted;
+}
+
+static float calculate_error(float heading, float bearing) {
+    float difference;
+
+    difference = bearing - heading;
+
+    if (difference < -M_PI) {
+        difference += 2 * M_PI;
+    }
+    if (difference > M_PI) {
+        difference -= 2 * M_PI;
+    }
+    return difference;
 }
 
 static void _timeout_check(void) {
