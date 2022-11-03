@@ -201,19 +201,15 @@ int nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
 }
 
 uint8_t nmea_calculate_checksum(uint8_t *buffer) {
-    uint8_t  checksum;
-    uint16_t len;
-    uint16_t i;
-
-    checksum = 0;
-    len      = strlen(buffer);
+    uint8_t  checksum = 0;
+    uint16_t len      = strlen(buffer);
 
     if (buffer[0] != '$') {
         return 0;
     }
 
     // disregard '\n', '\r', 2 chars for received checksum and '*'
-    for (i = 1; i < len - 5; i++) {
+    for (uint16_t i = 1; i < len - 5; i++) {
         checksum ^= buffer[i];
     }
 
