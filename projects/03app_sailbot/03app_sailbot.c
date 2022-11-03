@@ -30,19 +30,18 @@
 
 //=========================== defines =========================================
 
-#define AUTONOMOUS_OPERATION (0)  // user define to enable autonomous operation
+#define AUTONOMOUS_OPERATION (0)  //< user define to enable autonomous operation
 
-#define PATH_PLANNER_PERIOD_MS (500)  // path planner period
-#define CONTROL_LOOP_PERIOD_MS (100)  // control loop period
+#define PATH_PLANNER_PERIOD_MS (500)  //< path planner period
+#define CONTROL_LOOP_PERIOD_MS (100)  //< control loop period
 
-#define SAIL_TRIM_ANGLE_UNIT_STEP (10)     // unit step increase/decrease when trimming the sails
+#define SAIL_TRIM_ANGLE_UNIT_STEP (10)     //< unit step increase/decrease when trimming the sails
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
 #define TIMEOUT_CHECK_DELAY_MS    (200)    ///< 200 ms delay between packet received timeout checks
 #define ADVERTISEMENT_PERIOD_MS   (500)    ///< send an advertisement every 500 ms
 #define DB_BUFFER_MAX_BYTES       (64U)    ///< Max bytes in UART receive buffer
 #define MAX_WAYPOINTS             (10)
 
-#define CONST_PI                       (3.14159265359F)        // pi
 #define CONST_EARTH_RADIUS_KM          (6371.0F)               // 6371 km
 #define CONST_COS_PHI_0_INRIA_PARIS    (0.658139837F)          // cos(0.85245092073) where 0.85245092073 represent radians latitude of Inria Paris
 #define CONST_COS_PHI_0_UFF            (0.92114562603F)        // cos(0.3997826147759739) where 0.3997826147759739 represents radians latitude of UFF
@@ -340,12 +339,12 @@ static void convert_geographical_to_cartesian(cartesian_coordinate_t *out, waypo
     out->x = (in->longitude - CONST_ORIGIN_COORD_SYSTEM_LONG) * CONST_EARTH_RADIUS_KM;
     out->x *= CONST_COS_PHI_0;
     // account for longitude in degrees by converting to radians and then to meters (from km)
-    out->x *= CONST_PI;
+    out->x *= M_PI;
     out->x = out->x * 100.0 / 18.0;  // multiply by 1000, divide by 180
 
     // y = R(latitude - latitude_at_origin))
     out->y = (in->latitude - CONST_ORIGIN_COORD_SYSTEM_LAT) * CONST_EARTH_RADIUS_KM;
     // account for latitude in degrees by converting to radians and then to meters (from km)
-    out->y *= CONST_PI;
+    out->y *= M_PI;
     out->y = out->y * 100.0 / 18.0;
 }
