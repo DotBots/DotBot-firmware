@@ -30,6 +30,8 @@
 
 //=========================== defines =========================================
 
+#define AUTONOMOUS_OPERATION (0)  // user define to enable autonomous operation
+
 #define PATH_PLANNER_PERIOD_MS (500)  // path planner period
 #define CONTROL_LOOP_PERIOD_MS (100)  // control loop period
 
@@ -76,6 +78,7 @@ typedef struct {
     waypoint_t waypoints[MAX_WAYPOINTS];           ///< Array containing pre-programmed waypoints
     waypoint_t next_waypoint;                      ///< The next waypoint SailBot is going to traverse
     uint8_t    radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
+    bool       autonomous_operation;               ///< Flag used to enable/disable autonomous operation
 } sailbot_vars_t;
 
 //=========================== variables =========================================
@@ -118,7 +121,8 @@ int main(void) {
     NRF_P0->DIRSET = 1 << _led1_pin.pin;  // set pin as output
     NRF_P0->OUTSET = 0 << _led1_pin.pin;  // set pin LOW
 
-    _sailbot_vars.sail_trim = 50;
+    _sailbot_vars.autonomous_operation = AUTONOMOUS_OPERATION;
+    _sailbot_vars.sail_trim            = 50;
 
     // Configure Radio as a receiver
     db_radio_init(&radio_callback);  // Set the callback function.
@@ -142,15 +146,17 @@ int main(void) {
     // set timer callbacks
     db_timer_set_periodic_ms(0, TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
     db_timer_set_periodic_ms(1, ADVERTISEMENT_PERIOD_MS, &_advertise);
-    db_timer_set_periodic_ms(2, PATH_PLANNER_PERIOD_MS, &path_planner_callback);
-    db_timer_hf_set_periodic_us(0, CONTROL_LOOP_PERIOD_MS * 1000, &control_loop_callback);
+    if (_sailbot_vars.autonomous_operation) {
+        db_timer_set_periodic_ms(2, PATH_PLANNER_PERIOD_MS, &path_planner_callback);
+        db_timer_hf_set_periodic_us(0, CONTROL_LOOP_PERIOD_MS * 1000, &control_loop_callback);
 
-    // convenience dump of the pre-programmed waypoints and their conversion
-    for (uint8_t i = 0; i < MAX_WAYPOINTS; i++) {
-        if (_sailbot_vars.waypoints[i].valid) {
-            printf("Pre-programmed waypoint %d: %f %f; ", i, _sailbot_vars.waypoints[i].latitude, _sailbot_vars.waypoints[i].longitude);
-            convert_geographical_to_cartesian(&temp, &_sailbot_vars.waypoints[i]);
-            printf("converted: %f %f\n", temp.x, temp.y);
+        // convenience dump of the pre-programmed waypoints and their conversion
+        for (uint8_t i = 0; i < MAX_WAYPOINTS; i++) {
+            if (_sailbot_vars.waypoints[i].valid) {
+                printf("Pre-programmed waypoint %d: %f %f; ", i, _sailbot_vars.waypoints[i].latitude, _sailbot_vars.waypoints[i].longitude);
+                convert_geographical_to_cartesian(&temp, &_sailbot_vars.waypoints[i]);
+                printf("converted: %f %f\n", temp.x, temp.y);
+            }
         }
     }
 
