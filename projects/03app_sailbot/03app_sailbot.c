@@ -86,16 +86,16 @@ typedef struct {
 static const gpio_t   _led1_pin     = { .pin = 15, .port = 0 };
 static sailbot_vars_t _sailbot_vars = { 0, 0, {
                                                   // waypoints
-                                                  { 1, 48.84226853349436, 2.38764801698452 },  // waypoint 1 jardin de reuilly
-                                                  { 0, 48.85292599987966, 2.3691622320143892 },    // waypoint 2 bastille
-                                                  { 0, 48.84411394, 2.318446164 },  // waypoint 3
-                                                  { 0, 0, 0 },                      // waypoint 4
-                                                  { 0, 0, 0 },                      // waypoint 5
-                                                  { 0, 0, 0 },                      // waypoint 6
-                                                  { 0, 0, 0 },                      // waypoint 7
-                                                  { 0, 0, 0 },                      // waypoint 8
-                                                  { 0, 0, 0 },                      // waypoint 9
-                                                  { 0, 0, 0 },                      // waypoint 10
+                                                  { 1, 48.84226853349436, 2.38764801698452 },    // waypoint 1 jardin de reuilly
+                                                  { 0, 48.85292599987966, 2.3691622320143892 },  // waypoint 2 bastille
+                                                  { 0, 48.84411394, 2.318446164 },               // waypoint 3
+                                                  { 0, 0, 0 },                                   // waypoint 4
+                                                  { 0, 0, 0 },                                   // waypoint 5
+                                                  { 0, 0, 0 },                                   // waypoint 6
+                                                  { 0, 0, 0 },                                   // waypoint 7
+                                                  { 0, 0, 0 },                                   // waypoint 8
+                                                  { 0, 0, 0 },                                   // waypoint 9
+                                                  { 0, 0, 0 },                                   // waypoint 10
                                               } };
 
 //=========================== prototypes =========================================
@@ -193,7 +193,7 @@ void radio_callback(uint8_t *packet, uint8_t length) {
 
     // timestamp the arrival of the packet
     _sailbot_vars.ts_last_packet_received = db_timer_ticks();
-    _sailbot_vars.radio_override = true;
+    _sailbot_vars.radio_override          = true;
 
     // we filter out all packets other than MOVE_RAW command
     if (header->type != DB_PROTOCOL_CMD_MOVE_RAW) {
