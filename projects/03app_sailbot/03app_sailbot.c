@@ -64,9 +64,9 @@ typedef struct {
 } cartesian_coordinate_t;
 
 typedef struct {
-    uint32_t   ts_last_packet_received;  ///< Last timestamp in microseconds a control packet was received
-    int8_t     sail_trim;
-    waypoint_t waypoints[MAX_WAYPOINTS];
+    uint32_t   ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
+    int8_t     sail_trim;                          ///< Last angle of the servo controlling sail trim
+    waypoint_t waypoints[MAX_WAYPOINTS];           ///< Array containing pre-programmed waypoints
     uint8_t    radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
 } sailbot_vars_t;
 
@@ -125,7 +125,7 @@ int main(void) {
     gps_init(gps_callback);
 
     // convenience dump of the pre-programmed waypoints and their conversion
-    for (int i = 0; i < MAX_WAYPOINTS; i++) {
+    for (uint8_t i = 0; i < MAX_WAYPOINTS; i++) {
         if (_sailbot_vars.waypoints[i].valid) {
             printf("Pre-programmed waypoint %d: %f %f; ", i, _sailbot_vars.waypoints[i].latitude, _sailbot_vars.waypoints[i].longitude);
             convert_geographical_to_cartesian(&temp, &_sailbot_vars.waypoints[i]);
