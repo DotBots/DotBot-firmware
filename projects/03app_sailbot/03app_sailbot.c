@@ -103,7 +103,7 @@ static sailbot_vars_t _sailbot_vars = { 0, 0, {
 void          radio_callback(uint8_t *packet, uint8_t length);
 void          path_planner_callback(void);
 void          control_loop_callback(void);
-static void   convert_geographical_to_cartesian(cartesian_coordinate_t *out, waypoint_t *in);
+static void   convert_geographical_to_cartesian(cartesian_coordinate_t *out, const waypoint_t *in);
 static float  calculate_error(float heading, float bearing);
 static int8_t map_error_to_rudder_angle(float error);
 static void   _timeout_check(void);
@@ -230,8 +230,6 @@ void radio_callback(uint8_t *packet, uint8_t length) {
 
 // set _sailbot_vars.next_waypoint
 void path_planner_callback(void) {
-    uint8_t i;
-
     // TODO
     // check if we have reached the current waypoint before updating the next one
     // if reached, invalidate the current waypoint
@@ -240,7 +238,7 @@ void path_planner_callback(void) {
     // path plan the sailing route given wind conditions
 
     // update the next_waypoint
-    for (i = 0; i < MAX_WAYPOINTS; i++) {
+    for (uint8_t i = 0; i < MAX_WAYPOINTS; i++) {
         if (_sailbot_vars.waypoints[i].valid) {
             // copy the first found valid waypoint into the next_waypoint
             memcpy(&_sailbot_vars.next_waypoint, &_sailbot_vars.waypoints[i], sizeof(waypoint_t));
@@ -249,53 +247,55 @@ void path_planner_callback(void) {
 }
 
 void control_loop_callback(void) {
-    nmea_gprmc_t *         gps_data;
-    waypoint_t             current_position_gps;
-    cartesian_coordinate_t target;
-    cartesian_coordinate_t position;
-    float                  theta;
-    float                  psi;
-    float                  error;
-    float                  heading;
-    int8_t                 rudder_angle;
+    waypoint_t             current_position_gps = { 0, 0, 0 };
+    cartesian_coordinate_t target               = { 0, 0 };
+    cartesian_coordinate_t position             = { 0, 0 };
+    float                  theta                = 0;
+    float                  psi                  = 0;
+    float                  error                = 0;
+    float                  heading              = 0;
+    int8_t                 rudder_angle         = 0;
+    // Read the GPS
+    nmea_gprmc_t *gps_data = gps_last_known_position();
 
-    gps_data = gps_last_known_position();
-    heading  = lis2mdl_last_heading();
-    if (gps_data->valid && _sailbot_vars.next_waypoint.valid) {
-        // convert the next_waypoint to local coordinate system (and copy to stack to avoid concurrency issues)
-        convert_geographical_to_cartesian(&target, &_sailbot_vars.next_waypoint);
+    if (!gps_data->valid || !_sailbot_vars.next_waypoint.valid) {
+        return;
+    }
 
-        // save the current GPS position on stack to avoid concurrency issues between control_loop_callback() and the GPS module
-        current_position_gps.latitude  = gps_data->latitude;
-        current_position_gps.longitude = gps_data->longitude;
-        current_position_gps.valid     = 1;
+    // get heading
+    heading = lis2mdl_last_heading();
 
-        // convert geographical data given by GPS to our local coordinate system
-        convert_geographical_to_cartesian(&position, &current_position_gps);
+    // convert the next_waypoint to local coordinate system (and copy to stack to avoid concurrency issues)
+    convert_geographical_to_cartesian(&target, &_sailbot_vars.next_waypoint);
 
-        // calculate the angle theta, which is the angle between myself and the waypoint relative to the y axis
-        theta = atan2f(target.x - position.x, target.y - position.y);  // north clockwise convention
-        if (theta < 0) {
-            theta += M_PI * 2;
-        }
+    // save the current GPS position on stack to avoid concurrency issues between control_loop_callback() and the GPS module
+    current_position_gps.latitude  = gps_data->latitude;
+    current_position_gps.longitude = gps_data->longitude;
+    current_position_gps.valid     = 1;
 
-        // calculate the error
-        error = calculate_error(heading, theta);
+    // convert geographical data given by GPS to our local coordinate system
+    convert_geographical_to_cartesian(&position, &current_position_gps);
 
-        // convert error in radians to rudder angle
-        rudder_angle = map_error_to_rudder_angle(error);
+    // calculate the angle theta, which is the angle between myself and the waypoint relative to the y axis
+    theta = atan2f(target.x - position.x, target.y - position.y);  // north clockwise convention
+    if (theta < 0) {
+        theta += M_PI * 2;
+    }
 
-        // set the rudder servo
-        if (!_sailbot_vars.radio_override) {
-            servos_rudder_turn(rudder_angle);
-        }
+    // calculate the error
+    error = calculate_error(heading, theta);
+
+    // convert error in radians to rudder angle
+    rudder_angle = map_error_to_rudder_angle(error);
+
+    // set the rudder servo
+    if (!_sailbot_vars.radio_override) {
+        servos_rudder_turn(rudder_angle);
     }
 }
 
 static int8_t map_error_to_rudder_angle(float error) {
-    float converted;
-
-    converted = 255.0 * error / M_PI / 2.0;
+    float converted = 255.0 * error / M_PI / 2.0;
 
     if (converted > 127) {
         return 127;
@@ -307,9 +307,7 @@ static int8_t map_error_to_rudder_angle(float error) {
 }
 
 static float calculate_error(float heading, float bearing) {
-    float difference;
-
-    difference = bearing - heading;
+    float difference = bearing - heading;
 
     if (difference < -M_PI) {
         difference += 2 * M_PI;
@@ -337,7 +335,7 @@ static void _advertise(void) {
     db_radio_rx_enable();
 }
 
-static void convert_geographical_to_cartesian(cartesian_coordinate_t *out, waypoint_t *in) {
+static void convert_geographical_to_cartesian(cartesian_coordinate_t *out, const waypoint_t *in) {
     assert(in->valid > 0);
     assert(in->latitude <= 90.0 && in->latitude >= -90.0);
     assert(in->longitude <= 180.0 && in->longitude >= -180);
