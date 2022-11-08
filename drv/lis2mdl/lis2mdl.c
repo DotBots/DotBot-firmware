@@ -7,9 +7,11 @@
  *
  */
 
-#include "math.h"
+#include <assert.h>
+#include <math.h>
+#include <stdio.h>
+
 #include "gpio.h"
-#include "assert.h"
 #include "i2c.h"
 #include "lis2mdl.h"
 
