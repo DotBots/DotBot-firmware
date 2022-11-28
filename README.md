@@ -7,7 +7,7 @@
 
 This repository contains the source code for the DotBot's firmware.
 
-Loading this app onto the DotBot board will make the motors of the DotBot remote controllable by a nRF52840-DK with the [gateway-firmware](https://github.com/DotBots/Gateway-firmware-fresh/releases) firmware, as it can be seen in the above video.
+Loading this app onto the DotBot board will make the motors of the DotBot remote controllable by a nRF52840-DK with the [gateway-firmware](https://github.com/DotBots/Gateway-firmware/releases) firmware, as it can be seen in the above video.
 
 
 ## Getting Started
@@ -26,7 +26,7 @@ The following instructions will guide through running the default remote control
 
 
 1. Download the latest releases (the .hex files) of the DotBot-firmware and of the Gateway firmware from
-[here](https://github.com/DotBots/DotBot-firmware-fresh/releases)
+[here](https://github.com/DotBots/DotBot-firmware/releases)
 
 You should end up with 2 files named `03app_dotbot.hex` and `03app_dotbot_gateway.hex`.
 
