@@ -73,6 +73,11 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             break;
         }
 
+        // Check application is compatible
+        if (header->application != DotBot) {
+            break;
+        }
+
         uint8_t *cmd_ptr = ptk_ptr + sizeof(protocol_header_t);
         // parse received packet and update the motors' speeds
         switch (header->type) {
@@ -116,7 +121,7 @@ int main(void) {
         db_lh2_process_raw_data(&_dotbot_vars.lh2);
         if (_dotbot_vars.lh2.state == DB_LH2_RAW_DATA_READY) {
             db_lh2_stop(&_dotbot_vars.lh2);
-            db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DB_PROTOCOL_LH2_RAW_DATA);
+            db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_LH2_RAW_DATA);
             memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t), _dotbot_vars.lh2.raw_data, sizeof(db_lh2_raw_data_t) * LH2_LOCATIONS_COUNT);
             size_t length = sizeof(protocol_header_t) + sizeof(db_lh2_raw_data_t) * LH2_LOCATIONS_COUNT;
             db_radio_rx_disable();
@@ -151,7 +156,7 @@ static void _timeout_check(void) {
 }
 
 static void _advertise(void) {
-    db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DB_PROTOCOL_ADVERTISEMENT);
+    db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_ADVERTISEMENT);
     size_t length = sizeof(protocol_header_t);
     db_radio_rx_disable();
     db_radio_tx(_dotbot_vars.radio_buffer, length);

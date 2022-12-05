@@ -210,6 +210,11 @@ void radio_callback(uint8_t *packet, uint8_t length) {
         return;
     }
 
+    // Check application is compatible
+    if (header->application != SailBot) {
+        return;
+    }
+
     // Only move raw commands are supported
     if (header->type != DB_PROTOCOL_CMD_MOVE_RAW) {
         return;
@@ -328,7 +333,7 @@ static void _timeout_check(void) {
 }
 
 static void _advertise(void) {
-    db_protocol_header_to_buffer(_sailbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DB_PROTOCOL_ADVERTISEMENT);
+    db_protocol_header_to_buffer(_sailbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, SailBot, DB_PROTOCOL_ADVERTISEMENT);
     size_t length = sizeof(protocol_header_t);
     db_radio_rx_disable();
     db_radio_tx(_sailbot_vars.radio_buffer, length);
