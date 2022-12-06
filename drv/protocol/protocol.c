@@ -16,28 +16,32 @@
 
 //=========================== prototypes =======================================
 
-void db_protocol_header_to_buffer(uint8_t *buffer, uint64_t dst, command_type_t type) {
+void db_protocol_header_to_buffer(uint8_t *buffer, uint64_t dst,
+                                  application_type_t application, command_type_t command_type) {
     uint64_t          src    = db_device_id();
     protocol_header_t header = {
-        .dst      = dst,
-        .src      = src,
-        .swarm_id = DB_SWARM_ID,
-        .version  = DB_FIRMWARE_VERSION,
-        .type     = type,
+        .dst         = dst,
+        .src         = src,
+        .swarm_id    = DB_SWARM_ID,
+        .application = application,
+        .version     = DB_FIRMWARE_VERSION,
+        .type        = command_type,
     };
     memcpy(buffer, &header, sizeof(protocol_header_t));
 }
 
 //=========================== public ===========================================
 
-void db_protocol_cmd_move_raw_to_buffer(uint8_t *buffer, uint64_t dst, protocol_move_raw_command_t *command) {
-    db_protocol_header_to_buffer(buffer, dst, DB_PROTOCOL_CMD_MOVE_RAW);
+void db_protocol_cmd_move_raw_to_buffer(uint8_t *buffer, uint64_t dst,
+                                        application_type_t application, protocol_move_raw_command_t *command) {
+    db_protocol_header_to_buffer(buffer, dst, application, DB_PROTOCOL_CMD_MOVE_RAW);
     uint8_t *cmd_ptr = buffer + sizeof(protocol_header_t);
     memcpy(cmd_ptr, command, sizeof(protocol_move_raw_command_t));
 }
 
-void db_protocol_cmd_rgbled_to_buffer(uint8_t *buffer, uint64_t dst, protocol_rgbled_command_t *command) {
-    db_protocol_header_to_buffer(buffer, dst, DB_PROTOCOL_CMD_RGB_LED);
+void db_protocol_cmd_rgbled_to_buffer(uint8_t *buffer, uint64_t dst,
+                                      application_type_t application, protocol_rgbled_command_t *command) {
+    db_protocol_header_to_buffer(buffer, dst, application, DB_PROTOCOL_CMD_RGB_LED);
     uint8_t *cmd_ptr = buffer + sizeof(protocol_header_t);
     memcpy(cmd_ptr, command, sizeof(protocol_rgbled_command_t));
 }

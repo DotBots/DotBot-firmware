@@ -16,7 +16,7 @@
 
 //=========================== defines ==========================================
 
-#define DB_FIRMWARE_VERSION  (1)                   ///< Version of the command protocol
+#define DB_FIRMWARE_VERSION  (2)                   ///< Version of the firmware
 #define DB_SWARM_ID          (0x0000)              ///< Default swarm ID
 #define DB_BROADCAST_ADDRESS 0xffffffffffffffffUL  ///< Broadcast address
 #define DB_GATEWAY_ADDRESS   0x0000000000000000UL  ///< Gateway address
@@ -29,12 +29,18 @@ typedef enum {
     DB_PROTOCOL_ADVERTISEMENT = 4,  ///< DotBot advertisements
 } command_type_t;
 
+typedef enum {
+    DotBot  = 0,  ///< DotBot application
+    SailBot = 1,  ///< SailBot application
+} application_type_t;
+
 typedef struct __attribute__((packed)) {
-    uint64_t       dst;       ///< Destination address of this packet
-    uint64_t       src;       ///< Source address of this packet
-    uint16_t       swarm_id;  ///< Swarm ID
-    uint8_t        version;   ///< Version of the protocol
-    command_type_t type;      ///< Type of command following this header
+    uint64_t           dst;          ///< Destination address of this packet
+    uint64_t           src;          ///< Source address of this packet
+    uint16_t           swarm_id;     ///< Swarm ID
+    application_type_t application;  ///< Application type
+    uint8_t            version;      ///< Version of the firmware
+    command_type_t     type;         ///< Type of command following this header
 } protocol_header_t;
 
 typedef struct __attribute__((packed)) {
@@ -55,28 +61,31 @@ typedef struct __attribute__((packed)) {
 /**
  * @brief   Write the protocol header in a buffer
  *
- * @param[out]  buffer      Bytes array to write to
- * @param[in]   dst         Destination address written in the header
- * @param[in]   type        Command type that follows this header
+ * @param[out]  buffer          Bytes array to write to
+ * @param[in]   dst             Destination address written in the header
+ * @param[in]   application     Application type that relates to this header
+ * @param[in]   command_type    Command type that follows this header
  */
-void db_protocol_header_to_buffer(uint8_t *buffer, uint64_t dst, command_type_t type);
+void db_protocol_header_to_buffer(uint8_t *buffer, uint64_t dst, application_type_t application, command_type_t command_type);
 
 /**
  * @brief   Write a move raw command in a buffer
  *
  * @param[out]  buffer      Bytes array to write to
  * @param[in]   dst         Destination address written in the header
+ * @param[in]   application Application type that relates to this command
  * @param[in]   command     Pointer to the move raw command
  */
-void db_protocol_cmd_move_raw_to_buffer(uint8_t *buffer, uint64_t dst, protocol_move_raw_command_t *command);
+void db_protocol_cmd_move_raw_to_buffer(uint8_t *buffer, uint64_t dst, application_type_t application, protocol_move_raw_command_t *command);
 
 /**
  * @brief   Write an rgbled command in a buffer
  *
  * @param[out]  buffer      Bytes array to write to
  * @param[in]   dst         Destination address written in the header
+ * @param[in]   application Application type that relates to this command
  * @param[in]   command     Pointer to the rgbled command
  */
-void db_protocol_cmd_rgbled_to_buffer(uint8_t *buffer, uint64_t dst, protocol_rgbled_command_t *command);
+void db_protocol_cmd_rgbled_to_buffer(uint8_t *buffer, uint64_t dst, application_type_t application, protocol_rgbled_command_t *command);
 
 #endif

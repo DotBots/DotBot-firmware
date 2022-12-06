@@ -114,7 +114,7 @@ int main(void) {
         }
 
         if (command.left_y != 0 || command.right_y != 0) {
-            db_protocol_cmd_move_raw_to_buffer(_gw_vars.radio_tx_buffer, DB_BROADCAST_ADDRESS, &command);
+            db_protocol_cmd_move_raw_to_buffer(_gw_vars.radio_tx_buffer, DB_BROADCAST_ADDRESS, DotBot, &command);
             db_radio_rx_disable();
             db_radio_tx(_gw_vars.radio_tx_buffer, sizeof(protocol_header_t) + sizeof(protocol_move_raw_command_t));
             db_radio_rx_enable();
