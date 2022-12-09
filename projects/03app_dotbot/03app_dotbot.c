@@ -30,9 +30,16 @@
 #define DB_BUFFER_MAX_BYTES       (64U)  ///< Max bytes in UART receive buffer
 
 typedef struct {
-    uint32_t ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
-    db_lh2_t lh2;                                ///< LH2 device descriptor
-    uint8_t  radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
+    float x;
+    float y;
+    float z;
+} dotbot_lh2_location_t;
+
+typedef struct {
+    uint32_t              ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
+    db_lh2_t              lh2;                                ///< LH2 device descriptor
+    uint8_t               radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
+    dotbot_lh2_location_t last_location;                      ///< Last computed LH2 location received
 } dotbot_vars_t;
 
 //=========================== variables ========================================
@@ -92,6 +99,13 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             {
                 protocol_rgbled_command_t *command = (protocol_rgbled_command_t *)cmd_ptr;
                 db_rgbled_set(command->r, command->g, command->b);
+            } break;
+            case DB_PROTOCOL_LH2_LOCATION:
+            {
+                protocol_lh2_location_t *location = (protocol_lh2_location_t *)cmd_ptr;
+                _dotbot_vars.last_location.x      = (float)location->x / 1e6;
+                _dotbot_vars.last_location.y      = (float)location->y / 1e6;
+                _dotbot_vars.last_location.z      = (float)location->z / 1e6;
             } break;
             default:
                 break;
