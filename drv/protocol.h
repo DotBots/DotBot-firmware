@@ -57,9 +57,9 @@ typedef struct __attribute__((packed)) {
 } protocol_rgbled_command_t;
 
 typedef struct __attribute__((packed)) {
-    int32_t x;  ///< X coordinate, multiplied by 1e6
-    int32_t y;  ///< Y coordinate, multiplied by 1e6
-    int32_t z;  ///< Z coordinate, multiplied by 1e6
+    uint32_t x;  ///< X coordinate, multiplied by 1e6
+    uint32_t y;  ///< Y coordinate, multiplied by 1e6
+    uint32_t z;  ///< Z coordinate, multiplied by 1e6
 } protocol_lh2_location_t;
 
 //=========================== public ===========================================
