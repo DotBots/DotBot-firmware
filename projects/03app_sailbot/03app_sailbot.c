@@ -109,6 +109,7 @@ static float  calculate_error(float heading, float bearing);
 static int8_t map_error_to_rudder_angle(float error);
 static void   _timeout_check(void);
 static void   _advertise(void);
+static void   _send_gps_data(const nmea_gprmc_t *data);
 
 //=========================== main =========================================
 
@@ -293,6 +294,23 @@ void control_loop_callback(void) {
     if (!_sailbot_vars.radio_override) {
         servos_rudder_turn(rudder_angle);
     }
+
+    _send_gps_data(gps_data);
+}
+
+static void _send_gps_data(const nmea_gprmc_t *data) {
+    int32_t latitude  = (int32_t)(data->latitude * 1000000);
+    int32_t longitude = (int32_t)(data->longitude * 1000000);
+
+    db_protocol_header_to_buffer(_sailbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, SailBot, DB_PROTOCOL_GPS_LOCATION);
+
+    memcpy(_sailbot_vars.radio_buffer + sizeof(protocol_header_t), &latitude, sizeof(int32_t));
+    memcpy(_sailbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(int32_t), &longitude, sizeof(int32_t));
+
+    size_t length = sizeof(protocol_header_t) + 2 * sizeof(int32_t);
+    db_radio_rx_disable();
+    db_radio_tx(_sailbot_vars.radio_buffer, length);
+    db_radio_rx_enable();
 }
 
 static int8_t map_error_to_rudder_angle(float error) {

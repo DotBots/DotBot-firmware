@@ -27,6 +27,7 @@ typedef enum {
     DB_PROTOCOL_LH2_RAW_DATA  = 2,  ///< Lighthouse 2 raw data
     DB_PROTOCOL_LH2_LOCATION  = 3,  ///< Lighthouse processed locations
     DB_PROTOCOL_ADVERTISEMENT = 4,  ///< DotBot advertisements
+    DB_PROTOCOL_GPS_LOCATION  = 5,  ///< GPS data from SailBot
 } command_type_t;
 
 typedef enum {
