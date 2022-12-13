@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <nrf.h>
 #include <string.h>
+#include <stdint.h>
 #include "assert.h"
 #include "gpio.h"
 #include "uart.h"
@@ -89,7 +90,7 @@ uint8_t *strtok_new(uint8_t *string, uint8_t const *delimiter) {
         return NULL;
     }
 
-    if ((p = strpbrk(source, delimiter)) != NULL) {
+    if ((p = (uint8_t *)strpbrk((char *)source, (char *)delimiter)) != NULL) {
         *p     = 0;
         ret    = source;
         source = ++p;
@@ -110,10 +111,10 @@ int nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
     current_position = 0;
 
     calculated_checksum  = nmea_calculate_checksum(buffer);
-    rcvd_checksum_buf[0] = buffer[strlen(buffer) - 4];
-    rcvd_checksum_buf[1] = buffer[strlen(buffer) - 3];
+    rcvd_checksum_buf[0] = buffer[strlen((char *)buffer) - 4];
+    rcvd_checksum_buf[1] = buffer[strlen((char *)buffer) - 3];
     rcvd_checksum_buf[2] = NULL;
-    rcvd_checksum        = strtol(rcvd_checksum_buf, NULL, 16);
+    rcvd_checksum        = strtol((char *)rcvd_checksum_buf, NULL, 16);
 
     if (rcvd_checksum != calculated_checksum) {
         printf("gps: Invalid checksum. Sentence: %s \n", buffer);
@@ -121,17 +122,17 @@ int nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
         return -1;
     }
 
-    current_value = strtok_new(buffer, ",*\n");
+    current_value = (uint8_t *)strtok_new((uint8_t *)buffer, (uint8_t *)",*\n");
     while (current_value != NULL) {
         switch (current_position) {
             case 0:  // sentence type is GPRMC
-                assert(strcmp(current_value, "$GPRMC") == 0);
+                assert(strcmp((char *)current_value, "$GPRMC") == 0);
                 break;
             case 1:  // time
-                strcpy(position->timestamp, current_value);
+                strcpy((char *)position->timestamp, (char *)current_value);
                 break;
             case 2:  // Status "A" or "V"
-                if (strcmp(current_value, "A") == 0) {
+                if (strcmp((char *)current_value, "A") == 0) {
                     position->valid = 1;
                 } else {
                     position->valid = 0;
@@ -139,49 +140,49 @@ int nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
                 break;
             case 3:  // Latitude
                 position->latitude = 0;
-                if (strlen(current_value) > 2) {
+                if (strlen((char *)current_value) > 2) {
                     coordinate_degrees[0] = current_value[0];
                     coordinate_degrees[1] = current_value[1];
                     coordinate_degrees[2] = NULL;
-                    position->latitude += atoi(coordinate_degrees);
-                    position->latitude += atof(&current_value[2]) / 60.0;
+                    position->latitude += atoi((char *)coordinate_degrees);
+                    position->latitude += atof((char *)&current_value[2]) / 60.0;
                 }
                 break;
             case 4:  // Latitude N/S
-                if (strcmp(current_value, "S") == 0) {
+                if (strcmp((char *)current_value, "S") == 0) {
                     position->latitude *= (-1);  // for south of Equator, use negative latitude
                 }
                 break;
             case 5:  // Longitude
                 position->longitude = 0;
-                if (strlen(current_value) > 3) {
+                if (strlen((char *)current_value) > 3) {
                     coordinate_degrees[0] = current_value[0];
                     coordinate_degrees[1] = current_value[1];
                     coordinate_degrees[2] = current_value[2];
                     coordinate_degrees[3] = NULL;
-                    position->longitude += atoi(coordinate_degrees);
-                    position->longitude += atof(&current_value[3]) / 60.0;
+                    position->longitude += atoi((char *)coordinate_degrees);
+                    position->longitude += atof((char *)&current_value[3]) / 60.0;
                 }
                 break;
             case 6:  // Longitude E/W
-                if (strcmp(current_value, "W") == 0) {
+                if (strcmp((char *)current_value, "W") == 0) {
                     position->longitude *= (-1);  // for west of Greenwich, use negative longitude
                 }
                 break;
             case 7:  // Speed over ground in knots
-                position->velocity = atof(current_value);
+                position->velocity = atof((char *)current_value);
                 break;
             case 8:  // True course
-                position->course = atof(current_value);
+                position->course = atof((char *)current_value);
                 break;
             case 9:  // Date
-                strcpy(position->datestamp, current_value);
+                strcpy((char *)position->datestamp, (char *)current_value);
                 break;
             case 10:  // Magnetic variation
-                position->variation = atof(current_value);
+                position->variation = atof((char *)current_value);
                 break;
             case 11:  // Magnetic variation E/W
-                if (strcmp(current_value, "W") == 0) {
+                if (strcmp((char *)current_value, "W") == 0) {
                     position->variation *= (-1);  // for west of Greenwich, use negative variation
                 }
                 break;
@@ -195,14 +196,14 @@ int nmea_parse_gprmc_sentence(uint8_t *buffer, nmea_gprmc_t *position) {
                 return -1;
         }
         current_position++;
-        current_value = strtok_new(NULL, ",*\n");
+        current_value = strtok_new(NULL, (uint8_t *)",*\n");
     }
     return 0;
 }
 
 uint8_t nmea_calculate_checksum(uint8_t *buffer) {
     uint8_t  checksum = 0;
-    uint16_t len      = strlen(buffer);
+    uint16_t len      = strlen((char *)buffer);
 
     if (buffer[0] != '$') {
         return 0;

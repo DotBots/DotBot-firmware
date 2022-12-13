@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <nrf.h>
 #include <stdbool.h>
+#include <string.h>
 
 // Include BSP packages
 #include "device.h"
@@ -194,11 +195,6 @@ void radio_callback(uint8_t *packet, uint8_t length) {
     // timestamp the arrival of the packet
     _sailbot_vars.ts_last_packet_received = db_timer_ticks();
     _sailbot_vars.radio_override          = true;
-
-    // we filter out all packets other than MOVE_RAW command
-    if (header->type != DB_PROTOCOL_CMD_MOVE_RAW) {
-        return;
-    }
 
     // Check destination address matches
     if (header->dst != DB_BROADCAST_ADDRESS && header->dst != db_device_id()) {
