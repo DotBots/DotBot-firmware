@@ -10,10 +10,13 @@
     arm_endian="Little"
     arm_fp_abi="Hard"
     arm_fpu_type="FPv4-SP-D16"
+    build_treat_warnings_as_errors="Yes"
     c_preprocessor_definitions="ARM_MATH_CM4;NRF52833_XXAA;__nRF_FAMILY;CONFIG_NFCT_PINS_AS_GPIOS"
-    c_user_include_directories="$(SolutionDir)/../bsp;$(SolutionDir)/../drv;$(ProjectDir)/../../nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include" />
+    c_user_include_directories="$(SolutionDir)/../bsp;$(SolutionDir)/../drv;$(ProjectDir)/../../nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
+    gcc_enable_all_warnings="Yes" />
   <configuration
     Name="Debug"
+    c_additional_options="-Wno-missing-field-initializers"
     c_preprocessor_definitions="DEBUG"
     gcc_debugging_level="Level 3"
     gcc_omit_frame_pointer="Yes"
