@@ -190,6 +190,7 @@ int main(void) {
  *
  */
 void radio_callback(uint8_t *packet, uint8_t length) {
+    (void)length;
     uint8_t *          ptk_ptr = packet;
     protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
 
@@ -253,10 +254,10 @@ void control_loop_callback(void) {
     cartesian_coordinate_t target               = { 0, 0 };
     cartesian_coordinate_t position             = { 0, 0 };
     float                  theta                = 0;
-    float                  psi                  = 0;
-    float                  error                = 0;
-    float                  heading              = 0;
-    int8_t                 rudder_angle         = 0;
+    //float                  psi                  = 0;
+    float  error        = 0;
+    float  heading      = 0;
+    int8_t rudder_angle = 0;
     // Read the GPS
     nmea_gprmc_t *gps_data = gps_last_known_position();
 

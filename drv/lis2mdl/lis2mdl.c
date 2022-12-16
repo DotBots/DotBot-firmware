@@ -17,10 +17,10 @@
 
 //=========================== defines ==========================================
 
-static const gpio_t scl      = { .port = 1, .pin = 9 };
-static const gpio_t sda      = { .port = 0, .pin = 11 };
-static const gpio_t mag_int  = { .port = 0, .pin = 17 };
-static const gpio_t button_2 = { .port = 0, .pin = 12 };
+static const gpio_t scl     = { .port = 1, .pin = 9 };
+static const gpio_t sda     = { .port = 0, .pin = 11 };
+static const gpio_t mag_int = { .port = 0, .pin = 17 };
+//static const gpio_t button_2 = { .port = 0, .pin = 12 };
 
 #define LIS2MDL_ADDR           (0x1E)
 #define LIS2MDL_OFFSET_X_REG_L (0x45)
@@ -138,6 +138,7 @@ void lis2mdl_i2c_read_magnetometer(lis2mdl_compass_data_t *out) {
 }
 
 void lis2mdl_magnetometer_calibrate(lis2mdl_compass_data_t *offset) {
+    (void)offset;
     lis2mdl_compass_data_t current;
 
     printf("X,Y,Z\n");
