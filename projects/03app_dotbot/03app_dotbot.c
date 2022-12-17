@@ -66,6 +66,8 @@ static void _advertise(void);
 //=========================== callbacks ========================================
 
 static void radio_callback(uint8_t *pkt, uint8_t len) {
+    (void)len;
+
     _dotbot_vars.ts_last_packet_received = db_timer_ticks();
     do {
         uint8_t *          ptk_ptr = pkt;

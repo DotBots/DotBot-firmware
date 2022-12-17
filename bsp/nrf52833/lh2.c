@@ -346,7 +346,6 @@ void db_lh2_process_location(db_lh2_t *lh2) {
     }
 
     // compute LFSR locations and detect invalid packets
-    int8_t invalid_packet_counter = 0;
     for (uint8_t location = 0; location < LH2_LOCATIONS_COUNT; location++) {
         lh2->locations[location].selected_polynomial = lh2->raw_data[location].selected_polynomial;
         // find location of the first data set by counting the LFSR backwards
@@ -824,7 +823,7 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
             selected_poly = LH2_POLYNOMIAL_ERROR_INDICATOR;  // mark the poly as "wrong"
             break;
         }  // TODO: implement sorting network for efficiency?
-        if ((weights[0] <= threshold) | (weights[1] <= threshold) | (weights[2] <= threshold) | (weights[3] <= threshold)) {
+        if ((weights[0] <= (uint64_t)threshold) | (weights[1] <= (uint64_t)threshold) | (weights[2] <= (uint64_t)threshold) | (weights[3] <= (uint64_t)threshold)) {
             if ((weights[0] < weights[1]) & (weights[0] < weights[2]) & (weights[0] < weights[3])) {  // weight0 is the smallest
                 selected_poly = 0;
                 break;

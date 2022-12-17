@@ -69,6 +69,7 @@ int main(void) {
  *
  */
 void radio_callback(uint8_t *packet, uint8_t length) {
+    (void)length;
 
     // Check the arriving packet for any pressed button.
     if (packet[0] == 0x01 || packet[1] == 0x01 || packet[2] == 0x01 || packet[3] == 0x01) {
