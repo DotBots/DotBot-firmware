@@ -119,6 +119,10 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
                 _dotbot_vars.last_location.y = new_location.y;
                 _dotbot_vars.last_location.z = new_location.z;
             } break;
+            case DB_PROTOCOL_LH2_WAYPOINTS:
+            {
+                protocol_lh2_waypoints_t *target_waypoints = (protocol_lh2_waypoints_t *)cmd_ptr;
+            } break;
             default:
                 break;
         }
