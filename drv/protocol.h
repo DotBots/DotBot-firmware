@@ -16,7 +16,7 @@
 
 //=========================== defines ==========================================
 
-#define DB_FIRMWARE_VERSION  (2)                   ///< Version of the firmware
+#define DB_FIRMWARE_VERSION  (3)                   ///< Version of the firmware
 #define DB_SWARM_ID          (0x0000)              ///< Default swarm ID
 #define DB_BROADCAST_ADDRESS 0xffffffffffffffffUL  ///< Broadcast address
 #define DB_GATEWAY_ADDRESS   0x0000000000000000UL  ///< Gateway address
@@ -28,6 +28,7 @@ typedef enum {
     DB_PROTOCOL_LH2_LOCATION  = 3,  ///< Lighthouse processed locations
     DB_PROTOCOL_ADVERTISEMENT = 4,  ///< DotBot advertisements
     DB_PROTOCOL_GPS_LOCATION  = 5,  ///< GPS data from SailBot
+    DB_PROTOCOL_DOTBOT_DATA   = 6,  ///< DotBot specific data (for now location and direction)
 } command_type_t;
 
 typedef enum {

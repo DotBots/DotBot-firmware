@@ -13,6 +13,7 @@
 #include <nrf.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 // Include BSP headers
 #include "board.h"
 #include "device.h"
@@ -27,7 +28,8 @@
 
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
 #define DB_LH2_FULL_COMPUTATION   (0)
-#define DB_BUFFER_MAX_BYTES       (64U)  ///< Max bytes in UART receive buffer
+#define DB_BUFFER_MAX_BYTES       (64U)   ///< Max bytes in UART receive buffer
+#define DB_DIRECTION_THRESHOLD    (0.01)  ///< Threshold to update the direction
 
 typedef struct {
     float x;
@@ -40,6 +42,7 @@ typedef struct {
     db_lh2_t              lh2;                                ///< LH2 device descriptor
     uint8_t               radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
     dotbot_lh2_location_t last_location;                      ///< Last computed LH2 location received
+    int16_t               direction;                          ///< Current direction of the DotBot (angle in °)
 } dotbot_vars_t;
 
 //=========================== variables ========================================
@@ -62,6 +65,7 @@ static dotbot_vars_t _dotbot_vars;
 
 static void _timeout_check(void);
 static void _advertise(void);
+static void _compute_direction(const dotbot_lh2_location_t *location, int16_t *direction);
 
 //=========================== callbacks ========================================
 
@@ -102,10 +106,16 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             } break;
             case DB_PROTOCOL_LH2_LOCATION:
             {
-                protocol_lh2_location_t *location = (protocol_lh2_location_t *)cmd_ptr;
-                _dotbot_vars.last_location.x      = (float)location->x / 1e6;
-                _dotbot_vars.last_location.y      = (float)location->y / 1e6;
-                _dotbot_vars.last_location.z      = (float)location->z / 1e6;
+                const protocol_lh2_location_t *location     = (const protocol_lh2_location_t *)cmd_ptr;
+                dotbot_lh2_location_t          new_location = {
+                    .x = (float)location->x / 1e6,
+                    .y = (float)location->y / 1e6,
+                    .z = (float)location->z / 1e6,
+                };
+                _compute_direction(&new_location, &_dotbot_vars.direction);
+                _dotbot_vars.last_location.x = new_location.x;
+                _dotbot_vars.last_location.y = new_location.y;
+                _dotbot_vars.last_location.z = new_location.z;
             } break;
             default:
                 break;
@@ -131,13 +141,17 @@ int main(void) {
     db_lh2_init(&_dotbot_vars.lh2, &_lh2_d_gpio, &_lh2_e_gpio);
     db_lh2_start(&_dotbot_vars.lh2);
 
+    // Set an invalid heading since the value is unknown on startup.
+    _dotbot_vars.direction = 0xffff;
+
     while (1) {
         db_lh2_process_raw_data(&_dotbot_vars.lh2);
         if (_dotbot_vars.lh2.state == DB_LH2_RAW_DATA_READY) {
             db_lh2_stop(&_dotbot_vars.lh2);
-            db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_LH2_RAW_DATA);
-            memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t), _dotbot_vars.lh2.raw_data, sizeof(db_lh2_raw_data_t) * LH2_LOCATIONS_COUNT);
-            size_t length = sizeof(protocol_header_t) + sizeof(db_lh2_raw_data_t) * LH2_LOCATIONS_COUNT;
+            db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_DOTBOT_DATA);
+            memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t), &_dotbot_vars.direction, sizeof(int16_t));
+            memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(int16_t), _dotbot_vars.lh2.raw_data, sizeof(db_lh2_raw_data_t) * LH2_LOCATIONS_COUNT);
+            size_t length = sizeof(protocol_header_t) + sizeof(int16_t) + sizeof(db_lh2_raw_data_t) * LH2_LOCATIONS_COUNT;
             db_radio_rx_disable();
             db_radio_tx(_dotbot_vars.radio_buffer, length);
             db_radio_rx_enable();
@@ -161,6 +175,24 @@ int main(void) {
 }
 
 //=========================== private functions ================================
+
+static void _compute_direction(const dotbot_lh2_location_t *location, int16_t *direction) {
+    float dx       = location->x - _dotbot_vars.last_location.x;
+    float dy       = location->y - _dotbot_vars.last_location.y;
+    float distance = sqrtf(powf(dx, 2) + powf(dy, 2));
+
+    if (distance < DB_DIRECTION_THRESHOLD) {
+        // Skip computation if distance to last position is too small
+        return;
+    }
+
+    int8_t sideFactor = 1;
+    if (dx > 0) {
+        sideFactor = -1;
+    }
+    *direction = (int16_t)(acosf(dy / distance) * 180 / M_PI) * sideFactor;
+    __NOP();  // For debugging
+}
 
 static void _timeout_check(void) {
     uint32_t ticks = db_timer_ticks();
