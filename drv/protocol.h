@@ -20,7 +20,7 @@
 #define DB_SWARM_ID          (0x0000)              ///< Default swarm ID
 #define DB_BROADCAST_ADDRESS 0xffffffffffffffffUL  ///< Broadcast address
 #define DB_GATEWAY_ADDRESS   0x0000000000000000UL  ///< Gateway address
-#define DB_MAX_WAYPOINTS     (16)                  ///< Max number of waypoints
+#define DB_MAX_WAYPOINTS     (8)                   ///< Max number of waypoints
 
 typedef enum {
     DB_PROTOCOL_CMD_MOVE_RAW  = 0,  ///< Move raw command type
@@ -30,13 +30,19 @@ typedef enum {
     DB_PROTOCOL_ADVERTISEMENT = 4,  ///< DotBot advertisements
     DB_PROTOCOL_GPS_LOCATION  = 5,  ///< GPS data from SailBot
     DB_PROTOCOL_DOTBOT_DATA   = 6,  ///< DotBot specific data (for now location and direction)
-    DB_PROTOCOL_LH2_WAYPOINTS = 7,  ///< List of LH2 waypoints to follow
+    DB_PROTOCOL_CONTROL_MODE  = 7,  ///< Robot remote control mode (automatic or manual)
+    DB_PROTOCOL_LH2_WAYPOINTS = 8,  ///< List of LH2 waypoints to follow
 } command_type_t;
 
 typedef enum {
     DotBot  = 0,  ///< DotBot application
     SailBot = 1,  ///< SailBot application
 } application_type_t;
+
+typedef enum {
+    ControlManual = 0,  ///< Manual mode
+    ControlAuto   = 1,  ///< Automatic mode
+} protocol_control_mode_t;
 
 typedef struct __attribute__((packed)) {
     uint64_t           dst;          ///< Destination address of this packet
@@ -67,8 +73,8 @@ typedef struct __attribute__((packed)) {
 } protocol_lh2_location_t;
 
 typedef struct __attribute__((packed)) {
-    uint8_t waypoints_length;                            ///< Number of available waypoints
-    protocol_lh2_location_t waypoints[DB_MAX_WAYPOINTS]; ///< Array containing lh2 waypoints
+    uint8_t                 length;                    ///< Number of waypoints
+    protocol_lh2_location_t points[DB_MAX_WAYPOINTS];  ///< Array containing a list of lh2 point coordinates
 } protocol_lh2_waypoints_t;
 
 //=========================== public ===========================================
