@@ -20,16 +20,20 @@
 #include "lh2.h"
 #include "protocol.h"
 #include "motors.h"
+#include "pid.h"
 #include "radio.h"
 #include "rgbled.h"
 #include "timer.h"
 
 //=========================== defines ==========================================
 
-#define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
-#define DB_LH2_FULL_COMPUTATION   (0)
-#define DB_BUFFER_MAX_BYTES       (64U)   ///< Max bytes in UART receive buffer
-#define DB_DIRECTION_THRESHOLD    (0.01)  ///< Threshold to update the direction
+#define TIMEOUT_CHECK_DELAY_TICKS      (17000)  ///< ~500 ms delay between packet received timeout checks
+#define DB_LH2_FULL_COMPUTATION        (0)
+#define DB_BUFFER_MAX_BYTES            (64U)   ///< Max bytes in UART receive buffer
+#define DB_DIRECTION_THRESHOLD         (0.01)  ///< Threshold to update the direction
+#define DB_WAYPOINT_DISTANCE_THRESHOLD (0.05)  ///< Distance threshold towards a target waypoint
+#define DB_PID_SAMPLE_TIME_MS          (100)   ///< PID sample time in milliseconds
+#define DB_LINEAR_SPEED                (80)    ///< Linear speed in autonomous control is constant
 
 typedef struct {
     float x;
@@ -38,14 +42,25 @@ typedef struct {
 } dotbot_lh2_location_t;
 
 typedef struct {
-    uint32_t              ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
-    db_lh2_t              lh2;                                ///< LH2 device descriptor
-    uint8_t               radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
-    dotbot_lh2_location_t last_location;                      ///< Last computed LH2 location received
-    int16_t               direction;                          ///< Current direction of the DotBot (angle in °)
+    uint32_t                 ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
+    db_lh2_t                 lh2;                                ///< LH2 device descriptor
+    uint8_t                  radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
+    dotbot_lh2_location_t    last_location;                      ///< Last computed LH2 location received
+    int16_t                  direction;                          ///< Current direction of the DotBot (angle in °)
+    protocol_control_mode_t  control_mode;                       ///< Remote control mode
+    protocol_lh2_waypoints_t waypoints;                          ///< List of waypoints
+    uint8_t                  next_waypoint_idx;                  ///< Index of next waypoint to reach
+    pid_t                    pid_angular;                        ///< PID used to compute the angular speed
 } dotbot_vars_t;
 
 //=========================== variables ========================================
+
+///! PID gains
+static const pid_gains_t _pid_params = {
+    .kp = 5,
+    .ki = 2,
+    .kd = 0,
+};
 
 ///! LH2 event gpio
 static const gpio_t _lh2_e_gpio = {
@@ -66,6 +81,7 @@ static dotbot_vars_t _dotbot_vars;
 static void _timeout_check(void);
 static void _advertise(void);
 static void _compute_direction(const dotbot_lh2_location_t *location, int16_t *direction);
+static void _update_control_loop(void);
 
 //=========================== callbacks ========================================
 
@@ -118,10 +134,27 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
                 _dotbot_vars.last_location.x = new_location.x;
                 _dotbot_vars.last_location.y = new_location.y;
                 _dotbot_vars.last_location.z = new_location.z;
+                if (_dotbot_vars.control_mode == ControlAuto) {
+                    _update_control_loop();
+                    __NOP();
+                }
             } break;
+            case DB_PROTOCOL_CONTROL_MODE:
+                _dotbot_vars.control_mode = (protocol_control_mode_t)(*cmd_ptr);
+                if (_dotbot_vars.control_mode == ControlAuto) {
+                    db_pid_set_mode(&_dotbot_vars.pid_angular, DB_PID_MODE_AUTO);
+                } else {
+                    db_pid_set_mode(&_dotbot_vars.pid_angular, DB_PID_MODE_MANUAL);
+                }
+                break;
             case DB_PROTOCOL_LH2_WAYPOINTS:
             {
-                protocol_lh2_waypoints_t *target_waypoints = (protocol_lh2_waypoints_t *)cmd_ptr;
+                _dotbot_vars.control_mode           = ControlManual;
+                protocol_lh2_waypoints_t *waypoints = (protocol_lh2_waypoints_t *)cmd_ptr;
+                _dotbot_vars.waypoints.length       = waypoints->length;
+                memcpy(_dotbot_vars.waypoints.points, waypoints->points, waypoints->length * sizeof(protocol_lh2_location_t));
+                _dotbot_vars.next_waypoint_idx = 0;
+                _dotbot_vars.control_mode      = ControlAuto;
             } break;
             default:
                 break;
@@ -147,8 +180,13 @@ int main(void) {
     db_lh2_init(&_dotbot_vars.lh2, &_lh2_d_gpio, &_lh2_e_gpio);
     db_lh2_start(&_dotbot_vars.lh2);
 
+    // Initialize the pids
+    db_pid_init(&_dotbot_vars.pid_angular, 0.0, 0.0,
+                _pid_params.kp, _pid_params.ki, _pid_params.kd,
+                -75.0, 75.0, DB_PID_SAMPLE_TIME_MS, DB_PID_MODE_MANUAL, DB_PID_DIRECTION_DIRECT);
+
     // Set an invalid heading since the value is unknown on startup.
-    _dotbot_vars.direction = 0xffff;
+    _dotbot_vars.direction = (int16_t)0xffff;
 
     while (1) {
         db_lh2_process_raw_data(&_dotbot_vars.lh2);
@@ -173,7 +211,7 @@ int main(void) {
             }
             db_lh2_start(&_dotbot_vars.lh2);
         }
-        db_timer_delay_ms(50);
+        db_timer_delay_ms(100);
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
@@ -182,6 +220,38 @@ int main(void) {
 
 //=========================== private functions ================================
 
+static void _update_control_loop(void) {
+    if (_dotbot_vars.next_waypoint_idx >= _dotbot_vars.waypoints.length) {
+        db_motors_set_speed(0, 0);
+        return;
+    }
+    float dx               = ((float)_dotbot_vars.waypoints.points[_dotbot_vars.next_waypoint_idx].x / 1e6) - _dotbot_vars.last_location.x;
+    float dy               = ((float)_dotbot_vars.waypoints.points[_dotbot_vars.next_waypoint_idx].y / 1e6) - _dotbot_vars.last_location.y;
+    float distanceToTarget = sqrtf(powf(dx, 2) + powf(dy, 2));
+
+    if (distanceToTarget < DB_WAYPOINT_DISTANCE_THRESHOLD) {
+        // Target waypoint is reached
+        _dotbot_vars.next_waypoint_idx++;
+        return;
+    }
+
+    if (_dotbot_vars.direction == (int16_t)0xffff) {
+        // Unknown direction, just move forward a bit
+        db_motors_set_speed(DB_LINEAR_SPEED, DB_LINEAR_SPEED);
+    } else {
+        // compute angle to target waypoint
+        int8_t sideFactor               = (dx > 0) ? -1 : 1;
+        float  angleToTarget            = sideFactor * acosf(dy / distanceToTarget) * 180 / M_PI;
+        _dotbot_vars.pid_angular.input  = (float)_dotbot_vars.direction;
+        _dotbot_vars.pid_angular.target = angleToTarget;
+        db_pid_update(&_dotbot_vars.pid_angular);
+        float   angularSpeed = _dotbot_vars.pid_angular.output;
+        int16_t left         = (int16_t)((DB_LINEAR_SPEED - angularSpeed) / 2);
+        int16_t right        = (int16_t)((DB_LINEAR_SPEED + angularSpeed) / 2);
+        db_motors_set_speed(left, right);
+    }
+}
+
 static void _compute_direction(const dotbot_lh2_location_t *location, int16_t *direction) {
     float dx       = location->x - _dotbot_vars.last_location.x;
     float dy       = location->y - _dotbot_vars.last_location.y;
@@ -189,14 +259,12 @@ static void _compute_direction(const dotbot_lh2_location_t *location, int16_t *d
 
     if (distance < DB_DIRECTION_THRESHOLD) {
         // Skip computation if distance to last position is too small
+        // Should we set an invalid direction here ?
         return;
     }
 
-    int8_t sideFactor = 1;
-    if (dx > 0) {
-        sideFactor = -1;
-    }
-    *direction = (int16_t)(acosf(dy / distance) * 180 / M_PI) * sideFactor;
+    int8_t sideFactor = (dx > 0) ? -1 : 1;
+    *direction        = (int16_t)(acosf(dy / distance) * 180 / M_PI) * sideFactor;
     __NOP();  // For debugging
 }
 
