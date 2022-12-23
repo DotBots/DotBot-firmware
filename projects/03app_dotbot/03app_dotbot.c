@@ -31,9 +31,10 @@
 #define DB_LH2_FULL_COMPUTATION        (0)
 #define DB_BUFFER_MAX_BYTES            (64U)   ///< Max bytes in UART receive buffer
 #define DB_DIRECTION_THRESHOLD         (0.01)  ///< Threshold to update the direction
+#define DB_DIRECTION_INVALID           (-1000)
 #define DB_WAYPOINT_DISTANCE_THRESHOLD (0.05)  ///< Distance threshold towards a target waypoint
 #define DB_PID_SAMPLE_TIME_MS          (100)   ///< PID sample time in milliseconds
-#define DB_LINEAR_SPEED                (80)    ///< Linear speed in autonomous control is constant
+#define DB_MAX_SPEED                   (50)    ///< Max speed in autonomous control mode
 
 typedef struct {
     float x;
@@ -131,15 +132,18 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
                              .z = (float)location->z / 1e6,
                 };
                 _compute_direction(&new_location, &_dotbot_vars.direction);
-                _dotbot_vars.last_location.x = new_location.x;
-                _dotbot_vars.last_location.y = new_location.y;
-                _dotbot_vars.last_location.z = new_location.z;
+                if (_dotbot_vars.direction != DB_DIRECTION_INVALID) {
+                    _dotbot_vars.last_location.x = new_location.x;
+                    _dotbot_vars.last_location.y = new_location.y;
+                    _dotbot_vars.last_location.z = new_location.z;
+                }
                 if (_dotbot_vars.control_mode == ControlAuto) {
                     _update_control_loop();
                     __NOP();
                 }
             } break;
             case DB_PROTOCOL_CONTROL_MODE:
+                db_motors_set_speed(0, 0);
                 _dotbot_vars.control_mode = (protocol_control_mode_t)(*cmd_ptr);
                 if (_dotbot_vars.control_mode == ControlAuto) {
                     db_pid_set_mode(&_dotbot_vars.pid_angular, DB_PID_MODE_AUTO);
@@ -183,10 +187,10 @@ int main(void) {
     // Initialize the pids
     db_pid_init(&_dotbot_vars.pid_angular, 0.0, 0.0,
                 _pid_params.kp, _pid_params.ki, _pid_params.kd,
-                -75.0, 75.0, DB_PID_SAMPLE_TIME_MS, DB_PID_MODE_MANUAL, DB_PID_DIRECTION_DIRECT);
+                0, DB_MAX_SPEED, DB_PID_SAMPLE_TIME_MS, DB_PID_MODE_MANUAL, DB_PID_DIRECTION_DIRECT);
 
     // Set an invalid heading since the value is unknown on startup.
-    _dotbot_vars.direction = (int16_t)0xffff;
+    _dotbot_vars.direction = DB_DIRECTION_INVALID;
 
     while (1) {
         db_lh2_process_raw_data(&_dotbot_vars.lh2);
@@ -235,9 +239,9 @@ static void _update_control_loop(void) {
         return;
     }
 
-    if (_dotbot_vars.direction == (int16_t)0xffff) {
+    if (_dotbot_vars.direction == DB_DIRECTION_INVALID) {
         // Unknown direction, just move forward a bit
-        db_motors_set_speed(DB_LINEAR_SPEED, DB_LINEAR_SPEED);
+        db_motors_set_speed(DB_MAX_SPEED, DB_MAX_SPEED);
     } else {
         // compute angle to target waypoint
         int8_t sideFactor               = (dx > 0) ? -1 : 1;
@@ -246,8 +250,20 @@ static void _update_control_loop(void) {
         _dotbot_vars.pid_angular.target = angleToTarget;
         db_pid_update(&_dotbot_vars.pid_angular);
         float   angularSpeed = _dotbot_vars.pid_angular.output;
-        int16_t left         = (int16_t)((DB_LINEAR_SPEED - angularSpeed) / 2);
-        int16_t right        = (int16_t)((DB_LINEAR_SPEED + angularSpeed) / 2);
+        int16_t left         = (int16_t)((DB_MAX_SPEED - angularSpeed));
+        int16_t right        = (int16_t)((DB_MAX_SPEED + angularSpeed));
+        if (left > DB_MAX_SPEED) {
+            left = DB_MAX_SPEED;
+        }
+        if (right > DB_MAX_SPEED) {
+            right = DB_MAX_SPEED;
+        }
+        if (right < -DB_MAX_SPEED) {
+            right = -DB_MAX_SPEED;
+        }
+        if (left < -DB_MAX_SPEED) {
+            left = -DB_MAX_SPEED;
+        }
         db_motors_set_speed(left, right);
     }
 }
@@ -258,8 +274,8 @@ static void _compute_direction(const dotbot_lh2_location_t *location, int16_t *d
     float distance = sqrtf(powf(dx, 2) + powf(dy, 2));
 
     if (distance < DB_DIRECTION_THRESHOLD) {
-        // Skip computation if distance to last position is too small
-        // Should we set an invalid direction here ?
+        // Skip computation if distance to last position is too small and set an unknown direction
+        _dotbot_vars.direction = DB_DIRECTION_INVALID;
         return;
     }
 
