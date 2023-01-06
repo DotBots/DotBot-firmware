@@ -20,7 +20,7 @@ jobs:
         if: >-
           github.event_name == 'push' &&
           startsWith(github.event.ref, 'refs/tags')
-        run: BUILD_CONFIG=Release make
+        run: make docker-release
       - name: Convert 03app_dotbot elf to hex
         if: >-
           github.event_name == 'push' &&

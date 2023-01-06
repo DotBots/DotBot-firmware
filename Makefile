@@ -11,7 +11,7 @@ SRCS ?= $(shell find bsp/ -name "*.[c|h]") $(shell find drv/ -name "*.[c|h]") $(
 CLANG_FORMAT ?= clang-format
 CLANG_FORMAT_TYPE ?= file
 
-.PHONY: $(PROJECTS) docker format check-format
+.PHONY: $(PROJECTS) docker docker-release format check-format
 
 all: $(PROJECTS)
 
@@ -35,6 +35,13 @@ check-format:
 
 docker:
 	docker run --rm -i \
+		-e PACKAGES_DIR_OPT="-packagesdir $(SEGGER_DIR)/packages" \
+		-v $(PWD):/dotbot $(DOCKER_IMAGE) \
+		make $(DOCKER_TARGET)
+
+docker-release:
+	docker run --rm -i \
+		-e BUILD_CONFIG=Release \
 		-e PACKAGES_DIR_OPT="-packagesdir $(SEGGER_DIR)/packages" \
 		-v $(PWD):/dotbot $(DOCKER_IMAGE) \
 		make $(DOCKER_TARGET)
