@@ -10,12 +10,12 @@ on:
 
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
       - name: Build projects
-        run: make
+        run: make docker
       - name: Build projects for release
         if: >-
           github.event_name == 'push' &&
