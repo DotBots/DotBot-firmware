@@ -74,7 +74,7 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
 
     _dotbot_vars.ts_last_packet_received = db_timer_ticks();
     do {
-        uint8_t *          ptk_ptr = pkt;
+        uint8_t           *ptk_ptr = pkt;
         protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
         // Check destination address matches
         if (header->dst != DB_BROADCAST_ADDRESS && header->dst != db_device_id()) {
@@ -110,9 +110,9 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             {
                 const protocol_lh2_location_t *location     = (const protocol_lh2_location_t *)cmd_ptr;
                 dotbot_lh2_location_t          new_location = {
-                    .x = (float)location->x / 1e6,
-                    .y = (float)location->y / 1e6,
-                    .z = (float)location->z / 1e6,
+                             .x = (float)location->x / 1e6,
+                             .y = (float)location->y / 1e6,
+                             .z = (float)location->z / 1e6,
                 };
                 _compute_direction(&new_location, &_dotbot_vars.direction);
                 _dotbot_vars.last_location.x = new_location.x;
