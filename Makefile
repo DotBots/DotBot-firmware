@@ -2,6 +2,7 @@
 
 DOCKER_IMAGE ?= aabadie/dotbot:latest
 DOCKER_TARGET ?= all
+PACKAGES_DIR_OPT ?=
 SEGGER_DIR ?= /opt/segger
 BUILD_CONFIG ?= Debug
 
@@ -16,7 +17,7 @@ all: $(PROJECTS)
 
 $(PROJECTS):
 	@echo "\e[1mBuilding project $@\e[0m"
-	"$(SEGGER_DIR)/bin/emBuild" projects/dotbot-firmware.emProject -project $@ -config $(BUILD_CONFIG) -rebuild -verbose
+	"$(SEGGER_DIR)/bin/emBuild" projects/dotbot-firmware.emProject -project $@ -config $(BUILD_CONFIG) $(PACKAGES_DIR_OPT) -rebuild -verbose
 	@echo "\e[1mDone\e[0m\n"
 
 list-projects:
@@ -34,5 +35,6 @@ check-format:
 
 docker:
 	docker run --rm -i \
+		-e PACKAGES_DIR_OPT="-packagesdir $(SEGGER_DIR)/packages" \
 		-v $(PWD):/dotbot $(DOCKER_IMAGE) \
 		make $(DOCKER_TARGET)
