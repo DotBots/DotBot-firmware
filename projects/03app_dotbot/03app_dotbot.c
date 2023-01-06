@@ -33,9 +33,9 @@
 #define DB_BUFFER_MAX_BYTES            (255U)  ///< Max bytes in UART receive buffer
 #define DB_DIRECTION_THRESHOLD         (0.01)  ///< Threshold to update the direction
 #define DB_DIRECTION_INVALID           (-1000)
-#define DB_WAYPOINT_DISTANCE_THRESHOLD (100000) ///< Distance threshold towards a target waypoint
-#define DB_PID_SAMPLE_TIME_MS          (100)   ///< PID sample time in milliseconds
-#define DB_MAX_SPEED                   (65)    ///< Max speed in autonomous control mode
+#define DB_WAYPOINT_DISTANCE_THRESHOLD (100000)  ///< Distance threshold towards a target waypoint
+#define DB_PID_SAMPLE_TIME_MS          (100)     ///< PID sample time in milliseconds
+#define DB_MAX_SPEED                   (65)      ///< Max speed in autonomous control mode
 
 typedef struct {
     uint32_t                 ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
@@ -121,14 +121,14 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             } break;
             case DB_PROTOCOL_LH2_LOCATION:
             {
-                const protocol_lh2_location_t *location     = (const protocol_lh2_location_t *)cmd_ptr;
-                int16_t angle = -1000;
+                const protocol_lh2_location_t *location = (const protocol_lh2_location_t *)cmd_ptr;
+                int16_t                        angle    = -1000;
                 _compute_angle(location, &_dotbot_vars.last_location, &angle);
                 if (angle != DB_DIRECTION_INVALID) {
                     _dotbot_vars.last_location.x = location->x;
                     _dotbot_vars.last_location.y = location->y;
                     _dotbot_vars.last_location.z = location->z;
-                    _dotbot_vars.direction = angle;
+                    _dotbot_vars.direction       = angle;
                 }
                 _dotbot_vars.update_control_loop = (_dotbot_vars.control_mode == ControlAuto);
             } break;
@@ -144,7 +144,7 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             } break;
             case DB_PROTOCOL_LH2_WAYPOINTS:
             {
-                _dotbot_vars.control_mode           = ControlManual;
+                _dotbot_vars.control_mode     = ControlManual;
                 _dotbot_vars.waypoints.length = (uint8_t)*cmd_ptr;
                 printf("LH2_WAYPOINTS received: %d\n", _dotbot_vars.waypoints.length);
                 memcpy(&_dotbot_vars.waypoints.points, cmd_ptr + 1, _dotbot_vars.waypoints.length * sizeof(protocol_lh2_location_t));
@@ -182,7 +182,7 @@ int main(void) {
                 -10, 10, DB_PID_SAMPLE_TIME_MS, DB_PID_MODE_MANUAL, DB_PID_DIRECTION_DIRECT);
 
     // Set an invalid heading since the value is unknown on startup.
-    _dotbot_vars.direction = DB_DIRECTION_INVALID;
+    _dotbot_vars.direction           = DB_DIRECTION_INVALID;
     _dotbot_vars.update_control_loop = false;
 
     while (1) {
@@ -247,16 +247,16 @@ static void _update_control_loop(void) {
         // compute angle to target waypoint
         int16_t angleToTarget = 0;
         _compute_angle(&_dotbot_vars.waypoints.points[_dotbot_vars.next_waypoint_idx], &_dotbot_vars.last_location, &angleToTarget);
-        _dotbot_vars.pid_angular.input  = (float)(_dotbot_vars.direction - angleToTarget);
+        _dotbot_vars.pid_angular.input = (float)(_dotbot_vars.direction - angleToTarget);
         printf("Direction: %i\n", _dotbot_vars.direction);
         printf("Angle to target: %i\n", angleToTarget);
         printf("PID input: %i\n", (int16_t)_dotbot_vars.pid_angular.input);
         db_pid_update(&_dotbot_vars.pid_angular);
-        float   angularSpeed = _dotbot_vars.pid_angular.output;
+        float angularSpeed = _dotbot_vars.pid_angular.output;
 
         printf("Computed angular speed: %i\n", (int16_t)angularSpeed);
-        int16_t left         = (int16_t)((DB_MAX_SPEED - angularSpeed));
-        int16_t right        = (int16_t)((DB_MAX_SPEED + angularSpeed));
+        int16_t left  = (int16_t)((DB_MAX_SPEED - angularSpeed));
+        int16_t right = (int16_t)((DB_MAX_SPEED + angularSpeed));
         if (left > DB_MAX_SPEED) {
             left = DB_MAX_SPEED;
         }
@@ -284,7 +284,7 @@ static void _compute_angle(const protocol_lh2_location_t *next, const protocol_l
     }
 
     int8_t sideFactor = (dx > 0) ? -1 : 1;
-    *angle        = (int16_t)(acosf(dy / distance) * 180 / M_PI) * sideFactor;
+    *angle            = (int16_t)(acosf(dy / distance) * 180 / M_PI) * sideFactor;
     __NOP();  // For debugging
 }
 
