@@ -61,7 +61,7 @@ jobs:
             projects/03app_dotbot_gateway/Output/Release/Exe/03app_dotbot_gateway.hex"
           token: ${{ secrets.RELEASE_TOKEN }}
   style:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2

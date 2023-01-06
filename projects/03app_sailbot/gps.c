@@ -79,8 +79,8 @@ static void uart_callback(uint8_t byte) {
 // version of strtok that handles consecutive delimeters
 uint8_t *strtok_new(uint8_t *string, uint8_t const *delimiter) {
     static uint8_t *source = NULL;
-    uint8_t *       ret    = 0;
-    uint8_t *       p;
+    uint8_t        *ret    = 0;
+    uint8_t        *p;
 
     if (string != NULL) {
         source = string;

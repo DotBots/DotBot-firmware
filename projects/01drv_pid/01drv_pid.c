@@ -3,8 +3,8 @@
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  * @brief This is the main DotBot app.
  *
- * Load this program on your board. Now the DotBot can be remote controlled 
- * from a nearby nRF52840-DK. THe buttons of the DK serving as Forward, 
+ * Load this program on your board. Now the DotBot can be remote controlled
+ * from a nearby nRF52840-DK. THe buttons of the DK serving as Forward,
  * Right, Left and Back buttons.
  *
  *

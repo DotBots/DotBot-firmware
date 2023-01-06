@@ -191,7 +191,7 @@ int main(void) {
  */
 void radio_callback(uint8_t *packet, uint8_t length) {
     (void)length;
-    uint8_t *          ptk_ptr = packet;
+    uint8_t           *ptk_ptr = packet;
     protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
 
     // timestamp the arrival of the packet
@@ -254,7 +254,7 @@ void control_loop_callback(void) {
     cartesian_coordinate_t target               = { 0, 0 };
     cartesian_coordinate_t position             = { 0, 0 };
     float                  theta                = 0;
-    //float                  psi                  = 0;
+    // float                  psi                  = 0;
     float  error        = 0;
     float  heading      = 0;
     int8_t rudder_angle = 0;

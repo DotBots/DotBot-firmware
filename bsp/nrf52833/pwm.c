@@ -1,7 +1,7 @@
 /**
  * @file pwm.c
  * @addtogroup BSP
- * 
+ *
  * @brief  nRF52833-specific definition of the "pwm" bsp module.
  *
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
