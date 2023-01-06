@@ -16,35 +16,8 @@ jobs:
         uses: actions/checkout@v2
       - name: Build projects
         run: make docker
-      - name: Build projects for release
-        if: >-
-          github.event_name == 'push' &&
-          startsWith(github.event.ref, 'refs/tags')
-        run: make docker-release
-      - name: Convert 03app_dotbot elf to hex
-        if: >-
-          github.event_name == 'push' &&
-          startsWith(github.event.ref, 'refs/tags')
-        run: >-
-          objcopy -O ihex
-          projects/03app_dotbot/Output/Release/Exe/03app_dotbot.elf
-          projects/03app_dotbot/Output/Release/Exe/03app_dotbot.hex
-      - name: Convert 03app_sailbot elf to hex
-        if: >-
-          github.event_name == 'push' &&
-          startsWith(github.event.ref, 'refs/tags')
-        run: >-
-          objcopy -O ihex
-          projects/03app_sailbot/Output/Release/Exe/03app_sailbot.elf
-          projects/03app_sailbot/Output/Release/Exe/03app_sailbot.hex
-      - name: Convert 03app_dotbot_gateway elf to hex
-        if: >-
-          github.event_name == 'push' &&
-          startsWith(github.event.ref, 'refs/tags')
-        run: >-
-          objcopy -O ihex
-          projects/03app_dotbot_gateway/Output/Release/Exe/03app_dotbot_gateway.elf
-          projects/03app_dotbot_gateway/Output/Release/Exe/03app_dotbot_gateway.hex
+      - name: Build for release and convert elf artifacts to hex
+        run: DOCKER_TARGETS="convert-artifacts" BUILD_CONFIG=Release make docker
       - name: Release
         uses: ncipollo/release-action@v1
         if: >-
