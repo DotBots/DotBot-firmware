@@ -1,5 +1,7 @@
 .PHONY: all list-projects clean
 
+DOCKER_IMAGE ?= aabadie/dotbot:latest
+DOCKER_TARGET ?= all
 SEGGER_DIR ?= /opt/segger
 BUILD_CONFIG ?= Debug
 
@@ -8,7 +10,7 @@ SRCS ?= $(shell find bsp/ -name "*.[c|h]") $(shell find drv/ -name "*.[c|h]") $(
 CLANG_FORMAT ?= clang-format
 CLANG_FORMAT_TYPE ?= file
 
-.PHONY: $(PROJECTS) format check-format
+.PHONY: $(PROJECTS) docker format check-format
 
 all: $(PROJECTS)
 
@@ -29,3 +31,8 @@ format:
 
 check-format:
 	@$(CLANG_FORMAT) --dry-run --Werror --style=$(CLANG_FORMAT_TYPE) $(SRCS)
+
+docker:
+	docker run --rm -i \
+		-v $(PWD):/dotbot $(DOCKER_IMAGE) \
+		make $(DOCKER_TARGET)
