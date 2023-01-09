@@ -17,7 +17,7 @@ jobs:
       - name: Build projects
         run: make docker
       - name: Build for release and convert elf artifacts to hex
-        run: DOCKER_TARGETS="convert-artifacts" BUILD_CONFIG=Release make docker
+        run: DOCKER_TARGETS="artifacts" BUILD_CONFIG=Release make docker
       - name: Release
         uses: ncipollo/release-action@v1
         if: >-

@@ -12,8 +12,8 @@ CLANG_FORMAT ?= clang-format
 CLANG_FORMAT_TYPE ?= file
 
 ARTIFACT_PROJECTS ?= 03app_dotbot 03app_sailbot 03app_dotbot_gateway
-ARTIFACT_PROJECTS_ELF = $(foreach app,$(ARTIFACT_PROJECTS),projects/$(app)/Output/$(BUILD_CONFIG)/Exe/$(app).elf)
-ARTIFACT_PROJECTS_HEX = $(ARTIFACT_PROJECTS_ELF:.elf=.hex)
+ARTIFACT_ELF = $(foreach app,$(ARTIFACT_PROJECTS),projects/$(app)/Output/$(BUILD_CONFIG)/Exe/$(app).elf)
+ARTIFACT_HEX = $(ARTIFACT_ELF:.elf=.hex)
 
 
 .PHONY: $(PROJECTS) $(ARTIFACT_PROJECTS) docker docker-release format check-format
@@ -38,10 +38,10 @@ format:
 check-format:
 	@$(CLANG_FORMAT) --dry-run --Werror --style=$(CLANG_FORMAT_TYPE) $(SRCS)
 
-$(ARTIFACT_PROJECTS_HEX): $(ARTIFACT_PROJECTS)
+$(ARTIFACT_HEX): $(ARTIFACT_PROJECTS)
 	objcopy -O ihex $(subst .hex,.elf,$@) $@
 
-convert-artifacts: $(ARTIFACT_PROJECTS_HEX)
+artifacts: $(ARTIFACT_HEX)
 
 docker:
 	docker run --rm -i \
