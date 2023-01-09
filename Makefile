@@ -16,7 +16,7 @@ ARTIFACT_ELF = $(foreach app,$(ARTIFACT_PROJECTS),projects/$(app)/Output/$(BUILD
 ARTIFACT_HEX = $(ARTIFACT_ELF:.elf=.hex)
 
 
-.PHONY: $(PROJECTS) $(ARTIFACT_PROJECTS) docker docker-release format check-format
+.PHONY: $(PROJECTS) $(ARTIFACT_PROJECTS) artifacts docker docker-release format check-format
 
 all: $(PROJECTS)
 
