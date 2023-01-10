@@ -31,6 +31,7 @@ list-projects:
 
 clean:
 	"$(SEGGER_DIR)/bin/emBuild" projects/dotbot-firmware.emProject -config $(BUILD_CONFIG) -clean
+	rm -f $(ARTIFACT_HEX)
 
 format:
 	@$(CLANG_FORMAT) -i --style=$(CLANG_FORMAT_TYPE) $(SRCS)
@@ -38,10 +39,17 @@ format:
 check-format:
 	@$(CLANG_FORMAT) --dry-run --Werror --style=$(CLANG_FORMAT_TYPE) $(SRCS)
 
-$(ARTIFACT_HEX): $(ARTIFACT_PROJECTS)
+$(ARTIFACT_ELF): $(ARTIFACT_PROJECTS)
+
+$(ARTIFACT_HEX): $(ARTIFACT_ELF)
 	objcopy -O ihex $(subst .hex,.elf,$@) $@
 
 artifacts: $(ARTIFACT_HEX)
+	@mkdir -p artifacts
+	@for artifact in "$(ARTIFACT_ELF) $(ARTIFACT_HEX)"; do \
+		cp $${artifact} artifacts/.; \
+		done
+	@ls -l artifacts/
 
 docker:
 	docker run --rm -i \
