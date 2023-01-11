@@ -35,7 +35,7 @@
 #define DB_DIRECTION_INVALID           (-1000)
 #define DB_WAYPOINT_DISTANCE_THRESHOLD (100000)  ///< Distance threshold towards a target waypoint
 #define DB_PID_SAMPLE_TIME_MS          (100)     ///< PID sample time in milliseconds
-#define DB_MAX_SPEED                   (65)      ///< Max speed in autonomous control mode
+#define DB_MAX_SPEED                   (60)      ///< Max speed in autonomous control mode
 
 typedef struct {
     uint32_t                 ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
@@ -54,9 +54,9 @@ typedef struct {
 
 ///! PID gains
 static const pid_gains_t _pid_params = {
-    .kp = 0.5,
-    .ki = 0.2,
-    .kd = 0,
+    .kp = 0.1,
+    .ki = 0.0,
+    .kd = 0.0,
 };
 
 ///! LH2 event gpio
@@ -135,8 +135,8 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             case DB_PROTOCOL_CONTROL_MODE:
             {
                 db_motors_set_speed(0, 0);
-                _dotbot_vars.control_mode = (protocol_control_mode_t)(*cmd_ptr);
-                if (_dotbot_vars.control_mode == ControlAuto) {
+                protocol_control_mode_t control_mode = (protocol_control_mode_t)(*cmd_ptr);
+                if (control_mode == ControlAuto) {
                     db_pid_set_mode(&_dotbot_vars.pid_angular, DB_PID_MODE_AUTO);
                 } else {
                     db_pid_set_mode(&_dotbot_vars.pid_angular, DB_PID_MODE_MANUAL);
@@ -146,10 +146,11 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             {
                 _dotbot_vars.control_mode     = ControlManual;
                 _dotbot_vars.waypoints.length = (uint8_t)*cmd_ptr;
-                printf("LH2_WAYPOINTS received: %d\n", _dotbot_vars.waypoints.length);
                 memcpy(&_dotbot_vars.waypoints.points, cmd_ptr + 1, _dotbot_vars.waypoints.length * sizeof(protocol_lh2_location_t));
                 _dotbot_vars.next_waypoint_idx = 0;
-                _dotbot_vars.control_mode      = ControlAuto;
+                if (_dotbot_vars.waypoints.length > 0) {
+                    _dotbot_vars.control_mode = ControlAuto;
+                }
             } break;
             default:
                 printf("Unsupported message type\n");
@@ -179,7 +180,7 @@ int main(void) {
     // Initialize the pids
     db_pid_init(&_dotbot_vars.pid_angular, 0.0, 0.0,
                 _pid_params.kp, _pid_params.ki, _pid_params.kd,
-                -10, 10, DB_PID_SAMPLE_TIME_MS, DB_PID_MODE_MANUAL, DB_PID_DIRECTION_DIRECT);
+                -15, 15, DB_PID_SAMPLE_TIME_MS, DB_PID_MODE_MANUAL, DB_PID_DIRECTION_DIRECT);
 
     // Set an invalid heading since the value is unknown on startup.
     _dotbot_vars.direction           = DB_DIRECTION_INVALID;
@@ -223,10 +224,7 @@ int main(void) {
 //=========================== private functions ================================
 
 static void _update_control_loop(void) {
-    printf("Entering update control loop\n");
-
     if (_dotbot_vars.next_waypoint_idx >= _dotbot_vars.waypoints.length) {
-        printf("Last waypoint reached, stopping\n");
         db_motors_set_speed(0, 0);
         return;
     }
@@ -237,26 +235,23 @@ static void _update_control_loop(void) {
     if ((uint32_t)(distanceToTarget * 1e6) < (uint32_t)DB_WAYPOINT_DISTANCE_THRESHOLD) {
         // Target waypoint is reached
         _dotbot_vars.next_waypoint_idx++;
-        printf("Switching to next waypoint %d at x: %i, y: %i\n", _dotbot_vars.next_waypoint_idx, _dotbot_vars.waypoints.points[_dotbot_vars.next_waypoint_idx].x, _dotbot_vars.waypoints.points[_dotbot_vars.next_waypoint_idx].y);
     } else if (_dotbot_vars.direction == DB_DIRECTION_INVALID) {
-        ////printf("No direction, moving forward a bit\n");
         // Unknown direction, just move forward a bit
         db_motors_set_speed(DB_MAX_SPEED, DB_MAX_SPEED);
     } else {
-        printf("Updating motor speeds\n");
         // compute angle to target waypoint
         int16_t angleToTarget = 0;
         _compute_angle(&_dotbot_vars.waypoints.points[_dotbot_vars.next_waypoint_idx], &_dotbot_vars.last_location, &angleToTarget);
-        _dotbot_vars.pid_angular.input = (float)(_dotbot_vars.direction - angleToTarget);
-        printf("Direction: %i\n", _dotbot_vars.direction);
-        printf("Angle to target: %i\n", angleToTarget);
-        printf("PID input: %i\n", (int16_t)_dotbot_vars.pid_angular.input);
+        _dotbot_vars.pid_angular.input = (float)(angleToTarget - _dotbot_vars.direction);
+        // printf("Direction: %i\n", _dotbot_vars.direction);
+        // printf("Angle to target: %i\n", angleToTarget);
+        // printf("PID input: %i\n", (int16_t)_dotbot_vars.pid_angular.input);
         db_pid_update(&_dotbot_vars.pid_angular);
         float angularSpeed = _dotbot_vars.pid_angular.output;
 
-        printf("Computed angular speed: %i\n", (int16_t)angularSpeed);
-        int16_t left  = (int16_t)((DB_MAX_SPEED - angularSpeed));
-        int16_t right = (int16_t)((DB_MAX_SPEED + angularSpeed));
+        // printf("Computed angular speed: %i\n", (int16_t)angularSpeed);
+        int16_t left  = (int16_t)((DB_MAX_SPEED + angularSpeed));
+        int16_t right = (int16_t)((DB_MAX_SPEED - angularSpeed));
         if (left > DB_MAX_SPEED) {
             left = DB_MAX_SPEED;
         }
@@ -269,7 +264,7 @@ static void _update_control_loop(void) {
         if (left < -DB_MAX_SPEED) {
             left = -DB_MAX_SPEED;
         }
-        printf("Applying speeds: %i, %i\n", left, right);
+        // printf("Applying speeds: %i, %i\n", left, right);
         db_motors_set_speed(left, right);
     }
 }
@@ -285,7 +280,9 @@ static void _compute_angle(const protocol_lh2_location_t *next, const protocol_l
 
     int8_t sideFactor = (dx > 0) ? -1 : 1;
     *angle            = (int16_t)(acosf(dy / distance) * 180 / M_PI) * sideFactor;
-    __NOP();  // For debugging
+    if (*angle < 0) {
+        *angle = 360 + *angle;
+    }
 }
 
 static void _timeout_check(void) {
