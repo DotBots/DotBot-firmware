@@ -56,48 +56,41 @@ static void radio_init_addresses(void);
 
 //=========================== public ===========================================
 
-void db_radio_init(radio_cb_t callback) {
+void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
 
     // General configuration of the radio.
-    NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_0dBm << RADIO_TXPOWER_TXPOWER_Pos);  // 0dBm == 1mW Power output
-    NRF_RADIO->MODE    = (RADIO_MODE_MODE_Ble_1Mbit << RADIO_MODE_MODE_Pos);         // Use BLE 1Mbit/s protocol
+    NRF_RADIO->MODE = ((RADIO_MODE_MODE_Ble_1Mbit + mode) << RADIO_MODE_MODE_Pos);  // Configure BLE mode
 
-    NRF_RADIO->PCNF0 = (0 << RADIO_PCNF0_S1LEN_Pos) |                    // S1 field length in bits
-                       (1 << RADIO_PCNF0_S0LEN_Pos) |                    // S0 field length in bytes
-                       (8 << RADIO_PCNF0_LFLEN_Pos) |                    // LENGTH field length in bits
-                       (RADIO_PCNF0_PLEN_8bit << RADIO_PCNF0_PLEN_Pos);  // PREAMBLE length is 1 byte in BLE 1Mbit/s and 2Mbit/s
+    if (mode == DB_RADIO_BLE_1MBit || mode == DB_RADIO_BLE_2MBit) {
+        NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_0dBm << RADIO_TXPOWER_TXPOWER_Pos);  // 0dBm == 1mW Power output
+        NRF_RADIO->PCNF0   = (0 << RADIO_PCNF0_S1LEN_Pos) |                              // S1 field length in bits
+                           (1 << RADIO_PCNF0_S0LEN_Pos) |                                // S0 field length in bytes
+                           (8 << RADIO_PCNF0_LFLEN_Pos) |                                // LENGTH field length in bits
+                           (RADIO_PCNF0_PLEN_8bit << RADIO_PCNF0_PLEN_Pos);              // PREAMBLE length is 1 byte in BLE 1Mbit/s and 2Mbit/s
 
-    NRF_RADIO->PCNF1 = (4UL << RADIO_PCNF1_BALEN_Pos) |  // The base address is 4 Bytes long
-                       (PAYLOAD_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos) |
-                       (0 << RADIO_PCNF1_STATLEN_Pos) |
-                       (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |     // Make the on air packet be little endian (this enables some useful features)
-                       (RADIO_PCNF1_WHITEEN_Disabled << RADIO_PCNF1_WHITEEN_Pos);  // Disable the package whitening feature.
+        NRF_RADIO->PCNF1 = (4UL << RADIO_PCNF1_BALEN_Pos) |  // The base address is 4 Bytes long
+                           (PAYLOAD_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos) |
+                           (0 << RADIO_PCNF1_STATLEN_Pos) |
+                           (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |    // Make the on air packet be little endian (this enables some useful features)
+                           (RADIO_PCNF1_WHITEEN_Enabled << RADIO_PCNF1_WHITEEN_Pos);  // Enable data whitening feature.
+    } else {
+        // Long ranges modes (125KBit/500KBit)
+        NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_Pos8dBm << RADIO_TXPOWER_TXPOWER_Pos);  // 8dBm Power output
 
-    radio_init_addresses();
+        // Coded PHY (Long range)
+        NRF_RADIO->PCNF0 = (0 << RADIO_PCNF0_S1LEN_Pos) |
+                           (1 << RADIO_PCNF0_S0LEN_Pos) |
+                           (8 << RADIO_PCNF0_LFLEN_Pos) |
+                           (3 << RADIO_PCNF0_TERMLEN_Pos) |
+                           (2 << RADIO_PCNF0_CILEN_Pos) |
+                           (RADIO_PCNF0_PLEN_LongRange << RADIO_PCNF0_PLEN_Pos);
 
-    // Initialize Common Radio Configuration
-    radio_init_common(callback);
-}
-
-void db_radio_init_lr(radio_cb_t callback) {
-
-    // General configuration of the radio.
-    NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_Pos8dBm << RADIO_TXPOWER_TXPOWER_Pos);  // 8dBm Power output
-    NRF_RADIO->MODE    = (RADIO_MODE_MODE_Ble_LR125Kbit << RADIO_MODE_MODE_Pos);        // Use Long Range 125 kbps modulation
-
-    // Coded PHY (Long range)
-    NRF_RADIO->PCNF0 = (0 << RADIO_PCNF0_S1LEN_Pos) |
-                       (1 << RADIO_PCNF0_S0LEN_Pos) |
-                       (8 << RADIO_PCNF0_LFLEN_Pos) |
-                       (3 << RADIO_PCNF0_TERMLEN_Pos) |
-                       (2 << RADIO_PCNF0_CILEN_Pos) |
-                       (RADIO_PCNF0_PLEN_LongRange << RADIO_PCNF0_PLEN_Pos);
-
-    NRF_RADIO->PCNF1 = (RADIO_PCNF1_WHITEEN_Disabled << RADIO_PCNF1_WHITEEN_Pos) |
-                       (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |
-                       (3 << RADIO_PCNF1_BALEN_Pos) |
-                       (0 << RADIO_PCNF1_STATLEN_Pos) |
-                       (PAYLOAD_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos);
+        NRF_RADIO->PCNF1 = (RADIO_PCNF1_WHITEEN_Disabled << RADIO_PCNF1_WHITEEN_Pos) |
+                           (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |
+                           (3 << RADIO_PCNF1_BALEN_Pos) |
+                           (0 << RADIO_PCNF1_STATLEN_Pos) |
+                           (PAYLOAD_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos);
+    }
 
     radio_init_addresses();
 

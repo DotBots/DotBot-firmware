@@ -18,15 +18,19 @@
 #include <board.h>
 #include <radio.h>
 
-//=========================== defines =========================================
+//=========================== defines ===========================================
+
+#define NUMBER_OF_BYTES_IN_PACKET 32
 
 //=========================== variables =========================================
 
-//=========================== prototypes =========================================
+static uint8_t packet_tx[NUMBER_OF_BYTES_IN_PACKET];
+
+//=========================== prototypes ========================================
 
 void radio_callback(uint8_t *packet, uint8_t length);
 
-//=========================== main =========================================
+//=========================== main ==============================================
 
 /**
  *  @brief The program starts executing here.
@@ -44,9 +48,11 @@ int main(void) {
 
     //=========================== Configure Radio =========================================
 
-    db_radio_init(&radio_callback);  // Set the callback function.
-    db_radio_set_frequency(8);       // Set the RX frquency to 2408 MHz.
-    db_radio_rx_enable();            // Start receiving packets.
+    db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);
+    db_radio_set_frequency(8);  // Set the RX frquency to 2408 MHz.
+
+    db_radio_tx(packet_tx, NUMBER_OF_BYTES_IN_PACKET);
+    db_radio_rx_enable();  // Start receiving packets.
 
     while (1) {
 

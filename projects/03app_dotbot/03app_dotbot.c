@@ -134,7 +134,7 @@ int main(void) {
     db_board_init();
     db_rgbled_init();
     db_motors_init();
-    db_radio_init(&radio_callback);
+    db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);
     db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
     db_radio_rx_enable();       // Start receiving packets.
     db_timer_init();

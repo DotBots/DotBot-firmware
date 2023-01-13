@@ -20,6 +20,13 @@
 #define DEFAULT_NETWORK_ADDRESS 0x12345678UL  ///< Default network address
 #endif
 
+typedef enum {
+    DB_RADIO_BLE_1MBit,
+    DB_RADIO_BLE_2MBit,
+    DB_RADIO_BLE_LR125Kbit,
+    DB_RADIO_BLE_LR500Kbit,
+} db_radio_ble_mode_t;
+
 typedef void (*radio_cb_t)(uint8_t *packet, uint8_t length);  ///< Function pointer to the callback function called on packet receive
 
 //=========================== public ===========================================
@@ -31,20 +38,10 @@ typedef void (*radio_cb_t)(uint8_t *packet, uint8_t length);  ///< Function poin
  * with the db_radio_set_frequency function.
  *
  * @param[in] callback pointer to a function that will be called each time a packet is received.
+ * @param[in] mode     BLE mode used by the radio (1MBit, 2MBit, LR125KBit, LR500Kbit)
  *
  */
-void db_radio_init(radio_cb_t callback);
-
-/**
- * @brief Initializes the Long Range RADIO peripheral (125 kbps)
- *
- * After this function you must explicitly set the frequency of the radio
- * with the db_radio_set_frequency function.
- *
- * @param[in] callback pointer to a function that will be called each time a packet is received.
- *
- */
-void db_radio_init_lr(radio_cb_t callback);
+void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode);
 
 /**
  * @brief Set the tx-rx frequency of the radio, by the following formula
