@@ -103,6 +103,14 @@
     <file file_name="radio.c" />
     <file file_name="../radio.h" />
   </project>
+  <project Name="00bsp_rng">
+    <configuration
+      Name="Common"
+      project_directory="../bsp/nrf52833"
+      project_type="Library" />
+    <file file_name="rng.c" />
+    <file file_name="../rng.h" />
+  </project>
   <project Name="00bsp_timer">
     <configuration
       Name="Common"
