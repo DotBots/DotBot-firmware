@@ -83,8 +83,8 @@ int main(void) {
     db_timer_init();
 
     // Configure Radio as transmitter
-    db_radio_init(radio_callback);  // All RX packets received are forwarded in an HDLC frame over UART
-    db_radio_set_frequency(8);      // Set the radio frequency to 2408 MHz.
+    db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);  // All RX packets received are forwarded in an HDLC frame over UART
+    db_radio_set_frequency(8);                           // Set the radio frequency to 2408 MHz.
     // Initialize the gateway context
     _gw_vars.buttons = 0x0000;
     db_uart_init(&_rx_pin, &_tx_pin, DB_UART_BAUDRATE, &uart_callback);

@@ -44,7 +44,7 @@ int main(void) {
 
     //=========================== Configure Radio =========================================
 
-    db_radio_init_lr(&radio_callback);
+    db_radio_init(&radio_callback, DB_RADIO_BLE_LR125Kbit);
     db_radio_set_frequency(8);  // Set the RX frquency to 2408 MHz.
 
     db_radio_tx(packet_tx, NUMBER_OF_BYTES_IN_PACKET);
