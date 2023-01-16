@@ -18,9 +18,10 @@
 
 //=========================== defines ==========================================
 
-#define DB_UARTE     (NRF_UARTE0)
-#define DB_UARTE_IRQ (UARTE0_UART0_IRQn)
-#define DB_UARTE_ISR (UARTE0_UART0_IRQHandler)
+#define DB_UARTE            (NRF_UARTE0)
+#define DB_UARTE_IRQ        (UARTE0_UART0_IRQn)
+#define DB_UARTE_ISR        (UARTE0_UART0_IRQHandler)
+#define DB_UARTE_CHUNK_SIZE (64U)
 
 typedef struct {
     uint8_t      byte;      ///< the byte where received byte on UART is stored
@@ -120,11 +121,20 @@ void db_uart_init(const gpio_t *rx_pin, const gpio_t *tx_pin, uint32_t baudrate,
 }
 
 void db_uart_write(uint8_t *buffer, size_t length) {
-    DB_UARTE->EVENTS_ENDTX  = 0;
-    DB_UARTE->TXD.PTR       = (uint32_t)buffer;
-    DB_UARTE->TXD.MAXCNT    = length;
-    DB_UARTE->TASKS_STARTTX = 1;
-    while (DB_UARTE->EVENTS_ENDTX == 0) {}
+    uint8_t pos = 0;
+    // Send DB_UARTE_CHUNK_SIZE (64 Bytes) maximum at a time
+    while ((pos % DB_UARTE_CHUNK_SIZE) == 0 && pos < length) {
+        DB_UARTE->EVENTS_ENDTX = 0;
+        DB_UARTE->TXD.PTR      = (uint32_t)&buffer[pos];
+        if ((pos + DB_UARTE_CHUNK_SIZE) > length) {
+            DB_UARTE->TXD.MAXCNT = length - pos + 1;
+        } else {
+            DB_UARTE->TXD.MAXCNT = DB_UARTE_CHUNK_SIZE;
+        }
+        DB_UARTE->TASKS_STARTTX = 1;
+        while (DB_UARTE->EVENTS_ENDTX == 0) {}
+        pos += DB_UARTE_CHUNK_SIZE;
+    }
 }
 
 //=========================== interrupts =======================================
