@@ -21,7 +21,6 @@
 #include "lh2.h"
 #include "protocol.h"
 #include "motors.h"
-#include "pid.h"
 #include "radio.h"
 #include "rgbled.h"
 #include "timer.h"
@@ -29,13 +28,13 @@
 //=========================== defines ==========================================
 
 #define TIMEOUT_CHECK_DELAY_TICKS      (17000)  ///< ~500 ms delay between packet received timeout checks
-#define DB_LH2_FULL_COMPUTATION        (0)
-#define DB_BUFFER_MAX_BYTES            (255U)  ///< Max bytes in UART receive buffer
-#define DB_DIRECTION_THRESHOLD         (0.01)  ///< Threshold to update the direction
-#define DB_DIRECTION_INVALID           (-1000)
-#define DB_WAYPOINT_DISTANCE_THRESHOLD (100000)  ///< Distance threshold towards a target waypoint
-#define DB_PID_SAMPLE_TIME_MS          (100)     ///< PID sample time in milliseconds
-#define DB_MAX_SPEED                   (60)      ///< Max speed in autonomous control mode
+#define DB_LH2_FULL_COMPUTATION        (false)  ///< Wether the full LH2 computation is perform on board
+#define DB_BUFFER_MAX_BYTES            (255U)   ///< Max bytes in UART receive buffer
+#define DB_DIRECTION_THRESHOLD         (0.01)   ///< Threshold to update the direction
+#define DB_DIRECTION_INVALID           (-1000)  ///< Invalid angle e.g out of [0, 360] range
+#define DB_WAYPOINT_DISTANCE_THRESHOLD (75000)  ///< Distance threshold towards a target waypoint
+#define DB_MAX_SPEED                   (60)     ///< Max speed in autonomous control mode
+#define DB_ANGULAR_SPEED_FACTOR        (30)     ///< Constant applied to the normalized angle to target error
 
 typedef struct {
     uint32_t                 ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
@@ -46,18 +45,10 @@ typedef struct {
     protocol_control_mode_t  control_mode;                       ///< Remote control mode
     protocol_lh2_waypoints_t waypoints;                          ///< List of waypoints
     uint8_t                  next_waypoint_idx;                  ///< Index of next waypoint to reach
-    pid_t                    pid_angular;                        ///< PID used to compute the angular speed
-    bool                     update_control_loop;
+    bool                     update_control_loop;                ///< Whether the control loop need an update
 } dotbot_vars_t;
 
 //=========================== variables ========================================
-
-///! PID gains
-static const pid_gains_t _pid_params = {
-    .kp = 0.1,
-    .ki = 0.0,
-    .kd = 0.0,
-};
 
 ///! LH2 event gpio
 static const gpio_t _lh2_e_gpio = {
@@ -133,15 +124,8 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
                 _dotbot_vars.update_control_loop = (_dotbot_vars.control_mode == ControlAuto);
             } break;
             case DB_PROTOCOL_CONTROL_MODE:
-            {
                 db_motors_set_speed(0, 0);
-                protocol_control_mode_t control_mode = (protocol_control_mode_t)(*cmd_ptr);
-                if (control_mode == ControlAuto) {
-                    db_pid_set_mode(&_dotbot_vars.pid_angular, DB_PID_MODE_AUTO);
-                } else {
-                    db_pid_set_mode(&_dotbot_vars.pid_angular, DB_PID_MODE_MANUAL);
-                }
-            } break;
+                break;
             case DB_PROTOCOL_LH2_WAYPOINTS:
             {
                 _dotbot_vars.control_mode     = ControlManual;
@@ -153,7 +137,6 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
                 }
             } break;
             default:
-                printf("Unsupported message type\n");
                 break;
         }
     } while (0);
@@ -176,11 +159,6 @@ int main(void) {
     db_timer_set_periodic_ms(1, 500, &_advertise);
     db_lh2_init(&_dotbot_vars.lh2, &_lh2_d_gpio, &_lh2_e_gpio);
     db_lh2_start(&_dotbot_vars.lh2);
-
-    // Initialize the pids
-    db_pid_init(&_dotbot_vars.pid_angular, 0.0, 0.0,
-                _pid_params.kp, _pid_params.ki, _pid_params.kd,
-                -15, 15, DB_PID_SAMPLE_TIME_MS, DB_PID_MODE_MANUAL, DB_PID_DIRECTION_DIRECT);
 
     // Set an invalid heading since the value is unknown on startup.
     _dotbot_vars.direction           = DB_DIRECTION_INVALID;
@@ -214,7 +192,7 @@ int main(void) {
             _update_control_loop();
             _dotbot_vars.update_control_loop = false;
         }
-        db_timer_delay_ms(200);
+        db_timer_delay_ms(100);
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
@@ -242,29 +220,21 @@ static void _update_control_loop(void) {
         // compute angle to target waypoint
         int16_t angleToTarget = 0;
         _compute_angle(&_dotbot_vars.waypoints.points[_dotbot_vars.next_waypoint_idx], &_dotbot_vars.last_location, &angleToTarget);
-        _dotbot_vars.pid_angular.input = (float)(angleToTarget - _dotbot_vars.direction);
-        // printf("Direction: %i\n", _dotbot_vars.direction);
-        // printf("Angle to target: %i\n", angleToTarget);
-        // printf("PID input: %i\n", (int16_t)_dotbot_vars.pid_angular.input);
-        db_pid_update(&_dotbot_vars.pid_angular);
-        float angularSpeed = _dotbot_vars.pid_angular.output;
-
-        // printf("Computed angular speed: %i\n", (int16_t)angularSpeed);
-        int16_t left  = (int16_t)((DB_MAX_SPEED + angularSpeed));
-        int16_t right = (int16_t)((DB_MAX_SPEED - angularSpeed));
+        int16_t errorAngle = angleToTarget - _dotbot_vars.direction;
+        if (errorAngle < -180) {
+            errorAngle += 360;
+        } else if (errorAngle > 180) {
+            errorAngle -= 360;
+        }
+        int16_t angularSpeed = (int16_t)(((float)errorAngle / 180) * 30);
+        int16_t left         = (int16_t)((DB_MAX_SPEED - angularSpeed));
+        int16_t right        = (int16_t)((DB_MAX_SPEED + angularSpeed));
         if (left > DB_MAX_SPEED) {
             left = DB_MAX_SPEED;
         }
         if (right > DB_MAX_SPEED) {
             right = DB_MAX_SPEED;
         }
-        if (right < -DB_MAX_SPEED) {
-            right = -DB_MAX_SPEED;
-        }
-        if (left < -DB_MAX_SPEED) {
-            left = -DB_MAX_SPEED;
-        }
-        // printf("Applying speeds: %i, %i\n", left, right);
         db_motors_set_speed(left, right);
     }
 }
