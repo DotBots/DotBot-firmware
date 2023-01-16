@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <stdio.h>
 // Include BSP headers
 #include "board.h"
 #include "device.h"
@@ -26,23 +27,25 @@
 
 //=========================== defines ==========================================
 
-#define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
-#define DB_LH2_FULL_COMPUTATION   (0)
-#define DB_BUFFER_MAX_BYTES       (64U)   ///< Max bytes in UART receive buffer
-#define DB_DIRECTION_THRESHOLD    (0.01)  ///< Threshold to update the direction
+#define TIMEOUT_CHECK_DELAY_TICKS      (17000)  ///< ~500 ms delay between packet received timeout checks
+#define DB_LH2_FULL_COMPUTATION        (false)  ///< Wether the full LH2 computation is perform on board
+#define DB_BUFFER_MAX_BYTES            (255U)   ///< Max bytes in UART receive buffer
+#define DB_DIRECTION_THRESHOLD         (0.01)   ///< Threshold to update the direction
+#define DB_DIRECTION_INVALID           (-1000)  ///< Invalid angle e.g out of [0, 360] range
+#define DB_WAYPOINT_DISTANCE_THRESHOLD (75000)  ///< Distance threshold towards a target waypoint
+#define DB_MAX_SPEED                   (60)     ///< Max speed in autonomous control mode
+#define DB_ANGULAR_SPEED_FACTOR        (30)     ///< Constant applied to the normalized angle to target error
 
 typedef struct {
-    float x;
-    float y;
-    float z;
-} dotbot_lh2_location_t;
-
-typedef struct {
-    uint32_t              ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
-    db_lh2_t              lh2;                                ///< LH2 device descriptor
-    uint8_t               radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
-    dotbot_lh2_location_t last_location;                      ///< Last computed LH2 location received
-    int16_t               direction;                          ///< Current direction of the DotBot (angle in °)
+    uint32_t                 ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
+    db_lh2_t                 lh2;                                ///< LH2 device descriptor
+    uint8_t                  radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
+    protocol_lh2_location_t  last_location;                      ///< Last computed LH2 location received
+    int16_t                  direction;                          ///< Current direction of the DotBot (angle in °)
+    protocol_control_mode_t  control_mode;                       ///< Remote control mode
+    protocol_lh2_waypoints_t waypoints;                          ///< List of waypoints
+    uint8_t                  next_waypoint_idx;                  ///< Index of next waypoint to reach
+    bool                     update_control_loop;                ///< Whether the control loop need an update
 } dotbot_vars_t;
 
 //=========================== variables ========================================
@@ -65,7 +68,8 @@ static dotbot_vars_t _dotbot_vars;
 
 static void _timeout_check(void);
 static void _advertise(void);
-static void _compute_direction(const dotbot_lh2_location_t *location, int16_t *direction);
+static void _compute_angle(const protocol_lh2_location_t *next, const protocol_lh2_location_t *origin, int16_t *angle);
+static void _update_control_loop(void);
 
 //=========================== callbacks ========================================
 
@@ -108,16 +112,29 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             } break;
             case DB_PROTOCOL_LH2_LOCATION:
             {
-                const protocol_lh2_location_t *location     = (const protocol_lh2_location_t *)cmd_ptr;
-                dotbot_lh2_location_t          new_location = {
-                             .x = (float)location->x / 1e6,
-                             .y = (float)location->y / 1e6,
-                             .z = (float)location->z / 1e6,
-                };
-                _compute_direction(&new_location, &_dotbot_vars.direction);
-                _dotbot_vars.last_location.x = new_location.x;
-                _dotbot_vars.last_location.y = new_location.y;
-                _dotbot_vars.last_location.z = new_location.z;
+                const protocol_lh2_location_t *location = (const protocol_lh2_location_t *)cmd_ptr;
+                int16_t                        angle    = -1000;
+                _compute_angle(location, &_dotbot_vars.last_location, &angle);
+                if (angle != DB_DIRECTION_INVALID) {
+                    _dotbot_vars.last_location.x = location->x;
+                    _dotbot_vars.last_location.y = location->y;
+                    _dotbot_vars.last_location.z = location->z;
+                    _dotbot_vars.direction       = angle;
+                }
+                _dotbot_vars.update_control_loop = (_dotbot_vars.control_mode == ControlAuto);
+            } break;
+            case DB_PROTOCOL_CONTROL_MODE:
+                db_motors_set_speed(0, 0);
+                break;
+            case DB_PROTOCOL_LH2_WAYPOINTS:
+            {
+                _dotbot_vars.control_mode     = ControlManual;
+                _dotbot_vars.waypoints.length = (uint8_t)*cmd_ptr;
+                memcpy(&_dotbot_vars.waypoints.points, cmd_ptr + 1, _dotbot_vars.waypoints.length * sizeof(protocol_lh2_location_t));
+                _dotbot_vars.next_waypoint_idx = 0;
+                if (_dotbot_vars.waypoints.length > 0) {
+                    _dotbot_vars.control_mode = ControlAuto;
+                }
             } break;
             default:
                 break;
@@ -144,7 +161,8 @@ int main(void) {
     db_lh2_start(&_dotbot_vars.lh2);
 
     // Set an invalid heading since the value is unknown on startup.
-    _dotbot_vars.direction = 0xffff;
+    _dotbot_vars.direction           = DB_DIRECTION_INVALID;
+    _dotbot_vars.update_control_loop = false;
 
     while (1) {
         db_lh2_process_raw_data(&_dotbot_vars.lh2);
@@ -169,7 +187,12 @@ int main(void) {
             }
             db_lh2_start(&_dotbot_vars.lh2);
         }
-        db_timer_delay_ms(50);
+
+        if (_dotbot_vars.update_control_loop) {
+            _update_control_loop();
+            _dotbot_vars.update_control_loop = false;
+        }
+        db_timer_delay_ms(100);
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
@@ -178,22 +201,58 @@ int main(void) {
 
 //=========================== private functions ================================
 
-static void _compute_direction(const dotbot_lh2_location_t *location, int16_t *direction) {
-    float dx       = location->x - _dotbot_vars.last_location.x;
-    float dy       = location->y - _dotbot_vars.last_location.y;
+static void _update_control_loop(void) {
+    if (_dotbot_vars.next_waypoint_idx >= _dotbot_vars.waypoints.length) {
+        db_motors_set_speed(0, 0);
+        return;
+    }
+    float dx               = ((float)_dotbot_vars.waypoints.points[_dotbot_vars.next_waypoint_idx].x - (float)_dotbot_vars.last_location.x) / 1e6;
+    float dy               = ((float)_dotbot_vars.waypoints.points[_dotbot_vars.next_waypoint_idx].y - (float)_dotbot_vars.last_location.y) / 1e6;
+    float distanceToTarget = sqrtf(powf(dx, 2) + powf(dy, 2));
+
+    if ((uint32_t)(distanceToTarget * 1e6) < (uint32_t)DB_WAYPOINT_DISTANCE_THRESHOLD) {
+        // Target waypoint is reached
+        _dotbot_vars.next_waypoint_idx++;
+    } else if (_dotbot_vars.direction == DB_DIRECTION_INVALID) {
+        // Unknown direction, just move forward a bit
+        db_motors_set_speed(DB_MAX_SPEED, DB_MAX_SPEED);
+    } else {
+        // compute angle to target waypoint
+        int16_t angleToTarget = 0;
+        _compute_angle(&_dotbot_vars.waypoints.points[_dotbot_vars.next_waypoint_idx], &_dotbot_vars.last_location, &angleToTarget);
+        int16_t errorAngle = angleToTarget - _dotbot_vars.direction;
+        if (errorAngle < -180) {
+            errorAngle += 360;
+        } else if (errorAngle > 180) {
+            errorAngle -= 360;
+        }
+        int16_t angularSpeed = (int16_t)(((float)errorAngle / 180) * 30);
+        int16_t left         = (int16_t)((DB_MAX_SPEED - angularSpeed));
+        int16_t right        = (int16_t)((DB_MAX_SPEED + angularSpeed));
+        if (left > DB_MAX_SPEED) {
+            left = DB_MAX_SPEED;
+        }
+        if (right > DB_MAX_SPEED) {
+            right = DB_MAX_SPEED;
+        }
+        db_motors_set_speed(left, right);
+    }
+}
+
+static void _compute_angle(const protocol_lh2_location_t *next, const protocol_lh2_location_t *origin, int16_t *angle) {
+    float dx       = ((float)next->x - (float)origin->x) / 1e6;
+    float dy       = ((float)next->y - (float)origin->y) / 1e6;
     float distance = sqrtf(powf(dx, 2) + powf(dy, 2));
 
     if (distance < DB_DIRECTION_THRESHOLD) {
-        // Skip computation if distance to last position is too small
         return;
     }
 
-    int8_t sideFactor = 1;
-    if (dx > 0) {
-        sideFactor = -1;
+    int8_t sideFactor = (dx > 0) ? -1 : 1;
+    *angle            = (int16_t)(acosf(dy / distance) * 180 / M_PI) * sideFactor;
+    if (*angle < 0) {
+        *angle = 360 + *angle;
     }
-    *direction = (int16_t)(acosf(dy / distance) * 180 / M_PI) * sideFactor;
-    __NOP();  // For debugging
 }
 
 static void _timeout_check(void) {
