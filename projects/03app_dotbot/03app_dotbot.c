@@ -27,8 +27,12 @@
 
 //=========================== defines ==========================================
 
+#define DB_LH2_UPDATE_DELAY_MS         (100U)   ///< 100ms delay between each LH2 data refresh
+#define DB_ADVERTIZEMENT_DELAY_MS      (500U)   ///< 500ms delay between each advertizement packet sending
+#define DB_TIMEOUT_CHECK_DELAY_MS      (200U)   ///< 200ms delay between each timeout delay check
 #define TIMEOUT_CHECK_DELAY_TICKS      (17000)  ///< ~500 ms delay between packet received timeout checks
 #define DB_LH2_FULL_COMPUTATION        (false)  ///< Wether the full LH2 computation is perform on board
+#define DB_LH2_COUNTER_MASK            (0x07)   ///< Maximum number of lh2 iterations without value received
 #define DB_BUFFER_MAX_BYTES            (255U)   ///< Max bytes in UART receive buffer
 #define DB_DIRECTION_THRESHOLD         (0.01)   ///< Threshold to update the direction
 #define DB_DIRECTION_INVALID           (-1000)  ///< Invalid angle e.g out of [0, 360] range
@@ -46,6 +50,10 @@ typedef struct {
     protocol_lh2_waypoints_t waypoints;                          ///< List of waypoints
     uint8_t                  next_waypoint_idx;                  ///< Index of next waypoint to reach
     bool                     update_control_loop;                ///< Whether the control loop need an update
+    bool                     advertize;                          ///< Whether an advertize packet should be sent
+    bool                     update_lh2;                         ///< Whether LH2 data must be processed
+    uint8_t                  lh2_update_counter;                 ///< Counter used to track when lh2 data were received and to determine if an advertizement packet is needed
+    uint64_t                 device_id;                          ///< Device ID of the DotBot
 } dotbot_vars_t;
 
 //=========================== variables ========================================
@@ -70,6 +78,7 @@ static void _timeout_check(void);
 static void _advertise(void);
 static void _compute_angle(const protocol_lh2_location_t *next, const protocol_lh2_location_t *origin, int16_t *angle);
 static void _update_control_loop(void);
+static void _update_lh2(void);
 
 //=========================== callbacks ========================================
 
@@ -81,7 +90,7 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
         uint8_t           *ptk_ptr = pkt;
         protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
         // Check destination address matches
-        if (header->dst != DB_BROADCAST_ADDRESS && header->dst != db_device_id()) {
+        if (header->dst != DB_BROADCAST_ADDRESS && header->dst != _dotbot_vars.device_id) {
             break;
         }
 
@@ -154,45 +163,72 @@ int main(void) {
     db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);
     db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
     db_radio_rx_enable();       // Start receiving packets.
+
+    // Set an invalid heading since the value is unknown on startup.
+    // Control loop is stopped and advertize packets are sent
+    _dotbot_vars.direction           = DB_DIRECTION_INVALID;
+    _dotbot_vars.update_control_loop = false;
+    _dotbot_vars.advertize           = false;
+    _dotbot_vars.update_lh2          = false;
+    _dotbot_vars.lh2_update_counter  = 0;
+
+    // Retrieve the device id once at startup
+    _dotbot_vars.device_id = db_device_id();
+
     db_timer_init();
-    db_timer_set_periodic_ms(0, 200, &_timeout_check);
-    db_timer_set_periodic_ms(1, 500, &_advertise);
+    db_timer_set_periodic_ms(0, DB_TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
+    db_timer_set_periodic_ms(1, DB_ADVERTIZEMENT_DELAY_MS, &_advertise);
+    db_timer_set_periodic_ms(2, DB_LH2_UPDATE_DELAY_MS, &_update_lh2);
     db_lh2_init(&_dotbot_vars.lh2, &_lh2_d_gpio, &_lh2_e_gpio);
     db_lh2_start(&_dotbot_vars.lh2);
 
-    // Set an invalid heading since the value is unknown on startup.
-    _dotbot_vars.direction           = DB_DIRECTION_INVALID;
-    _dotbot_vars.update_control_loop = false;
-
     while (1) {
-        db_lh2_process_raw_data(&_dotbot_vars.lh2);
-        if (_dotbot_vars.lh2.state == DB_LH2_RAW_DATA_READY) {
-            db_lh2_stop(&_dotbot_vars.lh2);
-            db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_DOTBOT_DATA);
-            memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t), &_dotbot_vars.direction, sizeof(int16_t));
-            memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(int16_t), _dotbot_vars.lh2.raw_data, sizeof(db_lh2_raw_data_t) * LH2_LOCATIONS_COUNT);
-            size_t length = sizeof(protocol_header_t) + sizeof(int16_t) + sizeof(db_lh2_raw_data_t) * LH2_LOCATIONS_COUNT;
-            db_radio_rx_disable();
-            db_radio_tx(_dotbot_vars.radio_buffer, length);
-            db_radio_rx_enable();
-            if (DB_LH2_FULL_COMPUTATION) {
-                // the location function has to be running all the time
-                db_lh2_process_location(&_dotbot_vars.lh2);
+        __WFE();
 
-                // Reset the LH2 driver if a packet is ready. At this point, locations
-                // can be read from lh2.results array
-                if (_dotbot_vars.lh2.state == DB_LH2_LOCATION_READY) {
-                    __NOP();  // Add this no-op to allow setting a breakpoint here
+        bool need_advertize = false;
+        if (_dotbot_vars.update_lh2) {
+            db_lh2_process_raw_data(&_dotbot_vars.lh2);
+            if (_dotbot_vars.lh2.state == DB_LH2_RAW_DATA_READY) {
+                _dotbot_vars.lh2_update_counter = 0;
+                db_lh2_stop(&_dotbot_vars.lh2);
+                db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_DOTBOT_DATA);
+                memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t), &_dotbot_vars.direction, sizeof(int16_t));
+                memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(int16_t), _dotbot_vars.lh2.raw_data, sizeof(db_lh2_raw_data_t) * LH2_LOCATIONS_COUNT);
+                size_t length = sizeof(protocol_header_t) + sizeof(int16_t) + sizeof(db_lh2_raw_data_t) * LH2_LOCATIONS_COUNT;
+                db_radio_rx_disable();
+                db_radio_tx(_dotbot_vars.radio_buffer, length);
+                db_radio_rx_enable();
+                if (DB_LH2_FULL_COMPUTATION) {
+                    // the location function has to be running all the time
+                    db_lh2_process_location(&_dotbot_vars.lh2);
+
+                    // Reset the LH2 driver if a packet is ready. At this point, locations
+                    // can be read from lh2.results array
+                    if (_dotbot_vars.lh2.state == DB_LH2_LOCATION_READY) {
+                        __NOP();  // Add this no-op to allow setting a breakpoint here
+                    }
                 }
+                db_lh2_start(&_dotbot_vars.lh2);
+            } else {
+                _dotbot_vars.lh2_update_counter = (_dotbot_vars.lh2_update_counter + 1) & DB_LH2_COUNTER_MASK;
+                need_advertize                  = (_dotbot_vars.lh2_update_counter == DB_LH2_COUNTER_MASK);
             }
-            db_lh2_start(&_dotbot_vars.lh2);
+            _dotbot_vars.update_lh2 = false;
         }
 
         if (_dotbot_vars.update_control_loop) {
             _update_control_loop();
             _dotbot_vars.update_control_loop = false;
         }
-        db_timer_delay_ms(100);
+
+        if (_dotbot_vars.advertize && need_advertize) {
+            db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_ADVERTISEMENT);
+            size_t length = sizeof(protocol_header_t);
+            db_radio_rx_disable();
+            db_radio_tx(_dotbot_vars.radio_buffer, length);
+            db_radio_rx_enable();
+            _dotbot_vars.advertize = false;
+        }
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
@@ -263,9 +299,9 @@ static void _timeout_check(void) {
 }
 
 static void _advertise(void) {
-    db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_ADVERTISEMENT);
-    size_t length = sizeof(protocol_header_t);
-    db_radio_rx_disable();
-    db_radio_tx(_dotbot_vars.radio_buffer, length);
-    db_radio_rx_enable();
+    _dotbot_vars.advertize = true;
+}
+
+static void _update_lh2(void) {
+    _dotbot_vars.update_lh2 = true;
 }
