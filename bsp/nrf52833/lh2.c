@@ -21,7 +21,7 @@
 
 //=========================== defines =========================================
 
-#define SPIM3_INTERRUPT_PRIORITY               1           ///< Interrupt priority, as high as it will go
+#define SPIM3_INTERRUPT_PRIORITY               2           ///< Interrupt priority, as high as it will go
 #define SPI3_BUFFER_SIZE                       64          ///< Size of buffers used for SPI communications
 #define SPI3_FAKE_SCK_PIN                      6           ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
 #define SPI3_FAKE_SCK_PORT                     1           ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
