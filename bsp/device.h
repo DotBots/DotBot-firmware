@@ -20,8 +20,8 @@
  *
  * @return device address in 32bit format
  */
-static inline uint32_t db_device_addr(void) {
-    return *(uint32_t *)&NRF_FICR->DEVICEADDR[0];
+static inline uint64_t db_device_addr(void) {
+    return ((((uint64_t)NRF_FICR->DEVICEADDR[1]) << 32) & 0xffffffffffff) | (uint64_t)NRF_FICR->DEVICEADDR[0];
 }
 
 /**
@@ -30,7 +30,7 @@ static inline uint32_t db_device_addr(void) {
  * @return device identifier in 64bit format
  */
 static inline uint64_t db_device_id(void) {
-    return ((uint64_t)(*(uint32_t *)&NRF_FICR->DEVICEADDR[1]) << 32) | *(uint32_t *)&NRF_FICR->DEVICEADDR[0];
+    return ((uint64_t)NRF_FICR->DEVICEID[1]) << 32 | (uint64_t)NRF_FICR->DEVICEID[0];
 }
 
 #endif
