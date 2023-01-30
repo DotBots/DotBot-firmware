@@ -117,6 +117,7 @@ void db_uart_init(const gpio_t *rx_pin, const gpio_t *tx_pin, uint32_t baudrate,
         DB_UARTE->SHORTS        = (UARTE_SHORTS_ENDRX_STARTRX_Enabled << UARTE_SHORTS_ENDRX_STARTRX_Pos);
         DB_UARTE->TASKS_STARTRX = 1;
         NVIC_EnableIRQ(DB_UARTE_IRQ);
+        NVIC_SetPriority(DB_UARTE_IRQ, 0);
     }
 }
 
