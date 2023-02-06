@@ -73,6 +73,14 @@
     <file file_name="rpm.c" />
     <file file_name="../rpm.h" />
   </project>
+  <project Name="00bsp_gpio">
+    <configuration
+      Name="Common"
+      project_directory="../bsp/nrf52833"
+      project_type="Library" />
+    <file file_name="gpio.c" />
+    <file file_name="../gpio.h" />
+  </project>
   <project Name="00bsp_i2c">
     <configuration
       Name="Common"
