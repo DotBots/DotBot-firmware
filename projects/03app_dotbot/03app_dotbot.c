@@ -137,6 +137,7 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
                 break;
             case DB_PROTOCOL_LH2_WAYPOINTS:
             {
+                db_motors_set_speed(0, 0);
                 _dotbot_vars.control_mode     = ControlManual;
                 _dotbot_vars.waypoints.length = (uint8_t)*cmd_ptr;
                 memcpy(&_dotbot_vars.waypoints.points, cmd_ptr + 1, _dotbot_vars.waypoints.length * sizeof(protocol_lh2_location_t));
