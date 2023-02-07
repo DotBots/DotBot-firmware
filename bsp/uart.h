@@ -32,6 +32,8 @@ typedef void (*uart_rx_cb_t)(uint8_t data);  ///< Callback function prototype, i
  */
 void db_uart_init(const gpio_t *rx_pin, const gpio_t *tx_pin, uint32_t baudrate, uart_rx_cb_t callback);
 
+void db_uart_init_hwfc(const gpio_t *rx_pin, const gpio_t *tx_pin, const gpio_t *cts_pin, const gpio_t *rts_pin, uint32_t baudrate, uart_rx_cb_t callback);
+
 /**
  * @brief Write bytes to the UART
  *
