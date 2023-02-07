@@ -55,8 +55,10 @@ typedef struct {
 
 //=========================== variables ========================================
 
-static const gpio_t _rx_pin = { .pin = 8, .port = 0 };
-static const gpio_t _tx_pin = { .pin = 6, .port = 0 };
+static const gpio_t _rx_pin  = { .pin = 8, .port = 0 };
+static const gpio_t _tx_pin  = { .pin = 6, .port = 0 };
+static const gpio_t _cts_pin = { .pin = 7, .port = 0 };
+static const gpio_t _rts_pin = { .pin = 5, .port = 0 };
 
 static gateway_vars_t _gw_vars;
 
@@ -72,9 +74,11 @@ static void uart_callback(uint8_t data) {
 }
 
 static void radio_callback(uint8_t *packet, uint8_t length) {
+    db_gpio_clear(&_rts_pin);
     memcpy(_gw_vars.radio_queue.packets[_gw_vars.radio_queue.last].buffer, packet, length);
     _gw_vars.radio_queue.packets[_gw_vars.radio_queue.last].length = length;
     _gw_vars.radio_queue.last                                      = (_gw_vars.radio_queue.last + 1) & (DB_RADIO_QUEUE_SIZE - 1);
+    db_gpio_set(&_rts_pin);
 }
 
 //=========================== main =============================================
@@ -93,7 +97,7 @@ int main(void) {
     _gw_vars.buttons             = 0x0000;
     _gw_vars.radio_queue.current = 0;
     _gw_vars.radio_queue.last    = 0;
-    db_uart_init(&_rx_pin, &_tx_pin, DB_UART_BAUDRATE, &uart_callback);
+    db_uart_init_hwfc(&_rx_pin, &_tx_pin, &_cts_pin, &_rts_pin, DB_UART_BAUDRATE, &uart_callback);
 
     db_radio_rx_enable();
     _init_buttons();
@@ -127,6 +131,7 @@ int main(void) {
         }
 
         while (_gw_vars.radio_queue.current != _gw_vars.radio_queue.last) {
+            while (db_gpio_read(&_cts_pin)) {}
             size_t frame_len = db_hdlc_encode(_gw_vars.radio_queue.packets[_gw_vars.radio_queue.current].buffer, _gw_vars.radio_queue.packets[_gw_vars.radio_queue.current].length, _gw_vars.hdlc_tx_buffer);
             db_uart_write(_gw_vars.hdlc_tx_buffer, frame_len);
             _gw_vars.radio_queue.current = (_gw_vars.radio_queue.current + 1) & (DB_RADIO_QUEUE_SIZE - 1);
