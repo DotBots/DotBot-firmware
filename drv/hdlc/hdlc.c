@@ -160,8 +160,24 @@ size_t db_hdlc_encode(const uint8_t *input, size_t input_len, uint8_t *frame) {
     fcs = 0xFFFF - fcs;
 
     // Write the FCS in the frame
-    frame[frame_len++] = (fcs & 0xFF);
-    frame[frame_len++] = ((fcs & 0xFF00) >> 8);
+    if ((fcs & 0xFF) == DB_HDLC_ESCAPE) {
+        frame[frame_len++] = DB_HDLC_ESCAPE;
+        frame[frame_len++] = DB_HDLC_ESCAPE_ESCAPED;
+    } else if ((fcs & 0xFF) == DB_HDLC_FLAG) {
+        frame[frame_len++] = DB_HDLC_ESCAPE;
+        frame[frame_len++] = DB_HDLC_FLAG_ESCAPED;
+    } else {
+        frame[frame_len++] = (fcs & 0xFF);
+    }
+    if (((fcs & 0xFF00) >> 8) == DB_HDLC_ESCAPE) {
+        frame[frame_len++] = DB_HDLC_ESCAPE;
+        frame[frame_len++] = DB_HDLC_ESCAPE_ESCAPED;
+    } else if (((fcs & 0xFF00) >> 8) == DB_HDLC_FLAG) {
+        frame[frame_len++] = DB_HDLC_ESCAPE;
+        frame[frame_len++] = DB_HDLC_FLAG_ESCAPED;
+    } else {
+        frame[frame_len++] = ((fcs & 0xFF00) >> 8);
+    }
 
     // End flag
     frame[frame_len++] = DB_HDLC_FLAG;
