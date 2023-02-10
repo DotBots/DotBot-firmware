@@ -14,7 +14,7 @@
     build_treat_warnings_as_errors="Yes"
     c_additional_options="-Wno-missing-field-initializers"
     c_preprocessor_definitions="ARM_MATH_CM4;NRF52833_XXAA;__nRF_FAMILY;CONFIG_NFCT_PINS_AS_GPIOS"
-    c_user_include_directories="$(SolutionDir)/../bsp;$(SolutionDir)/../drv;$(ProjectDir)/../../nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
+    c_user_include_directories="$(SolutionDir)/../bsp;$(SolutionDir)/../drv;$(PackagesDir)/nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
     gcc_debugging_level="Level 2"
     gcc_enable_all_warnings="Yes"
     gcc_omit_frame_pointer="Yes"
@@ -194,7 +194,7 @@
       link_linker_script_file="$(ProjectDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf"
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
-      macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
+      macros="NRFHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(ProjectDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(ProjectDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       project_dependencies="00bsp_gpio"
       project_directory="01bsp_gpio"
       project_type="Executable"
@@ -202,11 +202,11 @@
       target_script_file="$(ProjectDir)/../../nRF_Target.js"
       target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
     <folder Name="Device Files">
-      <file file_name="../../nRF/Device/Include/nrf.h" />
-      <file file_name="../../nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="../../nRF/Device/Source/system_nrf52.c">
-        <file file_name="../../nRF/Device/Include/nrf.h" />
-        <configuration
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
+         <configuration
           Name="Common"
           default_code_section=".init"
           default_const_section=".init_rodata" />
@@ -257,7 +257,7 @@
       link_linker_script_file="$(ProjectDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf"
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
-      macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
+      macros="NRFHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(ProjectDir)/nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(ProjectDir)/nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       project_dependencies="00bsp_dotbot_board;00bsp_i2c;00bsp_timer_hf"
       project_directory="01bsp_i2c"
       project_type="Executable"
@@ -265,10 +265,10 @@
       target_script_file="$(ProjectDir)/../../nRF_Target.js"
       target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
     <folder Name="Device Files">
-      <file file_name="../../nRF/Device/Include/nrf.h" />
-      <file file_name="../../nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="../../nRF/Device/Source/system_nrf52.c">
-        <file file_name="../../nRF/Device/Include/nrf.h" />
+        <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
         <configuration
           Name="Common"
           default_code_section=".init"
@@ -320,7 +320,7 @@
       link_linker_script_file="$(ProjectDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf"
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
-      macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
+      macros="NRFHeaderFile=$(ProjectDir)/nRF/Device/Include/nrf.h;DeviceHeaderFile=$(ProjectDir)/nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(ProjectDir)/nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(ProjectDir)/nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       project_dependencies="00bsp_dotbot_board;00bsp_dotbot_lh2"
       project_directory="01bsp_lighthouse"
       project_type="Executable"
@@ -382,7 +382,7 @@
       link_linker_script_file="$(ProjectDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf"
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
-      macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
+      macros="NRFHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(ProjectDir)/nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(ProjectDir)/nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       project_dependencies="00bsp_dotbot_board;00bsp_dotbot_motors;00bsp_timer"
       project_directory="01bsp_motors"
       project_type="Executable"
@@ -390,10 +390,10 @@
       target_script_file="$(ProjectDir)/../../nRF_Target.js"
       target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
     <folder Name="Device Files">
-      <file file_name="../../nRF/Device/Include/nrf.h" />
-      <file file_name="../../nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="../../nRF/Device/Source/system_nrf52.c">
-        <file file_name="../../nRF/Device/Include/nrf.h" />
+        <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
         <configuration
           Name="Common"
           default_code_section=".init"
@@ -446,7 +446,7 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       linker_section_placements_segments="FLASH1 RX 0x00000000 0x00080000;RAM1 RWX 0x20000000 0x00020000"
-      macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
+      macros="NRFHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(ProjectDir)/nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(ProjectDir)/nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       project_dependencies="00bsp_dotbot_board;00bsp_radio"
       project_directory="01bsp_radio_lr_txrx"
       project_type="Executable"
@@ -454,8 +454,8 @@
       target_script_file="$(ProjectDir)/nRF_Target.js"
       target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
     <folder Name="Device Files">
-      <file file_name="../../nRF/Device/Include/nrf.h" />
-      <file file_name="../../nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="../../nRF/Device/Source/system_nrf52.c">
         <configuration
           Name="Common"
@@ -508,7 +508,7 @@
       link_linker_script_file="$(ProjectDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf"
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
-      macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
+      macros="NRFHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(ProjectDir)/nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(ProjectDir)/nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       project_dependencies="00bsp_dotbot_board;00bsp_radio"
       project_directory="01bsp_radio_txrx"
       project_type="Executable"
@@ -516,8 +516,8 @@
       target_script_file="$(ProjectDir)/nRF_Target.js"
       target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
     <folder Name="Device Files">
-      <file file_name="../../nRF/Device/Include/nrf.h" />
-      <file file_name="../../nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="../../nRF/Device/Source/system_nrf52.c">
         <configuration
           Name="Common"
@@ -570,7 +570,7 @@
       link_linker_script_file="$(ProjectDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf"
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
-      macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
+      macros="NRFHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(ProjectDir)/nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(ProjectDir)/nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       project_dependencies="00bsp_dotbot_board;00bsp_dotbot_rgbled;00bsp_timer"
       project_directory="01bsp_rgbled"
       project_type="Executable"
@@ -578,8 +578,8 @@
       target_script_file="$(ProjectDir)/nRF_Target.js"
       target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
     <folder Name="Device Files">
-      <file file_name="../../nRF/Device/Include/nrf.h" />
-      <file file_name="../../nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="../../nRF/Device/Source/system_nrf52.c">
         <configuration
           Name="Common"
@@ -632,7 +632,7 @@
       link_linker_script_file="$(ProjectDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf"
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
-      macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
+      macros="NRFHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(ProjectDir)/nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(ProjectDir)/nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       project_dependencies="00bsp_rng;00bsp_timer_hf"
       project_directory="01bsp_rng"
       project_type="Executable"
@@ -640,10 +640,10 @@
       target_script_file="$(ProjectDir)/../../nRF_Target.js"
       target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
     <folder Name="Device Files">
-      <file file_name="../../nRF/Device/Include/nrf.h" />
-      <file file_name="../../nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="../../nRF/Device/Source/system_nrf52.c">
-        <file file_name="../../nRF/Device/Include/nrf.h" />
+        <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
         <configuration
           Name="Common"
           default_code_section=".init"
@@ -695,7 +695,7 @@
       link_linker_script_file="$(ProjectDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf"
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
-      macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
+      macros="NRFHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(ProjectDir)/nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(ProjectDir)/nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       project_dependencies="00bsp_dotbot_board;00bsp_dotbot_rpm;00bsp_timer"
       project_directory="01bsp_rpm"
       project_type="Executable"
@@ -703,8 +703,8 @@
       target_script_file="$(ProjectDir)/nRF_Target.js"
       target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
     <folder Name="Device Files">
-      <file file_name="../../nRF/Device/Include/nrf.h" />
-      <file file_name="../../nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="../../nRF/Device/Source/system_nrf52.c">
         <configuration
           Name="Common"
@@ -757,7 +757,7 @@
       link_linker_script_file="$(ProjectDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf"
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
-      macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
+      macros="NRFHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(ProjectDir)/nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(ProjectDir)/nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       project_dependencies="00bsp_dotbot_board;00bsp_dotbot_rgbled;00bsp_timer"
       project_directory="01bsp_timer"
       project_type="Executable"
@@ -765,10 +765,10 @@
       target_script_file="$(ProjectDir)/../../nRF_Target.js"
       target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
     <folder Name="Device Files">
-      <file file_name="../../nRF/Device/Include/nrf.h" />
-      <file file_name="../../nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="../../nRF/Device/Source/system_nrf52.c">
-        <file file_name="../../nRF/Device/Include/nrf.h" />
+        <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
         <configuration
           Name="Common"
           default_code_section=".init"
@@ -820,7 +820,7 @@
       link_linker_script_file="$(ProjectDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf"
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
-      macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
+      macros="NRFHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(ProjectDir)/nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(ProjectDir)/nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       project_dependencies="00bsp_dotbot_board;00bsp_dotbot_rgbled;00bsp_timer_hf"
       project_directory="01bsp_timer_hf"
       project_type="Executable"
@@ -828,10 +828,10 @@
       target_script_file="$(ProjectDir)/../../nRF_Target.js"
       target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
     <folder Name="Device Files">
-      <file file_name="../../nRF/Device/Include/nrf.h" />
-      <file file_name="../../nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="../../nRF/Device/Source/system_nrf52.c">
-        <file file_name="../../nRF/Device/Include/nrf.h" />
+        <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
         <configuration
           Name="Common"
           default_code_section=".init"
@@ -883,7 +883,7 @@
       link_linker_script_file="$(ProjectDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf"
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
-      macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
+      macros="NRFHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(ProjectDir)/nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(ProjectDir)/nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       project_dependencies="00bsp_dotbot_board;00bsp_uart"
       project_directory="01bsp_uart"
       project_type="Executable"
@@ -891,8 +891,8 @@
       target_script_file="$(ProjectDir)/nRF_Target.js"
       target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
     <folder Name="Device Files">
-      <file file_name="../../nRF/Device/Include/nrf.h" />
-      <file file_name="../../nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="../../nRF/Device/Source/system_nrf52.c">
         <configuration
           Name="Common"
@@ -923,7 +923,7 @@
       </file>
     </folder>
   </project>
-<project Name="01drv_lis2mdl">
+  <project Name="01drv_lis2mdl">
     <configuration
       Name="Common"
       Placement="Flash"
@@ -946,7 +946,7 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_printf_fp_enabled="Float"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
-      macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
+      macros="NRFHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(ProjectDir)/nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(ProjectDir)/nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       project_dependencies="00bsp_i2c;00drv_lis2mdl"
       project_directory="01drv_lis2mdl"
       project_type="Executable"
@@ -954,8 +954,8 @@
       target_script_file="$(ProjectDir)/nRF_Target.js"
       target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
     <folder Name="Device Files">
-      <file file_name="../../nRF/Device/Include/nrf.h" />
-      <file file_name="../../nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="../../nRF/Device/Source/system_nrf52.c">
         <configuration
           Name="Common"
@@ -1013,7 +1013,7 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_printf_fp_enabled="Float"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
-      macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
+      macros="NRFHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(ProjectDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(ProjectDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       project_dependencies="00bsp_dotbot_board;00bsp_dotbot_rpm;00bsp_dotbot_motors;00bsp_timer_hf;00drv_pid"
       project_directory="01drv_pid"
       project_type="Executable"
@@ -1021,8 +1021,8 @@
       target_script_file="$(ProjectDir)/nRF_Target.js"
       target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
     <folder Name="Device Files">
-      <file file_name="../../nRF/Device/Include/nrf.h" />
-      <file file_name="../../nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="../../nRF/Device/Source/system_nrf52.c">
         <configuration
           Name="Common"
@@ -1075,7 +1075,7 @@
       link_linker_script_file="$(ProjectDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf"
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
-      macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
+      macros="NRFHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(ProjectDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(ProjectDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       project_dependencies="00bsp_dotbot_board;00bsp_dotbot_motors;00bsp_dotbot_rgbled;00bsp_radio;00bsp_dotbot_lh2;00drv_dotbot_protocol;00bsp_timer"
       project_directory="03app_dotbot"
       project_type="Executable"
@@ -1083,8 +1083,8 @@
       target_script_file="$(ProjectDir)/nRF_Target.js"
       target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
     <folder Name="Device Files">
-      <file file_name="../../nRF/Device/Include/nrf.h" />
-      <file file_name="../../nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="../../nRF/Device/Source/system_nrf52.c">
         <configuration
           Name="Common"
@@ -1137,15 +1137,15 @@
       link_linker_script_file="$(ProjectDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf"
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
-      macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
+      macros="NRFHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(ProjectDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(ProjectDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       project_dependencies="00bsp_radio;00bsp_dotbot_board;00bsp_uart;00bsp_timer;00bsp_uart;00drv_dotbot_hdlc;00drv_dotbot_protocol"
       project_directory="03app_dotbot_gateway"
       project_type="Executable"
       target_reset_script="Reset();"
       target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
     <folder Name="Device Files">
-      <file file_name="../../nRF/Device/Include/nrf.h" />
-      <file file_name="../../nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="../../nRF/Device/Source/system_nrf52.c">
         <configuration
           Name="Common"
@@ -1198,7 +1198,7 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_printf_fp_enabled="Float"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
-      macros="NRFHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/../../nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(PackagesDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(PackagesDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
+      macros="NRFHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(ProjectDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(ProjectDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
       project_dependencies="00bsp_radio;00bsp_uart;00drv_dotbot_protocol;00bsp_pwm;00bsp_timer_hf;00bsp_timer;00bsp_i2c;00drv_lis2mdl"
       project_directory="03app_sailbot"
       project_type="Executable"
@@ -1206,8 +1206,8 @@
       target_script_file="$(ProjectDir)/nRF_Target.js"
       target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
     <folder Name="Device Files">
-      <file file_name="../../nRF/Device/Include/nrf.h" />
-      <file file_name="../../nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="../../nRF/Device/Source/system_nrf52.c">
         <configuration
           Name="Common"
