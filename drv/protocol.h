@@ -16,7 +16,7 @@
 
 //=========================== defines ==========================================
 
-#define DB_FIRMWARE_VERSION  (4)                   ///< Version of the firmware
+#define DB_FIRMWARE_VERSION  (5)                   ///< Version of the firmware
 #define DB_SWARM_ID          (0x0000)              ///< Default swarm ID
 #define DB_BROADCAST_ADDRESS 0xffffffffffffffffUL  ///< Broadcast address
 #define DB_GATEWAY_ADDRESS   0x0000000000000000UL  ///< Gateway address
