@@ -316,25 +316,9 @@ void db_lh2_process_raw_data(db_lh2_t *lh2) {
     }
 
     if ((lh2->raw_data[0].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) ||
-        (lh2->raw_data[1].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) ||
-        (lh2->raw_data[2].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) ||
-        (lh2->raw_data[3].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR)) {  // failure to find one of the two polynomials - start from scratch and grab another capture
+        (lh2->raw_data[1].selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR)) {  // failure to find one of the two polynomials - start from scratch and grab another capture
         db_lh2_reset(lh2);
         return;
-    }
-
-    for (uint8_t location = 0; location < LH2_LOCATIONS_COUNT; location++) {
-        if ((lh2->raw_data[location].selected_polynomial == 0) || (lh2->raw_data[location].selected_polynomial == 1)) {
-            _lh2_vars.lha_packet_counter++;  // from LHA
-        }
-        if ((lh2->raw_data[location].selected_polynomial == 2) || (lh2->raw_data[location].selected_polynomial == 3)) {
-            _lh2_vars.lhb_packet_counter++;  // from LHB
-        }
-    }
-
-    if ((_lh2_vars.lha_packet_counter == 1) || (_lh2_vars.lhb_packet_counter == 1)) {
-        db_lh2_reset(lh2);
-        return;  // odd # of packets from 1 LH, erroneous result
     }
 
     lh2->state = DB_LH2_RAW_DATA_READY;
@@ -366,12 +350,6 @@ void db_lh2_process_location(db_lh2_t *lh2) {
         lh2->locations[0].lfsr_location       = tmp_locations[1];
         lh2->locations[1].selected_polynomial = lh2->raw_data[0].selected_polynomial;
         lh2->locations[1].lfsr_location       = tmp_locations[0];
-    }
-    if (lh2->locations[2].lfsr_location > lh2->locations[3].lfsr_location) {
-        lh2->locations[3].selected_polynomial = lh2->raw_data[2].selected_polynomial;
-        lh2->locations[3].lfsr_location       = tmp_locations[2];
-        lh2->locations[2].selected_polynomial = lh2->raw_data[3].selected_polynomial;
-        lh2->locations[2].lfsr_location       = tmp_locations[3];
     }
 
     for (uint8_t location = 0; location < LH2_LOCATIONS_COUNT; location++) {
@@ -812,29 +790,19 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
         bit_buffer1       = (uint32_t)(((0xFFFF800000000000 >> (*start_val)) & chipsH1) >> (64 - 17 - (*start_val)));
         bits_from_poly[0] = (((_poly_check(_polynomials[0], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
         bits_from_poly[1] = (((_poly_check(_polynomials[1], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
-        bits_from_poly[2] = (((_poly_check(_polynomials[2], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
-        bits_from_poly[3] = (((_poly_check(_polynomials[3], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
         bits_to_compare   = (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - 17 - (*start_val) - bits_N_for_comp)));
         weights[0]        = _hamming_weight(bits_from_poly[0] ^ bits_to_compare);
         weights[1]        = _hamming_weight(bits_from_poly[1] ^ bits_to_compare);
-        weights[2]        = _hamming_weight(bits_from_poly[2] ^ bits_to_compare);
-        weights[3]        = _hamming_weight(bits_from_poly[3] ^ bits_to_compare);
         if (bits_N_for_comp < 10) {                          // too few bits to reliably compare, give up
             selected_poly = LH2_POLYNOMIAL_ERROR_INDICATOR;  // mark the poly as "wrong"
             break;
         }  // TODO: implement sorting network for efficiency?
-        if ((weights[0] <= (uint64_t)threshold) | (weights[1] <= (uint64_t)threshold) | (weights[2] <= (uint64_t)threshold) | (weights[3] <= (uint64_t)threshold)) {
-            if ((weights[0] < weights[1]) & (weights[0] < weights[2]) & (weights[0] < weights[3])) {  // weight0 is the smallest
+        if ((weights[0] <= (uint64_t)threshold) | (weights[1] <= (uint64_t)threshold)) {
+            if ((weights[0] < weights[1])) {  // weight0 is the smallest
                 selected_poly = 0;
                 break;
-            } else if ((weights[1] < weights[0]) & (weights[1] < weights[2]) & (weights[1] < weights[3])) {  // weight1 is the smallest
+            } else if ((weights[1] < weights[0])) {  // weight1 is the smallest
                 selected_poly = 1;
-                break;
-            } else if ((weights[2] < weights[0]) & (weights[2] < weights[1]) & (weights[2] < weights[3])) {  // weight2 is the smallest
-                selected_poly = 2;
-                break;
-            } else if ((weights[3] < weights[0]) & (weights[3] < weights[1]) & (weights[3] < weights[2])) {  // weight3 is the smallest
-                selected_poly = 3;
                 break;
             }
         } else if (*start_val > 8) {  // match failed, try again removing bits from the end
@@ -943,90 +911,6 @@ uint32_t _reverse_count_p(uint8_t index, uint32_t bits) {
         if ((buffer ^ _end_buffers[index][15]) == 0x00000000) {
             count  = count + 122880 - 1;
             buffer = _end_buffers[index][0];
-        }
-    }
-    return count;
-}
-
-uint32_t _reverse_count_p3(uint32_t bits) {
-    uint32_t count  = 0;
-    uint32_t buffer = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
-
-    uint8_t  ii          = 0;  // loop variable for cumulative sum
-    uint32_t result      = 0;
-    uint32_t b17         = 0;
-    uint32_t masked_buff = 0;
-    while (buffer != _end_buffers[3][0])  // do until buffer reaches one of the saved states
-    {
-        b17         = buffer & 0x00000001;           // save the "newest" bit of the buffer
-        buffer      = (buffer & (0x0001FFFE)) >> 1;  // shift the buffer right, backwards in time
-        masked_buff = (buffer) & (_polynomials[3]);  // mask the buffer w/ the selected polynomial
-        for (ii = 0; ii < 17; ii++) {
-            result = result ^ (((masked_buff) >> ii) & (0x00000001));  // cumulative sum of buffer&poly
-        }
-        result = result ^ b17;
-        buffer = buffer | (result << 16);  // update buffer w/ result
-        result = 0;                        // reset result
-        count++;
-        if ((buffer ^ _end_buffers[3][1]) == 0x00000000) {
-            count  = count + 8192 - 1;
-            buffer = _end_buffers[3][0];
-        }
-        if ((buffer ^ _end_buffers[3][2]) == 0x00000000) {
-            count  = count + 16384 - 1;
-            buffer = _end_buffers[3][0];
-        }
-        if ((buffer ^ _end_buffers[3][3]) == 0x00000000) {
-            count  = count + 24576 - 1;
-            buffer = _end_buffers[3][0];
-        }
-        if ((buffer ^ _end_buffers[3][4]) == 0x00000000) {
-            count  = count + 32768 - 1;
-            buffer = _end_buffers[3][0];
-        }
-        if ((buffer ^ _end_buffers[3][5]) == 0x00000000) {
-            count  = count + 40960 - 1;
-            buffer = _end_buffers[3][0];
-        }
-        if ((buffer ^ _end_buffers[3][6]) == 0x00000000) {
-            count  = count + 49152 - 1;
-            buffer = _end_buffers[3][0];
-        }
-        if ((buffer ^ _end_buffers[3][7]) == 0x00000000) {
-            count  = count + 57344 - 1;
-            buffer = _end_buffers[3][0];
-        }
-        if ((buffer ^ _end_buffers[3][8]) == 0x00000000) {
-            count  = count + 65536 - 1;
-            buffer = _end_buffers[3][0];
-        }
-        if ((buffer ^ _end_buffers[3][9]) == 0x00000000) {
-            count  = count + 73728 - 1;
-            buffer = _end_buffers[3][0];
-        }
-        if ((buffer ^ _end_buffers[3][10]) == 0x00000000) {
-            count  = count + 81920 - 1;
-            buffer = _end_buffers[3][0];
-        }
-        if ((buffer ^ _end_buffers[3][11]) == 0x00000000) {
-            count  = count + 90112 - 1;
-            buffer = _end_buffers[3][0];
-        }
-        if ((buffer ^ _end_buffers[3][12]) == 0x00000000) {
-            count  = count + 98304 - 1;
-            buffer = _end_buffers[3][0];
-        }
-        if ((buffer ^ _end_buffers[3][13]) == 0x00000000) {
-            count  = count + 106496 - 1;
-            buffer = _end_buffers[3][0];
-        }
-        if ((buffer ^ _end_buffers[3][14]) == 0x00000000) {
-            count  = count + 114688 - 1;
-            buffer = _end_buffers[3][0];
-        }
-        if ((buffer ^ _end_buffers[3][15]) == 0x00000000) {
-            count  = count + 122880 - 1;
-            buffer = _end_buffers[3][0];
         }
     }
     return count;
@@ -1142,12 +1026,6 @@ void SPIM3_IRQHandler(void) {
         } else if (_lh2_vars.transfer_counter == 2) {
             memcpy(_lh2_vars.data[1].buffer, _lh2_vars.spi_rx_buffer, SPI3_BUFFER_SIZE);
             _lh2_vars.data[1].envelope_duration = NRF_TIMER2->CC[0];
-        } else if (_lh2_vars.transfer_counter == 3) {
-            memcpy(_lh2_vars.data[2].buffer, _lh2_vars.spi_rx_buffer, SPI3_BUFFER_SIZE);
-            _lh2_vars.data[2].envelope_duration = NRF_TIMER2->CC[0];
-        } else if (_lh2_vars.transfer_counter == 4) {
-            memcpy(_lh2_vars.data[3].buffer, _lh2_vars.spi_rx_buffer, SPI3_BUFFER_SIZE);
-            _lh2_vars.data[3].envelope_duration = NRF_TIMER2->CC[0];
             _lh2_vars.buffers_ready             = true;
         }
     }

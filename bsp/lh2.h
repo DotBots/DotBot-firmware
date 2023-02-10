@@ -20,7 +20,7 @@
 
 //=========================== defines ==========================================
 
-#define LH2_LOCATIONS_COUNT 4  ///< Number of computed locations
+#define LH2_LOCATIONS_COUNT 2  ///< Number of computed locations
 
 typedef enum {
     DB_LH2_IDLE,            ///< the lh2 engine is idle
