@@ -31,10 +31,10 @@
 
 //=========================== defines =========================================
 
-#define AUTONOMOUS_OPERATION (0)  //< user define to enable autonomous operation
+#define AUTONOMOUS_OPERATION (0)  ///< user define to enable autonomous operation
 
-#define PATH_PLANNER_PERIOD_MS (500)  //< path planner period
-#define CONTROL_LOOP_PERIOD_MS (100)  //< control loop period
+#define CONTROL_LOOP_PERIOD_MS      (100)  ///< control loop period
+#define WAYPOINT_DISTANCE_THRESHOLD (10)   ///< in meters
 
 #define SAIL_TRIM_ANGLE_UNIT_STEP (10)     //< unit step increase/decrease when trimming the sails
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
@@ -69,6 +69,7 @@ typedef struct {
     uint32_t                 ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
     int8_t                   sail_trim;                          ///< Last angle of the servo controlling sail trim
     protocol_gps_waypoints_t waypoints;                          ///< List of waypoints
+    uint32_t                 waypoints_threshold;                ///< Distance threshold to next waypoint
     uint8_t                  next_waypoint_idx;                  ///< Index of next waypoint to reach
     uint8_t                  radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
     bool                     autonomous_operation;               ///< Flag used to enable/disable autonomous operation
@@ -83,9 +84,9 @@ static sailbot_vars_t _sailbot_vars = { 0 };
 //=========================== prototypes =========================================
 
 void          radio_callback(uint8_t *packet, uint8_t length);
-void          path_planner_callback(void);
 void          control_loop_callback(void);
 static void   convert_geographical_to_cartesian(cartesian_coordinate_t *out, const protocol_gps_coordinate_t *in);
+static float  _distance(const cartesian_coordinate_t *pos1, const cartesian_coordinate_t *pos2);
 static float  calculate_error(float heading, float bearing);
 static int8_t map_error_to_rudder_angle(float error);
 static void   _timeout_check(void);
@@ -129,7 +130,6 @@ int main(void) {
     db_timer_set_periodic_ms(0, TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
     db_timer_set_periodic_ms(1, ADVERTISEMENT_PERIOD_MS, &_advertise);
 
-    db_timer_set_periodic_ms(2, PATH_PLANNER_PERIOD_MS, &path_planner_callback);
     db_timer_hf_set_periodic_us(0, CONTROL_LOOP_PERIOD_MS * 1000, &control_loop_callback);
 
     // Wait for radio packets to arrive
@@ -200,8 +200,9 @@ void radio_callback(uint8_t *packet, uint8_t length) {
         {
             servos_set(0, 0);
             _sailbot_vars.autonomous_operation = false;
-            _sailbot_vars.waypoints.length     = (uint8_t)*cmd_ptr;
-            memcpy(&_sailbot_vars.waypoints.coordinates, cmd_ptr + 1, _sailbot_vars.waypoints.length * sizeof(protocol_gps_coordinate_t));
+            _sailbot_vars.waypoints.length     = (uint8_t)*cmd_ptr++;
+            _sailbot_vars.waypoints_threshold  = (uint32_t)((uint8_t)*cmd_ptr++);
+            memcpy(&_sailbot_vars.waypoints.coordinates, cmd_ptr, _sailbot_vars.waypoints.length * sizeof(protocol_gps_coordinate_t));
             _sailbot_vars.next_waypoint_idx = 0;
             if (_sailbot_vars.waypoints.length > 0) {
                 _sailbot_vars.autonomous_operation = true;
@@ -212,8 +213,7 @@ void radio_callback(uint8_t *packet, uint8_t length) {
     }
 }
 
-// set _sailbot_vars.next_waypoint
-void path_planner_callback(void) {
+void control_loop_callback(void) {
     if (!_sailbot_vars.autonomous_operation) {
         // Do nothing if not in autonomous operation
         return;
@@ -222,19 +222,6 @@ void path_planner_callback(void) {
     if (_sailbot_vars.next_waypoint_idx >= _sailbot_vars.waypoints.length) {
         // Reset the rudder and sail when the last waypoint is reached
         servos_set(0, 0);
-        return;
-    }
-    // TODO
-    // check if we have reached the current waypoint before updating the next one
-    // if reached, increment the current waypoint index
-
-    // TODO
-    // path plan the sailing route given wind conditions
-}
-
-void control_loop_callback(void) {
-    if (!_sailbot_vars.autonomous_operation) {
-        // Do nothing if not in autonomous operation
         return;
     }
 
@@ -265,6 +252,14 @@ void control_loop_callback(void) {
 
     // convert geographical data given by GPS to our local coordinate system
     convert_geographical_to_cartesian(&position, &current_position_gps);
+
+    float distance_to_target = _distance(&target, &position);
+
+    // Check the next waypoint was reached, if yes increase the waypoint index and return
+    if (distance_to_target < _sailbot_vars.waypoints_threshold) {
+        _sailbot_vars.next_waypoint_idx++;
+        return;
+    }
 
     // calculate the angle theta, which is the angle between myself and the waypoint relative to the y axis
     theta = atan2f(target.x - position.x, target.y - position.y);  // north clockwise convention
@@ -358,4 +353,8 @@ static void convert_geographical_to_cartesian(cartesian_coordinate_t *out, const
     // account for latitude in degrees by converting to radians and then to meters (from km)
     out->y *= M_PI;
     out->y = out->y * 100.0 / 18.0;
+}
+
+static float _distance(const cartesian_coordinate_t *pos1, const cartesian_coordinate_t *pos2) {
+    return sqrtf(powf(pos2->x - pos1->x, 2) + powf(pos2->y - pos1->y, 2)) / 1000;  // in meters
 }
