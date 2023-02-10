@@ -41,7 +41,6 @@
 #define TIMEOUT_CHECK_DELAY_MS    (200)    ///< 200 ms delay between packet received timeout checks
 #define ADVERTISEMENT_PERIOD_MS   (500)    ///< send an advertisement every 500 ms
 #define DB_BUFFER_MAX_BYTES       (64U)    ///< Max bytes in UART receive buffer
-#define MAX_WAYPOINTS             (10)
 
 #define CONST_EARTH_RADIUS_KM          (6371.0F)               // 6371 km
 #define CONST_COS_PHI_0_INRIA_PARIS    (0.658139837F)          // cos(0.85245092073) where 0.85245092073 represent radians latitude of Inria Paris
@@ -62,49 +61,31 @@
 #define CONST_COS_PHI_0                CONST_COS_PHI_0_INRIA_PARIS
 
 typedef struct {
-    uint8_t valid;
-    float   latitude;
-    float   longitude;
-} waypoint_t;
-
-typedef struct {
     float x;
     float y;
 } cartesian_coordinate_t;
 
 typedef struct {
-    uint32_t   ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
-    int8_t     sail_trim;                          ///< Last angle of the servo controlling sail trim
-    waypoint_t waypoints[MAX_WAYPOINTS];           ///< Array containing pre-programmed waypoints
-    waypoint_t next_waypoint;                      ///< The next waypoint SailBot is going to traverse
-    uint8_t    radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
-    bool       autonomous_operation;               ///< Flag used to enable/disable autonomous operation
-    bool       radio_override;                     ///< Flag used to override autonomous operation when radio-controlled
+    uint32_t                 ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
+    int8_t                   sail_trim;                          ///< Last angle of the servo controlling sail trim
+    protocol_gps_waypoints_t waypoints;                          ///< List of waypoints
+    uint8_t                  next_waypoint_idx;                  ///< Index of next waypoint to reach
+    uint8_t                  radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
+    bool                     autonomous_operation;               ///< Flag used to enable/disable autonomous operation
+    bool                     radio_override;                     ///< Flag used to override autonomous operation when radio-controlled
 } sailbot_vars_t;
 
 //=========================== variables =========================================
 
 static const gpio_t   _led1_pin     = { .pin = 15, .port = 0 };
-static sailbot_vars_t _sailbot_vars = { 0, 0, {
-                                                  // waypoints
-                                                  { 1, 48.84226853349436, 2.38764801698452 },    // waypoint 1 jardin de reuilly
-                                                  { 0, 48.85292599987966, 2.3691622320143892 },  // waypoint 2 bastille
-                                                  { 0, 48.84411394, 2.318446164 },               // waypoint 3
-                                                  { 0, 0, 0 },                                   // waypoint 4
-                                                  { 0, 0, 0 },                                   // waypoint 5
-                                                  { 0, 0, 0 },                                   // waypoint 6
-                                                  { 0, 0, 0 },                                   // waypoint 7
-                                                  { 0, 0, 0 },                                   // waypoint 8
-                                                  { 0, 0, 0 },                                   // waypoint 9
-                                                  { 0, 0, 0 },                                   // waypoint 10
-                                              } };
+static sailbot_vars_t _sailbot_vars = { 0 };
 
 //=========================== prototypes =========================================
 
 void          radio_callback(uint8_t *packet, uint8_t length);
 void          path_planner_callback(void);
 void          control_loop_callback(void);
-static void   convert_geographical_to_cartesian(cartesian_coordinate_t *out, const waypoint_t *in);
+static void   convert_geographical_to_cartesian(cartesian_coordinate_t *out, const protocol_gps_coordinate_t *in);
 static float  calculate_error(float heading, float bearing);
 static int8_t map_error_to_rudder_angle(float error);
 static void   _timeout_check(void);
@@ -117,8 +98,6 @@ static void   _send_gps_data(const nmea_gprmc_t *data);
  *  @brief The program starts executing here.
  */
 int main(void) {
-    cartesian_coordinate_t temp;
-
     // Turn ON the LED1
     NRF_P0->DIRSET = 1 << _led1_pin.pin;  // set pin as output
     NRF_P0->OUTSET = 0 << _led1_pin.pin;  // set pin LOW
@@ -150,19 +129,8 @@ int main(void) {
     db_timer_set_periodic_ms(0, TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
     db_timer_set_periodic_ms(1, ADVERTISEMENT_PERIOD_MS, &_advertise);
 
-    if (_sailbot_vars.autonomous_operation) {
-        db_timer_set_periodic_ms(2, PATH_PLANNER_PERIOD_MS, &path_planner_callback);
-        db_timer_hf_set_periodic_us(0, CONTROL_LOOP_PERIOD_MS * 1000, &control_loop_callback);
-
-        // convenience dump of the pre-programmed waypoints and their conversion
-        for (uint8_t i = 0; i < MAX_WAYPOINTS; i++) {
-            if (_sailbot_vars.waypoints[i].valid) {
-                printf("Pre-programmed waypoint %d: %f %f; ", i, _sailbot_vars.waypoints[i].latitude, _sailbot_vars.waypoints[i].longitude);
-                convert_geographical_to_cartesian(&temp, &_sailbot_vars.waypoints[i]);
-                printf("converted: %f %f\n", temp.x, temp.y);
-            }
-        }
-    }
+    db_timer_set_periodic_ms(2, PATH_PLANNER_PERIOD_MS, &path_planner_callback);
+    db_timer_hf_set_periodic_us(0, CONTROL_LOOP_PERIOD_MS * 1000, &control_loop_callback);
 
     // Wait for radio packets to arrive
     while (1) {
@@ -213,47 +181,67 @@ void radio_callback(uint8_t *packet, uint8_t length) {
         return;
     }
 
-    // Only move raw commands are supported
-    if (header->type != DB_PROTOCOL_CMD_MOVE_RAW) {
-        return;
+    // Process the command received
+    uint8_t *cmd_ptr = ptk_ptr + sizeof(protocol_header_t);
+    switch (header->type) {
+        case DB_PROTOCOL_CMD_MOVE_RAW:
+        {
+            protocol_move_raw_command_t *command = (protocol_move_raw_command_t *)cmd_ptr;
+
+            if (command->right_y > 0 && ((int16_t)_sailbot_vars.sail_trim + SAIL_TRIM_ANGLE_UNIT_STEP < 127)) {
+                _sailbot_vars.sail_trim += SAIL_TRIM_ANGLE_UNIT_STEP;
+            } else if (command->right_y < 0 && ((int16_t)_sailbot_vars.sail_trim - SAIL_TRIM_ANGLE_UNIT_STEP > 0)) {
+                _sailbot_vars.sail_trim -= SAIL_TRIM_ANGLE_UNIT_STEP;
+            }
+            // set the servos
+            servos_set(command->left_x, _sailbot_vars.sail_trim);
+        } break;
+        case DB_PROTOCOL_GPS_WAYPOINTS:
+        {
+            servos_set(0, 0);
+            _sailbot_vars.autonomous_operation = false;
+            _sailbot_vars.waypoints.length     = (uint8_t)*cmd_ptr;
+            memcpy(&_sailbot_vars.waypoints.coordinates, cmd_ptr + 1, _sailbot_vars.waypoints.length * sizeof(protocol_gps_coordinate_t));
+            _sailbot_vars.next_waypoint_idx = 0;
+            if (_sailbot_vars.waypoints.length > 0) {
+                _sailbot_vars.autonomous_operation = true;
+            }
+        } break;
+        default:
+            break;
     }
-
-    // Read the DotBot command
-    protocol_move_raw_command_t *command = (protocol_move_raw_command_t *)(ptk_ptr + sizeof(protocol_header_t));
-
-    if (command->right_y > 0 && ((int16_t)_sailbot_vars.sail_trim + SAIL_TRIM_ANGLE_UNIT_STEP < 127)) {
-        _sailbot_vars.sail_trim += SAIL_TRIM_ANGLE_UNIT_STEP;
-    } else if (command->right_y < 0 && ((int16_t)_sailbot_vars.sail_trim - SAIL_TRIM_ANGLE_UNIT_STEP > 0)) {
-        _sailbot_vars.sail_trim -= SAIL_TRIM_ANGLE_UNIT_STEP;
-    }
-
-    // set the servos
-    servos_set(command->left_x, _sailbot_vars.sail_trim);
 }
 
 // set _sailbot_vars.next_waypoint
 void path_planner_callback(void) {
+    if (!_sailbot_vars.autonomous_operation) {
+        // Do nothing if not in autonomous operation
+        return;
+    }
+
+    if (_sailbot_vars.next_waypoint_idx >= _sailbot_vars.waypoints.length) {
+        // Reset the rudder and sail when the last waypoint is reached
+        servos_set(0, 0);
+        return;
+    }
     // TODO
     // check if we have reached the current waypoint before updating the next one
-    // if reached, invalidate the current waypoint
+    // if reached, increment the current waypoint index
 
     // TODO
     // path plan the sailing route given wind conditions
-
-    // update the next_waypoint
-    for (uint8_t i = 0; i < MAX_WAYPOINTS; i++) {
-        if (_sailbot_vars.waypoints[i].valid) {
-            // copy the first found valid waypoint into the next_waypoint
-            memcpy(&_sailbot_vars.next_waypoint, &_sailbot_vars.waypoints[i], sizeof(waypoint_t));
-        }
-    }
 }
 
 void control_loop_callback(void) {
-    waypoint_t             current_position_gps = { 0, 0, 0 };
-    cartesian_coordinate_t target               = { 0, 0 };
-    cartesian_coordinate_t position             = { 0, 0 };
-    float                  theta                = 0;
+    if (!_sailbot_vars.autonomous_operation) {
+        // Do nothing if not in autonomous operation
+        return;
+    }
+
+    protocol_gps_coordinate_t current_position_gps = { 0, 0 };
+    cartesian_coordinate_t    target               = { 0, 0 };
+    cartesian_coordinate_t    position             = { 0, 0 };
+    float                     theta                = 0;
     // float                  psi                  = 0;
     float  error        = 0;
     float  heading      = 0;
@@ -261,7 +249,7 @@ void control_loop_callback(void) {
     // Read the GPS
     nmea_gprmc_t *gps_data = gps_last_known_position();
 
-    if (!gps_data->valid || !_sailbot_vars.next_waypoint.valid) {
+    if (!gps_data->valid) {
         return;
     }
 
@@ -269,12 +257,11 @@ void control_loop_callback(void) {
     heading = lis2mdl_last_heading();
 
     // convert the next_waypoint to local coordinate system (and copy to stack to avoid concurrency issues)
-    convert_geographical_to_cartesian(&target, &_sailbot_vars.next_waypoint);
+    convert_geographical_to_cartesian(&target, &_sailbot_vars.waypoints.coordinates[_sailbot_vars.next_waypoint_idx]);
 
     // save the current GPS position on stack to avoid concurrency issues between control_loop_callback() and the GPS module
-    current_position_gps.latitude  = gps_data->latitude;
-    current_position_gps.longitude = gps_data->longitude;
-    current_position_gps.valid     = 1;
+    current_position_gps.latitude  = (int32_t)(gps_data->latitude * 1e6);
+    current_position_gps.longitude = (int32_t)(gps_data->longitude * 1e6);
 
     // convert geographical data given by GPS to our local coordinate system
     convert_geographical_to_cartesian(&position, &current_position_gps);
@@ -300,8 +287,8 @@ void control_loop_callback(void) {
 }
 
 static void _send_gps_data(const nmea_gprmc_t *data) {
-    int32_t latitude  = (int32_t)(data->latitude * 1000000);
-    int32_t longitude = (int32_t)(data->longitude * 1000000);
+    int32_t latitude  = (int32_t)(data->latitude * 1e6);
+    int32_t longitude = (int32_t)(data->longitude * 1e6);
 
     db_protocol_header_to_buffer(_sailbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, SailBot, DB_PROTOCOL_GPS_LOCATION);
 
@@ -355,20 +342,19 @@ static void _advertise(void) {
     db_radio_rx_enable();
 }
 
-static void convert_geographical_to_cartesian(cartesian_coordinate_t *out, const waypoint_t *in) {
-    assert(in->valid > 0);
-    assert(in->latitude <= 90.0 && in->latitude >= -90.0);
-    assert(in->longitude <= 180.0 && in->longitude >= -180);
+static void convert_geographical_to_cartesian(cartesian_coordinate_t *out, const protocol_gps_coordinate_t *in) {
+    assert(in->latitude <= (90 * 1e6) && in->latitude >= (-90 * 1e6));
+    assert(in->longitude <= (180 * 1e6) && in->longitude >= (-180 * 1e6));
 
     // x = R*(longitude - longitude_at_origin) * cos(PHI_0)
-    out->x = (in->longitude - CONST_ORIGIN_COORD_SYSTEM_LONG) * CONST_EARTH_RADIUS_KM;
+    out->x = (((float)in->longitude / 1e6) - CONST_ORIGIN_COORD_SYSTEM_LONG) * CONST_EARTH_RADIUS_KM;
     out->x *= CONST_COS_PHI_0;
     // account for longitude in degrees by converting to radians and then to meters (from km)
     out->x *= M_PI;
     out->x = out->x * 100.0 / 18.0;  // multiply by 1000, divide by 180
 
     // y = R(latitude - latitude_at_origin))
-    out->y = (in->latitude - CONST_ORIGIN_COORD_SYSTEM_LAT) * CONST_EARTH_RADIUS_KM;
+    out->y = (((float)in->latitude / 1e6) - CONST_ORIGIN_COORD_SYSTEM_LAT) * CONST_EARTH_RADIUS_KM;
     // account for latitude in degrees by converting to radians and then to meters (from km)
     out->y *= M_PI;
     out->y = out->y * 100.0 / 18.0;
