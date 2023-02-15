@@ -33,7 +33,7 @@ RUN echo 'Installing Segger Studio' >&2 && \
 
 RUN /opt/segger/bin/pkg update -packagesdir /opt/segger/packages
 RUN /opt/segger/bin/pkg upgrade -packagesdir /opt/segger/packages
-RUN /opt/segger/bin/pkg install -yes -packagesdir /opt/segger/packages CMSIS-CORE_V5 CMSIS-DSP_V5
+RUN /opt/segger/bin/pkg install -yes -packagesdir /opt/segger/packages CMSIS-CORE_V5 CMSIS-DSP_V5 nRF
 
 RUN mkdir /dotbot
 RUN git config --global --add safe.directory /dotbot

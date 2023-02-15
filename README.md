@@ -82,4 +82,4 @@ The different applications in this repository can be built using
 [SEGGER embedded studio for ARM](https://www.segger.com/downloads/embedded-studio).
 In SEGGER embedded studio, use the package manager
 (available in menu Tools > Package manager) to install the CMSIS 5 CMSIS-CORE
-and CMSIS-DSP packages.
+, CMSIS-DSP and nRF packages.
