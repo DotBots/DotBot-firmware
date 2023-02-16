@@ -37,6 +37,7 @@
 #define DB_DIRECTION_THRESHOLD    (0.01)   ///< Threshold to update the direction
 #define DB_DIRECTION_INVALID      (-1000)  ///< Invalid angle e.g out of [0, 360] range
 #define DB_MAX_SPEED              (60)     ///< Max speed in autonomous control mode
+#define DB_REDUCE_SPEED_FACTOR    (0.9)    ///< Reduction factor applied to speed when close to target or error angle is too large
 #define DB_ANGULAR_SPEED_FACTOR   (30)     ///< Constant applied to the normalized angle to target error
 
 typedef struct {
@@ -248,12 +249,18 @@ static void _update_control_loop(void) {
     float dy               = ((float)_dotbot_vars.waypoints.points[_dotbot_vars.next_waypoint_idx].y - (float)_dotbot_vars.last_location.y) / 1e6;
     float distanceToTarget = sqrtf(powf(dx, 2) + powf(dy, 2));
 
+    float speedReductionFactor = 1.0;  // No reduction by default
+
+    if ((uint32_t)(distanceToTarget * 1e6) < _dotbot_vars.waypoints_threshold * 2) {
+        speedReductionFactor = DB_REDUCE_SPEED_FACTOR;
+    }
+
     if ((uint32_t)(distanceToTarget * 1e6) < _dotbot_vars.waypoints_threshold) {
         // Target waypoint is reached
         _dotbot_vars.next_waypoint_idx++;
     } else if (_dotbot_vars.direction == DB_DIRECTION_INVALID) {
         // Unknown direction, just move forward a bit
-        db_motors_set_speed(DB_MAX_SPEED, DB_MAX_SPEED);
+        db_motors_set_speed((int16_t)DB_MAX_SPEED * speedReductionFactor, (int16_t)DB_MAX_SPEED * speedReductionFactor);
     } else {
         // compute angle to target waypoint
         int16_t angleToTarget = 0;
@@ -264,9 +271,12 @@ static void _update_control_loop(void) {
         } else if (errorAngle > 180) {
             errorAngle -= 360;
         }
+        if (errorAngle > 20 || errorAngle < -20) {
+            speedReductionFactor = DB_REDUCE_SPEED_FACTOR;
+        }
         int16_t angularSpeed = (int16_t)(((float)errorAngle / 180) * 30);
-        int16_t left         = (int16_t)((DB_MAX_SPEED - angularSpeed));
-        int16_t right        = (int16_t)((DB_MAX_SPEED + angularSpeed));
+        int16_t left         = (int16_t)(((DB_MAX_SPEED * speedReductionFactor) - angularSpeed));
+        int16_t right        = (int16_t)(((DB_MAX_SPEED * speedReductionFactor) + angularSpeed));
         if (left > DB_MAX_SPEED) {
             left = DB_MAX_SPEED;
         }
