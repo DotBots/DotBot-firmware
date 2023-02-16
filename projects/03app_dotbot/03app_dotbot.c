@@ -27,18 +27,18 @@
 
 //=========================== defines ==========================================
 
-#define DB_LH2_UPDATE_DELAY_MS         (100U)   ///< 100ms delay between each LH2 data refresh
-#define DB_ADVERTIZEMENT_DELAY_MS      (500U)   ///< 500ms delay between each advertizement packet sending
-#define DB_TIMEOUT_CHECK_DELAY_MS      (200U)   ///< 200ms delay between each timeout delay check
-#define TIMEOUT_CHECK_DELAY_TICKS      (17000)  ///< ~500 ms delay between packet received timeout checks
-#define DB_LH2_FULL_COMPUTATION        (false)  ///< Wether the full LH2 computation is perform on board
-#define DB_LH2_COUNTER_MASK            (0x07)   ///< Maximum number of lh2 iterations without value received
-#define DB_BUFFER_MAX_BYTES            (255U)   ///< Max bytes in UART receive buffer
-#define DB_DIRECTION_THRESHOLD         (0.01)   ///< Threshold to update the direction
-#define DB_DIRECTION_INVALID           (-1000)  ///< Invalid angle e.g out of [0, 360] range
-#define DB_WAYPOINT_DISTANCE_THRESHOLD (75000)  ///< Distance threshold towards a target waypoint
-#define DB_MAX_SPEED                   (60)     ///< Max speed in autonomous control mode
-#define DB_ANGULAR_SPEED_FACTOR        (30)     ///< Constant applied to the normalized angle to target error
+#define DB_LH2_UPDATE_DELAY_MS    (100U)   ///< 100ms delay between each LH2 data refresh
+#define DB_ADVERTIZEMENT_DELAY_MS (500U)   ///< 500ms delay between each advertizement packet sending
+#define DB_TIMEOUT_CHECK_DELAY_MS (200U)   ///< 200ms delay between each timeout delay check
+#define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
+#define DB_LH2_FULL_COMPUTATION   (false)  ///< Wether the full LH2 computation is perform on board
+#define DB_LH2_COUNTER_MASK       (0x07)   ///< Maximum number of lh2 iterations without value received
+#define DB_BUFFER_MAX_BYTES       (255U)   ///< Max bytes in UART receive buffer
+#define DB_DIRECTION_THRESHOLD    (0.01)   ///< Threshold to update the direction
+#define DB_DIRECTION_INVALID      (-1000)  ///< Invalid angle e.g out of [0, 360] range
+#define DB_MAX_SPEED              (60)     ///< Max speed in autonomous control mode
+#define DB_REDUCE_SPEED_FACTOR    (0.9)    ///< Reduction factor applied to speed when close to target or error angle is too large
+#define DB_ANGULAR_SPEED_FACTOR   (30)     ///< Constant applied to the normalized angle to target error
 
 typedef struct {
     uint32_t                 ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
@@ -48,6 +48,7 @@ typedef struct {
     int16_t                  direction;                          ///< Current direction of the DotBot (angle in °)
     protocol_control_mode_t  control_mode;                       ///< Remote control mode
     protocol_lh2_waypoints_t waypoints;                          ///< List of waypoints
+    uint32_t                 waypoints_threshold;                ///< Distance to target waypoint threshold
     uint8_t                  next_waypoint_idx;                  ///< Index of next waypoint to reach
     bool                     update_control_loop;                ///< Whether the control loop need an update
     bool                     advertize;                          ///< Whether an advertize packet should be sent
@@ -138,9 +139,10 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             case DB_PROTOCOL_LH2_WAYPOINTS:
             {
                 db_motors_set_speed(0, 0);
-                _dotbot_vars.control_mode     = ControlManual;
-                _dotbot_vars.waypoints.length = (uint8_t)*cmd_ptr;
-                memcpy(&_dotbot_vars.waypoints.points, cmd_ptr + 1, _dotbot_vars.waypoints.length * sizeof(protocol_lh2_location_t));
+                _dotbot_vars.control_mode        = ControlManual;
+                _dotbot_vars.waypoints.length    = (uint8_t)*cmd_ptr++;
+                _dotbot_vars.waypoints_threshold = (uint32_t)((uint8_t)*cmd_ptr++ * 1000);
+                memcpy(&_dotbot_vars.waypoints.points, cmd_ptr, _dotbot_vars.waypoints.length * sizeof(protocol_lh2_location_t));
                 _dotbot_vars.next_waypoint_idx = 0;
                 if (_dotbot_vars.waypoints.length > 0) {
                     _dotbot_vars.control_mode = ControlAuto;
@@ -247,12 +249,18 @@ static void _update_control_loop(void) {
     float dy               = ((float)_dotbot_vars.waypoints.points[_dotbot_vars.next_waypoint_idx].y - (float)_dotbot_vars.last_location.y) / 1e6;
     float distanceToTarget = sqrtf(powf(dx, 2) + powf(dy, 2));
 
-    if ((uint32_t)(distanceToTarget * 1e6) < (uint32_t)DB_WAYPOINT_DISTANCE_THRESHOLD) {
+    float speedReductionFactor = 1.0;  // No reduction by default
+
+    if ((uint32_t)(distanceToTarget * 1e6) < _dotbot_vars.waypoints_threshold * 2) {
+        speedReductionFactor = DB_REDUCE_SPEED_FACTOR;
+    }
+
+    if ((uint32_t)(distanceToTarget * 1e6) < _dotbot_vars.waypoints_threshold) {
         // Target waypoint is reached
         _dotbot_vars.next_waypoint_idx++;
     } else if (_dotbot_vars.direction == DB_DIRECTION_INVALID) {
         // Unknown direction, just move forward a bit
-        db_motors_set_speed(DB_MAX_SPEED, DB_MAX_SPEED);
+        db_motors_set_speed((int16_t)DB_MAX_SPEED * speedReductionFactor, (int16_t)DB_MAX_SPEED * speedReductionFactor);
     } else {
         // compute angle to target waypoint
         int16_t angleToTarget = 0;
@@ -263,9 +271,12 @@ static void _update_control_loop(void) {
         } else if (errorAngle > 180) {
             errorAngle -= 360;
         }
+        if (errorAngle > 20 || errorAngle < -20) {
+            speedReductionFactor = DB_REDUCE_SPEED_FACTOR;
+        }
         int16_t angularSpeed = (int16_t)(((float)errorAngle / 180) * 30);
-        int16_t left         = (int16_t)((DB_MAX_SPEED - angularSpeed));
-        int16_t right        = (int16_t)((DB_MAX_SPEED + angularSpeed));
+        int16_t left         = (int16_t)(((DB_MAX_SPEED * speedReductionFactor) - angularSpeed));
+        int16_t right        = (int16_t)(((DB_MAX_SPEED * speedReductionFactor) + angularSpeed));
         if (left > DB_MAX_SPEED) {
             left = DB_MAX_SPEED;
         }
