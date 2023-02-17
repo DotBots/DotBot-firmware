@@ -33,8 +33,8 @@
 
 #define AUTONOMOUS_OPERATION (0)  ///< user define to enable autonomous operation
 
-#define CONTROL_LOOP_PERIOD_MS      (100)  ///< control loop period
-#define WAYPOINT_DISTANCE_THRESHOLD (10)   ///< in meters
+#define CONTROL_LOOP_PERIOD_MS      (1000)  ///< control loop period
+#define WAYPOINT_DISTANCE_THRESHOLD (10)    ///< in meters
 
 #define SAIL_TRIM_ANGLE_UNIT_STEP (10)     //< unit step increase/decrease when trimming the sails
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
@@ -164,7 +164,6 @@ void radio_callback(uint8_t *packet, uint8_t length) {
 
     // timestamp the arrival of the packet
     _sailbot_vars.ts_last_packet_received = db_timer_ticks();
-    _sailbot_vars.radio_override          = true;
 
     // Check destination address matches
     if (header->dst != DB_BROADCAST_ADDRESS && header->dst != db_device_id()) {
@@ -188,6 +187,8 @@ void radio_callback(uint8_t *packet, uint8_t length) {
         {
             protocol_move_raw_command_t *command = (protocol_move_raw_command_t *)cmd_ptr;
 
+            _sailbot_vars.radio_override = true;
+
             if (command->right_y > 0 && ((int16_t)_sailbot_vars.sail_trim + SAIL_TRIM_ANGLE_UNIT_STEP < 127)) {
                 _sailbot_vars.sail_trim += SAIL_TRIM_ANGLE_UNIT_STEP;
             } else if (command->right_y < 0 && ((int16_t)_sailbot_vars.sail_trim - SAIL_TRIM_ANGLE_UNIT_STEP > 0)) {
@@ -198,7 +199,8 @@ void radio_callback(uint8_t *packet, uint8_t length) {
         } break;
         case DB_PROTOCOL_GPS_WAYPOINTS:
         {
-            servos_set(0, 0);
+            servos_set(0, _sailbot_vars.sail_trim);
+            _sailbot_vars.radio_override       = false;
             _sailbot_vars.autonomous_operation = false;
             _sailbot_vars.waypoints.length     = (uint8_t)*cmd_ptr++;
             _sailbot_vars.waypoints_threshold  = (uint32_t)((uint8_t)*cmd_ptr++);
@@ -214,25 +216,6 @@ void radio_callback(uint8_t *packet, uint8_t length) {
 }
 
 void control_loop_callback(void) {
-    if (!_sailbot_vars.autonomous_operation) {
-        // Do nothing if not in autonomous operation
-        return;
-    }
-
-    if (_sailbot_vars.next_waypoint_idx >= _sailbot_vars.waypoints.length) {
-        // Reset the rudder and sail when the last waypoint is reached
-        servos_set(0, 0);
-        return;
-    }
-
-    protocol_gps_coordinate_t current_position_gps = { 0, 0 };
-    cartesian_coordinate_t    target               = { 0, 0 };
-    cartesian_coordinate_t    position             = { 0, 0 };
-    float                     theta                = 0;
-    // float                  psi                  = 0;
-    float  error        = 0;
-    float  heading      = 0;
-    int8_t rudder_angle = 0;
     // Read the GPS
     nmea_gprmc_t *gps_data = gps_last_known_position();
 
@@ -241,7 +224,27 @@ void control_loop_callback(void) {
     }
 
     // get heading
-    heading = lis2mdl_last_heading();
+    float heading = lis2mdl_last_heading();
+
+    _send_gps_data(gps_data);
+
+    if (!_sailbot_vars.autonomous_operation) {
+        // Do nothing if not in autonomous operation
+        return;
+    }
+
+    if (_sailbot_vars.next_waypoint_idx >= _sailbot_vars.waypoints.length) {
+        // Reset the rudder and sail when the last waypoint is reached
+        servos_set(0, _sailbot_vars.sail_trim);
+        return;
+    }
+
+    protocol_gps_coordinate_t current_position_gps = { 0, 0 };
+    cartesian_coordinate_t    target               = { 0, 0 };
+    cartesian_coordinate_t    position             = { 0, 0 };
+    float                     theta                = 0;
+    float                     error                = 0;
+    int8_t                    rudder_angle         = 0;
 
     // convert the next_waypoint to local coordinate system (and copy to stack to avoid concurrency issues)
     convert_geographical_to_cartesian(&target, &_sailbot_vars.waypoints.coordinates[_sailbot_vars.next_waypoint_idx]);
@@ -277,8 +280,6 @@ void control_loop_callback(void) {
     if (!_sailbot_vars.radio_override) {
         servos_rudder_turn(rudder_angle);
     }
-
-    _send_gps_data(gps_data);
 }
 
 static void _send_gps_data(const nmea_gprmc_t *data) {
@@ -322,8 +323,7 @@ static float calculate_error(float heading, float bearing) {
 
 static void _timeout_check(void) {
     uint32_t ticks = db_timer_ticks();
-    if (ticks > _sailbot_vars.ts_last_packet_received + TIMEOUT_CHECK_DELAY_TICKS && _sailbot_vars.ts_last_packet_received > 0) {
-        _sailbot_vars.radio_override = false;
+    if (ticks > _sailbot_vars.ts_last_packet_received + TIMEOUT_CHECK_DELAY_TICKS && _sailbot_vars.ts_last_packet_received > 0 && !_sailbot_vars.autonomous_operation) {
         // set the servos
         servos_set(0, _sailbot_vars.sail_trim);
     }
@@ -356,5 +356,5 @@ static void convert_geographical_to_cartesian(cartesian_coordinate_t *out, const
 }
 
 static float _distance(const cartesian_coordinate_t *pos1, const cartesian_coordinate_t *pos2) {
-    return sqrtf(powf(pos2->x - pos1->x, 2) + powf(pos2->y - pos1->y, 2)) / 1000;  // in meters
+    return sqrtf(powf(pos2->x - pos1->x, 2) + powf(pos2->y - pos1->y, 2));  // in meters
 }

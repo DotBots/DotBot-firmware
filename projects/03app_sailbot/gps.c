@@ -19,7 +19,7 @@
 
 //=========================== defines ==========================================
 
-#define GPS_UART_MAX_BYTES (83U)  ///< max bytes in UART receive buffer 82 bytes for NMEA + 1
+#define GPS_UART_MAX_BYTES (128U)  ///< max bytes in UART receive buffer, must be greater than 82 bytes for NMEA
 
 typedef struct {
     uint8_t      buffer[GPS_UART_MAX_BYTES];  ///< buffer where message received on UART is stored
@@ -218,8 +218,8 @@ uint8_t nmea_calculate_checksum(uint8_t *buffer) {
 }
 
 void gps_init(gps_rx_cb_t callback) {
-    // configure the module to output rate of 10 Hz
-    uint8_t nmea_cmd_set_10hz_data_rate[] = "$PMTK220,100*2F\r\n";
+    // configure the module to output rate of 1 Hz
+    uint8_t nmea_cmd_set_1hz_data_rate[] = "$PMTK220,1000*1F\r\n";
     // configure the module at 115200 bauds
     uint8_t nmea_cmd_set_baud_rate_115200[] = "$PMTK251,115200*1F\r\n";
     // enable only GPRMC sentences
@@ -243,8 +243,8 @@ void gps_init(gps_rx_cb_t callback) {
     db_uart_write(nmea_cmd_set_nmea_output, 51);
     db_timer_delay_ms(10);
 
-    // command to module to use 10hz output data rate
-    db_uart_write(nmea_cmd_set_10hz_data_rate, 17);
+    // command to module to use 1hz output data rate
+    db_uart_write(nmea_cmd_set_1hz_data_rate, 17);
 
     _gps_vars.callback = callback;
 }
