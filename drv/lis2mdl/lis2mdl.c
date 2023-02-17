@@ -116,7 +116,10 @@ void lis2mdl_i2c_read_magnetometer(lis2mdl_compass_data_t *out) {
 
     // make sure that data is ready for read
     db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_STATUS_REG, &tmp, 1);
-    assert((tmp & 0x8) != 0);
+
+    if ((tmp & 0x8) == 0) {
+        return;
+    }
 
     db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_OUTX_L_REG, &tmp, 1);
     out->x = (int16_t)tmp;

@@ -32,6 +32,7 @@ typedef enum {
     DB_PROTOCOL_DOTBOT_DATA   = 6,  ///< DotBot specific data (for now location and direction)
     DB_PROTOCOL_CONTROL_MODE  = 7,  ///< Robot remote control mode (automatic or manual)
     DB_PROTOCOL_LH2_WAYPOINTS = 8,  ///< List of LH2 waypoints to follow
+    DB_PROTOCOL_GPS_WAYPOINTS = 9,  ///< List of GPS waypoints to follow
 } command_type_t;
 
 typedef enum {
@@ -76,6 +77,16 @@ typedef struct __attribute__((packed)) {
     uint8_t                 length;                    ///< Number of waypoints
     protocol_lh2_location_t points[DB_MAX_WAYPOINTS];  ///< Array containing a list of lh2 point coordinates
 } protocol_lh2_waypoints_t;
+
+typedef struct __attribute__((packed)) {
+    int32_t latitude;   ///< Latitude, multiplied by 1e6
+    int32_t longitude;  ///< Longitude, multiplied by 1e6
+} protocol_gps_coordinate_t;
+
+typedef struct __attribute__((packed)) {
+    uint8_t                   length;                         ///< Number of waypoints
+    protocol_gps_coordinate_t coordinates[DB_MAX_WAYPOINTS];  ///< Array containing a list of GPS coordinates
+} protocol_gps_waypoints_t;
 
 //=========================== public ===========================================
 
