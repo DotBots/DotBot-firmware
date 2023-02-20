@@ -20,7 +20,7 @@
 #define DB_SWARM_ID          (0x0000)              ///< Default swarm ID
 #define DB_BROADCAST_ADDRESS 0xffffffffffffffffUL  ///< Broadcast address
 #define DB_GATEWAY_ADDRESS   0x0000000000000000UL  ///< Gateway address
-#define DB_MAX_WAYPOINTS     (8)                   ///< Max number of waypoints
+#define DB_MAX_WAYPOINTS     (16)                  ///< Max number of waypoints
 
 typedef enum {
     DB_PROTOCOL_CMD_MOVE_RAW  = 0,   ///< Move raw command type
