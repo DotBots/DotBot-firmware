@@ -206,8 +206,7 @@
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="../../nRF/Device/Source/system_nrf52.c">
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-         <configuration
+        <configuration
           Name="Common"
           default_code_section=".init"
           default_const_section=".init_rodata" />
