@@ -13,28 +13,31 @@
 #include <nrf.h>
 
 #include "board.h"
+#include "gpio.h"
 
 //=========================== defines =========================================
 
 //=========================== variables =========================================
+
+static const gpio_t _reg_pin = { .pin = 20, .port = 0 };
 
 //=========================== public ==========================================
 
 void db_board_init(void) {
 
     // Turn ON the DotBot board regulator
-    NRF_P0->DIRSET = 1 << 20;  // set pin as output
-    NRF_P0->OUTSET = 1 << 20;  // set pin HIGH
+    db_gpio_init(&_reg_pin, DB_GPIO_OUT);
+    db_gpio_set(&_reg_pin);
 }
 
 void db_board_regulator_on(void) {
 
     // Turn ON the DotBot board regulator
-    NRF_P0->OUTSET = 1 << 20;  // set pin HIGH
+    db_gpio_set(&_reg_pin);
 }
 
 void db_board_regulator_off(void) {
 
     // Turn OFF the DotBot board regulator
-    NRF_P0->OUTCLR = 1 << 20;  // set pin LOW
+    db_gpio_clear(&_reg_pin);
 }
