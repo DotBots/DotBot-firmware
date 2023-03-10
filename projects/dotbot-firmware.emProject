@@ -135,6 +135,7 @@
   <project Name="00bsp_uart">
     <configuration
       Name="Common"
+      project_dependencies="00bsp_gpio"
       project_directory="../bsp/nrf52833"
       project_type="Library" />
     <file file_name="uart.c" />

@@ -37,9 +37,8 @@ static uart_vars_t _uart_vars;  ///< variable handling the UART context
 void db_uart_init(const gpio_t *rx_pin, const gpio_t *tx_pin, uint32_t baudrate, uart_rx_cb_t callback) {
 
     // configure UART pins (RX as input, TX as output);
-    nrf_port[rx_pin->port]->PIN_CNF[rx_pin->pin] |= (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos);
-    nrf_port[rx_pin->port]->PIN_CNF[tx_pin->pin] &= ~(1UL << GPIO_PIN_CNF_INPUT_Pos);
-    nrf_port[rx_pin->port]->DIRSET = (1 << tx_pin->pin);
+    db_gpio_init(rx_pin, DB_GPIO_IN_PU);
+    db_gpio_init(tx_pin, DB_GPIO_OUT);
 
     // configure UART
     DB_UARTE->CONFIG   = 0;
