@@ -1,0 +1,36 @@
+<!DOCTYPE CrossStudio_Project_File>
+<solution Name="drv" target="8" version="2">
+  <project Name="00drv_dotbot_hdlc">
+    <configuration
+      Name="Common"
+      project_directory="hdlc"
+      project_type="Library" />
+    <file file_name="hdlc.c" />
+    <file file_name="../hdlc.h" />
+  </project>
+  <project Name="00drv_dotbot_protocol">
+    <configuration
+      Name="Common"
+      project_directory="protocol"
+      project_type="Library" />
+    <file file_name="protocol.c" />
+    <file file_name="../protocol.h" />
+  </project>
+  <project Name="00drv_pid">
+    <configuration
+      Name="Common"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="pid/pid.c" />
+    <file file_name="pid.h" />
+  </project>
+  <project Name="00drv_lis2mdl">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_i2c(bsp)"
+      project_directory="lis2mdl"
+      project_type="Library" />
+    <file file_name="lis2mdl.c" />
+    <file file_name="../lis2mdl.h" />
+  </project>
+</solution>

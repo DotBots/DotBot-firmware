@@ -1,0 +1,124 @@
+<!DOCTYPE CrossStudio_Project_File>
+<solution Name="bsp" target="8" version="2">
+  <project Name="00bsp_clock">
+    <configuration
+      Name="Common"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf52833/clock.c" />
+    <file file_name="clock.h" />
+  </project>
+  <project Name="00bsp_dotbot_board">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_gpio"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf52833/board.c" />
+    <file file_name="board.h" />
+  </project>
+  <project Name="00bsp_dotbot_lh2">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_timer_hf"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf52833/lh2.c" />
+    <file file_name="lh2.h" />
+  </project>
+  <project Name="00bsp_dotbot_motors">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_pwm"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf52833/motors.c" />
+    <file file_name="motors.h" />
+  </project>
+  <project Name="00bsp_dotbot_rgbled">
+    <configuration
+      Name="Common"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf52833/rgbled.c" />
+    <file file_name="rgbled.h" />
+  </project>
+  <project Name="00bsp_dotbot_rpm">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_timer"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf52833/rpm.c" />
+    <file file_name="rpm.h" />
+  </project>
+  <project Name="00bsp_gpio">
+    <configuration
+      Name="Common"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf52833/gpio.c" />
+    <file file_name="gpio.h" />
+  </project>
+  <project Name="00bsp_i2c">
+    <configuration
+      Name="Common"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf52833/i2c.c" />
+    <file file_name="i2c.h" />
+  </project>
+  <project Name="00bsp_pwm">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_gpio"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf52833/pwm.c" />
+    <file file_name="pwm.h" />
+  </project>
+  <project Name="00bsp_radio">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_clock"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf52833/radio.c" />
+    <file file_name="radio.h" />
+  </project>
+  <project Name="00bsp_rng">
+    <configuration
+      Name="Common"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf52833/rng.c" />
+    <file file_name="rng.h" />
+  </project>
+  <project Name="00bsp_timer">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_clock"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf52833/timer.c" />
+    <file file_name="timer.h" />
+  </project>
+  <project Name="00bsp_timer_hf">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_clock"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf52833/timer_hf.c" />
+    <file file_name="timer_hf.h" />
+  </project>
+  <project Name="00bsp_uart">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_gpio"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf52833/uart.c" />
+    <file file_name="uart.h" />
+  </project>
+</solution>
