@@ -33,6 +33,7 @@
   <project Name="00bsp_dotbot_board">
     <configuration
       Name="Common"
+      project_dependencies="00bsp_gpio"
       project_directory="../bsp/nrf52833"
       project_type="Library" />
     <file file_name="board.c" />
@@ -92,6 +93,7 @@
   <project Name="00bsp_pwm">
     <configuration
       Name="Common"
+      project_dependencies="00bsp_gpio"
       project_directory="../bsp/nrf52833"
       project_type="Library" />
     <file file_name="pwm.c" />
@@ -135,6 +137,7 @@
   <project Name="00bsp_uart">
     <configuration
       Name="Common"
+      project_dependencies="00bsp_gpio"
       project_directory="../bsp/nrf52833"
       project_type="Library" />
     <file file_name="uart.c" />
@@ -205,8 +208,7 @@
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="../../nRF/Device/Source/system_nrf52.c">
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-         <configuration
+        <configuration
           Name="Common"
           default_code_section=".init"
           default_const_section=".init_rodata" />
@@ -1138,7 +1140,7 @@
       linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
       linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
       macros="NRFHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(ProjectDir)/../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(ProjectDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
-      project_dependencies="00bsp_radio;00bsp_dotbot_board;00bsp_uart;00bsp_timer;00bsp_uart;00drv_dotbot_hdlc;00drv_dotbot_protocol"
+      project_dependencies="00bsp_radio;00bsp_dotbot_board;00bsp_uart;00bsp_timer;00bsp_uart;00drv_dotbot_hdlc;00drv_dotbot_protocol;00bsp_gpio"
       project_directory="03app_dotbot_gateway"
       project_type="Executable"
       target_reset_script="Reset();"

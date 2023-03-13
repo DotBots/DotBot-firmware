@@ -59,12 +59,12 @@ typedef struct {
 
 static const gpio_t _rx_pin = { .pin = 8, .port = 0 };
 static const gpio_t _tx_pin = { .pin = 6, .port = 0 };
+static const gpio_t _btn1   = { .port = 0, .pin = 11 };
+static const gpio_t _btn2   = { .port = 0, .pin = 12 };
+static const gpio_t _btn3   = { .port = 0, .pin = 24 };
+static const gpio_t _btn4   = { .port = 0, .pin = 25 };
 
 static gateway_vars_t _gw_vars;
-
-//=========================== prototypes =======================================
-
-static void _init_buttons(void);
 
 //=========================== callbacks ========================================
 
@@ -110,24 +110,27 @@ int main(void) {
     db_uart_init(&_rx_pin, &_tx_pin, DB_UART_BAUDRATE, &uart_callback);
 
     db_radio_rx_enable();
-    _init_buttons();
+
+    db_gpio_init(&_btn2, DB_GPIO_IN_PU);
+    db_gpio_init(&_btn3, DB_GPIO_IN_PU);
+    db_gpio_init(&_btn4, DB_GPIO_IN_PU);
+    db_gpio_init(&_btn1, DB_GPIO_IN_PU);
 
     while (1) {
         protocol_move_raw_command_t command;
-        _gw_vars.buttons = NRF_P0->IN;
         // Read Button 1 (P0.11)
-        if (!(_gw_vars.buttons & GPIO_IN_PIN11_Msk)) {
+        if (!db_gpio_read(&_btn1)) {
             command.left_y = 100;
-        } else if (!(_gw_vars.buttons & GPIO_IN_PIN24_Msk)) {
+        } else if (!db_gpio_read(&_btn2)) {
             command.left_y = -100;
         } else {
             command.left_y = 0;
         }
 
         // Read Button 2 (P0.12)
-        if (!(_gw_vars.buttons & GPIO_IN_PIN12_Msk)) {
+        if (!db_gpio_read(&_btn3)) {
             command.right_y = 100;
-        } else if (!(_gw_vars.buttons & GPIO_IN_PIN25_Msk)) {
+        } else if (!db_gpio_read(&_btn4)) {
             command.right_y = -100;
         } else {
             command.right_y = 0;
@@ -172,25 +175,4 @@ int main(void) {
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
     __NOP();
-}
-
-//=========================== private functions ================================
-
-static void _init_buttons(void) {
-
-    NRF_P0->PIN_CNF[11] = (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos) |        // Set Pin as input
-                          (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos) |  // Activate the input
-                          (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos);      // Activate the Pull-up resistor
-
-    NRF_P0->PIN_CNF[12] = (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos) |        // Set Pin as input
-                          (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos) |  // Activate the input
-                          (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos);      // Activate the Pull-up resistor
-
-    NRF_P0->PIN_CNF[24] = (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos) |        // Set Pin as input
-                          (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos) |  // Activate the input
-                          (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos);      // Activate the Pull-up resistor
-
-    NRF_P0->PIN_CNF[25] = (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos) |        // Set Pin as input
-                          (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos) |  // Activate the input
-                          (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos);      // Activate the Pull-up resistor
 }

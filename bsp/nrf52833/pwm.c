@@ -39,9 +39,9 @@ void db_pwm_init(const gpio_t *pins, size_t num_channels, uint16_t mtop) {
 
     // configure PWM channel pins;
     for (uint8_t channel = 0; channel < num_channels; channel++) {
-        // Configure the PWM pins as output in the GPIO peripheral.
-        nrf_port[pins[channel].port]->DIRSET = (1 << pins[channel].pin);
-        NRF_PWM0->PSEL.OUT[channel]          = (pins[channel].port << PWM_PSEL_OUT_PORT_Pos) |
+        // Configure the PWM pins as output.
+        db_gpio_init(&pins[channel], DB_GPIO_OUT);
+        NRF_PWM0->PSEL.OUT[channel] = (pins[channel].port << PWM_PSEL_OUT_PORT_Pos) |
                                       (pins[channel].pin << PWM_PSEL_OUT_PIN_Pos) |
                                       (PWM_PSEL_OUT_CONNECT_Connected << PWM_PSEL_OUT_CONNECT_Pos);
     }
