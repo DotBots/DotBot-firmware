@@ -25,7 +25,7 @@
     c_additional_options="-Wno-missing-field-initializers"
     c_preprocessor_definitions="ARM_MATH_CM4;NRF52833_XXAA;__nRF_FAMILY;CONFIG_NFCT_PINS_AS_GPIOS;FLASH_PLACEMENT=1"
     c_user_include_directories="$(SolutionDir)/../bsp;$(SolutionDir)/../drv;$(PackagesDir)/nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
-    debug_register_definition_file="$(ProjectDir)/../nRF/nrf52833.svd"
+    debug_register_definition_file="$(ProjectDir)/../../nRF/nrf52833/nrf52833.svd"
     debug_stack_pointer_start="__stack_end__"
     debug_start_from_entry_point_symbol="No"
     debug_target_connection="J-Link"
@@ -34,14 +34,14 @@
     gcc_entry_point="Reset_Handler"
     gcc_omit_frame_pointer="Yes"
     gcc_optimization_level="Level 2 for size"
-    link_linker_script_file="$(ProjectDir)/../../nRF/Device/Linker/ses_nrf52833_xxaa.icf"
+    link_linker_script_file="$(ProjectDir)/../../nRF/nrf52833/Device/Linker/ses_nrf52833_xxaa.icf"
     link_time_optimization="No"
-    linker_memory_map_file="$(ProjectDir)/../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
-    linker_section_placement_file="$(ProjectDir)/../../nRF/flash_placement.xml"
-    macros="NRFHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceSystemFile=$(ProjectDir)/../../../nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/../../../nRF/Device/Startup/ses_startup_nrf52833.s;DeviceLinkerScript=$(ProjectDir)/../../../nRF/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/../../../nRF/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
+    linker_memory_map_file="$(ProjectDir)/../../nRF/nrf52833/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
+    linker_section_placement_file="$(ProjectDir)/../../nRF/nrf52833/flash_placement.xml"
+    macros="DeviceSystemFile=$(ProjectDir)/../../../nRF/nrf52833/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/../../../nRF/nrf52833/Device/Startup/ses_startup_nrf52833.s;DeviceCommonVectorsFile=$(ProjectDir)/../../../nRF/nrf52833/Device/Startup/ses_startup_nrf_common.s;SeggerThumbStartup=$(ProjectDir)/../../../nRF/nrf52833/SEGGER_THUMB_Startup.s;DeviceLinkerScript=$(ProjectDir)/../../../nRF/nrf52833/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/../../../nRF/nrf52833/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
     project_type="Executable"
     target_reset_script="Reset();"
-    target_script_file="$(ProjectDir)/../../nRF_Target.js"
+    target_script_file="$(ProjectDir)/../../nRF/nrf52833_Target.js"
     target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
   <configuration Name="Debug" c_preprocessor_definitions="DEBUG" />
   <configuration Name="Release" c_preprocessor_definitions="NDEBUG" />

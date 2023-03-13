@@ -8,7 +8,7 @@
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -32,8 +32,8 @@
       <file file_name="01bsp_gpio.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
-      <file file_name="../../nRF/Device/Startup/ses_startup_nrf_common.s" />
+      <file file_name="$(SeggerThumbStartup)" />
+      <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
@@ -47,7 +47,7 @@
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -71,8 +71,8 @@
       <file file_name="01bsp_i2c.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
-      <file file_name="../../nRF/Device/Startup/ses_startup_nrf_common.s" />
+      <file file_name="$(SeggerThumbStartup)" />
+      <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
@@ -86,7 +86,7 @@
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -110,8 +110,8 @@
       <file file_name="01bsp_lighthouse.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
-      <file file_name="../../nRF/Device/Startup/ses_startup_nrf_common.s" />
+      <file file_name="$(SeggerThumbStartup)" />
+      <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
@@ -125,7 +125,7 @@
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -149,8 +149,8 @@
       <file file_name="01bsp_motors.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
-      <file file_name="../../nRF/Device/Startup/ses_startup_nrf_common.s" />
+      <file file_name="$(SeggerThumbStartup)" />
+      <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
@@ -164,7 +164,7 @@
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -188,8 +188,8 @@
       <file file_name="01bsp_radio_lr_txrx.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
-      <file file_name="../../nRF/Device/Startup/ses_startup_nrf_common.s" />
+      <file file_name="$(SeggerThumbStartup)" />
+      <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
@@ -203,7 +203,7 @@
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -227,8 +227,8 @@
       <file file_name="01bsp_radio_txrx.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
-      <file file_name="../../nRF/Device/Startup/ses_startup_nrf_common.s" />
+      <file file_name="$(SeggerThumbStartup)" />
+      <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
@@ -242,7 +242,7 @@
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -266,8 +266,8 @@
       <file file_name="01bsp_rgbled.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
-      <file file_name="../../nRF/Device/Startup/ses_startup_nrf_common.s" />
+      <file file_name="$(SeggerThumbStartup)" />
+      <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
@@ -281,7 +281,7 @@
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -305,8 +305,8 @@
       <file file_name="01bsp_rng.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
-      <file file_name="../../nRF/Device/Startup/ses_startup_nrf_common.s" />
+      <file file_name="$(SeggerThumbStartup)" />
+      <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
@@ -320,7 +320,7 @@
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -344,8 +344,8 @@
       <file file_name="01bsp_rpm.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
-      <file file_name="../../nRF/Device/Startup/ses_startup_nrf_common.s" />
+      <file file_name="$(SeggerThumbStartup)" />
+      <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
@@ -359,7 +359,7 @@
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -383,8 +383,8 @@
       <file file_name="01bsp_timer.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
-      <file file_name="../../nRF/Device/Startup/ses_startup_nrf_common.s" />
+      <file file_name="$(SeggerThumbStartup)" />
+      <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
@@ -398,7 +398,7 @@
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -422,8 +422,8 @@
       <file file_name="01bsp_timer_hf.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
-      <file file_name="../../nRF/Device/Startup/ses_startup_nrf_common.s" />
+      <file file_name="$(SeggerThumbStartup)" />
+      <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
@@ -437,7 +437,7 @@
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -461,8 +461,8 @@
       <file file_name="01bsp_uart.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
-      <file file_name="../../nRF/Device/Startup/ses_startup_nrf_common.s" />
+      <file file_name="$(SeggerThumbStartup)" />
+      <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
@@ -476,7 +476,7 @@
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -500,8 +500,8 @@
       <file file_name="01drv_lis2mdl.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
-      <file file_name="../../nRF/Device/Startup/ses_startup_nrf_common.s" />
+      <file file_name="$(SeggerThumbStartup)" />
+      <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
@@ -515,7 +515,7 @@
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -539,8 +539,8 @@
       <file file_name="01drv_pid.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
-      <file file_name="../../nRF/Device/Startup/ses_startup_nrf_common.s" />
+      <file file_name="$(SeggerThumbStartup)" />
+      <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
@@ -554,7 +554,7 @@
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -578,8 +578,8 @@
       <file file_name="03app_dotbot.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
-      <file file_name="../../nRF/Device/Startup/ses_startup_nrf_common.s" />
+      <file file_name="$(SeggerThumbStartup)" />
+      <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
@@ -593,7 +593,7 @@
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -617,8 +617,8 @@
       <file file_name="03app_dotbot_gateway.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
-      <file file_name="../../nRF/Device/Startup/ses_startup_nrf_common.s" />
+      <file file_name="$(SeggerThumbStartup)" />
+      <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
@@ -632,7 +632,7 @@
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -660,8 +660,8 @@
       <file file_name="servos.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="../../nRF/SEGGER_THUMB_Startup.s" />
-      <file file_name="../../nRF/Device/Startup/ses_startup_nrf_common.s" />
+      <file file_name="$(SeggerThumbStartup)" />
+      <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
