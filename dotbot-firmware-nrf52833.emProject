@@ -1,5 +1,5 @@
 <!DOCTYPE CrossStudio_Project_File>
-<solution Name="dotbot-firmware" target="8" version="2">
+<solution Name="dotbot-firmware-nrf52833" target="8" version="2">
   <configuration
     CMSIS_CORE="Yes"
     LIBRARY_IO_TYPE="RTT"
@@ -45,23 +45,23 @@
     target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
   <configuration Name="Debug" c_preprocessor_definitions="DEBUG" />
   <configuration Name="Release" c_preprocessor_definitions="NDEBUG" />
-  <import file_name="../bsp/bsp.emProject" />
-  <import file_name="../drv/drv.emProject" />
-  <import file_name="01bsp_gpio/01bsp_gpio.emProject" />
-  <import file_name="01bsp_i2c/01bsp_i2c.emProject" />
-  <import file_name="01bsp_lighthouse/01bsp_lighthouse.emProject" />
-  <import file_name="01bsp_motors/01bsp_motors.emProject" />
-  <import file_name="01bsp_radio_lr_txrx/01bsp_radio_lr_txrx.emProject" />
-  <import file_name="01bsp_radio_txrx/01bsp_radio_txrx.emProject" />
-  <import file_name="01bsp_rgbled/01bsp_rgbled.emProject" />
-  <import file_name="01bsp_rng/01bsp_rng.emProject" />
-  <import file_name="01bsp_rpm/01bsp_rpm.emProject" />
-  <import file_name="01bsp_timer/01bsp_timer.emProject" />
-  <import file_name="01bsp_timer_hf/01bsp_timer_hf.emProject" />
-  <import file_name="01bsp_uart/01bsp_uart.emProject" />
-  <import file_name="01drv_lis2mdl/01drv_lis2mdl.emProject" />
-  <import file_name="01drv_pid/01drv_pid.emProject" />
-  <import file_name="03app_dotbot/03app_dotbot.emProject" />
-  <import file_name="03app_dotbot_gateway/03app_dotbot_gateway.emProject" />
-  <import file_name="03app_sailbot/03app_sailbot.emProject" />
+  <import file_name="bsp/bsp.emProject" />
+  <import file_name="drv/drv.emProject" />
+  <import file_name="projects/01bsp_gpio/01bsp_gpio.emProject" />
+  <import file_name="projects/01bsp_i2c/01bsp_i2c.emProject" />
+  <import file_name="projects/01bsp_lighthouse/01bsp_lighthouse.emProject" />
+  <import file_name="projects/01bsp_motors/01bsp_motors.emProject" />
+  <import file_name="projects/01bsp_radio_lr_txrx/01bsp_radio_lr_txrx.emProject" />
+  <import file_name="projects/01bsp_radio_txrx/01bsp_radio_txrx.emProject" />
+  <import file_name="projects/01bsp_rgbled/01bsp_rgbled.emProject" />
+  <import file_name="projects/01bsp_rng/01bsp_rng.emProject" />
+  <import file_name="projects/01bsp_rpm/01bsp_rpm.emProject" />
+  <import file_name="projects/01bsp_timer/01bsp_timer.emProject" />
+  <import file_name="projects/01bsp_timer_hf/01bsp_timer_hf.emProject" />
+  <import file_name="projects/01bsp_uart/01bsp_uart.emProject" />
+  <import file_name="projects/01drv_lis2mdl/01drv_lis2mdl.emProject" />
+  <import file_name="projects/01drv_pid/01drv_pid.emProject" />
+  <import file_name="projects/03app_dotbot/03app_dotbot.emProject" />
+  <import file_name="projects/03app_dotbot_gateway/03app_dotbot_gateway.emProject" />
+  <import file_name="projects/03app_sailbot/03app_sailbot.emProject" />
 </solution>
