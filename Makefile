@@ -5,8 +5,10 @@ DOCKER_TARGETS ?= all
 PACKAGES_DIR_OPT ?=
 SEGGER_DIR ?= /opt/segger
 BUILD_CONFIG ?= Debug
+NRF_TARGET ?= nrf52833
+PROJECT_FILE ?= dotbot-firmware-$(NRF_TARGET).emProject
 
-PROJECTS ?= $(shell git grep -h "project Name" projects/dotbot-firmware.emProject | sed -e s/"<project Name=\"/"/ | sed -e s/\"\>// | sed -e s/^[[:space:]]*// | sort)
+PROJECTS ?= $(shell find projects/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/projects// | sort)
 SRCS ?= $(shell find bsp/ -name "*.[c|h]") $(shell find drv/ -name "*.[c|h]") $(shell find projects/ -name "*.[c|h]")
 CLANG_FORMAT ?= clang-format
 CLANG_FORMAT_TYPE ?= file
@@ -22,7 +24,7 @@ all: $(PROJECTS)
 
 $(PROJECTS):
 	@echo "\e[1mBuilding project $@\e[0m"
-	"$(SEGGER_DIR)/bin/emBuild" projects/dotbot-firmware.emProject -project $@ -config $(BUILD_CONFIG) $(PACKAGES_DIR_OPT) -rebuild -verbose
+	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -project $@ -config $(BUILD_CONFIG) $(PACKAGES_DIR_OPT) -rebuild -verbose
 	@echo "\e[1mDone\e[0m\n"
 
 list-projects:
@@ -30,7 +32,7 @@ list-projects:
 	@echo $(PROJECTS) | tr ' ' '\n'
 
 clean:
-	"$(SEGGER_DIR)/bin/emBuild" projects/dotbot-firmware.emProject -config $(BUILD_CONFIG) -clean
+	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -config $(BUILD_CONFIG) -clean
 	rm -f $(ARTIFACT_HEX)
 
 format:
