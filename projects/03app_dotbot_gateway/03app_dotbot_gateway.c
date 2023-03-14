@@ -17,7 +17,6 @@
 #include "hdlc.h"
 #include "protocol.h"
 #include "radio.h"
-#include "timer.h"
 #include "uart.h"
 
 //=========================== defines ==========================================
@@ -97,7 +96,6 @@ static void radio_callback(uint8_t *packet, uint8_t length) {
  */
 int main(void) {
     db_board_init();
-    db_timer_init();
 
     // Configure Radio as transmitter
     db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);  // All RX packets received are forwarded in an HDLC frame over UART
