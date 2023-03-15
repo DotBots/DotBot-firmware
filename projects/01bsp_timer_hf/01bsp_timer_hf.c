@@ -14,15 +14,18 @@
 #include <nrf.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "board.h"
-#include "rgbled.h"
+#include "gpio.h"
 #include "timer_hf.h"
 
 //=========================== defines =========================================
 
 //=========================== variables =========================================
 
-static uint8_t _color_idx = 0;
+#if defined(NRF5340_XXAA_APPLICATION)
+static const gpio_t led2 = { .port = 0, .pin = 29 };
+#else
+static const gpio_t led2 = { .port = 0, .pin = 14 };
+#endif
 
 //=========================== main =========================================
 
@@ -35,20 +38,15 @@ static void message_one_shot_callback(void) {
 }
 
 static void led_callback(void) {
-    _color_idx = (_color_idx + 1) % 2;
-    if (_color_idx) {
-        db_rgbled_set(255, 0, 0);
-    } else {
-        db_rgbled_set(0, 255, 0);
-    }
+    db_gpio_toggle(&led2);
 }
 
 /**
  *  @brief The program starts executing here.
  */
 int main(void) {
-    db_board_init();
-    db_rgbled_init();
+    db_gpio_init(&led2, DB_GPIO_OUT);
+    db_gpio_set(&led2);
     db_timer_hf_init();
     db_timer_hf_set_periodic_us(0, 2000000, &message_callback);
     db_timer_hf_set_periodic_us(1, 500000, &led_callback);
