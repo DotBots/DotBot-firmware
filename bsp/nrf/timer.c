@@ -18,10 +18,17 @@
 
 //=========================== define ===========================================
 
+#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+#define TIMER_RTC          (NRF_RTC1_S)       ///< Backend RTC peripheral used by the timer
+#define TIMER_RTC_IRQ      (RTC1_IRQn)        ///< IRQ corresponding to the RTC used
+#define TIMER_RTC_ISR      (RTC1_IRQHandler)  ///< ISR function handler corresponding to the RTC used
+#define TIMER_RTC_CB_CHANS (RTC1_CC_NUM - 1)  ///< Number of channels that can be used for periodic callbacks
+#else
 #define TIMER_RTC          (NRF_RTC2)         ///< Backend RTC peripheral used by the timer
 #define TIMER_RTC_IRQ      (RTC2_IRQn)        ///< IRQ corresponding to the RTC used
 #define TIMER_RTC_ISR      (RTC2_IRQHandler)  ///< ISR function handler corresponding to the RTC used
 #define TIMER_RTC_CB_CHANS (RTC2_CC_NUM - 1)  ///< Number of channels that can be used for periodic callbacks
+#endif
 
 typedef struct {
     uint32_t   period_ticks;  ///< Period in ticks between each callback
