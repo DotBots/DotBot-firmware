@@ -18,10 +18,17 @@
 
 //=========================== define ===========================================
 
+#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+#define TIMER_HF          (NRF_TIMER2_S)       ///< Backend TIMER peripheral used by the timer
+#define TIMER_HF_IRQ      (TIMER2_IRQn)        ///< IRQ corresponding to the TIMER used
+#define TIMER_HF_ISR      (TIMER2_IRQHandler)  ///< ISR function handler corresponding to the TIMER used
+#define TIMER_HF_CB_CHANS (TIMER2_CC_NUM - 1)  ///< Number of channels that can be used for periodic callbacks
+#else
 #define TIMER_HF          (NRF_TIMER4)         ///< Backend TIMER peripheral used by the timer
 #define TIMER_HF_IRQ      (TIMER4_IRQn)        ///< IRQ corresponding to the TIMER used
 #define TIMER_HF_ISR      (TIMER4_IRQHandler)  ///< ISR function handler corresponding to the TIMER used
 #define TIMER_HF_CB_CHANS (TIMER4_CC_NUM - 1)  ///< Number of channels that can be used for periodic callbacks
+#endif
 
 typedef struct {
     uint32_t      period_us;  ///< Period in ticks between each callback
