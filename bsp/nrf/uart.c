@@ -18,10 +18,17 @@
 
 //=========================== defines ==========================================
 
+#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+#define DB_UARTE            (NRF_UARTE1_S)
+#define DB_UARTE_IRQ        (SERIAL1_IRQn)
+#define DB_UARTE_ISR        (SERIAL1_IRQHandler)
+#define DB_UARTE_CHUNK_SIZE (64U)
+#else
 #define DB_UARTE            (NRF_UARTE0)
 #define DB_UARTE_IRQ        (UARTE0_UART0_IRQn)
 #define DB_UARTE_ISR        (UARTE0_UART0_IRQHandler)
 #define DB_UARTE_CHUNK_SIZE (64U)
+#endif
 
 typedef struct {
     uint8_t      byte;      ///< the byte where received byte on UART is stored
