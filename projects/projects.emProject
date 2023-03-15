@@ -7,8 +7,8 @@
       project_directory="01bsp_gpio"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceCommonHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -46,8 +46,8 @@
       project_directory="01bsp_i2c"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceCommonHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -85,8 +85,8 @@
       project_directory="01bsp_lighthouse"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceCommonHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -124,8 +124,8 @@
       project_directory="01bsp_motors"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceCommonHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -163,8 +163,8 @@
       project_directory="01bsp_radio_lr_txrx"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceCommonHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -202,8 +202,8 @@
       project_directory="01bsp_radio_txrx"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceCommonHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -241,8 +241,8 @@
       project_directory="01bsp_rgbled"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceCommonHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -280,8 +280,8 @@
       project_directory="01bsp_rng"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceCommonHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -319,8 +319,8 @@
       project_directory="01bsp_rpm"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceCommonHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -358,8 +358,8 @@
       project_directory="01bsp_timer"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceCommonHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -397,8 +397,8 @@
       project_directory="01bsp_timer_hf"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceCommonHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -436,8 +436,8 @@
       project_directory="01bsp_uart"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceCommonHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -475,8 +475,8 @@
       project_directory="01drv_lis2mdl"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceCommonHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -514,8 +514,8 @@
       project_directory="01drv_pid"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceCommonHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -553,8 +553,8 @@
       project_directory="03app_dotbot"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceCommonHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -592,8 +592,8 @@
       project_directory="03app_dotbot_gateway"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceCommonHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -631,8 +631,8 @@
       project_directory="03app_sailbot"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf.h" />
-      <file file_name="$(PackagesDir)/nRF/Device/Include/nrf52833.h" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceCommonHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
