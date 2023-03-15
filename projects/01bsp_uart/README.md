@@ -25,5 +25,11 @@ On the computer, use a terminal application to connect to the virtual communicat
 port (/dev/ttyUSBxx on Linux, COMxx on Windows, etc) created by the UART to USB
 cable. The baudrate is 115200.
 
+Example with [socat](http://www.dest-unreach.org/socat):
+
+```
+socat - open:/dev/ttyACM0,b115200,echo=0,raw,cs8,parenb=0,cstopb=0
+```
+
 Loading this app onto the DotBot board will echo messages sent from the
 computer to the DotBot on the debug terminal.
