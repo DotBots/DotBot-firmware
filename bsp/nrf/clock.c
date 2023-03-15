@@ -47,8 +47,12 @@ void db_lfclk_init(void) {
     }
 
     NRF_CLOCK->EVENTS_LFCLKSTARTED = 0;
-    NRF_CLOCK->LFCLKSRC            = (CLOCK_LFCLKSRC_SRC_Xtal << CLOCK_LFCLKSRC_SRC_Pos);
-    NRF_CLOCK->TASKS_LFCLKSTART    = 1;
+#if defined(NRF5340_XXAA)
+    NRF_CLOCK->LFCLKSRC = (CLOCK_LFCLKSRC_SRC_LFXO << CLOCK_LFCLKSRC_SRC_Pos);
+#else
+    NRF_CLOCK->LFCLKSRC = (CLOCK_LFCLKSRC_SRC_Xtal << CLOCK_LFCLKSRC_SRC_Pos);
+#endif
+    NRF_CLOCK->TASKS_LFCLKSTART = 1;
     while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0) {}
     _clock_state.lf_enabled = true;
 }
