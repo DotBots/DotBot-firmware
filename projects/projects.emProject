@@ -354,7 +354,7 @@
   <project Name="01bsp_timer">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00bsp_dotbot_rgbled(bsp)"
+      project_dependencies="00bsp_timer(bsp);00bsp_gpio(bsp)"
       project_directory="01bsp_timer"
       project_type="Executable" />
     <folder Name="Device Files">
