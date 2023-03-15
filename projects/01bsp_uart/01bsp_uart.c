@@ -15,7 +15,8 @@
 
 //=========================== defines ==========================================
 
-#define DB_UART_MAX_BYTES (64U)  ///< max bytes in UART receive buffer
+#define DB_UART_MAX_BYTES (64U)      ///< max bytes in UART receive buffer
+#define DB_UART_BAUDRATE  (115200U)  ///< UART baudrate
 
 typedef struct {
     uint8_t buffer[DB_UART_MAX_BYTES];  ///< buffer where message received on UART is stored
@@ -34,7 +35,7 @@ static void uart_callback(uint8_t byte) {
     _uart_vars.buffer[_uart_vars.pos] = byte;
     _uart_vars.pos++;
     if (byte == '\n' || _uart_vars.pos == DB_UART_MAX_BYTES - 1) {
-        db_uart_write(_uart_vars.buffer, _uart_vars.pos);
+        db_uart_write(_uart_vars.buffer, _uart_vars.pos - 1);
         _uart_vars.pos = 0;
     }
 }
@@ -46,7 +47,7 @@ static void uart_callback(uint8_t byte) {
  */
 int main(void) {
     db_board_init();
-    db_uart_init(&_rx_pin, &_tx_pin, 1000000, &uart_callback);
+    db_uart_init(&_rx_pin, &_tx_pin, DB_UART_BAUDRATE, &uart_callback);
 
     while (1) {
         __WFE();
