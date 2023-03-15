@@ -11,14 +11,20 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ["nrf52833", "nrf5340-app"]
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
       - name: Build projects
-        run: make docker
+        run: NRF_TARGET=${{ matrix.target }} make docker
       - name: Build for release and convert elf artifacts to hex
-        run: DOCKER_TARGETS="artifacts" BUILD_CONFIG=Release make docker
-      - name: Upload artifacts
+        if: matrix.target == 'nrf52833'
+        run: NRF_TARGET=${{ matrix.target }} DOCKER_TARGETS="artifacts" BUILD_CONFIG=Release make docker
+      - name: Upload artifact
+        if: matrix.target == 'nrf52833'
         uses: actions/upload-artifact@v3
         with:
           name: artifacts
