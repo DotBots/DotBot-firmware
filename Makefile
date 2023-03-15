@@ -8,13 +8,17 @@ BUILD_CONFIG ?= Debug
 NRF_TARGET ?= nrf52833
 PROJECT_FILE ?= dotbot-firmware-$(NRF_TARGET).emProject
 
-PROJECTS ?= $(shell find projects/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/projects// | sort)
+ifeq (nrf5340-app,$(NRF_TARGET))
+  PROJECTS ?= 01bsp_gpio 01bsp_timer 01bsp_timer_hf 01bsp_uart
+else
+  PROJECTS ?= $(shell find projects/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/projects// | sort)
+endif
 SRCS ?= $(shell find bsp/ -name "*.[c|h]") $(shell find drv/ -name "*.[c|h]") $(shell find projects/ -name "*.[c|h]")
 CLANG_FORMAT ?= clang-format
 CLANG_FORMAT_TYPE ?= file
 
 ARTIFACT_PROJECTS ?= 03app_dotbot 03app_sailbot 03app_dotbot_gateway
-ARTIFACT_ELF = $(foreach app,$(ARTIFACT_PROJECTS),projects/$(app)/Output/$(BUILD_CONFIG)/Exe/$(app).elf)
+ARTIFACT_ELF = $(foreach app,$(ARTIFACT_PROJECTS),projects/$(app)/Output/$(NRF_TARGET)/$(BUILD_CONFIG)/Exe/$(app)-$(NRF_TARGET).elf)
 ARTIFACT_HEX = $(ARTIFACT_ELF:.elf=.hex)
 
 
@@ -55,6 +59,7 @@ artifacts: $(ARTIFACT_HEX)
 
 docker:
 	docker run --rm -i \
+		-e NRF_TARGET="$(NRF_TARGET)" \
 		-e BUILD_CONFIG="$(BUILD_CONFIG)" \
 		-e PACKAGES_DIR_OPT="-packagesdir $(SEGGER_DIR)/packages" \
 		-e PROJECTS="$(PROJECTS)" \
