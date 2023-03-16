@@ -21,8 +21,17 @@
 
 //=========================== defines ==========================================
 
-#define DB_TWIM             (NRF_TWIM1)  ///< TWI peripheral used
-#define DB_TWIM_TX_BUF_SIZE (32U)        ///< TX max buffer size
+#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+#define DB_TWIM             (NRF_TWIM0_S)         ///< TWI peripheral used
+#define DB_TWIM_IRQ_HANDLER (SERIAL0_IRQHandler)  ///< TWI IRQ handler function
+#define DB_TWIM_IRQ         (SERIAL0_IRQn)        ///< TWI IRQ
+#define DB_TWIM_TX_BUF_SIZE (32U)                 ///< TX max buffer size
+#else
+#define DB_TWIM             (NRF_TWIM1)                                     ///< TWI peripheral used
+#define DB_TWIM_IRQ_HANDLER (SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQHandler)  ///< TWI IRQ handler function
+#define DB_TWIM_IRQ         (SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQn)        ///< TWI IRQ
+#define DB_TWIM_TX_BUF_SIZE (32U)                                           ///< TX max buffer size
+#endif
 
 typedef struct {
     uint8_t buffer[DB_TWIM_TX_BUF_SIZE];  ///< internal buffer used to send bytes on I2C bus
@@ -64,8 +73,8 @@ void db_i2c_init(const gpio_t *scl, const gpio_t *sda) {
     // set frequency
     DB_TWIM->FREQUENCY = TWIM_FREQUENCY_FREQUENCY_K400;
 
-    NVIC_EnableIRQ(SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQn);
-    NVIC_ClearPendingIRQ(SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQn);
+    NVIC_EnableIRQ(DB_TWIM_IRQ);
+    NVIC_ClearPendingIRQ(DB_TWIM_IRQ);
 
     DB_TWIM->ENABLE = (TWIM_ENABLE_ENABLE_Enabled << TWIM_ENABLE_ENABLE_Pos);
 }
@@ -116,7 +125,7 @@ void _wait_for_transfer(void) {
 
 //=========================== interrupt ========================================
 
-void SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQHandler(void) {
+void DB_TWIM_IRQ_HANDLER(void) {
     if (DB_TWIM->EVENTS_STOPPED) {
         DB_TWIM->EVENTS_STOPPED = 0;
         _i2c_tx_vars.running    = false;
