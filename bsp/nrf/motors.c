@@ -25,12 +25,21 @@
 
 //=========================== variables =========================================
 
+#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+static const gpio_t _pwm_pins[PWM_CHANNELS] = {
+    { .port = 0, .pin = 28 },  // AIN1
+    { .port = 0, .pin = 29 },  // AIN2
+    { .port = 0, .pin = 30 },  // BIN1
+    { .port = 0, .pin = 31 },  // BIN2
+};
+#else
 static const gpio_t _pwm_pins[PWM_CHANNELS] = {
     { .port = 0, .pin = 2 },   // AIN1
     { .port = 0, .pin = 28 },  // AIN2
     { .port = 1, .pin = 9 },   // BIN1
     { .port = 0, .pin = 11 },  // BIN2
 };
+#endif
 
 //=========================== public ==========================================
 
