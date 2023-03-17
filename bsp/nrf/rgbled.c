@@ -12,13 +12,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "gpio.h"
 #include "rgbled.h"
 
 //=========================== define ==========================================
 
-// Pin definitions
-#define LED_MOSI_PIN 3  ///< nRF52840 P0.3
-#define LED_SCK_PIN  6  ///< nRF52840 P1.6 ( used because it's not an available pin in the BCM module).
+#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+#define DB_NRF_SPIM (NRF_SPIM0_S)
+#else
+#define DB_NRF_SPIM (NRF_SPIM0)
+#endif
 
 // EasyDMA buffer size definition
 #define LED_BUFFER_SIZE 32
@@ -28,6 +31,9 @@
 #define LED_ZERO 0b00010000
 
 //=========================== variables =======================================
+
+static const gpio_t _mosi_pin = { .port = 0, .pin = 3 };  ///< nRF52840 P0.3
+static const gpio_t _sck_pin  = { .port = 1, .pin = 6 };  ///< nRF52840 P1.6 ( used because it's not an available pin in the BCM module).
 
 // EasyDMA buffer declaration for the RGB LED.
 typedef struct {
@@ -40,32 +46,32 @@ static rgbled_vars_t rgbled_vars;
 
 void db_rgbled_init(void) {
 
-    // Configure the necessary Pins in the GPIO peripheral
-    NRF_P0->DIRSET = 1 << LED_MOSI_PIN;  // MOSI as Output
-    NRF_P0->DIRSET = 1 << LED_SCK_PIN;   // SCK  as Output
+    // Configure the necessary Pins in the GPIO peripheral, MOSI and SCK as Output
+    db_gpio_init(&_mosi_pin, DB_GPIO_OUT);
+    db_gpio_init(&_sck_pin, DB_GPIO_OUT);
 
     // Define the necessary Pins in the SPIM peripheral
-    NRF_SPIM0->PSEL.MOSI = LED_MOSI_PIN << SPIM_PSEL_MOSI_PIN_Pos |                         // Define pin number for MOSI pin
-                           0 << SPIM_PSEL_MOSI_PORT_Pos |                                   // Define pin port for MOSI pin
-                           SPIM_PSEL_MOSI_CONNECT_Connected << SPIM_PSEL_MOSI_CONNECT_Pos;  // Enable the MOSI pin
+    DB_NRF_SPIM->PSEL.MOSI = _mosi_pin.pin << SPIM_PSEL_MOSI_PIN_Pos |                        // Define pin number for MOSI pin
+                             _mosi_pin.port << SPIM_PSEL_MOSI_PORT_Pos |                      // Define pin port for MOSI pin
+                             SPIM_PSEL_MOSI_CONNECT_Connected << SPIM_PSEL_MOSI_CONNECT_Pos;  // Enable the MOSI pin
 
-    NRF_SPIM0->PSEL.SCK = LED_SCK_PIN << SPIM_PSEL_SCK_PIN_Pos |                         // Define pin number for SCK pin
-                          1 << SPIM_PSEL_SCK_PORT_Pos |                                  // Define pin port for SCK pin
-                          SPIM_PSEL_SCK_CONNECT_Connected << SPIM_PSEL_SCK_CONNECT_Pos;  // Enable the SCK pin
+    DB_NRF_SPIM->PSEL.SCK = _sck_pin.pin << SPIM_PSEL_SCK_PIN_Pos |                        // Define pin number for SCK pin
+                            _sck_pin.port << SPIM_PSEL_SCK_PORT_Pos |                      // Define pin port for SCK pin
+                            SPIM_PSEL_SCK_CONNECT_Connected << SPIM_PSEL_SCK_CONNECT_Pos;  // Enable the SCK pin
 
     // Configure the SPIM peripheral
-    NRF_SPIM0->FREQUENCY = SPIM_FREQUENCY_FREQUENCY_K500;                        // Set SPI frequency to 500Khz
-    NRF_SPIM0->CONFIG    = SPIM_CONFIG_ORDER_MsbFirst << SPIM_CONFIG_ORDER_Pos;  // Set MsB out first
+    DB_NRF_SPIM->FREQUENCY = SPIM_FREQUENCY_FREQUENCY_K500;                        // Set SPI frequency to 500Khz
+    DB_NRF_SPIM->CONFIG    = SPIM_CONFIG_ORDER_MsbFirst << SPIM_CONFIG_ORDER_Pos;  // Set MsB out first
 
     // Configure the WRITER EasyDMA channel
-    NRF_SPIM0->TXD.MAXCNT = LED_BUFFER_SIZE;                   // Set the size of the output buffer.
-    NRF_SPIM0->TXD.PTR    = (uint32_t)&rgbled_vars.ledBuffer;  // Set the output buffer pointer.
+    DB_NRF_SPIM->TXD.MAXCNT = LED_BUFFER_SIZE;                   // Set the size of the output buffer.
+    DB_NRF_SPIM->TXD.PTR    = (uint32_t)&rgbled_vars.ledBuffer;  // Set the output buffer pointer.
 
     // Enable the SPIM pripheral
-    NRF_SPIM0->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
+    DB_NRF_SPIM->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
 
     // Execute a transfer
-    NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;  // trigger the SPI transfer
+    DB_NRF_SPIM->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;  // trigger the SPI transfer
 }
 
 void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b) {
@@ -204,5 +210,5 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b) {
     rgbled_vars.ledBuffer[30] = 0x10;
 
     // Finally, execute the SPI transfer
-    NRF_SPIM0->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
+    DB_NRF_SPIM->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;
 }

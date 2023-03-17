@@ -41,6 +41,7 @@
   <project Name="00bsp_dotbot_rgbled">
     <configuration
       Name="Common"
+      project_dependencies="00bsp_gpio(bsp)"
       project_directory="."
       project_type="Library" />
     <file file_name="nrf/rgbled.c" />
