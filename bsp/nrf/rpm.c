@@ -13,17 +13,21 @@
 #include <stdlib.h>
 #include <nrf.h>
 #include "rpm.h"
+#include "gpio.h"
 #include "timer.h"
 
 //=========================== defines ==========================================
 
-#define RPM_LEFT_PIN          (17)          ///< Number of the pin connected to the left magnetic encoder
-#define RPM_LEFT_PORT         (NRF_P0)      ///< Port of the pin connected to the left magnetic encoder
+#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+#define NRF_GPIOTE NRF_GPIOTE0_S
+#define NRF_TIMER0 NRF_TIMER0_S
+#define NRF_TIMER1 NRF_TIMER1_S
+#define NRF_PPI    NRF_DPPIC_S
+#endif
+
 #define RPM_LEFT_TIMER        (NRF_TIMER0)  ///< Timer peripheral used to count left cycles
 #define RPM_LEFT_PPI_CHAN     (0)           ///< PPI channel used between left side timer and gpio
 #define RPM_LEFT_GPIOTE_CHAN  (0)           ///< GPIOTE channel used for left side gpio event
-#define RPM_RIGHT_PIN         (15)          ///< Number of the pin connected to the right magnetic encoder
-#define RPM_RIGHT_PORT        (NRF_P0)      ///< Port of the pin connected to the right magnetic encoder
 #define RPM_RIGHT_TIMER       (NRF_TIMER1)  ///< Timer peripheral used to count right cycles
 #define RPM_RIGHT_PPI_CHAN    (1)           ///< PPI channel used between right side timer and gpio
 #define RPM_RIGHT_GPIOTE_CHAN (1)           ///< GPIOTE channel used for right side gpio event
@@ -62,6 +66,14 @@ typedef struct {
 
 //=========================== variables ========================================
 
+#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+static const gpio_t _left_pin  = { .port = 0, .pin = 23 };
+static const gpio_t _right_pin = { .port = 0, .pin = 24 };
+#else
+static const gpio_t _left_pin  = { .port = 0, .pin = 17 };
+static const gpio_t _right_pin = { .port = 0, .pin = 15 };
+#endif
+
 /*
  * Global variable used to store cycle counts at the beginning and at the end of
  * an RTC timeframe (50ms), for each side
@@ -88,17 +100,17 @@ static void _update_counters(void);
 
 void db_rpm_init(void) {
     // Configure pin connected to left magnetic encoder sensor, input pullup
-    RPM_LEFT_PORT->PIN_CNF[RPM_LEFT_PIN] |= (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos);
-    RPM_LEFT_PORT->PIN_CNF[RPM_LEFT_PIN] &= ~(1UL << GPIO_PIN_CNF_INPUT_Pos);
+    db_gpio_init(&_left_pin, DB_GPIO_IN_PU);
     NRF_GPIOTE->CONFIG[RPM_LEFT_GPIOTE_CHAN] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
-                                               (RPM_LEFT_PIN << GPIOTE_CONFIG_PSEL_Pos) |
+                                               (_left_pin.pin << GPIOTE_CONFIG_PSEL_Pos) |
+                                               (_left_pin.port << GPIOTE_CONFIG_PORT_Pos) |
                                                (GPIOTE_CONFIG_POLARITY_LoToHi << GPIOTE_CONFIG_POLARITY_Pos);
 
     // Configure pin connected to right magnetic encoder sensor, input pullup
-    RPM_RIGHT_PORT->PIN_CNF[RPM_RIGHT_PIN] |= (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos);
-    RPM_RIGHT_PORT->PIN_CNF[RPM_RIGHT_PIN] &= ~(1UL << GPIO_PIN_CNF_INPUT_Pos);
+    db_gpio_init(&_right_pin, DB_GPIO_IN_PU);
     NRF_GPIOTE->CONFIG[RPM_RIGHT_GPIOTE_CHAN] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
-                                                (RPM_RIGHT_PIN << GPIOTE_CONFIG_PSEL_Pos) |
+                                                (_right_pin.pin << GPIOTE_CONFIG_PSEL_Pos) |
+                                                (_right_pin.port << GPIOTE_CONFIG_PORT_Pos) |
                                                 (GPIOTE_CONFIG_POLARITY_LoToHi << GPIOTE_CONFIG_POLARITY_Pos);
 
     // Configure and clear timers
@@ -114,12 +126,19 @@ void db_rpm_init(void) {
     RPM_RIGHT_TIMER->TASKS_CLEAR = 1;
 
     // Configure gpiote/timer count PPI
-    //   - PO.17 (left magnetic encoder) event connected to PPI channel 0 which fires Timer 0 capture 0
-    //   - PO.15 (right magnetic encoder) event connected to PPI channel 1 which fires Timer 0 capture 1
+    //   - PO.17 (left magnetic encoder) event connected to PPI channel 0 which fires Timer 0 count
+    //   - PO.15 (right magnetic encoder) event connected to PPI channel 1 which fires Timer 1 count
+#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+    NRF_GPIOTE->PUBLISH_IN[RPM_LEFT_GPIOTE_CHAN]  = RPM_LEFT_PPI_CHAN | (GPIOTE_PUBLISH_IN_EN_Enabled << GPIOTE_PUBLISH_IN_EN_Pos);
+    RPM_LEFT_TIMER->SUBSCRIBE_COUNT               = RPM_LEFT_PPI_CHAN | (TIMER_SUBSCRIBE_COUNT_EN_Enabled << TIMER_SUBSCRIBE_COUNT_EN_Pos);
+    NRF_GPIOTE->PUBLISH_IN[RPM_RIGHT_GPIOTE_CHAN] = RPM_RIGHT_PPI_CHAN | (GPIOTE_PUBLISH_IN_EN_Enabled << GPIOTE_PUBLISH_IN_EN_Pos);
+    RPM_RIGHT_TIMER->SUBSCRIBE_COUNT              = RPM_RIGHT_PPI_CHAN | (TIMER_SUBSCRIBE_COUNT_EN_Enabled << TIMER_SUBSCRIBE_COUNT_EN_Pos);
+#else
     NRF_PPI->CH[RPM_LEFT_PPI_CHAN].EEP  = (uint32_t)&NRF_GPIOTE->EVENTS_IN[RPM_LEFT_GPIOTE_CHAN];
     NRF_PPI->CH[RPM_LEFT_PPI_CHAN].TEP  = (uint32_t)&RPM_LEFT_TIMER->TASKS_COUNT;
     NRF_PPI->CH[RPM_RIGHT_PPI_CHAN].EEP = (uint32_t)&NRF_GPIOTE->EVENTS_IN[RPM_RIGHT_GPIOTE_CHAN];
     NRF_PPI->CH[RPM_RIGHT_PPI_CHAN].TEP = (uint32_t)&RPM_RIGHT_TIMER->TASKS_COUNT;
+#endif
 
     // Enable PPI channels
     NRF_PPI->CHENSET = (1 << RPM_RIGHT_PPI_CHAN) | (1 << RPM_LEFT_PPI_CHAN);
