@@ -76,6 +76,7 @@ void db_gpio_init_irq(const gpio_t *gpio, gpio_mode_t mode, gpio_irq_edge_t edge
 
     NRF_GPIOTE->CONFIG[gpio_pin_idx] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
                                        (gpio->pin << GPIOTE_CONFIG_PSEL_Pos) |
+                                       (gpio->port << GPIOTE_CONFIG_PORT_Pos) |
                                        (edge << GPIOTE_CONFIG_POLARITY_Pos);
     NRF_GPIOTE->INTENSET |= (GPIOTE_INTENSET_IN0_Msk << gpio_pin_idx);
 }
