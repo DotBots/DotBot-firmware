@@ -49,7 +49,7 @@
   <project Name="00bsp_dotbot_rpm">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_timer"
+      project_dependencies="00bsp_timer;00bsp_gpio(bsp)"
       project_directory="."
       project_type="Library" />
     <file file_name="nrf/rpm.c" />
