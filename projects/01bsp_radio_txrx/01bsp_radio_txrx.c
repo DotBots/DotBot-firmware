@@ -15,8 +15,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 // Include BSP packages
-#include <board.h>
-#include <radio.h>
+#include "board.h"
+#include "gpio.h"
+#include "radio.h"
 
 //=========================== defines ===========================================
 
@@ -25,6 +26,8 @@
 //=========================== variables =========================================
 
 static uint8_t packet_tx[NUMBER_OF_BYTES_IN_PACKET];
+
+static const gpio_t _dbg_pin = { .port = 0, .pin = 31 };
 
 //=========================== prototypes ========================================
 
@@ -40,11 +43,9 @@ int main(void) {
     // Turn ON the DotBot board regulator
     db_board_init();
 
-    //=========================== Configure GPIO =========================================
+    //=========================== Initialize GPIO =========================================
 
-    // Set the test pin (P0.31) as an output
-    NRF_P0->PIN_CNF[31] = (GPIO_PIN_CNF_DIR_Output << GPIO_PIN_CNF_DIR_Pos) |   // Set Pin as output
-                          (GPIO_PIN_CNF_DRIVE_S0S1 << GPIO_PIN_CNF_DRIVE_Pos);  // Activate high current gpio mode.
+    db_gpio_init(&_dbg_pin, DB_GPIO_OUT);
 
     //=========================== Configure Radio =========================================
 
@@ -64,7 +65,6 @@ int main(void) {
 }
 
 //=========================== functions =========================================
-
 /**
  *  @brief Callback function to process received packets
  *
@@ -80,11 +80,11 @@ void radio_callback(uint8_t *packet, uint8_t length) {
     // Check the arriving packet for any pressed button.
     if (packet[0] == 0x01 || packet[1] == 0x01 || packet[2] == 0x01 || packet[3] == 0x01) {
 
-        NRF_P0->OUTSET = 1 << GPIO_OUTSET_PIN31_Pos;  // if any button is pressed, set the pin HIGH.
+        db_gpio_set(&_dbg_pin);
     }
 
     else {
 
-        NRF_P0->OUTCLR = 1 << GPIO_OUTCLR_PIN31_Pos;  // No buttons pressed, set the pin LOW.
+        db_gpio_clear(&_dbg_pin);
     }
 }
