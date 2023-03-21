@@ -21,7 +21,11 @@
  * @return device address in 32bit format
  */
 static inline uint64_t db_device_addr(void) {
+#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+    return 0;
+#else
     return ((((uint64_t)NRF_FICR->DEVICEADDR[1]) << 32) & 0xffffffffffff) | (uint64_t)NRF_FICR->DEVICEADDR[0];
+#endif
 }
 
 /**
@@ -30,7 +34,11 @@ static inline uint64_t db_device_addr(void) {
  * @return device identifier in 64bit format
  */
 static inline uint64_t db_device_id(void) {
+#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+    return ((uint64_t)NRF_FICR_S->INFO.DEVICEID[1]) << 32 | (uint64_t)NRF_FICR_S->INFO.DEVICEID[0];
+#else
     return ((uint64_t)NRF_FICR->DEVICEID[1]) << 32 | (uint64_t)NRF_FICR->DEVICEID[0];
+#endif
 }
 
 #endif
