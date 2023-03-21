@@ -1,0 +1,52 @@
+<!DOCTYPE CrossStudio_Project_File>
+<solution Name="dotbot-firmware-nrf5340-app" target="8" version="2">
+  <configuration
+    LIBRARY_IO_TYPE="RTT"
+    Name="Common"
+    Target="nRF5340_xxAA_Application"
+    arm_architecture="v8M_Mainline"
+    arm_compiler_variant="SEGGER"
+    arm_core_type="Cortex-M33"
+    arm_endian="Little"
+    arm_fp_abi="Hard"
+    arm_fpu_type="FPv5-SP-D16"
+    arm_linker_heap_size="1024"
+    arm_linker_process_stack_size="0"
+    arm_linker_stack_size="2048"
+    arm_linker_variant="SEGGER"
+    arm_rtl_variant="SEGGER"
+    arm_target_debug_interface_type="ADIv5"
+    arm_target_device_name="nRF5340_xxAA_Application"
+    arm_target_interface_type="SWD"
+    build_intermediate_directory="Output/nrf5340-app/$(Configuration)/Obj/$(ProjectName)"
+    build_output_directory="Output/nrf5340-app/$(Configuration)/Exe"
+    build_output_file_name="$(OutDir)/$(ProjectName)-nrf5340-app$(EXE)"
+    build_treat_warnings_as_errors="Yes"
+    c_additional_options="-Wno-strict-prototypes"
+    c_preprocessor_definitions="ARM_MATH_ARMV8MML;NRF5340_XXAA;NRF_APPLICATION;__NRF_FAMILY;CONFIG_NFCT_PINS_AS_GPIOS;FLASH_PLACEMENT=1"
+    c_user_include_directories="$(SolutionDir)/../bsp;$(SolutionDir)/../drv;$(PackagesDir)/nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
+    debug_register_definition_file="$(PackagesDir)/nRF/XML/nrf5340_application_Registers.xml"
+    debug_stack_pointer_start="__stack_end__"
+    debug_start_from_entry_point_symbol="No"
+    debug_target_connection="J-Link"
+    gcc_debugging_level="Level 2"
+    gcc_enable_all_warnings="Yes"
+    gcc_entry_point="Reset_Handler"
+    gcc_omit_frame_pointer="Yes"
+    gcc_optimization_level="Level 2 for size"
+    link_linker_script_file="$(ProjectDir)/../../nRF/nrf5340/nRF_Flash_Variant2.icf"
+    link_time_optimization="No"
+    linker_memory_map_file="$(PackagesDir)/nRF/XML/nRF5340_xxAA_Application_MemoryMap.xml"
+    linker_printf_fmt_level="int"
+    linker_printf_fp_enabled="Float"
+    linker_printf_width_precision_supported="Yes"
+    macros="DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf5340_application.h;DeviceCommonHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceSystemFile=$(PackagesDir)/nRF/Device/Source/system_nrf5340_application.c;DeviceVectorsFile=$(PackagesDir)/nRF/Source/nrf5340_application_Vectors.s;DeviceCommonVectorsFile=$(PackagesDir)/nRF/Source/nRF_Startup.s;SeggerThumbStartup=$(ProjectDir)/../../../nRF/nrf5340/SEGGER_THUMB_Startup.s;DeviceLinkerScript=$(ProjectDir)/../../../nRF/nrf5340/nRF_Flash_Variant2.icf;DeviceMemoryMap=$(PackagesDir)/nRF/XML/nRF5340_xxAA_Application_MemoryMap.xml;DeviceFamily=nRF;Target=nRF5340_xxAA_Application"
+    project_type="Executable"
+    target_reset_script="Reset();"
+    target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
+  <configuration Name="Debug" c_preprocessor_definitions="DEBUG" />
+  <configuration Name="Release" c_preprocessor_definitions="NDEBUG" />
+  <import file_name="bsp/bsp.emProject" />
+  <import file_name="drv/drv.emProject" />
+  <import file_name="projects/projects.emProject" />
+</solution>

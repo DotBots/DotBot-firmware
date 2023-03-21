@@ -13,6 +13,15 @@
 
 //=========================== variables ========================================
 
+#if defined(NRF5340_XXAA_APPLICATION)
+static const gpio_t led1 = { .port = 0, .pin = 28 };
+static const gpio_t led2 = { .port = 0, .pin = 29 };
+static const gpio_t led3 = { .port = 0, .pin = 30 };
+static const gpio_t btn1 = { .port = 0, .pin = 23 };
+static const gpio_t btn2 = { .port = 0, .pin = 24 };
+static const gpio_t btn3 = { .port = 0, .pin = 8 };
+static const gpio_t btn4 = { .port = 0, .pin = 9 };
+#else
 static const gpio_t led1 = { .port = 0, .pin = 13 };
 static const gpio_t led2 = { .port = 0, .pin = 14 };
 static const gpio_t led3 = { .port = 0, .pin = 15 };
@@ -20,6 +29,7 @@ static const gpio_t btn1 = { .port = 0, .pin = 11 };
 static const gpio_t btn2 = { .port = 0, .pin = 12 };
 static const gpio_t btn3 = { .port = 0, .pin = 24 };
 static const gpio_t btn4 = { .port = 0, .pin = 25 };
+#endif
 
 //=========================== callbacks ========================================
 

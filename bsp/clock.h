@@ -12,6 +12,10 @@
  * @copyright Inria, 2022
  */
 
+#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+#define NRF_CLOCK NRF_CLOCK_S
+#endif
+
 /**
  * @brief Initialize and start the High Frequency clock
  */

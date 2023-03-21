@@ -39,29 +39,17 @@ int main(void) {
     db_motors_init();
 
     while (1) {
-        // Right motor forward
-        db_motors_set_speed(0, 60);
-        db_timer_delay_s(1);        // wait 2 sec
-        db_motors_set_speed(0, 0);  // Turn off motor
-        db_timer_delay_s(1);        // wait 1 sec
+        // Move forward
+        for (uint8_t speed = 50; speed < 100; speed++) {
+            db_motors_set_speed(speed, speed);
+            db_timer_delay_ms(20);
+        }
 
-        // Right motor backward
-        db_motors_set_speed(0, -60);
-        db_timer_delay_s(1);        // wait 2 sec
-        db_motors_set_speed(0, 0);  // Turn off motor
-        db_timer_delay_s(1);        // wait 1 sec
-
-        // Left motor forward
-        db_motors_set_speed(60, 0);
-        db_timer_delay_s(1);        // wait 2 sec
-        db_motors_set_speed(0, 0);  // Turn off motor
-        db_timer_delay_s(1);        // wait 1 sec
-
-        // Left motor backward
-        db_motors_set_speed(-60, 0);
-        db_timer_delay_s(1);        // wait 2 sec
-        db_motors_set_speed(0, 0);  // Turn off motor
-        db_timer_delay_s(1);        // wait 1 sec
+        // Move backward
+        for (uint8_t speed = 50; speed < 100; speed++) {
+            db_motors_set_speed(speed * -1, speed * -1);
+            db_timer_delay_ms(20);
+        }
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.

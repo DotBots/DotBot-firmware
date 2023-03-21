@@ -17,6 +17,14 @@
 
 //=========================== defines ==========================================
 
+#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+#define NRF_P0            NRF_P0_S
+#define NRF_P1            NRF_P1_S
+#define NRF_GPIOTE        NRF_GPIOTE0_S
+#define GPIOTE_IRQn       GPIOTE0_IRQn
+#define GPIOTE_IRQHandler GPIOTE0_IRQHandler
+#endif
+
 /**
  * Enable a pin as output, must be called once before using the other macros below
  */
