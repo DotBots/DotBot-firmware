@@ -61,3 +61,6 @@ dkms.conf
 
 # Generated Output/ dirs
 Output/
+
+# Git conflict files
+*.orig
