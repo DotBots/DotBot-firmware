@@ -9,7 +9,7 @@ NRF_TARGET ?= nrf52833
 PROJECT_FILE ?= dotbot-firmware-$(NRF_TARGET).emProject
 
 ifeq (nrf5340-app,$(NRF_TARGET))
-  PROJECTS ?= 01bsp_gpio 01bsp_i2c 01bsp_motors 01drv_pid 01bsp_rpm 01bsp_timer 01bsp_timer_hf 01bsp_uart
+  PROJECTS ?= 01bsp_gpio 01bsp_i2c 01bsp_motors 01drv_pid 01bsp_rgbled 01bsp_rpm 01bsp_timer 01bsp_timer_hf 01bsp_uart
 else
   PROJECTS ?= $(shell find projects/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/projects// | sort)
 endif
