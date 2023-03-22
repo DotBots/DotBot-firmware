@@ -23,6 +23,10 @@
 #define NRF_TIMER0 NRF_TIMER0_S
 #define NRF_TIMER1 NRF_TIMER1_S
 #define NRF_PPI    NRF_DPPIC_S
+#elif defined(NRF5340_XXAA) && defined(NRF_NETWORK)
+#define NRF_TIMER0 NRF_TIMER0_NS
+#define NRF_TIMER1 NRF_TIMER1_NS
+#define NRF_PPI    NRF_DPPIC_NS
 #endif
 
 #define RPM_LEFT_TIMER        (NRF_TIMER0)  ///< Timer peripheral used to count left cycles
@@ -66,7 +70,7 @@ typedef struct {
 
 //=========================== variables ========================================
 
-#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+#if defined(NRF5340_XXAA)
 static const gpio_t _left_pin  = { .port = 0, .pin = 23 };
 static const gpio_t _right_pin = { .port = 0, .pin = 24 };
 #else
@@ -128,7 +132,7 @@ void db_rpm_init(void) {
     // Configure gpiote/timer count PPI
     //   - PO.17 (left magnetic encoder) event connected to PPI channel 0 which fires Timer 0 count
     //   - PO.15 (right magnetic encoder) event connected to PPI channel 1 which fires Timer 1 count
-#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+#if defined(NRF5340_XXAA)
     NRF_GPIOTE->PUBLISH_IN[RPM_LEFT_GPIOTE_CHAN]  = RPM_LEFT_PPI_CHAN | (GPIOTE_PUBLISH_IN_EN_Enabled << GPIOTE_PUBLISH_IN_EN_Pos);
     RPM_LEFT_TIMER->SUBSCRIBE_COUNT               = RPM_LEFT_PPI_CHAN | (TIMER_SUBSCRIBE_COUNT_EN_Enabled << TIMER_SUBSCRIBE_COUNT_EN_Pos);
     NRF_GPIOTE->PUBLISH_IN[RPM_RIGHT_GPIOTE_CHAN] = RPM_RIGHT_PPI_CHAN | (GPIOTE_PUBLISH_IN_EN_Enabled << GPIOTE_PUBLISH_IN_EN_Pos);
