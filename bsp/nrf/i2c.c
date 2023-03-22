@@ -21,17 +21,20 @@
 
 //=========================== defines ==========================================
 
-#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
-#define DB_TWIM             (NRF_TWIM0_S)         ///< TWI peripheral used
+#if defined(NRF5340_XXAA)
+#if defined(NRF_APPLICATION)
+#define DB_TWIM (NRF_TWIM0_S)  ///< TWI peripheral used
+#elif defined(NRF_NETWORK)
+#define DB_TWIM (NRF_TWIM0_NS)  ///< TWI peripheral used
+#endif
 #define DB_TWIM_IRQ_HANDLER (SERIAL0_IRQHandler)  ///< TWI IRQ handler function
 #define DB_TWIM_IRQ         (SERIAL0_IRQn)        ///< TWI IRQ
-#define DB_TWIM_TX_BUF_SIZE (32U)                 ///< TX max buffer size
 #else
 #define DB_TWIM             (NRF_TWIM1)                                     ///< TWI peripheral used
 #define DB_TWIM_IRQ_HANDLER (SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQHandler)  ///< TWI IRQ handler function
 #define DB_TWIM_IRQ         (SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQn)        ///< TWI IRQ
-#define DB_TWIM_TX_BUF_SIZE (32U)                                           ///< TX max buffer size
 #endif
+#define DB_TWIM_TX_BUF_SIZE (32U)  ///< TX max buffer size
 
 typedef struct {
     uint8_t buffer[DB_TWIM_TX_BUF_SIZE];  ///< internal buffer used to send bytes on I2C bus
