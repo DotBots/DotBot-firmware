@@ -56,6 +56,9 @@ int main(void) {
                                     SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
                                     SPU_PERIPHID_PERM_PRESENT_IsPresent << SPU_PERIPHID_PERM_PRESENT_Pos);
 
+    // Configure non secure DPPI channels
+    NRF_SPU_S->DPPI[0].PERM = 0;
+
     // Mark both GPIO ports as non secure so all of their pins can be controlled by the network core
     NRF_SPU_S->GPIOPORT[0].PERM = 0;
     NRF_SPU_S->GPIOPORT[1].PERM = 0;
