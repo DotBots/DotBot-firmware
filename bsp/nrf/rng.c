@@ -13,6 +13,10 @@
 
 #include "rng.h"
 
+#if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
+#define NRF_RNG NRF_RNG_NS
+#endif
+
 //=========================== public ===========================================
 
 void db_rng_init(void) {

@@ -18,8 +18,12 @@
 
 //=========================== define ===========================================
 
-#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
-#define TIMER_HF          (NRF_TIMER2_S)       ///< Backend TIMER peripheral used by the timer
+#if defined(NRF5340_XXAA)
+#if defined(NRF_APPLICATION)
+#define TIMER_HF (NRF_TIMER2_S)  ///< Backend TIMER peripheral used by the timer
+#elif defined(NRF_NETWORK)
+#define TIMER_HF (NRF_TIMER2_NS)  ///< Backend TIMER peripheral used by the timer
+#endif
 #define TIMER_HF_IRQ      (TIMER2_IRQn)        ///< IRQ corresponding to the TIMER used
 #define TIMER_HF_ISR      (TIMER2_IRQHandler)  ///< ISR function handler corresponding to the TIMER used
 #define TIMER_HF_CB_CHANS (TIMER2_CC_NUM - 1)  ///< Number of channels that can be used for periodic callbacks
@@ -58,7 +62,7 @@ void db_timer_hf_init(void) {
     TIMER_HF->TASKS_CLEAR = 1;
     TIMER_HF->PRESCALER   = 4;  // Run TIMER at 1MHz
     TIMER_HF->BITMODE     = (TIMER_BITMODE_BITMODE_32Bit << TIMER_BITMODE_BITMODE_Pos);
-    TIMER_HF->INTENSET    = (TIMER_INTENSET_COMPARE5_Enabled << TIMER_INTENSET_COMPARE5_Pos);
+    TIMER_HF->INTENSET    = (1 << (TIMER_INTENSET_COMPARE0_Pos + TIMER_HF_CB_CHANS));
     NVIC_EnableIRQ(TIMER_HF_IRQ);
 
     // Start the timer
@@ -66,13 +70,13 @@ void db_timer_hf_init(void) {
 }
 
 uint32_t db_timer_hf_now(void) {
-    TIMER_HF->TASKS_CAPTURE[5] = 1;
-    return TIMER_HF->CC[5];
+    TIMER_HF->TASKS_CAPTURE[TIMER_HF_CB_CHANS] = 1;
+    return TIMER_HF->CC[TIMER_HF_CB_CHANS];
 }
 
 void db_timer_hf_set_periodic_us(uint8_t channel, uint32_t us, timer_hf_cb_t cb) {
-    assert(channel >= 0 && channel < TIMER_HF_CB_CHANS);  // Make sure the required channel is correct
-    assert(cb);                                           // Make sure the callback function is valid
+    assert(channel >= 0 && channel < TIMER_HF_CB_CHANS + 1);  // Make sure the required channel is correct
+    assert(cb);                                               // Make sure the callback function is valid
 
     _timer_hf_vars.timer_callback[channel].period_us = us;
     _timer_hf_vars.timer_callback[channel].one_shot  = false;
@@ -83,8 +87,8 @@ void db_timer_hf_set_periodic_us(uint8_t channel, uint32_t us, timer_hf_cb_t cb)
 }
 
 void db_timer_hf_set_oneshot_us(uint8_t channel, uint32_t us, timer_hf_cb_t cb) {
-    assert(channel >= 0 && channel < TIMER_HF_CB_CHANS);  // Make sure the required channel is correct
-    assert(cb);                                           // Make sure the callback function is valid
+    assert(channel >= 0 && channel < TIMER_HF_CB_CHANS + 1);  // Make sure the required channel is correct
+    assert(cb);                                               // Make sure the callback function is valid
 
     _timer_hf_vars.timer_callback[channel].period_us = us;
     _timer_hf_vars.timer_callback[channel].one_shot  = true;
@@ -104,7 +108,7 @@ void db_timer_hf_set_oneshot_s(uint8_t channel, uint32_t s, timer_hf_cb_t cb) {
 
 void db_timer_hf_delay_us(uint32_t us) {
     TIMER_HF->TASKS_CAPTURE[TIMER_HF_CB_CHANS] = 1;
-    TIMER_HF->CC[5] += us;
+    TIMER_HF->CC[TIMER_HF_CB_CHANS] += us;
     _timer_hf_vars.running = true;
     while (_timer_hf_vars.running) {
         __WFE();

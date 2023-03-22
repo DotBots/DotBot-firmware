@@ -23,6 +23,10 @@
 #define NRF_GPIOTE        NRF_GPIOTE0_S
 #define GPIOTE_IRQn       GPIOTE0_IRQn
 #define GPIOTE_IRQHandler GPIOTE0_IRQHandler
+#elif defined(NRF5340_XXAA) && defined(NRF_NETWORK)
+#define NRF_P0     NRF_P0_NS
+#define NRF_P1     NRF_P1_NS
+#define NRF_GPIOTE NRF_GPIOTE_NS
 #endif
 
 /**

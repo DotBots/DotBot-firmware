@@ -36,6 +36,9 @@ static gpio_vars_t _gpio_vars;
 
 void db_gpio_init(const gpio_t *gpio, gpio_mode_t mode) {
 
+    // Reset the pin configuration
+    nrf_port[gpio->port]->PIN_CNF[gpio->pin] = 0;
+
     switch (mode) {
         case DB_GPIO_OUT:
             nrf_port[gpio->port]->PIN_CNF[gpio->pin] |= GPIO_PIN_CNF_DIR_Output << GPIO_PIN_CNF_DIR_Pos;

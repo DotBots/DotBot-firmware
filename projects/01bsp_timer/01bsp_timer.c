@@ -21,7 +21,7 @@
 
 //=========================== variables =========================================
 
-#if defined(NRF5340_XXAA_APPLICATION)
+#if defined(NRF5340_XXAA)
 static const gpio_t led1 = { .port = 0, .pin = 28 };
 #else
 static const gpio_t led1 = { .port = 0, .pin = 13 };

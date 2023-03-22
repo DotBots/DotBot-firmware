@@ -19,6 +19,10 @@
 
 //=========================== defines ==========================================
 
+#if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
+#define NRF_RADIO NRF_RADIO_NS
+#endif
+
 #define PAYLOAD_MAX_LENGTH       UINT8_MAX
 #define RADIO_INTERRUPT_PRIORITY 1
 
@@ -75,7 +79,11 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
                            (RADIO_PCNF1_WHITEEN_Enabled << RADIO_PCNF1_WHITEEN_Pos);  // Enable data whitening feature.
     } else {
         // Long ranges modes (125KBit/500KBit)
+#if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
+        NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_Neg8dBm << RADIO_TXPOWER_TXPOWER_Pos);  // -8dBm Power output
+#else
         NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_Pos8dBm << RADIO_TXPOWER_TXPOWER_Pos);  // 8dBm Power output
+#endif
 
         // Coded PHY (Long range)
         NRF_RADIO->PCNF0 = (0 << RADIO_PCNF0_S1LEN_Pos) |

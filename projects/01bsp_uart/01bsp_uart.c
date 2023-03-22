@@ -25,7 +25,7 @@ typedef struct {
 
 //=========================== variables ========================================
 
-#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+#if defined(NRF5340_XXAA)
 static const gpio_t _rx_pin = { .pin = 0, .port = 1 };
 static const gpio_t _tx_pin = { .pin = 1, .port = 1 };
 #else
