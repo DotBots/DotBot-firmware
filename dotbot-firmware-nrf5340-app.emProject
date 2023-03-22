@@ -49,4 +49,5 @@
   <import file_name="bsp/bsp.emProject" />
   <import file_name="drv/drv.emProject" />
   <import file_name="projects/projects.emProject" />
+  <import file_name="projects/projects-nrf5340-app.emProject" />
 </solution>
