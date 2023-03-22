@@ -19,6 +19,8 @@
 
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
 #define DB_NRF_SPIM (NRF_SPIM0_S)
+#elif defined(NRF5340_XXAA) && defined(NRF_NETWORK)
+#define DB_NRF_SPIM (NRF_SPIM0_NS)
 #else
 #define DB_NRF_SPIM (NRF_SPIM0)
 #endif
