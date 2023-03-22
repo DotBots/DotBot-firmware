@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: ["nrf52833", "nrf5340-app"]
+        target: ["nrf52833", "nrf5340-app", "nrf5340-net"]
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
