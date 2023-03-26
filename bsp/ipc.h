@@ -41,6 +41,10 @@ typedef enum {
     DB_IPC_RADIO_RX_DIS_ACK,  ///< Acknowledment for radio rx disable
     DB_IPC_RADIO_TX_REQ,      ///< Request for radio tx
     DB_IPC_RADIO_TX_ACK,      ///< Acknowledment for radio tx
+    DB_IPC_RNG_INIT_REQ,      ///< Request for rng init
+    DB_IPC_RNG_INIT_ACK,      ///< Acknowledment for rng init
+    DB_IPC_RNG_READ_REQ,      ///< Request for rng read
+    DB_IPC_RNG_READ_ACK,      ///< Acknowledment for rng read
 } ipc_event_type_t;
 
 typedef struct {
@@ -73,9 +77,14 @@ typedef struct {
     ipc_radio_pdu_t            rx_param;
 } ipc_radio_data_t;
 
+typedef struct {
+    uint8_t value;
+} ipc_rng_data_t;
+
 typedef struct __attribute__((packed)) {
     ipc_event_type_t event;
     ipc_radio_data_t radio;
+    ipc_rng_data_t   rng;
 } ipc_shared_data_t;
 
 static inline void mutex_lock(void) {
