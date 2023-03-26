@@ -17,9 +17,9 @@
 //========================== functions =========================================
 
 static void _network_call(ipc_event_type_t req, ipc_event_type_t ack) {
-    ipc_shared_data.event = req;
-    mutex_unlock();
+    ipc_shared_data.event    = req;
     NRF_IPC_S->TASKS_SEND[1] = 1;
+    mutex_unlock();
     while (ipc_shared_data.event != ack) {}
 }
 

@@ -20,31 +20,16 @@
 #include "radio.h"
 #include "timer_hf.h"
 
-//=========================== defines ==========================================
-
-#define PAYLOAD_MAX_LENGTH UINT8_MAX
-
-typedef struct __attribute__((packed)) {
-    uint8_t header;                       ///< PDU header (depends on the type of PDU - advertising physical channel or Data physical channel)
-    uint8_t length;                       ///< Length of the payload + MIC (if any)
-    uint8_t payload[PAYLOAD_MAX_LENGTH];  ///< Payload + MIC (if any)
-} ble_radio_pdu_t;
-
-typedef struct {
-    ble_radio_pdu_t pdu;       ///< Variable that stores the radio PDU (protocol data unit) that arrives and the radio packets that are about to be sent.
-    radio_cb_t      callback;  ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
-} radio_vars_t;
-
 //=========================== variables ========================================
 
-static radio_vars_t _radio_vars = { 0 };
+static radio_cb_t _radio_callback = NULL;
 
 //========================== functions =========================================
 
 static void _network_call(ipc_event_type_t req, ipc_event_type_t ack) {
-    ipc_shared_data.event = req;
-    mutex_unlock();
+    ipc_shared_data.event    = req;
     NRF_IPC_S->TASKS_SEND[1] = 1;
+    mutex_unlock();
     while (ipc_shared_data.event != ack) {}
 }
 
@@ -89,7 +74,7 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
     }
 
     if (callback) {
-        _radio_vars.callback = callback;
+        _radio_callback = callback;
     }
 
     mutex_lock();
@@ -139,16 +124,8 @@ void db_radio_rx_disable(void) {
 void IPC_IRQHandler(void) {
     if (NRF_IPC_S->EVENTS_RECEIVE[0]) {
         NRF_IPC_S->EVENTS_RECEIVE[0] = 0;
-        if (ipc_shared_data.event == DB_IPC_RADIO_RX_REQ) {
-            mutex_lock();
-            _radio_vars.pdu.length = ipc_shared_data.radio.rx_param.length;
-            memcpy(_radio_vars.pdu.payload, (void *)ipc_shared_data.radio.rx_param.buffer, _radio_vars.pdu.length);
-            if (_radio_vars.callback) {
-                _radio_vars.callback(_radio_vars.pdu.payload, _radio_vars.pdu.length);
-            }
-            ipc_shared_data.event = DB_IPC_RADIO_RX_ACK;
-            mutex_unlock();
-            NRF_IPC_S->TASKS_SEND[1] = 1;
+        if (ipc_shared_data.event == DB_IPC_RADIO_RX_REQ && _radio_callback != NULL) {
+            _radio_callback((uint8_t *)ipc_shared_data.radio.rx_param.buffer, ipc_shared_data.radio.rx_param.length);
         }
     }
 
