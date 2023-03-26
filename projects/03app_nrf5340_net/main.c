@@ -12,12 +12,13 @@
 // Include BSP headers
 #include "ipc.h"
 #include "radio.h"
+#include "rng.h"
 
 //=========================== functions =========================================
 
 void radio_callback(uint8_t *packet, uint8_t length) {
     mutex_lock();
-    ipc_shared_data.event                         = DB_IPC_RADIO_RX_REQ;
+    ipc_shared_data.event                 = DB_IPC_RADIO_RX_REQ;
     ipc_shared_data.radio.rx_param.length = length;
     memcpy((void *)ipc_shared_data.radio.rx_param.buffer, packet, length);
     mutex_unlock();
@@ -94,6 +95,21 @@ int main(void) {
                 ipc_shared_data.event = DB_IPC_RADIO_TX_ACK;
                 mutex_unlock();
                 NRF_IPC_NS->TASKS_SEND[0] = 1;
+                break;
+            case DB_IPC_RNG_INIT_REQ:
+                mutex_lock();
+                db_rng_init();
+                ipc_shared_data.event = DB_IPC_RNG_INIT_ACK;
+                mutex_unlock();
+                NRF_IPC_NS->TASKS_SEND[0] = 1;
+                break;
+            case DB_IPC_RNG_READ_REQ:
+                mutex_lock();
+                db_rng_read((uint8_t *)&ipc_shared_data.rng.value);
+                ipc_shared_data.event = DB_IPC_RNG_READ_ACK;
+                mutex_unlock();
+                NRF_IPC_NS->TASKS_SEND[0] = 1;
+                break;
             default:
                 break;
         }
