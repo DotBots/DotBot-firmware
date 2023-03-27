@@ -21,8 +21,12 @@
 
 //=========================== defines ==========================================
 
-#define DB_BUFFER_MAX_BYTES (255U)                           ///< Max bytes in UART receive buffer
-#define DB_UART_BAUDRATE    (1000000UL)                      ///< UART baudrate used by the gateway
+#define DB_BUFFER_MAX_BYTES (255U)  ///< Max bytes in UART receive buffer
+#if defined(NRF5340_XXAA)
+#define DB_UART_BAUDRATE (460800UL)  ///< UART baudrate used by the gateway
+#else
+#define DB_UART_BAUDRATE (1000000UL)  ///< UART baudrate used by the gateway
+#endif
 #define DB_RADIO_QUEUE_SIZE (8U)                             ///< Size of the radio queue (must by a power of 2)
 #define DB_UART_QUEUE_SIZE  ((DB_BUFFER_MAX_BYTES + 1) * 2)  ///< Size of the UART queue size (must by a power of 2)
 
@@ -56,12 +60,21 @@ typedef struct {
 
 //=========================== variables ========================================
 
+#if defined(NRF5340_XXAA)
+static const gpio_t _rx_pin = { .pin = 0, .port = 1 };
+static const gpio_t _tx_pin = { .pin = 1, .port = 1 };
+static const gpio_t _btn1   = { .port = 0, .pin = 23 };
+static const gpio_t _btn2   = { .port = 0, .pin = 24 };
+static const gpio_t _btn3   = { .port = 0, .pin = 8 };
+static const gpio_t _btn4   = { .port = 0, .pin = 9 };
+#else
 static const gpio_t _rx_pin = { .pin = 8, .port = 0 };
 static const gpio_t _tx_pin = { .pin = 6, .port = 0 };
 static const gpio_t _btn1   = { .port = 0, .pin = 11 };
 static const gpio_t _btn2   = { .port = 0, .pin = 12 };
 static const gpio_t _btn3   = { .port = 0, .pin = 24 };
 static const gpio_t _btn4   = { .port = 0, .pin = 25 };
+#endif
 
 static gateway_vars_t _gw_vars;
 
