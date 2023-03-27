@@ -21,10 +21,10 @@
 
 //=========================== defines =========================================
 
-#define SPIM3_INTERRUPT_PRIORITY               2           ///< Interrupt priority, as high as it will go
-#define SPI3_BUFFER_SIZE                       64          ///< Size of buffers used for SPI communications
-#define SPI3_FAKE_SCK_PIN                      6           ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
-#define SPI3_FAKE_SCK_PORT                     1           ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
+#define SPIM_INTERRUPT_PRIORITY                2           ///< Interrupt priority, as high as it will go
+#define SPI_BUFFER_SIZE                        64          ///< Size of buffers used for SPI communications
+#define SPI_FAKE_SCK_PIN                       6           ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
+#define SPI_FAKE_SCK_PORT                      1           ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
 #define FUZZY_CHIP                             0xFF        ///< not sure what this is about
 #define LH2_LOCATION_ERROR_INDICATOR           0xFFFFFFFF  ///< indicate the location value is false
 #define LH2_POLYNOMIAL_ERROR_INDICATOR         0xFF        ///< indicate the polynomial index is invalid
@@ -32,19 +32,32 @@
 #define LH2_BUFFER_SIZE                        128         ///< buffer size containing lh2 frames
 #define GPIOTE_CH_IN_ENV_HiToLo                1           ///< falling edge gpio channel
 #define GPIOTE_CH_IN_ENV_LoToHi                2           ///< rising edge gpio channel
+#define PPI_SPI_START_CHAN                     2
+#define PPI_SPI_STOP_CHAN                      3
+
+#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+#define NRF_SPIM         NRF_SPIM4_S
+#define SPIM_IRQ         SPIM4_IRQn
+#define SPIM_IRQ_HANDLER SPIM4_IRQHandler
+#define NRF_GPIOTE       NRF_GPIOTE0_S
+#define NRF_PPI          NRF_DPPIC_S
+#else
+#define NRF_SPIM         NRF_SPIM3
+#define SPIM_IRQ         SPIM3_IRQn
+#define SPIM_IRQ_HANDLER SPIM3_IRQHandler
+#endif
 
 typedef struct {
-    uint32_t envelope_duration;        ///< initialize envelope duration storage variables
-    uint8_t  buffer[LH2_BUFFER_SIZE];  ///< arrays of bits for local storage, contents of SPI transfer are copied into this
-} lh2_data_t;
+    uint8_t buffer[LH2_BUFFER_SIZE];  ///< arrays of bits for local storage, contents of SPI transfer are copied into this
+} lh2_buffer_t;
 
 typedef struct {
-    uint8_t    transfer_counter;                 ///< counter of spi transfer in the current cycle
-    uint8_t    spi_rx_buffer[SPI3_BUFFER_SIZE];  ///< buffer where data coming from SPI are stored
-    bool       buffers_ready;                    ///< specify when data buffers are ready to be process
-    lh2_data_t data[LH2_LOCATIONS_COUNT];        ///< array containing demodulation data of each locations
-    uint8_t    lha_packet_counter;               ///< number of packet received from LHA
-    uint8_t    lhb_packet_counter;               ///< number of packet received from LHB
+    uint8_t      transfer_counter;                ///< counter of spi transfer in the current cycle
+    uint8_t      spi_rx_buffer[SPI_BUFFER_SIZE];  ///< buffer where data coming from SPI are stored
+    bool         buffers_ready;                   ///< specify when data buffers are ready to be process
+    lh2_buffer_t data[LH2_LOCATIONS_COUNT];       ///< array containing demodulation data of each locations
+    uint8_t      lha_packet_counter;              ///< number of packet received from LHA
+    uint8_t      lhb_packet_counter;              ///< number of packet received from LHB
 } lh2_vars_t;
 
 //=========================== variables ========================================
@@ -229,12 +242,7 @@ void _ppi_setup(void);
  *
  * @param[in]   gpio_d  pointer to gpio data
  */
-void _spi3_setup(const gpio_t *gpio_d);
-
-/**
- * @brief timer2 setup, in _ppi_setup() this timer will CLEAR/START at falling edge of envelop signal and STOP/CAPTURE at rising edge of envelope signal
- */
-void _timer2_setup(void);
+void _spi_setup(const gpio_t *gpio_d);
 
 //=========================== public ===========================================
 
@@ -246,10 +254,10 @@ void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
     _lh2_pin_set_input(gpio_d);                    // Data_pin will become the MISO pin
     _lh2_pin_set_output(&_lh2_spi_fake_sck_gpio);  // set SCK as Output.
 
-    _spi3_setup(gpio_d);
+    _spi_setup(gpio_d);
 
     // Setup the LH2 local variables
-    memset(_lh2_vars.spi_rx_buffer, 0, SPI3_BUFFER_SIZE);
+    memset(_lh2_vars.spi_rx_buffer, 0, SPI_BUFFER_SIZE);
     _lh2_vars.transfer_counter   = 0;
     _lh2_vars.lha_packet_counter = 0;
     _lh2_vars.lhb_packet_counter = 0;
@@ -262,14 +270,13 @@ void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
         lh2->raw_data[location].bit_offset           = 0;
         lh2->locations[location].selected_polynomial = LH2_POLYNOMIAL_ERROR_INDICATOR;
         lh2->locations[location].lfsr_location       = LH2_LOCATION_ERROR_INDICATOR;
-        _lh2_vars.data[location].envelope_duration   = 0xFFFFFFFF;
+        //_lh2_vars.data[location].envelope_duration   = 0xFFFFFFFF;
         memset(_lh2_vars.data[location].buffer, 0, LH2_BUFFER_SIZE);
     }
 
     // initialize GPIOTEs
     _gpiote_setup(gpio_e);
-    // initialize timer(s)
-    _timer2_setup();
+
     // initialize PPI
     _ppi_setup();
 
@@ -278,19 +285,14 @@ void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
 
 void db_lh2_start(db_lh2_t *lh2) {
     db_lh2_reset(lh2);
-    NRF_PPI->CHENSET = (PPI_CHENSET_CH2_Enabled << PPI_CHENSET_CH2_Pos) |
-                       //(PPI_CHENSET_CH3_Enabled << PPI_CHENSET_CH3_Pos);
-                       (PPI_CHENSET_CH4_Enabled << PPI_CHENSET_CH4_Pos) |
-                       (PPI_CHENSET_CH5_Enabled << PPI_CHENSET_CH5_Pos);
+    NRF_PPI->CHENSET = (1 << PPI_SPI_START_CHAN) | (1 << PPI_SPI_STOP_CHAN);
+
     lh2->state = DB_LH2_RUNNING;
 }
 
 void db_lh2_stop(db_lh2_t *lh2) {
-    NRF_PPI->CHENCLR = (PPI_CHENSET_CH2_Enabled << PPI_CHENSET_CH2_Pos) |
-                       //(PPI_CHENSET_CH3_Enabled << PPI_CHENSET_CH3_Pos);
-                       (PPI_CHENSET_CH4_Enabled << PPI_CHENSET_CH4_Pos) |
-                       (PPI_CHENSET_CH5_Enabled << PPI_CHENSET_CH5_Pos);
-    lh2->state = DB_LH2_IDLE;
+    NRF_PPI->CHENCLR = (1 << PPI_SPI_START_CHAN) | (1 << PPI_SPI_STOP_CHAN);
+    lh2->state       = DB_LH2_IDLE;
 }
 
 void db_lh2_reset(db_lh2_t *lh2) {
@@ -942,91 +944,75 @@ void _gpiote_setup(const gpio_t *gpio_e) {
 }
 
 void _ppi_setup(void) {
-    uint32_t gpiote_input_task_addr   = (uint32_t)&NRF_GPIOTE->EVENTS_IN[GPIOTE_CH_IN_ENV_HiToLo];
-    uint32_t envelope_input_LoToHi    = (uint32_t)&NRF_GPIOTE->EVENTS_IN[GPIOTE_CH_IN_ENV_LoToHi];
-    uint32_t spi3_start_task_addr     = (uint32_t)&NRF_SPIM3->TASKS_START;
-    uint32_t spi3_stop_task_addr      = (uint32_t)&NRF_SPIM3->TASKS_STOP;
-    uint32_t timer2_start_task_addr   = (uint32_t)&NRF_TIMER2->TASKS_START;
-    uint32_t timer2_stop_task_addr    = (uint32_t)&NRF_TIMER2->TASKS_STOP;
-    uint32_t timer2_capture_task_addr = (uint32_t)&NRF_TIMER2->TASKS_CAPTURE[0];
-    uint32_t timer2_clear_task_addr   = (uint32_t)&NRF_TIMER2->TASKS_CLEAR;
+#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+    NRF_GPIOTE->PUBLISH_IN[GPIOTE_CH_IN_ENV_HiToLo] = PPI_SPI_START_CHAN | (GPIOTE_PUBLISH_IN_EN_Enabled << GPIOTE_PUBLISH_IN_EN_Pos);
+    NRF_SPIM->SUBSCRIBE_START                       = PPI_SPI_START_CHAN | (SPIM_SUBSCRIBE_START_EN_Enabled << SPIM_SUBSCRIBE_START_EN_Pos);
 
-    NRF_PPI->CH[2].EEP   = gpiote_input_task_addr;  // envelope down
-    NRF_PPI->CH[2].TEP   = spi3_start_task_addr;    // start spi3 transfer
-    NRF_PPI->FORK[2].TEP = timer2_start_task_addr;  // start timer
+    NRF_GPIOTE->PUBLISH_IN[GPIOTE_CH_IN_ENV_LoToHi] = PPI_SPI_STOP_CHAN | (GPIOTE_PUBLISH_IN_EN_Enabled << GPIOTE_PUBLISH_IN_EN_Pos);
+    NRF_SPIM->SUBSCRIBE_STOP                        = PPI_SPI_STOP_CHAN | (SPIM_SUBSCRIBE_STOP_EN_Enabled << SPIM_SUBSCRIBE_STOP_EN_Pos);
+#else
+    uint32_t gpiote_input_task_addr = (uint32_t)&NRF_GPIOTE->EVENTS_IN[GPIOTE_CH_IN_ENV_HiToLo];
+    uint32_t envelope_input_LoToHi  = (uint32_t)&NRF_GPIOTE->EVENTS_IN[GPIOTE_CH_IN_ENV_LoToHi];
+    uint32_t spi_start_task_addr    = (uint32_t)&NRF_SPIM3->TASKS_START;
+    uint32_t spi_stop_task_addr     = (uint32_t)&NRF_SPIM3->TASKS_STOP;
 
-    // NRF_PPI->CH[3].EEP    = gpiote_input_task_addr;
-    // NRF_PPI->CH[3].TEP    = gpiote_output_task_addr;
+    NRF_PPI->CH[PPI_SPI_START_CHAN].EEP = gpiote_input_task_addr;  // envelope down
+    NRF_PPI->CH[PPI_SPI_START_CHAN].TEP = spi_start_task_addr;     // start spi3 transfer
 
-    NRF_PPI->CH[4].EEP   = envelope_input_LoToHi;     // envelope up, finished lh2 data
-    NRF_PPI->CH[4].TEP   = timer2_capture_task_addr;  // get time it took
-    NRF_PPI->FORK[4].TEP = timer2_stop_task_addr;     // stop timer
-
-    NRF_PPI->CH[5].EEP   = envelope_input_LoToHi;
-    NRF_PPI->CH[5].TEP   = timer2_clear_task_addr;  // clear timer
-    NRF_PPI->FORK[5].TEP = spi3_stop_task_addr;     // stop spi3 transfer
+    NRF_PPI->CH[3].EEP = envelope_input_LoToHi;  // envelope up, finished lh2 data
+    NRF_PPI->CH[3].TEP = spi_stop_task_addr;     // stop spi3 transfer
+#endif
 }
 
-void _spi3_setup(const gpio_t *gpio_d) {
+void _spi_setup(const gpio_t *gpio_d) {
     // Define the necessary Pins in the SPIM peripheral
-    NRF_SPIM3->PSEL.MISO = gpio_d->pin << SPIM_PSEL_MISO_PIN_Pos |                          // Define pin number for MISO pin
-                           gpio_d->port << SPIM_PSEL_MISO_PORT_Pos |                        // Define pin port for MISO pin
-                           SPIM_PSEL_MISO_CONNECT_Connected << SPIM_PSEL_MISO_CONNECT_Pos;  // Enable the MISO pin
+    NRF_SPIM->PSEL.MISO = gpio_d->pin << SPIM_PSEL_MISO_PIN_Pos |                          // Define pin number for MISO pin
+                          gpio_d->port << SPIM_PSEL_MISO_PORT_Pos |                        // Define pin port for MISO pin
+                          SPIM_PSEL_MISO_CONNECT_Connected << SPIM_PSEL_MISO_CONNECT_Pos;  // Enable the MISO pin
 
-    NRF_SPIM3->PSEL.SCK = _lh2_spi_fake_sck_gpio.pin << SPIM_PSEL_SCK_PIN_Pos |          // Define pin number for SCK pin
-                          _lh2_spi_fake_sck_gpio.port << SPIM_PSEL_SCK_PORT_Pos |        // Define pin port for SCK pin
-                          SPIM_PSEL_SCK_CONNECT_Connected << SPIM_PSEL_SCK_CONNECT_Pos;  // Enable the SCK pin
+    NRF_SPIM->PSEL.SCK = _lh2_spi_fake_sck_gpio.pin << SPIM_PSEL_SCK_PIN_Pos |          // Define pin number for SCK pin
+                         _lh2_spi_fake_sck_gpio.port << SPIM_PSEL_SCK_PORT_Pos |        // Define pin port for SCK pin
+                         SPIM_PSEL_SCK_CONNECT_Connected << SPIM_PSEL_SCK_CONNECT_Pos;  // Enable the SCK pin
 
-    NRF_SPIM3->PSEL.MOSI = (4UL) << SPIM_PSEL_MOSI_PIN_Pos |
-                           1 << SPIM_PSEL_MOSI_PORT_Pos |
-                           SPIM_PSEL_MOSI_CONNECT_Connected << SPIM_PSEL_MOSI_CONNECT_Pos;
+    NRF_SPIM->PSEL.MOSI = (4UL) << SPIM_PSEL_MOSI_PIN_Pos |
+                          1 << SPIM_PSEL_MOSI_PORT_Pos |
+                          SPIM_PSEL_MOSI_CONNECT_Connected << SPIM_PSEL_MOSI_CONNECT_Pos;
 
     // Configure the Interruptions
-    NVIC_ClearPendingIRQ(SPIM3_IRQn);
-    NVIC_DisableIRQ(SPIM3_IRQn);  // Disable interruptions while configuring
+    NVIC_ClearPendingIRQ(SPIM_IRQ);
+    NVIC_DisableIRQ(SPIM_IRQ);  // Disable interruptions while configuring
 
     // Configure the SPIM peripheral
-    NRF_SPIM3->FREQUENCY = SPIM_FREQUENCY_FREQUENCY_M32;                         // Set SPI frequency to 32MHz
-    NRF_SPIM3->CONFIG    = SPIM_CONFIG_ORDER_MsbFirst << SPIM_CONFIG_ORDER_Pos;  // Set MsB out first
+    NRF_SPIM->FREQUENCY = SPIM_FREQUENCY_FREQUENCY_M32;                         // Set SPI frequency to 32MHz
+    NRF_SPIM->CONFIG    = SPIM_CONFIG_ORDER_MsbFirst << SPIM_CONFIG_ORDER_Pos;  // Set MsB out first
 
     // Configure the EasyDMA channel, only using RX
-    NRF_SPIM3->RXD.MAXCNT = SPI3_BUFFER_SIZE;                   // Set the size of the input buffer.
-    NRF_SPIM3->RXD.PTR    = (uint32_t)_lh2_vars.spi_rx_buffer;  // Set the input buffer pointer.
+    NRF_SPIM->RXD.MAXCNT = SPI_BUFFER_SIZE;                    // Set the size of the input buffer.
+    NRF_SPIM->RXD.PTR    = (uint32_t)_lh2_vars.spi_rx_buffer;  // Set the input buffer pointer.
 
-    NRF_SPIM3->INTENSET = SPIM_INTENSET_END_Enabled << SPIM_INTENSET_END_Pos;  // Enable interruption for when a packet arrives
-    NVIC_SetPriority(SPIM3_IRQn, SPIM3_INTERRUPT_PRIORITY);                    // Set priority for Radio interrupts to 1
+    NRF_SPIM->INTENSET = SPIM_INTENSET_END_Enabled << SPIM_INTENSET_END_Pos;  // Enable interruption for when a packet arrives
+    NVIC_SetPriority(SPIM_IRQ, SPIM_INTERRUPT_PRIORITY);                      // Set priority for Radio interrupts to 1
     // Enable SPIM interruptions
-    NVIC_EnableIRQ(SPIM3_IRQn);
+    NVIC_EnableIRQ(SPIM_IRQ);
 
     // Enable the SPIM peripheral
-    NRF_SPIM3->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
-}
-
-void _timer2_setup(void) {
-    NRF_TIMER2->BITMODE   = TIMER_BITMODE_BITMODE_32Bit;
-    NRF_TIMER2->PRESCALER = (0UL);  // 16 MHz clock counter
-
-    // timer will START at falling edge of the envelope signal
-    // timer will STOP at rising edge of the envelope signal
-    // it is the processor's responsibility to read this timer's count value and reset it
+    NRF_SPIM->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
 }
 
 //=========================== interrupts =======================================
 
-void SPIM3_IRQHandler(void) {
+void SPIM_IRQ_HANDLER(void) {
     // Check if the interrupt was caused by a fully send package
-    if (NRF_SPIM3->EVENTS_END) {
+    if (NRF_SPIM->EVENTS_END) {
         // Clear the Interrupt flag
-        NRF_SPIM3->EVENTS_END = 0;
+        NRF_SPIM->EVENTS_END = 0;
         _lh2_vars.transfer_counter++;
         // load global SPI buffer (_lh2_vars.spi_rx_buffer) into four local arrays (_lh2_vars.data[0].buffer ... _lh2_vars.data[3].buffer)
         if (_lh2_vars.transfer_counter == 1) {
-            memcpy(_lh2_vars.data[0].buffer, _lh2_vars.spi_rx_buffer, SPI3_BUFFER_SIZE);
-            _lh2_vars.data[0].envelope_duration = NRF_TIMER2->CC[0];
+            memcpy(_lh2_vars.data[0].buffer, _lh2_vars.spi_rx_buffer, SPI_BUFFER_SIZE);
         } else if (_lh2_vars.transfer_counter == 2) {
-            memcpy(_lh2_vars.data[1].buffer, _lh2_vars.spi_rx_buffer, SPI3_BUFFER_SIZE);
-            _lh2_vars.data[1].envelope_duration = NRF_TIMER2->CC[0];
-            _lh2_vars.buffers_ready             = true;
+            memcpy(_lh2_vars.data[1].buffer, _lh2_vars.spi_rx_buffer, SPI_BUFFER_SIZE);
+            _lh2_vars.buffers_ready = true;
         }
     }
 }

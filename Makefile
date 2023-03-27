@@ -9,7 +9,7 @@ NRF_TARGET ?= nrf52833
 PROJECT_FILE ?= dotbot-firmware-$(NRF_TARGET).emProject
 
 ifeq (nrf5340-app,$(NRF_TARGET))
-  PROJECTS ?= 01bsp_gpio 01bsp_i2c 01bsp_motors 01bsp_rgbled 01bsp_rpm 01bsp_timer 01bsp_timer_hf 01bsp_uart 01drv_lis2mdl 01drv_pid
+  PROJECTS ?= 01bsp_gpio 01bsp_i2c 01bsp_lighthouse 01bsp_motors 01bsp_rgbled 01bsp_rpm 01bsp_timer 01bsp_timer_hf 01bsp_uart 01drv_lis2mdl 01drv_pid
 else ifeq (nrf5340-net,$(NRF_TARGET))
   PROJECTS ?= 01bsp_gpio 01bsp_i2c 01bsp_motors 01bsp_radio_txrx 01bsp_radio_lr_txrx 01bsp_rgbled 01bsp_rng 01bsp_rpm 01bsp_timer 01bsp_timer_hf 01bsp_uart 01drv_lis2mdl 01drv_pid
 else
