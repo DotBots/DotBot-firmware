@@ -128,6 +128,4 @@ void IPC_IRQHandler(void) {
             _radio_callback((uint8_t *)ipc_shared_data.radio.rx_param.buffer, ipc_shared_data.radio.rx_param.length);
         }
     }
-
-    NVIC_ClearPendingIRQ(IPC_IRQn);
 }

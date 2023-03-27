@@ -214,8 +214,6 @@ void radio_init_common(radio_cb_t callback) {
  */
 void RADIO_IRQHandler(void) {
 
-    NVIC_ClearPendingIRQ(RADIO_IRQn);
-
     // Check if the interrupt was caused by a fully received package
     if (NRF_RADIO->EVENTS_END) {
         NRF_RADIO->EVENTS_END = 0;
