@@ -33,7 +33,6 @@ typedef enum {
     DB_IPC_RADIO_CHAN_ACK,    ///< Acknowledment for radio set channel
     DB_IPC_RADIO_ADDR_REQ,    ///< Request for radio set network address
     DB_IPC_RADIO_ADDR_ACK,    ///< Acknowledment for radio set network address
-    DB_IPC_RADIO_RX_REQ,      ///< Request for radio rx
     DB_IPC_RADIO_RX_EN_REQ,   ///< Request for radio rx enable
     DB_IPC_RADIO_RX_EN_ACK,   ///< Acknowledment for radio rx enable
     DB_IPC_RADIO_RX_DIS_REQ,  ///< Request for radio rx disable
@@ -45,6 +44,12 @@ typedef enum {
     DB_IPC_RNG_READ_REQ,      ///< Request for rng read
     DB_IPC_RNG_READ_ACK,      ///< Acknowledment for rng read
 } ipc_event_type_t;
+
+typedef enum {
+    DB_IPC_CHAN_REQ      = 0,  ///< Channel used for request events
+    DB_IPC_CHAN_ACK      = 1,  ///< Channel used for acknownlegment events
+    DB_IPC_CHAN_RADIO_RX = 2,  ///< Channel used for radio RX events
+} ipc_channels_t;
 
 typedef struct {
     db_radio_ble_mode_t mode;  ///< Radio mode (2Mbit/s, 1Mbit/s, LR500kbit/s, LR125kbit/s

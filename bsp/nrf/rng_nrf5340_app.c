@@ -17,8 +17,8 @@
 //========================== functions =========================================
 
 static void _network_call(ipc_event_type_t req, ipc_event_type_t ack) {
-    ipc_shared_data.event    = req;
-    NRF_IPC_S->TASKS_SEND[1] = 1;
+    ipc_shared_data.event                  = req;
+    NRF_IPC_S->TASKS_SEND[DB_IPC_CHAN_REQ] = 1;
     mutex_unlock();
     while (ipc_shared_data.event != ack) {}
 }
@@ -47,9 +47,8 @@ void db_rng_init(void) {
                                     SPU_RAMREGION_PERM_WRITE_Enable << SPU_RAMREGION_PERM_WRITE_Pos |
                                     SPU_RAMREGION_PERM_SECATTR_Non_Secure << SPU_RAMREGION_PERM_SECATTR_Pos);
 
-    NRF_IPC_S->INTENSET       = IPC_INTENSET_RECEIVE0_Enabled << IPC_INTENSET_RECEIVE0_Pos;
-    NRF_IPC_S->SEND_CNF[1]    = IPC_SEND_CNF_CHEN1_Enable << IPC_SEND_CNF_CHEN1_Pos;
-    NRF_IPC_S->RECEIVE_CNF[0] = IPC_SEND_CNF_CHEN0_Enable << IPC_SEND_CNF_CHEN0_Pos;
+    NRF_IPC_S->SEND_CNF[DB_IPC_CHAN_REQ]    = 1 << DB_IPC_CHAN_REQ;
+    NRF_IPC_S->RECEIVE_CNF[DB_IPC_CHAN_ACK] = 1 << DB_IPC_CHAN_ACK;
 
     NVIC_EnableIRQ(IPC_IRQn);
 
@@ -75,9 +74,7 @@ void db_rng_read(uint8_t *value) {
 //=========================== interrupt handlers ===============================
 
 void IPC_IRQHandler(void) {
-    if (NRF_IPC_S->EVENTS_RECEIVE[0]) {
-        NRF_IPC_S->EVENTS_RECEIVE[0] = 0;
+    if (NRF_IPC_S->EVENTS_RECEIVE[DB_IPC_CHAN_ACK]) {
+        NRF_IPC_S->EVENTS_RECEIVE[DB_IPC_CHAN_ACK] = 0;
     }
-
-    NVIC_ClearPendingIRQ(IPC_IRQn);
 }
