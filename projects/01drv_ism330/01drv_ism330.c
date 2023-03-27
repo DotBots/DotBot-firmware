@@ -15,22 +15,32 @@
 
 //=========================== defines ==========================================
 
-
-
 //=========================== variables ========================================
 
-ism330_acc_data_t acc_data;
+ism330_acc_data_t  acc_data;
 ism330_gyro_data_t gyro_data;
 
-    //=========================== main =============================================
+///! IMU SDA pin
+static const gpio_t _ism330_sda_gpio = {
+    .port = 0,
+    .pin  = 10,
+};
 
-    /**
-     *  @brief The program starts executing here.
-     */
+///! IMU SCL pin
+static const gpio_t _ism330_scl_gpio = {
+    .port = 0,
+    .pin  = 9,
+};
+
+//=========================== main =============================================
+
+/**
+ *  @brief The program starts executing here.
+ */
 int main(void) {
 
     db_board_init();
-    db_ism330_init();
+    db_ism330_init(&_ism330_sda_gpio, &_ism330_scl_gpio);
     db_timer_hf_init();
 
     db_timer_hf_delay_ms(500);

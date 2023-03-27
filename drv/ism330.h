@@ -3,9 +3,9 @@
 
 /**
  * @file ism300.h
- * @addtogroup BSP
+ * @addtogroup DRV
  *
- * @brief  bsp module for the ISM330DHCXTR IMU.
+ * @brief  drv module for the ISM330DHCXTR IMU.
  *
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  *
@@ -51,18 +51,6 @@
 
 //=========================== variables ========================================
 
-///! IMU SDA pin
-static const gpio_t _ism330_sda_gpio = {
-    .port = 0,
-    .pin  = 10,
-};
-
-///! IMU SCL pin
-static const gpio_t _ism330_scl_gpio = {
-    .port = 0,
-    .pin  = 9,
-};
-
 ///! Data type to store the accelerometer data in [cm/s^2]
 typedef struct {
     float x;  ///< X axis
@@ -83,17 +71,10 @@ typedef struct {
  * @brief Initialize the IMU, configures the data rate and range for all the sensors.
  *        Also activates  the High-Pass filter for the Gyro.
  *
- *
+ * @param[in]   sda  pointer to gpio serial data pin
+ * @param[in]   scl  pointer to gpio serial clock pin
  */
-void db_ism330_init(void);
-
-// /**
-//  * @brief Configure
-//  * 
-//  * @param[in] range           Range of the data for the accelerometer. Accepted values +-(2,4,8,16) g
-//  * @param[in] data_rate       pointer to struct that represents the SDA pin
-//  */
-// void db_ism330_accel_config(int8_t range, int16_t data_rate);
+void db_ism330_init(const gpio_t *sda, const gpio_t *sck);
 
 /**
  * @brief Read the X, Y and Z values for the accelerometer.
@@ -102,14 +83,6 @@ void db_ism330_init(void);
  * @param[out] data       Output vector of the accelerometer 
  */
 void db_ism330_accel_read(ism330_acc_data_t *data);
-
-/**
- * @brief Begin transmission on I2C
- *
- * @param[in] range           Range of the data for the gyroscapo. Accepted values +-(125,250,500,1000,2000,4000) dps
- * @param[in] data_rate       pointer to struct that represents the SDA pin
- */
-// void db_ism330_gyro_config(int8_t range, int16_t data_rate);
 
 /**
  * @brief Read the X, Y and Z values for the gyroscope.

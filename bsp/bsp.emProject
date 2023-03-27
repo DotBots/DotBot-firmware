@@ -72,14 +72,6 @@
     <file file_name="nrf/i2c.c" />
     <file file_name="i2c.h" />
   </project>
-  <project Name="00bsp_ism330">
-    <configuration
-      Name="Common"
-      project_directory="."
-      project_type="Library" />
-    <file file_name="nrf/ism330.c" />
-    <file file_name="ism330.h" />
-  </project>
   <project Name="00bsp_pwm">
     <configuration
       Name="Common"
