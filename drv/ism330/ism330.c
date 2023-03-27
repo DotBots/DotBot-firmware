@@ -1,8 +1,8 @@
 /**
- * @file i2c.c
- * @addtogroup BSP
+ * @file ism330.c
+ * @addtogroup DRV
  *
- * @brief  bsp module for the ISM330DHCXTR IMU.
+ * @brief  drv module for the ISM330DHCXTR IMU.
  *
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  *
@@ -13,7 +13,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 #include <nrf.h>
 #include "gpio.h"
