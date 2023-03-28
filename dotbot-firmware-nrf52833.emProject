@@ -40,6 +40,7 @@
     link_linker_script_file="$(ProjectDir)/../../nRF/nrf52833/Device/Linker/ses_nrf52833_xxaa.icf"
     link_time_optimization="No"
     linker_memory_map_file="$(ProjectDir)/../../nRF/nrf52833/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
+    linker_output_format="hex"
     linker_section_placement_file="$(ProjectDir)/../../nRF/nrf52833/flash_placement.xml"
     macros="BuildTarget=nrf52833;ClockImplementationFile=clock.c;Lh2ImplementationFile=lh2.c;PwmImplementationFile=pwm.c;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceCommonHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceSystemFile=$(ProjectDir)/../../../nRF/nrf52833/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/../../../nRF/nrf52833/Device/Startup/ses_startup_nrf52833.s;DeviceCommonVectorsFile=$(ProjectDir)/../../../nRF/nrf52833/Device/Startup/ses_startup_nrf_common.s;SeggerThumbStartup=$(ProjectDir)/../../../nRF/nrf52833/SEGGER_THUMB_Startup.s;DeviceLinkerScript=$(ProjectDir)/../../../nRF/nrf52833/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/../../../nRF/nrf52833/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
     project_type="Executable"

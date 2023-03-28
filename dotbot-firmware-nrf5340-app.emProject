@@ -37,6 +37,7 @@
     link_linker_script_file="$(ProjectDir)/../../nRF/nrf5340/nRF_Flash_Variant2.icf"
     link_time_optimization="No"
     linker_memory_map_file="$(PackagesDir)/nRF/XML/nRF5340_xxAA_Application_MemoryMap.xml"
+    linker_output_format="hex"
     linker_printf_fmt_level="int"
     linker_printf_fp_enabled="Float"
     linker_printf_width_precision_supported="Yes"
