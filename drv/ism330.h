@@ -80,7 +80,7 @@ void db_ism330_init(const gpio_t *sda, const gpio_t *sck);
  * @brief Read the X, Y and Z values for the accelerometer.
  *        returned as a vector of 3 floats [x, y, z], in cm/s^2
  *
- * @param[out] data       Output vector of the accelerometer 
+ * @param[out] data       Output vector of the accelerometer
  */
 void db_ism330_accel_read(ism330_acc_data_t *data);
 
