@@ -29,22 +29,30 @@
     debug_stack_pointer_start="__stack_end__"
     debug_start_from_entry_point_symbol="No"
     debug_target_connection="J-Link"
-    gcc_debugging_level="Level 2"
     gcc_enable_all_warnings="Yes"
     gcc_entry_point="Reset_Handler"
-    gcc_omit_frame_pointer="Yes"
-    gcc_optimization_level="Level 2 for size"
     link_linker_script_file="$(ProjectDir)/../../nRF/nrf5340/nRF_Flash_Variant3.icf"
     link_time_optimization="No"
     linker_memory_map_file="$(PackagesDir)/nRF/XML/nRF5340_xxAA_Network_MemoryMap.xml"
+    linker_output_format="hex"
     linker_printf_fmt_level="int"
     linker_printf_width_precision_supported="Yes"
     macros="BuildTarget=nrf5340-net;ClockImplementationFile=clock_nrf5340_net.c;Lh2ImplementationFile=lh2.c;PwmImplementationFile=pwm_nrf5340_net.c;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf5340_network.h;DeviceCommonHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceSystemFile=$(PackagesDir)/nRF/Device/Source/system_nrf5340_network.c;DeviceVectorsFile=$(PackagesDir)/nRF/Source/nrf5340_network_Vectors.s;DeviceCommonVectorsFile=$(PackagesDir)/nRF/Source/nRF_Startup.s;SeggerThumbStartup=$(ProjectDir)/../../../nRF/nrf5340/SEGGER_THUMB_Startup.s;DeviceLinkerScript=$(ProjectDir)/../../../nRF/nrf5340/nRF_Flash_Variant3.icf;DeviceMemoryMap=$(PackagesDir)/nRF/XML/nRF5340_xxAA_Network_MemoryMap.xml;DeviceFamily=nRF;Target=nRF5340_xxAA_Network"
     project_type="Executable"
     target_reset_script="Reset();"
     target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
-  <configuration Name="Debug" c_preprocessor_definitions="DEBUG" />
-  <configuration Name="Release" c_preprocessor_definitions="NDEBUG" />
+  <configuration
+    Name="Debug"
+    c_preprocessor_definitions="DEBUG"
+    gcc_debugging_level="Level 3"
+    gcc_omit_frame_pointer="Yes"
+    gcc_optimization_level="None" />
+  <configuration
+    Name="Release"
+    c_preprocessor_definitions="NDEBUG"
+    gcc_debugging_level="Level 2"
+    gcc_omit_frame_pointer="Yes"
+    gcc_optimization_level="Level 2 balanced" />
   <import file_name="bsp/bsp.emProject" />
   <import file_name="drv/drv.emProject" />
   <import file_name="projects/projects.emProject" />

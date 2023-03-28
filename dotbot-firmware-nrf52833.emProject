@@ -32,21 +32,29 @@
     debug_stack_pointer_start="__stack_end__"
     debug_start_from_entry_point_symbol="No"
     debug_target_connection="J-Link"
-    gcc_debugging_level="Level 2"
     gcc_enable_all_warnings="Yes"
     gcc_entry_point="Reset_Handler"
-    gcc_omit_frame_pointer="Yes"
-    gcc_optimization_level="Level 2 for size"
     link_linker_script_file="$(ProjectDir)/../../nRF/nrf52833/Device/Linker/ses_nrf52833_xxaa.icf"
     link_time_optimization="No"
     linker_memory_map_file="$(ProjectDir)/../../nRF/nrf52833/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
+    linker_output_format="hex"
     linker_section_placement_file="$(ProjectDir)/../../nRF/nrf52833/flash_placement.xml"
     macros="BuildTarget=nrf52833;ClockImplementationFile=clock.c;Lh2ImplementationFile=lh2.c;PwmImplementationFile=pwm.c;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceCommonHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceSystemFile=$(ProjectDir)/../../../nRF/nrf52833/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/../../../nRF/nrf52833/Device/Startup/ses_startup_nrf52833.s;DeviceCommonVectorsFile=$(ProjectDir)/../../../nRF/nrf52833/Device/Startup/ses_startup_nrf_common.s;SeggerThumbStartup=$(ProjectDir)/../../../nRF/nrf52833/SEGGER_THUMB_Startup.s;DeviceLinkerScript=$(ProjectDir)/../../../nRF/nrf52833/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/../../../nRF/nrf52833/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
     project_type="Executable"
     target_reset_script="Reset();"
     target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
-  <configuration Name="Debug" c_preprocessor_definitions="DEBUG" />
-  <configuration Name="Release" c_preprocessor_definitions="NDEBUG" />
+  <configuration
+    Name="Debug"
+    c_preprocessor_definitions="DEBUG"
+    gcc_debugging_level="Level 3"
+    gcc_omit_frame_pointer="Yes"
+    gcc_optimization_level="None" />
+  <configuration
+    Name="Release"
+    c_preprocessor_definitions="NDEBUG"
+    gcc_debugging_level="Level 2"
+    gcc_omit_frame_pointer="Yes"
+    gcc_optimization_level="Level 2 balanced" />
   <import file_name="bsp/bsp.emProject" />
   <import file_name="drv/drv.emProject" />
   <import file_name="projects/projects.emProject" />
