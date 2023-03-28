@@ -28,6 +28,7 @@ CLANG_FORMAT_TYPE ?= file
 ARTIFACT_PROJECTS ?= 03app_dotbot 03app_sailbot 03app_dotbot_gateway
 ARTIFACT_ELF = $(foreach app,$(ARTIFACT_PROJECTS),projects/$(app)/Output/$(NRF_TARGET)/$(BUILD_CONFIG)/Exe/$(app)-$(NRF_TARGET).elf)
 ARTIFACT_HEX = $(ARTIFACT_ELF:.elf=.hex)
+ARTIFACTS = $(ARTIFACT_ELF) $(ARTIFACT_HEX)
 
 
 .PHONY: $(PROJECTS) $(ARTIFACT_PROJECTS) artifacts docker docker-release format check-format
@@ -45,7 +46,9 @@ list-projects:
 
 clean:
 	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -config $(BUILD_CONFIG) -clean
-	rm -f $(ARTIFACT_HEX)
+
+distclean: clean
+	rm -rf artifacts/
 
 format:
 	@$(CLANG_FORMAT) -i --style=$(CLANG_FORMAT_TYPE) $(SRCS)
@@ -53,14 +56,9 @@ format:
 check-format:
 	@$(CLANG_FORMAT) --dry-run --Werror --style=$(CLANG_FORMAT_TYPE) $(SRCS)
 
-$(ARTIFACT_ELF): $(ARTIFACT_PROJECTS)
-
-$(ARTIFACT_HEX): $(ARTIFACT_ELF)
-	objcopy -O ihex $(subst .hex,.elf,$@) $@
-
-artifacts: $(ARTIFACT_HEX)
+artifacts: $(ARTIFACT_PROJECTS)
 	@mkdir -p artifacts
-	@for artifact in "$(ARTIFACT_ELF) $(ARTIFACT_HEX)"; do \
+	@for artifact in "$(ARTIFACTS)"; do \
 		cp $${artifact} artifacts/.; \
 		done
 	@ls -l artifacts/
