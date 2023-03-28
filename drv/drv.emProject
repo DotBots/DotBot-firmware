@@ -38,4 +38,13 @@
     <file file_name="lis2mdl.c" />
     <file file_name="../lis2mdl.h" />
   </project>
+  <project Name="00drv_ism330">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_i2c(bsp)"
+      project_directory="ism330"
+      project_type="Library" />
+    <file file_name="ism330.c" />
+    <file file_name="../ism330.h" />
+  </project>
 </solution>
