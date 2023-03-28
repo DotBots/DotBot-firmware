@@ -471,7 +471,7 @@
   <project Name="01drv_ism330">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_i2c(bsp);00drv_ism330(drv);00bsp_dotbot_board(bsp);00bsp_timer_hf(bsp)"
+      project_dependencies="00drv_ism330(drv);00bsp_dotbot_board(bsp);00bsp_timer_hf(bsp)"
       project_directory="01drv_ism330"
       project_type="Executable" />
     <folder Name="Device Files">
