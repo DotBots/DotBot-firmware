@@ -15,16 +15,17 @@ jobs:
       fail-fast: false
       matrix:
         target: ["nrf52833", "nrf5340-app", "nrf5340-net"]
+        config: ["Debug", "Release"]
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
       - name: Build projects
-        run: NRF_TARGET=${{ matrix.target }} make docker
+        run: NRF_TARGET=${{ matrix.target }} BUILD_CONFIG=${{ matrix.config }} make docker
       - name: Build for release and convert elf artifacts to hex
-        if: matrix.target == 'nrf52833'
-        run: NRF_TARGET=${{ matrix.target }} DOCKER_TARGETS="artifacts" BUILD_CONFIG=Release make docker
+        if: matrix.target == 'nrf52833' && matrix.config == 'Release'
+        run: NRF_TARGET=${{ matrix.target }} DOCKER_TARGETS="artifacts" BUILD_CONFIG=${{ matrix.config }} make docker
       - name: Upload artifact
-        if: matrix.target == 'nrf52833'
+        if: matrix.target == 'nrf52833' && matrix.config == 'Release'
         uses: actions/upload-artifact@v3
         with:
           name: artifacts
