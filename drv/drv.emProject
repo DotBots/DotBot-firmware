@@ -2,7 +2,9 @@
 <solution Name="drv" target="8" version="2">
   <configuration
     Name="Common"
-    c_user_include_directories="$(SolutionDir);$(SolutionDir)/../bsp;$(PackagesDir)/nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include" />
+    c_user_include_directories="$(SolutionDir);$(SolutionDir)/../bsp;$(PackagesDir)/nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
+    build_output_directory="Output/$(BuildTarget)/$(Configuration)/Obj"
+    build_output_file_name="$(OutDir)/$(ProjectName)-$(BuildTarget)$(LIB)" />
   <project Name="00drv_dotbot_hdlc">
     <configuration
       Name="Common"
