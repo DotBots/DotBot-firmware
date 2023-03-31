@@ -13,17 +13,18 @@
 #include "board.h"
 #include "gpio.h"
 #include "radio.h"
-#include "timer.h"
+#include "timer_hf.h"
 
 //=========================== defines ===========================================
 
-#define DELAY_MS   (100)
-#define RADIO_FREQ (8)
+#define DELAY_MS   (100)                 // Wait 100ms between each send
+#define RADIO_FREQ (8)                   // Set the frequency to 2408 MHz
+#define RADIO_MODE (DB_RADIO_BLE_1MBit)  // Use BLE 1Mbit/s
 
 //=========================== variables =========================================
 
 static const uint8_t packet_tx[] = {
-    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x00   // ABCDEFG
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x00  // ABCDEFG
 };
 
 #if defined(NRF5340_XXAA)
@@ -52,19 +53,18 @@ int main(void) {
     //=========================== Initialize GPIO and timer =====================
 
     db_gpio_init(&_dbg_pin, DB_GPIO_OUT);
-    db_timer_init();
+    db_timer_hf_init();
 
     //=========================== Configure Radio ===============================
 
-    db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);
-    db_radio_set_frequency(RADIO_FREQ);  // Set the RX frquency to 2408 MHz.
-    db_radio_rx_enable();
+    db_radio_init(&radio_callback, RADIO_MODE);
+    db_radio_set_frequency(RADIO_FREQ);
 
     while (1) {
         db_radio_rx_disable();
         db_radio_tx((uint8_t *)packet_tx, sizeof(packet_tx) / sizeof(packet_tx[0]));
         db_radio_rx_enable();
-        db_timer_delay_ms(DELAY_MS);
+        db_timer_hf_delay_ms(DELAY_MS);
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.

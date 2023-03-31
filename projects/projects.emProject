@@ -159,7 +159,7 @@
   <project Name="01bsp_radio_lr_txrx">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_dotbot_board(bsp);00bsp_radio(bsp);00bsp_gpio(bsp)"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_radio(bsp);00bsp_gpio(bsp);00bsp_timer_hf(bsp)"
       project_directory="01bsp_radio_lr_txrx"
       project_type="Executable" />
     <folder Name="Device Files">
@@ -198,7 +198,7 @@
   <project Name="01bsp_radio_txrx">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_dotbot_board(bsp);00bsp_radio(bsp);00bsp_gpio(bsp);00bsp_timer(bsp)"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_radio(bsp);00bsp_gpio(bsp);00bsp_timer_hf(bsp)"
       project_directory="01bsp_radio_txrx"
       project_type="Executable" />
     <folder Name="Device Files">
