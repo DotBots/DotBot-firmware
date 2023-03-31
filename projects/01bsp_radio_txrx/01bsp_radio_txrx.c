@@ -15,11 +15,15 @@
 #include "radio.h"
 #include "timer.h"
 
+//=========================== defines ===========================================
+
+#define DELAY_MS   (100)
+#define RADIO_FREQ (8)
+
 //=========================== variables =========================================
 
-static uint8_t packet_tx[] = {
-    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48,
-    0x49, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x00
+static const uint8_t packet_tx[] = {
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x00   // ABCDEFG
 };
 
 #if defined(NRF5340_XXAA)
@@ -31,8 +35,8 @@ static const gpio_t _dbg_pin = { .port = 0, .pin = 13 };
 //=========================== functions =========================================
 
 static void radio_callback(uint8_t *packet, uint8_t length) {
-    printf("packet received (%dB): %s\n", length, (char *)packet);
     db_gpio_toggle(&_dbg_pin);
+    printf("packet received (%dB): %s\n", length, (char *)packet);
 }
 
 //=========================== main ==============================================
@@ -53,13 +57,14 @@ int main(void) {
     //=========================== Configure Radio ===============================
 
     db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);
-    db_radio_set_frequency(8);  // Set the RX frquency to 2408 MHz.
+    db_radio_set_frequency(RADIO_FREQ);  // Set the RX frquency to 2408 MHz.
+    db_radio_rx_enable();
 
     while (1) {
         db_radio_rx_disable();
-        db_radio_tx(packet_tx, sizeof(packet_tx) / sizeof(packet_tx[0]));
+        db_radio_tx((uint8_t *)packet_tx, sizeof(packet_tx) / sizeof(packet_tx[0]));
         db_radio_rx_enable();
-        db_timer_delay_ms(100);
+        db_timer_delay_ms(DELAY_MS);
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.

@@ -9,19 +9,31 @@
  * @copyright Inria, 2023
  */
 #include <nrf.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "ipc.h"
 #include "rng.h"
 
+//========================== variables =========================================
+
+static bool _ack_received[] = {
+    [DB_IPC_NET_READY_ACK] = false,
+    [DB_IPC_RNG_INIT_ACK]  = false,
+    [DB_IPC_RNG_READ_ACK]  = false,
+};
+
 //========================== functions =========================================
 
-static void _network_call(ipc_event_type_t req, ipc_event_type_t ack) {
-    ipc_shared_data.event                  = req;
-    NRF_IPC_S->TASKS_SEND[DB_IPC_CHAN_REQ] = 1;
-    mutex_unlock();
-    while (ipc_shared_data.event != ack) {}
-}
+static inline void _network_call(ipc_event_type_t req, ipc_event_type_t ack) {
+    if (req != DB_IPC_NONE) {
+        ipc_shared_data.event                  = req;
+        NRF_IPC_S->TASKS_SEND[DB_IPC_CHAN_REQ] = 1;
+        mutex_unlock();
+    }
+    while (!_ack_received[ack]) {}
+    _ack_received[ack] = false;
+};
 
 //=========================== public ===========================================
 
@@ -47,18 +59,25 @@ void db_rng_init(void) {
                                     SPU_RAMREGION_PERM_WRITE_Enable << SPU_RAMREGION_PERM_WRITE_Pos |
                                     SPU_RAMREGION_PERM_SECATTR_Non_Secure << SPU_RAMREGION_PERM_SECATTR_Pos);
 
+    NRF_IPC_S->INTENSET                     = 1 << DB_IPC_CHAN_ACK;
     NRF_IPC_S->SEND_CNF[DB_IPC_CHAN_REQ]    = 1 << DB_IPC_CHAN_REQ;
     NRF_IPC_S->RECEIVE_CNF[DB_IPC_CHAN_ACK] = 1 << DB_IPC_CHAN_ACK;
 
     NVIC_EnableIRQ(IPC_IRQn);
+    NVIC_ClearPendingIRQ(IPC_IRQn);
+    NVIC_SetPriority(IPC_IRQn, IPC_IRQ_PRIORITY);
 
     // Start the network core
     if (NRF_RESET_S->NETWORK.FORCEOFF != 0) {
-        NRF_RESET_S->NETWORK.FORCEOFF = 0;
-
-        while (ipc_shared_data.event != DB_IPC_NET_READY_REQ) {
-            __WFE();
-        }
+        db_timer_hf_init();
+        *(volatile uint32_t *)0x50005618ul = 1ul;
+        NRF_RESET_S->NETWORK.FORCEOFF      = (RESET_NETWORK_FORCEOFF_FORCEOFF_Release << RESET_NETWORK_FORCEOFF_FORCEOFF_Pos);
+        db_timer_hf_delay_us(5);  // Wait for at least five microseconds
+        NRF_RESET_S->NETWORK.FORCEOFF = (RESET_NETWORK_FORCEOFF_FORCEOFF_Hold << RESET_NETWORK_FORCEOFF_FORCEOFF_Pos);
+        db_timer_hf_delay_us(5);  // Wait for at least one microsecond
+        NRF_RESET_S->NETWORK.FORCEOFF      = (RESET_NETWORK_FORCEOFF_FORCEOFF_Release << RESET_NETWORK_FORCEOFF_FORCEOFF_Pos);
+        *(volatile uint32_t *)0x50005618ul = 0ul;
+        _network_call(DB_IPC_NONE, DB_IPC_NET_READY_ACK);
     }
 
     mutex_lock();
@@ -76,5 +95,8 @@ void db_rng_read(uint8_t *value) {
 void IPC_IRQHandler(void) {
     if (NRF_IPC_S->EVENTS_RECEIVE[DB_IPC_CHAN_ACK]) {
         NRF_IPC_S->EVENTS_RECEIVE[DB_IPC_CHAN_ACK] = 0;
+        mutex_lock();
+        _ack_received[ipc_shared_data.event] = true;
+        mutex_unlock();
     }
 }

@@ -14,18 +14,19 @@
 #include "ipc.h"
 #include "radio.h"
 #include "rng.h"
+#include "gpio.h"
 
 //=========================== variables =========================================
 
-static bool _data_received = false;
+static bool             _data_received  = false;
+static ipc_event_type_t _event_received = DB_IPC_NONE;
 
 //=========================== functions =========================================
 
 void radio_callback(uint8_t *packet, uint8_t length) {
     mutex_lock();
-    ipc_shared_data.radio.rx_param.length = length;
-    memcpy((void *)ipc_shared_data.radio.rx_param.buffer, packet, length);
-    mutex_unlock();
+    ipc_shared_data.radio.rx_pdu.length = length;
+    memcpy((void *)ipc_shared_data.radio.rx_pdu.buffer, packet, length);
     _data_received = true;
 }
 
@@ -38,45 +39,46 @@ int main(void) {
     NRF_IPC_NS->RECEIVE_CNF[DB_IPC_CHAN_REQ]   = 1 << DB_IPC_CHAN_REQ;
 
     NVIC_EnableIRQ(IPC_IRQn);
+    NVIC_ClearPendingIRQ(IPC_IRQn);
+    NVIC_SetPriority(IPC_IRQn, 1);
 
     mutex_lock();
-    ipc_shared_data.event                   = DB_IPC_NET_READY_REQ;
+    ipc_shared_data.event                   = DB_IPC_NET_READY_ACK;
     NRF_IPC_NS->TASKS_SEND[DB_IPC_CHAN_ACK] = 1;
     mutex_unlock();
 
     while (1) {
         __WFE();
         if (_data_received) {
-            mutex_lock();
-            NRF_IPC_NS->TASKS_SEND[2] = 1;
+            _data_received                               = false;
+            NRF_IPC_NS->TASKS_SEND[DB_IPC_CHAN_RADIO_RX] = 1;
             mutex_unlock();
-            _data_received = false;
         }
-        switch (ipc_shared_data.event) {
+        switch (_event_received) {
             case DB_IPC_RADIO_INIT_REQ:
                 mutex_lock();
-                db_radio_init(&radio_callback, ipc_shared_data.radio.init_param.mode);
+                db_radio_init(&radio_callback, ipc_shared_data.radio.mode);
                 ipc_shared_data.event                   = DB_IPC_RADIO_INIT_ACK;
                 NRF_IPC_NS->TASKS_SEND[DB_IPC_CHAN_ACK] = 1;
                 mutex_unlock();
                 break;
             case DB_IPC_RADIO_FREQ_REQ:
                 mutex_lock();
-                db_radio_set_frequency(ipc_shared_data.radio.freq_param.frequency);
+                db_radio_set_frequency(ipc_shared_data.radio.frequency);
                 ipc_shared_data.event                   = DB_IPC_RADIO_FREQ_ACK;
                 NRF_IPC_NS->TASKS_SEND[DB_IPC_CHAN_ACK] = 1;
                 mutex_unlock();
                 break;
             case DB_IPC_RADIO_CHAN_REQ:
                 mutex_lock();
-                db_radio_set_channel(ipc_shared_data.radio.chan_param.channel);
+                db_radio_set_channel(ipc_shared_data.radio.channel);
                 ipc_shared_data.event                   = DB_IPC_RADIO_CHAN_ACK;
                 NRF_IPC_NS->TASKS_SEND[DB_IPC_CHAN_ACK] = 1;
                 mutex_unlock();
                 break;
             case DB_IPC_RADIO_ADDR_REQ:
                 mutex_lock();
-                db_radio_set_network_address(ipc_shared_data.radio.addr_param.addr);
+                db_radio_set_network_address(ipc_shared_data.radio.addr);
                 ipc_shared_data.event                   = DB_IPC_RADIO_ADDR_ACK;
                 NRF_IPC_NS->TASKS_SEND[DB_IPC_CHAN_ACK] = 1;
                 mutex_unlock();
@@ -97,7 +99,7 @@ int main(void) {
                 break;
             case DB_IPC_RADIO_TX_REQ:
                 mutex_lock();
-                db_radio_tx((uint8_t *)ipc_shared_data.radio.tx_param.buffer, ipc_shared_data.radio.tx_param.length);
+                db_radio_tx((uint8_t *)ipc_shared_data.radio.tx_pdu.buffer, ipc_shared_data.radio.tx_pdu.length);
                 ipc_shared_data.event                   = DB_IPC_RADIO_TX_ACK;
                 NRF_IPC_NS->TASKS_SEND[DB_IPC_CHAN_ACK] = 1;
                 mutex_unlock();
@@ -105,25 +107,27 @@ int main(void) {
             case DB_IPC_RNG_INIT_REQ:
                 mutex_lock();
                 db_rng_init();
-                ipc_shared_data.event = DB_IPC_RNG_INIT_ACK;
-                mutex_unlock();
+                ipc_shared_data.event                   = DB_IPC_RNG_INIT_ACK;
                 NRF_IPC_NS->TASKS_SEND[DB_IPC_CHAN_ACK] = 1;
+                mutex_unlock();
                 break;
             case DB_IPC_RNG_READ_REQ:
                 mutex_lock();
                 db_rng_read((uint8_t *)&ipc_shared_data.rng.value);
-                ipc_shared_data.event = DB_IPC_RNG_READ_ACK;
-                mutex_unlock();
+                ipc_shared_data.event                   = DB_IPC_RNG_READ_ACK;
                 NRF_IPC_NS->TASKS_SEND[DB_IPC_CHAN_ACK] = 1;
+                mutex_unlock();
                 break;
             default:
                 break;
         }
+        _event_received = DB_IPC_NONE;
     };
 }
 
 void IPC_IRQHandler(void) {
     if (NRF_IPC_NS->EVENTS_RECEIVE[DB_IPC_CHAN_REQ]) {
         NRF_IPC_NS->EVENTS_RECEIVE[DB_IPC_CHAN_REQ] = 0;
+        _event_received                             = ipc_shared_data.event;
     }
 }

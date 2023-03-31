@@ -24,13 +24,29 @@
 
 static radio_cb_t _radio_callback = NULL;
 
+static bool _ack_received[] = {
+    [DB_IPC_NET_READY_ACK]    = false,
+    [DB_IPC_RADIO_INIT_ACK]   = false,
+    [DB_IPC_RADIO_FREQ_ACK]   = false,
+    [DB_IPC_RADIO_CHAN_ACK]   = false,
+    [DB_IPC_RADIO_ADDR_ACK]   = false,
+    [DB_IPC_RADIO_RX_EN_ACK]  = false,
+    [DB_IPC_RADIO_RX_DIS_ACK] = false,
+    [DB_IPC_RADIO_TX_ACK]     = false,
+    [DB_IPC_RNG_INIT_ACK]     = false,
+    [DB_IPC_RNG_READ_ACK]     = false,
+};
+
 //========================== functions =========================================
 
-static void _network_call(ipc_event_type_t req, ipc_event_type_t ack) {
-    ipc_shared_data.event                  = req;
-    NRF_IPC_S->TASKS_SEND[DB_IPC_CHAN_REQ] = 1;
-    mutex_unlock();
-    while (ipc_shared_data.event != ack) {}
+static inline void _network_call(ipc_event_type_t req, ipc_event_type_t ack) {
+    if (req != DB_IPC_NONE) {
+        ipc_shared_data.event                  = req;
+        NRF_IPC_S->TASKS_SEND[DB_IPC_CHAN_REQ] = 1;
+        mutex_unlock();
+    }
+    while (!_ack_received[ack]) {}
+    _ack_received[ack] = false;
 }
 
 //=========================== public ===========================================
@@ -66,12 +82,13 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
     NRF_IPC_S->RECEIVE_CNF[DB_IPC_CHAN_RADIO_RX] = 1 << DB_IPC_CHAN_RADIO_RX;
 
     NVIC_EnableIRQ(IPC_IRQn);
+    NVIC_ClearPendingIRQ(IPC_IRQn);
+    NVIC_SetPriority(IPC_IRQn, IPC_IRQ_PRIORITY);
 
     // Start the network core
     if (NRF_RESET_S->NETWORK.FORCEOFF != 0) {
         NRF_RESET_S->NETWORK.FORCEOFF = 0;
-
-        while (ipc_shared_data.event != DB_IPC_NET_READY_REQ) {}
+        _network_call(DB_IPC_NONE, DB_IPC_NET_READY_ACK);
     }
 
     if (callback) {
@@ -79,32 +96,32 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
     }
 
     mutex_lock();
-    ipc_shared_data.radio.init_param.mode = mode;
+    ipc_shared_data.radio.mode = mode;
     _network_call(DB_IPC_RADIO_INIT_REQ, DB_IPC_RADIO_INIT_ACK);
 }
 
 void db_radio_set_frequency(uint8_t freq) {
     mutex_lock();
-    ipc_shared_data.radio.freq_param.frequency = freq;
+    ipc_shared_data.radio.frequency = freq;
     _network_call(DB_IPC_RADIO_FREQ_REQ, DB_IPC_RADIO_FREQ_ACK);
 }
 
 void db_radio_set_channel(uint8_t channel) {
     mutex_lock();
-    ipc_shared_data.radio.chan_param.channel = channel;
+    ipc_shared_data.radio.channel = channel;
     _network_call(DB_IPC_RADIO_CHAN_REQ, DB_IPC_RADIO_CHAN_ACK);
 }
 
 void db_radio_set_network_address(uint32_t addr) {
     mutex_lock();
-    ipc_shared_data.radio.addr_param.addr = addr;
+    ipc_shared_data.radio.addr = addr;
     _network_call(DB_IPC_RADIO_ADDR_REQ, DB_IPC_RADIO_ADDR_ACK);
 }
 
 void db_radio_tx(uint8_t *tx_buffer, uint8_t length) {
     mutex_lock();
-    ipc_shared_data.radio.tx_param.length = length;
-    memcpy((void *)ipc_shared_data.radio.tx_param.buffer, tx_buffer, length);
+    ipc_shared_data.radio.tx_pdu.length = length;
+    memcpy((void *)ipc_shared_data.radio.tx_pdu.buffer, tx_buffer, length);
     _network_call(DB_IPC_RADIO_TX_REQ, DB_IPC_RADIO_TX_ACK);
 }
 
@@ -118,18 +135,21 @@ void db_radio_rx_disable(void) {
     _network_call(DB_IPC_RADIO_RX_DIS_REQ, DB_IPC_RADIO_RX_DIS_ACK);
 }
 
-//=========================== private ==========================================
-
 //=========================== interrupt handlers ===============================
 
 void IPC_IRQHandler(void) {
     if (NRF_IPC_S->EVENTS_RECEIVE[DB_IPC_CHAN_ACK]) {
         NRF_IPC_S->EVENTS_RECEIVE[DB_IPC_CHAN_ACK] = 0;
+        mutex_lock();
+        _ack_received[ipc_shared_data.event] = true;
+        mutex_unlock();
     }
     if (NRF_IPC_S->EVENTS_RECEIVE[DB_IPC_CHAN_RADIO_RX]) {
         NRF_IPC_S->EVENTS_RECEIVE[DB_IPC_CHAN_RADIO_RX] = 0;
         if (_radio_callback) {
-            _radio_callback((uint8_t *)ipc_shared_data.radio.rx_param.buffer, ipc_shared_data.radio.rx_param.length);
+            mutex_lock();
+            _radio_callback((uint8_t *)ipc_shared_data.radio.rx_pdu.buffer, ipc_shared_data.radio.rx_pdu.length);
+            mutex_unlock();
         }
     }
 }

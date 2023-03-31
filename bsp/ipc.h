@@ -13,8 +13,10 @@
  */
 
 #include <nrf.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include "radio.h"
+#include "timer_hf.h"
 
 #if defined(NRF_APPLICATION)
 #define NRF_MUTEX NRF_MUTEX_NS
@@ -22,9 +24,11 @@
 #define NRF_MUTEX NRF_APPMUTEX_NS
 #endif
 
+#define IPC_IRQ_PRIORITY (1)
+
 typedef enum {
     DB_IPC_NONE,              ///< Sorry, but nothing
-    DB_IPC_NET_READY_REQ,     ///< Network core is ready
+    DB_IPC_NET_READY_ACK,     ///< Network core is ready
     DB_IPC_RADIO_INIT_REQ,    ///< Request for radio initialization
     DB_IPC_RADIO_INIT_ACK,    ///< Acknowledment for radio initialization
     DB_IPC_RADIO_FREQ_REQ,    ///< Request for radio set frequency
@@ -51,34 +55,18 @@ typedef enum {
     DB_IPC_CHAN_RADIO_RX = 2,  ///< Channel used for radio RX events
 } ipc_channels_t;
 
-typedef struct {
-    db_radio_ble_mode_t mode;  ///< Radio mode (2Mbit/s, 1Mbit/s, LR500kbit/s, LR125kbit/s
-} ipc_radio_init_param_t;
-
-typedef struct {
-    uint8_t frequency;  ///< Radio frequency
-} ipc_radio_set_freq_param_t;
-
-typedef struct {
-    uint8_t channel;  ///< Radio channel
-} ipc_radio_set_chan_param_t;
-
-typedef struct {
-    uint32_t addr;
-} ipc_radio_set_addr_param_t;  ///< Network address used to configure the radio
-
-typedef struct {
+typedef struct __attribute__((packed)) {
     uint8_t length;             ///< Length of the pdu in bytes
     uint8_t buffer[UINT8_MAX];  ///< Buffer containing the pdu data
 } ipc_radio_pdu_t;
 
-typedef struct {
-    ipc_radio_init_param_t     init_param;  ///< db_radio_init function parameters
-    ipc_radio_set_freq_param_t freq_param;  ///< db_set_frequency function parameters
-    ipc_radio_set_chan_param_t chan_param;  ///< db_set_channel function parameters
-    ipc_radio_set_addr_param_t addr_param;  ///< db_set_network_address function parameters
-    ipc_radio_pdu_t            tx_param;    ///< PDU to send
-    ipc_radio_pdu_t            rx_param;    ///< Received pdu
+typedef struct __attribute__((packed)) {
+    db_radio_ble_mode_t mode;       ///< db_radio_init function parameters
+    uint8_t             frequency;  ///< db_set_frequency function parameters
+    uint8_t             channel;    ///< db_set_channel function parameters
+    uint32_t            addr;       ///< db_set_network_address function parameters
+    ipc_radio_pdu_t     tx_pdu;     ///< PDU to send
+    ipc_radio_pdu_t     rx_pdu;     ///< Received pdu
 } ipc_radio_data_t;
 
 typedef struct {
