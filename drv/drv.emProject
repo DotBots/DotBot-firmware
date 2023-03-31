@@ -47,4 +47,12 @@
     <file file_name="ism330.c" />
     <file file_name="../ism330.h" />
   </project>
+  <project Name="00drv_ekf">
+    <configuration
+      Name="Common"
+      project_directory="ekf"
+      project_type="Library" />
+    <file file_name="ekf.c" />
+    <file file_name="../ekf.h" />
+  </project>
 </solution>

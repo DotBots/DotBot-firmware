@@ -19,17 +19,22 @@
 #include "board.h"
 #include "device.h"
 #include "lh2.h"
-#include "protocol.h"
 #include "motors.h"
 #include "radio.h"
-#include "rgbled.h"
 #include "timer.h"
+#include "timer_hf.h"
+// Include DRV hearders
+#include "ekf.h"
+#include "protocol.h"
+#include "rgbled.h"
+#include "ism330.h"
 
 //=========================== defines ==========================================
 
 #define DB_LH2_UPDATE_DELAY_MS    (100U)   ///< 100ms delay between each LH2 data refresh
 #define DB_ADVERTIZEMENT_DELAY_MS (500U)   ///< 500ms delay between each advertizement packet sending
 #define DB_TIMEOUT_CHECK_DELAY_MS (200U)   ///< 200ms delay between each timeout delay check
+#define DB_EKF_PREDICT_DELAY_US   (20000U) ///< 20ms delay between each EKF prediction
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
 #define DB_LH2_FULL_COMPUTATION   (false)  ///< Wether the full LH2 computation is perform on board
 #define DB_LH2_COUNTER_MASK       (0x07)   ///< Maximum number of lh2 iterations without value received
@@ -55,6 +60,12 @@ typedef struct {
     bool                     update_lh2;                         ///< Whether LH2 data must be processed
     uint8_t                  lh2_update_counter;                 ///< Counter used to track when lh2 data were received and to determine if an advertizement packet is needed
     uint64_t                 device_id;                          ///< Device ID of the DotBot
+    // EKF variables
+    bool                     ekf_predict_and_gyro_flag;                   ///< Whether to run an EKF predict
+    KalmanFilter_t           ekf;                                ///< State variables of the kalman filter.
+    ism330_gyro_data_t       gyro;                               ///< Current angular speed, as read from the gyroscope. in [rad/s]
+    ism330_acc_data_t        acc;                                ///< Current Acceleration, as read from the accelerometer. in [cm/s^2]
+
 } dotbot_vars_t;
 
 //=========================== variables ========================================
@@ -71,15 +82,29 @@ static const gpio_t _lh2_d_gpio = {
     .pin  = 29,
 };
 
+///! IMU SDA pin
+static const gpio_t _ism330_sda_gpio = {
+    .port = 0,
+    .pin  = 10,
+};
+
+///! IMU SCL pin
+static const gpio_t _ism330_scl_gpio = {
+    .port = 0,
+    .pin  = 9,
+};
+
 static dotbot_vars_t _dotbot_vars;
 
 //=========================== prototypes =======================================
 
 static void _timeout_check(void);
 static void _advertise(void);
-static void _compute_angle(const protocol_lh2_location_t *next, const protocol_lh2_location_t *origin, int16_t *angle);
+static void _compute_angle_2(const protocol_lh2_location_t *next, const protocol_lh2_location_t *origin, int16_t *angle);
 static void _update_control_loop(void);
 static void _update_lh2(void);
+static void _ekf_predict_and_gyro_flag_update(void);
+int16_t _angle_overflow(int16_t deg);
 
 //=========================== callbacks ========================================
 
@@ -123,14 +148,28 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             case DB_PROTOCOL_LH2_LOCATION:
             {
                 const protocol_lh2_location_t *location = (const protocol_lh2_location_t *)cmd_ptr;
-                int16_t                        angle    = -1000;
-                _compute_angle(location, &_dotbot_vars.last_location, &angle);
-                if (angle != DB_DIRECTION_INVALID) {
-                    _dotbot_vars.last_location.x = location->x;
-                    _dotbot_vars.last_location.y = location->y;
-                    _dotbot_vars.last_location.z = location->z;
-                    _dotbot_vars.direction       = angle;
-                }
+                //  THIS IS THE OLD ANGLE ESTIMATION CODE.
+                // int16_t                        angle    = -1000;
+                // _compute_angle(location, &_dotbot_vars.last_location, &angle);
+                // if (angle != DB_DIRECTION_INVALID) {
+                //     _dotbot_vars.last_location.x = location->x;
+                //     _dotbot_vars.last_location.y = location->y;
+                //     _dotbot_vars.last_location.z = location->z;
+                //     _dotbot_vars.direction       = angle;
+                // }
+
+                // RUN EKF UPDATE LH2 HERE
+                // ######################################################################
+                // EKF assumes that the PyDotBot controller was calibrated  with a 40x40cm box
+                float  lh2_pos[] = {location->x * 2e-4, location->y * 2e-4};  // the 2e-4 is what you have to multiply what comes from the LH2 to convert to [cm]
+                EKF_update_lh2_xy(&_dotbot_vars.ekf, lh2_pos);
+                // Update the dotbot variables with the current estimate.
+                _dotbot_vars.last_location.x = (int32_t)(_dotbot_vars.ekf.x * 5e3); // 5e3 == 1/(2e-4), it transforms the [cm] of the ekf back into the units used by the rest of the code.
+                _dotbot_vars.last_location.y = (int32_t)(_dotbot_vars.ekf.y * 5e3);
+                _dotbot_vars.last_location.z = location->z;
+                _dotbot_vars.direction       = (int16_t)(_dotbot_vars.ekf.theta * 180 / M_PI);
+                // ######################################################################
+                // Set the flag to run the controller.
                 _dotbot_vars.update_control_loop = (_dotbot_vars.control_mode == ControlAuto);
             } break;
             case DB_PROTOCOL_CONTROL_MODE:
@@ -163,9 +202,17 @@ int main(void) {
     db_board_init();
     db_rgbled_init();
     db_motors_init();
+    db_ism330_init(&_ism330_sda_gpio, &_ism330_scl_gpio);
     db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);
     db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
     db_radio_rx_enable();       // Start receiving packets.
+
+    // Initialize the EKF
+    _dotbot_vars.ekf_predict_and_gyro_flag = false;
+    float x0[] =  {0,0,0,0,0};
+    float P0[] =  {6.25e+04, 6.25e+04, 9.8696044e+00, 2.5e+01, 9.8696044e+00};  // Initial covariance according to http://dx.doi.org/10.1021/ie300415d.
+    EKF_init(&_dotbot_vars.ekf, x0 ,P0);
+    
 
     // Set an invalid heading since the value is unknown on startup.
     // Control loop is stopped and advertize packets are sent
@@ -179,9 +226,11 @@ int main(void) {
     _dotbot_vars.device_id = db_device_id();
 
     db_timer_init();
+    db_timer_hf_init();
     db_timer_set_periodic_ms(0, DB_TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
     db_timer_set_periodic_ms(1, DB_ADVERTIZEMENT_DELAY_MS, &_advertise);
     db_timer_set_periodic_ms(2, DB_LH2_UPDATE_DELAY_MS, &_update_lh2);
+    db_timer_hf_set_periodic_us(0, DB_EKF_PREDICT_DELAY_US, &_ekf_predict_and_gyro_flag_update);
     db_lh2_init(&_dotbot_vars.lh2, &_lh2_d_gpio, &_lh2_e_gpio);
     db_lh2_start(&_dotbot_vars.lh2);
 
@@ -232,6 +281,19 @@ int main(void) {
             db_radio_rx_enable();
             _dotbot_vars.advertize = false;
         }
+ 
+        if (_dotbot_vars.ekf_predict_and_gyro_flag) {
+
+            // Also read and update the Gyro
+            db_ism330_gyro_read(&_dotbot_vars.gyro);
+            EKF_update_gyro_W(&_dotbot_vars.ekf,_dotbot_vars.gyro.z);
+
+            // Run the ekf prediction step
+            EKF_predict(&_dotbot_vars.ekf, 0.002);
+            _dotbot_vars.ekf_predict_and_gyro_flag = false;
+
+        }
+ 
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
@@ -264,13 +326,14 @@ static void _update_control_loop(void) {
     } else {
         // compute angle to target waypoint
         int16_t angleToTarget = 0;
-        _compute_angle(&_dotbot_vars.waypoints.points[_dotbot_vars.next_waypoint_idx], &_dotbot_vars.last_location, &angleToTarget);
-        int16_t errorAngle = angleToTarget - _dotbot_vars.direction;
-        if (errorAngle < -180) {
-            errorAngle += 360;
-        } else if (errorAngle > 180) {
-            errorAngle -= 360;
-        }
+        _compute_angle_2(&_dotbot_vars.waypoints.points[_dotbot_vars.next_waypoint_idx], &_dotbot_vars.last_location, &angleToTarget);
+        int16_t errorAngle = _angle_overflow(angleToTarget - _dotbot_vars.direction);
+        // if (errorAngle < -180) {
+        //     errorAngle += 360;
+        // } else if (errorAngle > 180) {
+        //     errorAngle -= 360;
+        // }
+
         if (errorAngle > 20 || errorAngle < -20) {
             speedReductionFactor = DB_REDUCE_SPEED_FACTOR;
         }
@@ -287,20 +350,33 @@ static void _update_control_loop(void) {
     }
 }
 
-static void _compute_angle(const protocol_lh2_location_t *next, const protocol_lh2_location_t *origin, int16_t *angle) {
+// This is my implementation of the angle between two points
+static void _compute_angle_2(const protocol_lh2_location_t *next, const protocol_lh2_location_t *origin, int16_t *angle) {
     float dx       = ((float)next->x - (float)origin->x) / 1e6;
     float dy       = ((float)next->y - (float)origin->y) / 1e6;
-    float distance = sqrtf(powf(dx, 2) + powf(dy, 2));
 
-    if (distance < DB_DIRECTION_THRESHOLD) {
-        return;
+    float temp_angle = atan2f(dy,dx)  * 180 / M_PI;
+
+    *angle = _angle_overflow((int16_t)temp_angle);
+}
+
+int16_t _angle_overflow(int16_t deg)
+{
+    // Calculate the equivalent angle between -2π and +2π
+    int16_t angle_mod = deg % 360;
+
+    // If the angle is less than -π, add 2π to make it positive
+    if (angle_mod < -180)
+    {
+        angle_mod += 360;
+    }
+    // If the angle is greater than +π, subtract 2π to make it negative
+    else if (angle_mod > 180)
+    {
+        angle_mod -= 360;
     }
 
-    int8_t sideFactor = (dx > 0) ? -1 : 1;
-    *angle            = (int16_t)(acosf(dy / distance) * 180 / M_PI) * sideFactor;
-    if (*angle < 0) {
-        *angle = 360 + *angle;
-    }
+    return angle_mod;
 }
 
 static void _timeout_check(void) {
@@ -316,4 +392,8 @@ static void _advertise(void) {
 
 static void _update_lh2(void) {
     _dotbot_vars.update_lh2 = true;
+}
+
+static void _ekf_predict_and_gyro_flag_update(void) {
+    _dotbot_vars.ekf_predict_and_gyro_flag = true;
 }

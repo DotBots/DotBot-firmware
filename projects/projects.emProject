@@ -588,7 +588,7 @@
   <project Name="03app_dotbot">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_lh2(bsp);00bsp_dotbot_motors(bsp);00bsp_timer(bsp);00drv_dotbot_hdlc(drv);00drv_dotbot_protocol(drv);00bsp_dotbot_rgbled(bsp);00bsp_radio(bsp)"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_lh2(bsp);00bsp_dotbot_motors(bsp);00bsp_timer(bsp);00drv_dotbot_hdlc(drv);00drv_dotbot_protocol(drv);00bsp_dotbot_rgbled(bsp);00bsp_radio(bsp);00drv_ekf(drv);00drv_ism330(drv);00bsp_timer_hf(bsp)"
       project_directory="03app_dotbot"
       project_type="Executable" />
     <folder Name="Device Files">
