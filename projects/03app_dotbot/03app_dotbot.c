@@ -60,6 +60,7 @@ typedef struct {
     bool                     update_lh2;                         ///< Whether LH2 data must be processed
     uint8_t                  lh2_update_counter;                 ///< Counter used to track when lh2 data were received and to determine if an advertizement packet is needed
     uint64_t                 device_id;                          ///< Device ID of the DotBot
+    int16_t                  angle_to_target;                      ///< Angle from the DotBot to the next waypoint, in degrees.
     // EKF variables
     bool                     ekf_predict_and_gyro_flag;                   ///< Whether to run an EKF predict
     KalmanFilter_t           ekf;                                ///< State variables of the kalman filter.
@@ -105,6 +106,7 @@ static void _update_control_loop(void);
 static void _update_lh2(void);
 static void _ekf_predict_and_gyro_flag_update(void);
 int16_t _angle_overflow(int16_t deg);
+static void _radio_ekf_debug_data(void);
 
 //=========================== callbacks ========================================
 
@@ -328,6 +330,10 @@ static void _update_control_loop(void) {
         int16_t angleToTarget = 0;
         _compute_angle_2(&_dotbot_vars.waypoints.points[_dotbot_vars.next_waypoint_idx], &_dotbot_vars.last_location, &angleToTarget);
         int16_t errorAngle = _angle_overflow(angleToTarget - _dotbot_vars.direction);
+
+        // Send debug information to the Gateway.
+        _dotbot_vars.angle_to_target = angleToTarget;
+        _radio_ekf_debug_data();
         // if (errorAngle < -180) {
         //     errorAngle += 360;
         // } else if (errorAngle > 180) {
@@ -396,4 +402,50 @@ static void _update_lh2(void) {
 
 static void _ekf_predict_and_gyro_flag_update(void) {
     _dotbot_vars.ekf_predict_and_gyro_flag = true;
+}
+
+// Send data from the ekf and the controller back to the gateway for debugging purposes.
+static void _radio_ekf_debug_data(void){
+
+    // Current size of the packet
+    uint32_t length = 0;
+
+    // Define the buffer to send through the radio, and fill it with the header.
+    db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_EKF_DEBUG);
+    length += sizeof(protocol_header_t);                // Size of the header already in the buffer
+
+    // Add X to the buffer
+    int32_t x = (int32_t)(_dotbot_vars.ekf.x * 1e4);    // We multiply  by 1e4 to convert from [cm] to [um]
+    memcpy(_dotbot_vars.radio_buffer + length, &x, sizeof(x));
+    length += sizeof(x);                                // Size of the X variable, we just added to the buffer
+
+    // Add Y to the buffer
+    int32_t y = (int32_t)(_dotbot_vars.ekf.y * 1e4);    // We multiply by 1e4 to convert from [cm] to [um]
+    memcpy(_dotbot_vars.radio_buffer + length, &y, sizeof(y));
+    length += sizeof(y);                                              // Size of the Y variable, we just loaded into the buffer
+
+    // Add Theta to the buffer
+    int32_t theta = (int32_t)(_dotbot_vars.ekf.theta * 180 / M_PI * 1e3);   // We multiply by all that to convert from [radians] to [ mili degrees]
+    memcpy(_dotbot_vars.radio_buffer + length, &theta, sizeof(theta));
+    length += sizeof(theta);                                              // Size of the theta variable, we just loaded into the buffer
+
+    // Add V to the buffer
+    uint16_t V = (uint16_t)(_dotbot_vars.ekf.V * 10);             // We multiply by 10 to convert from [cm/s] to [mm/s]
+    memcpy(_dotbot_vars.radio_buffer + length, &V, sizeof(V));
+    length += sizeof(V);                                              // Size of the V variable, we just loaded into the buffer.
+
+    // Add w to the buffer
+    int32_t w = (int32_t)(_dotbot_vars.ekf.w * 180 / M_PI * 1e3);    // We multiply by all that to convert from [radians per second] to [ mili degrees per second]
+    memcpy(_dotbot_vars.radio_buffer + length, &w, sizeof(w));
+    length += sizeof(w);                                              // Size of the W variable, we just loaded into the buffer.
+
+    // Add Angle_to_target to the buffer
+    int16_t angle_to_target = (int16_t)(_dotbot_vars.angle_to_target);              // Already in [degrees], from -180 to 180 
+    memcpy(_dotbot_vars.radio_buffer + length, &angle_to_target, sizeof(angle_to_target));
+    length += sizeof(angle_to_target);                                              // Size of the W variable, we just loaded into the buffer.
+
+    // Send the packet over the radio
+    db_radio_rx_disable();
+    db_radio_tx(_dotbot_vars.radio_buffer, length);
+    db_radio_rx_enable();
 }

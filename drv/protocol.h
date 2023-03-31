@@ -34,6 +34,7 @@ typedef enum {
     DB_PROTOCOL_LH2_WAYPOINTS = 8,   ///< List of LH2 waypoints to follow
     DB_PROTOCOL_GPS_WAYPOINTS = 9,   ///< List of GPS waypoints to follow
     DB_PROTOCOL_SAILBOT_DATA  = 10,  ///< SailBot specific data (for now GPS and direction)
+    DB_PROTOCOL_EKF_DEBUG     = 11,  ///< Information on the internal variables of the ekf to better debug it.
 } command_type_t;
 
 typedef enum {
@@ -88,6 +89,15 @@ typedef struct __attribute__((packed)) {
     uint8_t                   length;                         ///< Number of waypoints
     protocol_gps_coordinate_t coordinates[DB_MAX_WAYPOINTS];  ///< Array containing a list of GPS coordinates
 } protocol_gps_waypoints_t;
+
+typedef struct __attribute__((packed)) {
+    int32_t x;      ///< X coordinate, in [um]
+    int32_t y;      ///< Y coordinate, in [um]
+    int32_t theta;  ///< Angle of orientation, in [mili degrees], from -pi to +pi
+    uint16_t V;     ///< Forward speed, in [mm/s]
+    int32_t w;      ///< Angular speed. in [mili degrees per second].
+    int16_t angle_to_target;  ///< Angle between the dotbot and the waypoint. , in [mili degrees], from -pi to +pi.
+} protocol_ekf_debug_t;
 
 //=========================== public ===========================================
 
