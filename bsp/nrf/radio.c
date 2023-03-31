@@ -23,8 +23,12 @@
 #define NRF_RADIO NRF_RADIO_NS
 #endif
 
-#define PAYLOAD_MAX_LENGTH       UINT8_MAX
+#define PAYLOAD_MAX_LENGTH UINT8_MAX
+#if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
+#define RADIO_INTERRUPT_PRIORITY 2
+#else
 #define RADIO_INTERRUPT_PRIORITY 1
+#endif
 
 typedef struct __attribute__((packed)) {
     uint8_t header;                       ///< PDU header (depends on the type of PDU - advertising physical channel or Data physical channel)
@@ -55,15 +59,31 @@ static radio_vars_t radio_vars = { 0 };
 
 //========================== prototypes ========================================
 
-static void radio_init_common(radio_cb_t callback);
 static void radio_init_addresses(void);
 
 //=========================== public ===========================================
 
 void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
 
+#if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
+    // Reset radio to its initial values
+    NRF_RADIO->POWER = (RADIO_POWER_POWER_Disabled << RADIO_POWER_POWER_Pos);
+    NRF_RADIO->POWER = (RADIO_POWER_POWER_Enabled << RADIO_POWER_POWER_Pos);
+
+    // Copy all the RADIO trim values from FICR into the target addresses (from errata v1.6 - 3.29 [158])
+    for (uint32_t index = 0; index < 32ul && NRF_FICR_NS->TRIMCNF[index].ADDR != (uint32_t *)0xFFFFFFFFul; index++) {
+        if (((uint32_t)NRF_FICR_NS->TRIMCNF[index].ADDR & 0xFFFFF000ul) == (volatile uint32_t)NRF_RADIO_NS) {
+            *((volatile uint32_t *)NRF_FICR_NS->TRIMCNF[index].ADDR) = NRF_FICR_NS->TRIMCNF[index].DATA;
+        }
+    }
+#endif
+
     // General configuration of the radio.
     NRF_RADIO->MODE = ((RADIO_MODE_MODE_Ble_1Mbit + mode) << RADIO_MODE_MODE_Pos);  // Configure BLE mode
+#if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
+    // From errata v1.6 - 3.15 [117] RADIO: Changing MODE requires additional configuration
+    *((volatile uint32_t *)0x41008588) = *((volatile uint32_t *)0x01FF0080);
+#endif
 
     if (mode == DB_RADIO_BLE_1MBit || mode == DB_RADIO_BLE_2MBit) {
         NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_0dBm << RADIO_TXPOWER_TXPOWER_Pos);  // 0dBm == 1mW Power output
@@ -102,8 +122,26 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
 
     radio_init_addresses();
 
-    // Initialize Common Radio Configuration
-    radio_init_common(callback);
+    // CRC Config
+    NRF_RADIO->CRCCNF  = (RADIO_CRCCNF_LEN_Two << RADIO_CRCCNF_LEN_Pos);  // Checksum uses 2 bytes, and is enabled.
+    NRF_RADIO->CRCINIT = 0xFFFFUL;                                        // initial value
+    NRF_RADIO->CRCPOLY = 0x11021UL;                                       // CRC poly: x^16 + x^12^x^5 + 1
+
+    // pointer to packet payload
+    NRF_RADIO->PACKETPTR = (uint32_t)&radio_vars.pdu;
+
+    // Assign the callback function that will be called when a radio packet is received.
+    radio_vars.callback = callback;
+
+    // Configure the external High-frequency Clock. (Needed for correct operation)
+    db_hfclk_init();
+
+    // Configure the Interruptions
+    NVIC_DisableIRQ(RADIO_IRQn);  // Disable interruptions while configuring
+    NRF_RADIO->INTENSET = (RADIO_INTENSET_END_Enabled << RADIO_INTENSET_END_Pos |
+                           RADIO_INTENSET_CRCOK_Enabled << RADIO_INTENSET_CRCOK_Pos);  // Enable interruption for when a valid packet arrives
+    NVIC_SetPriority(RADIO_IRQn, RADIO_INTERRUPT_PRIORITY);                            // Set priority for Radio interrupts to 1
+    NVIC_ClearPendingIRQ(RADIO_IRQn);
 }
 
 void db_radio_set_frequency(uint8_t freq) {
@@ -120,7 +158,6 @@ void db_radio_set_network_address(uint32_t addr) {
 }
 
 void db_radio_tx(uint8_t *tx_buffer, uint8_t length) {
-
     // Load the tx_buffer into memory.
     radio_vars.pdu.length = length;
     memcpy(radio_vars.pdu.payload, tx_buffer, length);
@@ -149,6 +186,8 @@ void db_radio_rx_enable(void) {
 
     // Enable Radio interruptions
     NVIC_EnableIRQ(RADIO_IRQn);
+    NVIC_SetPriority(RADIO_IRQn, RADIO_INTERRUPT_PRIORITY);  // Set priority for Radio interrupts to 1
+    NVIC_ClearPendingIRQ(RADIO_IRQn);
 }
 
 void db_radio_rx_disable(void) {
@@ -173,35 +212,6 @@ static void radio_init_addresses(void) {
     NRF_RADIO->RXADDRESSES = (RADIO_RXADDRESSES_ADDR0_Enabled << RADIO_RXADDRESSES_ADDR0_Pos);
 }
 
-/**
- * @brief This function is private and it sets the common configurations for the radio
- *
- * @param[in] callback pointer to a function that will be called each time a packet is received.
- */
-void radio_init_common(radio_cb_t callback) {
-
-    // CRC Config
-    NRF_RADIO->CRCCNF  = (RADIO_CRCCNF_LEN_Two << RADIO_CRCCNF_LEN_Pos);  // Checksum uses 2 bytes, and is enabled.
-    NRF_RADIO->CRCINIT = 0xFFFFUL;                                        // initial value
-    NRF_RADIO->CRCPOLY = 0x11021UL;                                       // CRC poly: x^16 + x^12^x^5 + 1
-
-    // pointer to packet payload
-    NRF_RADIO->PACKETPTR = (uint32_t)&radio_vars.pdu;
-
-    // Assign the callback function that will be called when a radio packet is received.
-    radio_vars.callback = callback;
-
-    // Configure the external High-frequency Clock. (Needed for correct operation)
-    db_hfclk_init();
-
-    // Configure the Interruptions
-    NVIC_DisableIRQ(RADIO_IRQn);  // Disable interruptions while configuring
-    NRF_RADIO->INTENSET = (RADIO_INTENSET_END_Enabled << RADIO_INTENSET_END_Pos |
-                           RADIO_INTENSET_CRCOK_Enabled << RADIO_INTENSET_CRCOK_Pos);  // Enable interruption for when a valid packet arrives
-    NVIC_SetPriority(RADIO_IRQn, RADIO_INTERRUPT_PRIORITY);                            // Set priority for Radio interrupts to 1
-    NVIC_ClearPendingIRQ(RADIO_IRQn);                                                  // Clear the flag for any pending radio interrupt
-}
-
 //=========================== interrupt handlers ===============================
 
 /**
@@ -214,8 +224,6 @@ void radio_init_common(radio_cb_t callback) {
  */
 void RADIO_IRQHandler(void) {
 
-    NVIC_ClearPendingIRQ(RADIO_IRQn);
-
     // Check if the interrupt was caused by a fully received package
     if (NRF_RADIO->EVENTS_END) {
         NRF_RADIO->EVENTS_END = 0;
@@ -223,7 +231,6 @@ void RADIO_IRQHandler(void) {
 
     // Check if the interrupt was caused by a fully received package
     if (NRF_RADIO->EVENTS_CRCOK) {
-
         // Clear the Interrupt flag
         NRF_RADIO->EVENTS_CRCOK = 0;
 

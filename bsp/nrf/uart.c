@@ -127,6 +127,7 @@ void db_uart_init(const gpio_t *rx_pin, const gpio_t *tx_pin, uint32_t baudrate,
         DB_UARTE->TASKS_STARTRX = 1;
         NVIC_EnableIRQ(DB_UARTE_IRQ);
         NVIC_SetPriority(DB_UARTE_IRQ, 0);
+        NVIC_ClearPendingIRQ(DB_UARTE_IRQ);
     }
 }
 
@@ -159,5 +160,4 @@ void DB_UARTE_ISR(void) {
             _uart_vars.callback(_uart_vars.byte);
         }
     }
-    NVIC_ClearPendingIRQ(DB_UARTE_IRQ);
 }

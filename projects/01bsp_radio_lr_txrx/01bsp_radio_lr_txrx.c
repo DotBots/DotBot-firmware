@@ -17,22 +17,34 @@
 #include "board.h"
 #include "gpio.h"
 #include "radio.h"
+#include "timer_hf.h"
 
 //=========================== defines =========================================
 
-#define NUMBER_OF_BYTES_IN_PACKET 32
+#define DELAY_MS   (100)                     // Wait 100ms between each send
+#define RADIO_FREQ (8)                       // Set the frequency to 2408 MHz
+#define RADIO_MODE (DB_RADIO_BLE_LR125Kbit)  // Use BLE Long Range 125Kbit/s
 
 //=========================== variables =========================================
 
-static uint8_t packet_tx[NUMBER_OF_BYTES_IN_PACKET];
+static const uint8_t packet_tx[] = {
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x00  // ABCDEFG
+};
 
-static const gpio_t _dbg_pin = { .port = 0, .pin = 31 };
+#if defined(NRF5340_XXAA)
+static const gpio_t _dbg_pin = { .port = 0, .pin = 28 };
+#else
+static const gpio_t _dbg_pin = { .port = 0, .pin = 0 };
+#endif
 
 //=========================== prototypes =========================================
 
-void radio_callback(uint8_t *packet, uint8_t length);
+static void radio_callback(uint8_t *packet, uint8_t length) {
+    db_gpio_toggle(&_dbg_pin);
+    printf("packet received (%dB): %s\n", length, (char *)packet);
+}
 
-//=========================== main =========================================
+//=========================== main ===============================================
 
 /**
  *  @brief The program starts executing here.
@@ -42,50 +54,23 @@ int main(void) {
     // Turn ON the DotBot board regulator
     db_board_init();
 
-    //=========================== Initialize GPIO =========================================
+    //=========================== Initialize GPIO and timer ======================
 
     db_gpio_init(&_dbg_pin, DB_GPIO_OUT);
+    db_timer_hf_init();
 
-    memset(packet_tx, 0, NUMBER_OF_BYTES_IN_PACKET);
-    packet_tx[0] = 0x01;
+    //=========================== Configure Radio ================================s
 
-    //=========================== Configure Radio =========================================
-
-    db_radio_init(&radio_callback, DB_RADIO_BLE_LR125Kbit);
-    db_radio_set_frequency(8);  // Set the RX frquency to 2408 MHz.
-
-    db_radio_tx(packet_tx, NUMBER_OF_BYTES_IN_PACKET);
-    db_radio_rx_enable();  // Start receiving packets.
+    db_radio_init(&radio_callback, RADIO_MODE);
+    db_radio_set_frequency(RADIO_FREQ);
 
     while (1) {
-
-        __WFE();
-        __SEV();
-        __WFE();
+        db_radio_rx_disable();
+        db_radio_tx((uint8_t *)packet_tx, sizeof(packet_tx) / sizeof(packet_tx[0]));
+        db_radio_rx_enable();
+        db_timer_hf_delay_ms(DELAY_MS);
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
     __NOP();
-}
-
-//=========================== functions =========================================
-
-/**
- *  @brief Callback function to process received packets
- *
- * This function gets called each time a packet is received.
- *
- * @param[in] packet pointer to the array of data to send over the radio (max size = 32)
- * @param[in] length Number of bytes to send (max size = 32)
- *
- */
-void radio_callback(uint8_t *packet, uint8_t length) {
-    (void)length;
-
-    // Check the arriving packet for any pressed button.
-    if (packet[0] == 0x01 || packet[1] == 0x01 || packet[2] == 0x01 || packet[3] == 0x01) {
-        db_gpio_set(&_dbg_pin);
-    } else {
-        db_gpio_clear(&_dbg_pin);
-    }
 }

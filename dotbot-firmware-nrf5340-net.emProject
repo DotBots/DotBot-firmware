@@ -37,7 +37,7 @@
     linker_output_format="hex"
     linker_printf_fmt_level="int"
     linker_printf_width_precision_supported="Yes"
-    macros="BuildTarget=nrf5340-net;ClockImplementationFile=clock_nrf5340_net.c;Lh2ImplementationFile=lh2.c;PwmImplementationFile=pwm_nrf5340_net.c;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf5340_network.h;DeviceCommonHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceSystemFile=$(PackagesDir)/nRF/Device/Source/system_nrf5340_network.c;DeviceVectorsFile=$(PackagesDir)/nRF/Source/nrf5340_network_Vectors.s;DeviceCommonVectorsFile=$(PackagesDir)/nRF/Source/nRF_Startup.s;SeggerThumbStartup=$(ProjectDir)/../../../nRF/nrf5340/SEGGER_THUMB_Startup.s;DeviceLinkerScript=$(ProjectDir)/../../../nRF/nrf5340/nRF_Flash_Variant3.icf;DeviceMemoryMap=$(PackagesDir)/nRF/XML/nRF5340_xxAA_Network_MemoryMap.xml;DeviceFamily=nRF;Target=nRF5340_xxAA_Network"
+    macros="BuildTarget=nrf5340-net;ClockImplementationFile=clock_nrf5340_net.c;Lh2ImplementationFile=lh2.c;PwmImplementationFile=pwm_nrf5340_net.c;RadioImplementationFile=radio.c;RngImplementationFile=rng.c;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf5340_network.h;DeviceCommonHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceSystemFile=$(PackagesDir)/nRF/Device/Source/system_nrf5340_network.c;DeviceVectorsFile=$(PackagesDir)/nRF/Source/nrf5340_network_Vectors.s;DeviceCommonVectorsFile=$(PackagesDir)/nRF/Source/nRF_Startup.s;SeggerThumbStartup=$(ProjectDir)/../../../nRF/nrf5340/SEGGER_THUMB_Startup.s;DeviceLinkerScript=$(ProjectDir)/../../../nRF/nrf5340/nRF_Flash_Variant3.icf;DeviceMemoryMap=$(PackagesDir)/nRF/XML/nRF5340_xxAA_Network_MemoryMap.xml;DeviceFamily=nRF;Target=nRF5340_xxAA_Network"
     project_type="Executable"
     target_reset_script="Reset();"
     target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
@@ -56,4 +56,5 @@
   <import file_name="bsp/bsp.emProject" />
   <import file_name="drv/drv.emProject" />
   <import file_name="projects/projects.emProject" />
+  <import file_name="projects/projects-nrf5340-net.emProject" />
 </solution>

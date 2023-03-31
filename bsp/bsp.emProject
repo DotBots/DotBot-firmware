@@ -2,9 +2,9 @@
 <solution Name="bsp" target="8" version="2">
   <configuration
     Name="Common"
-    c_user_include_directories="$(SolutionDir);$(PackagesDir)/nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
     build_output_directory="Output/$(BuildTarget)/$(Configuration)/Obj"
-    build_output_file_name="$(OutDir)/$(ProjectName)-$(BuildTarget)$(LIB)" />
+    build_output_file_name="$(OutDir)/$(ProjectName)-$(BuildTarget)$(LIB)"
+    c_user_include_directories="$(SolutionDir);$(PackagesDir)/nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include" />
   <project Name="00bsp_clock">
     <configuration
       Name="Common"
@@ -86,18 +86,19 @@
   <project Name="00bsp_radio">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_clock"
+      project_dependencies="00bsp_clock;00bsp_timer_hf(bsp)"
       project_directory="."
       project_type="Library" />
-    <file file_name="nrf/radio.c" />
+    <file file_name="nrf/$(RadioImplementationFile)" />
     <file file_name="radio.h" />
   </project>
   <project Name="00bsp_rng">
     <configuration
       Name="Common"
+      project_dependencies="00bsp_timer_hf(bsp)"
       project_directory="."
       project_type="Library" />
-    <file file_name="nrf/rng.c" />
+    <file file_name="nrf/$(RngImplementationFile)" />
     <file file_name="rng.h" />
   </project>
   <project Name="00bsp_timer">
