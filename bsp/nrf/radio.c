@@ -30,6 +30,8 @@
 #define RADIO_INTERRUPT_PRIORITY 1
 #endif
 
+#define RADIO_TIFS 150U  ///< Inter frame spacing in us
+
 typedef struct __attribute__((packed)) {
     uint8_t header;                       ///< PDU header (depends on the type of PDU - advertising physical channel or Data physical channel)
     uint8_t length;                       ///< Length of the payload + MIC (if any)
@@ -65,11 +67,11 @@ static void radio_init_addresses(void);
 
 void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
 
-#if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
     // Reset radio to its initial values
     NRF_RADIO->POWER = (RADIO_POWER_POWER_Disabled << RADIO_POWER_POWER_Pos);
     NRF_RADIO->POWER = (RADIO_POWER_POWER_Enabled << RADIO_POWER_POWER_Pos);
 
+#if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
     // Copy all the RADIO trim values from FICR into the target addresses (from errata v1.6 - 3.29 [158])
     for (uint32_t index = 0; index < 32ul && NRF_FICR_NS->TRIMCNF[index].ADDR != (uint32_t *)0xFFFFFFFFul; index++) {
         if (((uint32_t)NRF_FICR_NS->TRIMCNF[index].ADDR & 0xFFFFF000ul) == (volatile uint32_t)NRF_RADIO_NS) {
@@ -100,7 +102,7 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
     } else {
         // Long ranges modes (125KBit/500KBit)
 #if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
-        NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_Neg8dBm << RADIO_TXPOWER_TXPOWER_Pos);  // -8dBm Power output
+        NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_0dBm << RADIO_TXPOWER_TXPOWER_Pos);  // 0dBm Power output
 #else
         NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_Pos8dBm << RADIO_TXPOWER_TXPOWER_Pos);  // 8dBm Power output
 #endif
@@ -121,6 +123,9 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
     }
 
     radio_init_addresses();
+
+    // Inter frame spacing in us
+    NRF_RADIO->TIFS = RADIO_TIFS;
 
     // CRC Config
     NRF_RADIO->CRCCNF  = (RADIO_CRCCNF_LEN_Two << RADIO_CRCCNF_LEN_Pos);  // Checksum uses 2 bytes, and is enabled.
