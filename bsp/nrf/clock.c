@@ -36,6 +36,7 @@ void db_hfclk_init(void) {
 
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
     // Enable 128MHZ core clock, only possible with application core
+    NRF_CLOCK->HFCLKSRC  = CLOCK_HFCLKSRC_SRC_HFXO << CLOCK_HFCLKSRC_SRC_Pos;
     NRF_CLOCK->HFCLKCTRL = CLOCK_HFCLKCTRL_HCLK_Div1 << CLOCK_HFCLKCTRL_HCLK_Pos;
 #endif
 
@@ -59,5 +60,9 @@ void db_lfclk_init(void) {
 #endif
     NRF_CLOCK->TASKS_LFCLKSTART = 1;
     while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0) {}
+#if defined(NRF5340_XXAA)
+    NRF_CLOCK->TASKS_CAL = 1;
+    while (NRF_CLOCK->EVENTS_DONE == 0) {}
+#endif
     _clock_state.lf_enabled = true;
 }
