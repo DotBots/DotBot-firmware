@@ -14,6 +14,10 @@
 
 //=========================== defines ==========================================
 
+#ifndef NRF53_XOSC32_CAPACITANCE
+#define NRF53_XOSC32_CAPACITANCE 8  ///< Depends on the 32MHz crytal used, its capacitance is 8pF on nRF5340-DK
+#endif
+
 typedef struct {
     bool hf_enabled;  ///< Checks whether high frequency clock is running
     bool lf_enabled;  ///< Checks whether low frequency clock is running
@@ -35,8 +39,13 @@ void db_hfclk_init(void) {
     }
 
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+    // Configure the 32MHz internal capacitance value (taken from crystal specs)
+    const int8_t   slope           = (int8_t)(NRF_FICR_S->XOSC32MTRIM & FICR_XOSC32MTRIM_SLOPE_Msk) >> FICR_XOSC32MTRIM_SLOPE_Pos;
+    const uint8_t  offset          = (uint8_t)(NRF_FICR_S->XOSC32MTRIM & FICR_XOSC32MTRIM_OFFSET_Msk) >> FICR_XOSC32MTRIM_OFFSET_Pos;
+    const uint32_t cap_value       = (((slope + 56) * (NRF53_XOSC32_CAPACITANCE * 2 - 14)) + ((offset - 8) << 4) + 32) >> 6;
+    NRF_OSCILLATORS_S->XOSC32MCAPS = (OSCILLATORS_XOSC32MCAPS_ENABLE_Enabled << OSCILLATORS_XOSC32MCAPS_ENABLE_Pos) | cap_value;
+    NRF_CLOCK->HFCLKSRC            = CLOCK_HFCLKSRC_SRC_HFXO << CLOCK_HFCLKSRC_SRC_Pos;
     // Enable 128MHZ core clock, only possible with application core
-    NRF_CLOCK->HFCLKSRC  = CLOCK_HFCLKSRC_SRC_HFXO << CLOCK_HFCLKSRC_SRC_Pos;
     NRF_CLOCK->HFCLKCTRL = CLOCK_HFCLKCTRL_HCLK_Div1 << CLOCK_HFCLKCTRL_HCLK_Pos;
 #endif
 
