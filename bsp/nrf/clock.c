@@ -63,15 +63,18 @@ void db_lfclk_init(void) {
 
     NRF_CLOCK->EVENTS_LFCLKSTARTED = 0;
 #if defined(NRF5340_XXAA)
-    NRF_CLOCK->LFCLKSRC = (CLOCK_LFCLKSRC_SRC_LFRC << CLOCK_LFCLKSRC_SRC_Pos);
+    // To use LFXO, P0.0 and P0.1 must use value Peripheral in MCUSEL bitfield
+    NRF_P0_S->PIN_CNF[0] = GPIO_PIN_CNF_MCUSEL_Peripheral << GPIO_PIN_CNF_MCUSEL_Pos;
+    NRF_P0_S->PIN_CNF[1] = GPIO_PIN_CNF_MCUSEL_Peripheral << GPIO_PIN_CNF_MCUSEL_Pos;
+
+    // Apply internal capacitor values as defined in 32k crystal specs
+    NRF_OSCILLATORS_S->XOSC32KI.INTCAP = OSCILLATORS_XOSC32KI_INTCAP_INTCAP_C9PF << OSCILLATORS_XOSC32KI_INTCAP_INTCAP_Pos;
+
+    NRF_CLOCK->LFCLKSRC = (CLOCK_LFCLKSRC_SRC_LFXO << CLOCK_LFCLKSRC_SRC_Pos);
 #else
     NRF_CLOCK->LFCLKSRC = (CLOCK_LFCLKSRC_SRC_Xtal << CLOCK_LFCLKSRC_SRC_Pos);
 #endif
     NRF_CLOCK->TASKS_LFCLKSTART = 1;
     while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0) {}
-#if defined(NRF5340_XXAA)
-    NRF_CLOCK->TASKS_CAL = 1;
-    while (NRF_CLOCK->EVENTS_DONE == 0) {}
-#endif
     _clock_state.lf_enabled = true;
 }

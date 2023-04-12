@@ -65,7 +65,9 @@ int main(void) {
 
     // Give access to all GPIOs to network core
     for (uint8_t pin = 0; pin < 32; pin++) {
-        NRF_P0_S->PIN_CNF[pin] = GPIO_PIN_CNF_MCUSEL_NetworkMCU << GPIO_PIN_CNF_MCUSEL_Pos;
+        if (pin > 1) {  // P0.0 and P0.1 are used for the LFXO crystal
+            NRF_P0_S->PIN_CNF[pin] = GPIO_PIN_CNF_MCUSEL_NetworkMCU << GPIO_PIN_CNF_MCUSEL_Pos;
+        }
         NRF_P1_S->PIN_CNF[pin] = GPIO_PIN_CNF_MCUSEL_NetworkMCU << GPIO_PIN_CNF_MCUSEL_Pos;
     }
 
