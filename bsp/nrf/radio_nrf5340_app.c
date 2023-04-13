@@ -52,6 +52,9 @@ static inline void _network_call(ipc_event_type_t req, ipc_event_type_t ack) {
 //=========================== public ===========================================
 
 void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
+    // On nrf53 configure constant latency mode for better performances
+    NRF_POWER_S->TASKS_CONSTLAT = 1;
+
     db_hfclk_init();
 
     // RADIO (address at 0x41008000 => periph ID is 8)

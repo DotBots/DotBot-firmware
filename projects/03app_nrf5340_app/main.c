@@ -12,6 +12,9 @@
 
 int main(void) {
 
+    // On nrf53 configure constant latency mode for better performances
+    NRF_POWER_S->TASKS_CONSTLAT = 1;
+
     db_hfclk_init();
     db_lfclk_init();
 
