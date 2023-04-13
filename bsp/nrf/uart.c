@@ -22,10 +22,12 @@
 #define DB_UARTE     (NRF_UARTE1_S)
 #define DB_UARTE_IRQ (SERIAL1_IRQn)
 #define DB_UARTE_ISR (SERIAL1_IRQHandler)
+#define NRF_POWER    (NRF_POWER_S)
 #elif defined(NRF5340_XXAA) && defined(NRF_NETWORK)
 #define DB_UARTE     (NRF_UARTE0_NS)
 #define DB_UARTE_IRQ (SERIAL0_IRQn)
 #define DB_UARTE_ISR (SERIAL0_IRQHandler)
+#define NRF_POWER    (NRF_POWER_NS)
 #else
 #define DB_UARTE     (NRF_UARTE0)
 #define DB_UARTE_IRQ (UARTE0_UART0_IRQn)
@@ -45,6 +47,11 @@ static uart_vars_t _uart_vars;  ///< variable handling the UART context
 //=========================== public ===========================================
 
 void db_uart_init(const gpio_t *rx_pin, const gpio_t *tx_pin, uint32_t baudrate, uart_rx_cb_t callback) {
+
+#if defined(NRF5340_XXAA)
+    // On nrf53 configure constant latency mode for better performances
+    NRF_POWER->TASKS_CONSTLAT = 1;
+#endif
 
     // configure UART pins (RX as input, TX as output);
     db_gpio_init(rx_pin, DB_GPIO_IN_PU);

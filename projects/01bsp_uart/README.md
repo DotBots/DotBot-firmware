@@ -23,12 +23,12 @@ index 44aac55..7068b18 100644
 
 On the computer, use a terminal application to connect to the virtual communication
 port (/dev/ttyUSBxx on Linux, COMxx on Windows, etc) created by the UART to USB
-cable. The baudrate is 115200.
+cable. The baudrate is 1Mbaud.
 
 Example with [socat](http://www.dest-unreach.org/socat):
 
 ```
-socat - open:/dev/ttyACM0,b115200,echo=0,raw,cs8,parenb=0,cstopb=0
+socat - open:/dev/ttyACM0,b1000000,echo=0,raw,cs8,parenb=0,cstopb=0
 ```
 
 Loading this app onto the DotBot board will echo messages sent from the

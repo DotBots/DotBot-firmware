@@ -67,6 +67,11 @@ static void radio_init_addresses(void);
 
 void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
 
+#if defined(NRF5340_XXAA)
+    // On nrf53 configure constant latency mode for better performances
+    NRF_POWER_NS->TASKS_CONSTLAT = 1;
+#endif
+
     // Reset radio to its initial values
     NRF_RADIO->POWER = (RADIO_POWER_POWER_Disabled << RADIO_POWER_POWER_Pos);
     NRF_RADIO->POWER = (RADIO_POWER_POWER_Enabled << RADIO_POWER_POWER_Pos);
