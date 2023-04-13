@@ -21,12 +21,8 @@
 
 //=========================== defines ==========================================
 
-#define DB_BUFFER_MAX_BYTES (255U)  ///< Max bytes in UART receive buffer
-#if defined(NRF5340_XXAA)
-#define DB_UART_BAUDRATE (460800UL)  ///< UART baudrate used by the gateway
-#else
-#define DB_UART_BAUDRATE (1000000UL)  ///< UART baudrate used by the gateway
-#endif
+#define DB_BUFFER_MAX_BYTES (255U)                           ///< Max bytes in UART receive buffer
+#define DB_UART_BAUDRATE    (1000000UL)                      ///< UART baudrate used by the gateway
 #define DB_RADIO_QUEUE_SIZE (8U)                             ///< Size of the radio queue (must by a power of 2)
 #define DB_UART_QUEUE_SIZE  ((DB_BUFFER_MAX_BYTES + 1) * 2)  ///< Size of the UART queue size (must by a power of 2)
 

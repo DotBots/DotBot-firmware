@@ -15,8 +15,8 @@
 
 //=========================== defines ==========================================
 
-#define DB_UART_MAX_BYTES (64U)      ///< max bytes in UART receive buffer
-#define DB_UART_BAUDRATE  (115200U)  ///< UART baudrate
+#define DB_UART_MAX_BYTES (64U)       ///< max bytes in UART receive buffer
+#define DB_UART_BAUDRATE  (1000000U)  ///< UART baudrate
 
 typedef struct {
     uint8_t buffer[DB_UART_MAX_BYTES];  ///< buffer where message received on UART is stored
