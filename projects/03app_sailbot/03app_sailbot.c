@@ -31,8 +31,6 @@
 
 //=========================== defines =========================================
 
-#define AUTONOMOUS_OPERATION (0)  ///< user define to enable autonomous operation
-
 #define CONTROL_LOOP_PERIOD_MS      (1000)  ///< control loop period
 #define WAYPOINT_DISTANCE_THRESHOLD (10)    ///< in meters
 
@@ -103,7 +101,7 @@ int main(void) {
     NRF_P0->DIRSET = 1 << _led1_pin.pin;  // set pin as output
     NRF_P0->OUTSET = 0 << _led1_pin.pin;  // set pin LOW
 
-    _sailbot_vars.autonomous_operation = AUTONOMOUS_OPERATION;
+    _sailbot_vars.autonomous_operation = false;
     _sailbot_vars.radio_override       = false;
     _sailbot_vars.sail_trim            = 50;
 
