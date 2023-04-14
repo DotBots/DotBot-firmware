@@ -16,7 +16,7 @@
 
 //=========================== defines ==========================================
 
-#define DB_FIRMWARE_VERSION  (7)                   ///< Version of the firmware
+#define DB_FIRMWARE_VERSION  (8)                   ///< Version of the firmware
 #define DB_SWARM_ID          (0x0000)              ///< Default swarm ID
 #define DB_BROADCAST_ADDRESS 0xffffffffffffffffUL  ///< Broadcast address
 #define DB_GATEWAY_ADDRESS   0x0000000000000000UL  ///< Gateway address
@@ -94,7 +94,7 @@ typedef struct __attribute__((packed)) {
     int32_t x;      ///< X coordinate, in [um]
     int32_t y;      ///< Y coordinate, in [um]
     int32_t theta;  ///< Angle of orientation, in [mili degrees], from -pi to +pi
-    uint16_t V;     ///< Forward speed, in [mm/s]
+    int16_t V;     ///< Forward speed, in [mm/s]
     int32_t w;      ///< Angular speed. in [mili degrees per second].
     int16_t angle_to_target;  ///< Angle between the dotbot and the waypoint. , in [mili degrees], from -pi to +pi.
 } protocol_ekf_debug_t;

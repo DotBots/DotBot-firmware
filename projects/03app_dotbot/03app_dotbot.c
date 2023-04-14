@@ -66,6 +66,7 @@ typedef struct {
     KalmanFilter_t           ekf;                                ///< State variables of the kalman filter.
     ism330_gyro_data_t       gyro;                               ///< Current angular speed, as read from the gyroscope. in [rad/s]
     ism330_acc_data_t        acc;                                ///< Current Acceleration, as read from the accelerometer. in [cm/s^2]
+    int32_t                  boop_flag;
 
 } dotbot_vars_t;
 
@@ -105,6 +106,7 @@ static void _compute_angle_2(const protocol_lh2_location_t *next, const protocol
 static void _update_control_loop(void);
 static void _update_lh2(void);
 static void _ekf_predict_and_gyro_flag_update(void);
+static void _boop(void);
 int16_t _angle_overflow(int16_t deg);
 static void _radio_ekf_debug_data(void);
 
@@ -233,6 +235,7 @@ int main(void) {
     db_timer_set_periodic_ms(1, DB_ADVERTIZEMENT_DELAY_MS, &_advertise);
     db_timer_set_periodic_ms(2, DB_LH2_UPDATE_DELAY_MS, &_update_lh2);
     db_timer_hf_set_periodic_us(0, DB_EKF_PREDICT_DELAY_US, &_ekf_predict_and_gyro_flag_update);
+    db_timer_hf_set_periodic_us(1, 100000, &_boop);
     db_lh2_init(&_dotbot_vars.lh2, &_lh2_d_gpio, &_lh2_e_gpio);
     db_lh2_start(&_dotbot_vars.lh2);
 
@@ -240,6 +243,9 @@ int main(void) {
         __WFE();
 
         bool need_advertize = false;
+        //db_ism330_gyro_read(&_dotbot_vars.gyro);
+        //int32_t Z = (int32_t)(_dotbot_vars.gyro.z * 180 / M_PI * 1e3);
+        //_radio_ekf_debug_data();
         if (_dotbot_vars.update_lh2) {
             db_lh2_process_raw_data(&_dotbot_vars.lh2);
             if (_dotbot_vars.lh2.state == DB_LH2_RAW_DATA_READY) {
@@ -291,9 +297,16 @@ int main(void) {
             EKF_update_gyro_W(&_dotbot_vars.ekf,_dotbot_vars.gyro.z);
 
             // Run the ekf prediction step
-            EKF_predict(&_dotbot_vars.ekf, 0.002);
+            EKF_predict(&_dotbot_vars.ekf, 0.02);
             _dotbot_vars.ekf_predict_and_gyro_flag = false;
+            // _dotbot_vars.counter +=Z;
+            // _radio_ekf_debug_data();
 
+        }
+
+        if(_dotbot_vars.boop_flag) {
+            _radio_ekf_debug_data();
+            _dotbot_vars.boop_flag = false;
         }
  
     }
@@ -352,7 +365,8 @@ static void _update_control_loop(void) {
         if (right > DB_MAX_SPEED) {
             right = DB_MAX_SPEED;
         }
-        db_motors_set_speed(left, right);
+        db_motors_set_speed(0, 0);
+        // db_motors_set_speed(left, right);
     }
 }
 
@@ -404,6 +418,11 @@ static void _ekf_predict_and_gyro_flag_update(void) {
     _dotbot_vars.ekf_predict_and_gyro_flag = true;
 }
 
+static void _boop(void) {
+    _dotbot_vars.boop_flag = true;
+    // _radio_ekf_debug_data();
+}
+
 // Send data from the ekf and the controller back to the gateway for debugging purposes.
 static void _radio_ekf_debug_data(void){
 
@@ -430,14 +449,19 @@ static void _radio_ekf_debug_data(void){
     length += sizeof(theta);                                              // Size of the theta variable, we just loaded into the buffer
 
     // Add V to the buffer
-    uint16_t V = (uint16_t)(_dotbot_vars.ekf.V * 10);             // We multiply by 10 to convert from [cm/s] to [mm/s]
+    int16_t V = (int16_t)(_dotbot_vars.ekf.V * 10);             // We multiply by 10 to convert from [cm/s] to [mm/s]
     memcpy(_dotbot_vars.radio_buffer + length, &V, sizeof(V));
     length += sizeof(V);                                              // Size of the V variable, we just loaded into the buffer.
 
     // Add w to the buffer
-    int32_t w = (int32_t)(_dotbot_vars.ekf.w * 180 / M_PI * 1e3);    // We multiply by all that to convert from [radians per second] to [ mili degrees per second]
-    memcpy(_dotbot_vars.radio_buffer + length, &w, sizeof(w));
-    length += sizeof(w);                                              // Size of the W variable, we just loaded into the buffer.
+    int32_t W = (int32_t)(_dotbot_vars.ekf.W * 180 / M_PI * 1e3);    // We multiply by all that to convert from [radians per second] to [ mili degrees per second]
+    memcpy(_dotbot_vars.radio_buffer + length, &W, sizeof(W));
+    length += sizeof(W);                                              // Size of the W variable, we just loaded into the buffer.
+
+    // Add w to the buffer
+    // int32_t W = (int32_t)(_dotbot_vars.gyro.z * 180 / M_PI * 1e3);    // We multiply by all that to convert from [radians per second] to [ mili degrees per second]
+    // memcpy(_dotbot_vars.radio_buffer + length, &W, sizeof(W));
+    // length += sizeof(W);                                              // Size of the W variable, we just loaded into the buffer.
 
     // Add Angle_to_target to the buffer
     int16_t angle_to_target = (int16_t)(_dotbot_vars.angle_to_target);              // Already in [degrees], from -180 to 180 
