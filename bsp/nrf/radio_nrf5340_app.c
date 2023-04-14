@@ -57,6 +57,16 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
 
     db_hfclk_init();
 
+    // VREQCTRL (address at 0x41004000 => periph ID is 4)
+    NRF_SPU_S->PERIPHID[4].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
+                                   SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
+                                   SPU_PERIPHID_PERM_PRESENT_IsPresent << SPU_PERIPHID_PERM_PRESENT_Pos);
+
+    // POWER (address at 0x41005000 => periph ID is 5)
+    NRF_SPU_S->PERIPHID[5].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
+                                   SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
+                                   SPU_PERIPHID_PERM_PRESENT_IsPresent << SPU_PERIPHID_PERM_PRESENT_Pos);
+
     // RADIO (address at 0x41008000 => periph ID is 8)
     NRF_SPU_S->PERIPHID[8].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
                                    SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
@@ -89,8 +99,8 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
     NVIC_SetPriority(IPC_IRQn, IPC_IRQ_PRIORITY);
 
     // Start the network core
-    if (NRF_RESET_S->NETWORK.FORCEOFF != 0) {
-        NRF_RESET_S->NETWORK.FORCEOFF = 0;
+    if (NRF_RESET_NS->NETWORK.FORCEOFF != 0) {
+        NRF_RESET_NS->NETWORK.FORCEOFF = 0;
         _network_call(DB_IPC_NONE, DB_IPC_NET_READY_ACK);
     }
 

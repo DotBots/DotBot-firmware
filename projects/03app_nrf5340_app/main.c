@@ -20,6 +20,16 @@ int main(void) {
 
     // Mark peripherals required by the network as non secure
 
+    // VREQCTRL (address at 0x41004000 => periph ID is 4)
+    NRF_SPU_S->PERIPHID[4].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
+                                   SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
+                                   SPU_PERIPHID_PERM_PRESENT_IsPresent << SPU_PERIPHID_PERM_PRESENT_Pos);
+
+    // POWER (address at 0x41005000 => periph ID is 5)
+    NRF_SPU_S->PERIPHID[5].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
+                                   SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
+                                   SPU_PERIPHID_PERM_PRESENT_IsPresent << SPU_PERIPHID_PERM_PRESENT_Pos);
+
     // RADIO (address at 0x41008000 => periph ID is 8)
     NRF_SPU_S->PERIPHID[8].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
                                    SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
@@ -75,7 +85,7 @@ int main(void) {
     }
 
     // Start the network core
-    NRF_RESET_S->NETWORK.FORCEOFF = 0;
+    NRF_RESET_NS->NETWORK.FORCEOFF = 0;
 
     while (1) {
         __WFE();
