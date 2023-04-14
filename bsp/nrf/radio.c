@@ -89,7 +89,12 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
     NRF_RADIO->MODE = ((RADIO_MODE_MODE_Ble_1Mbit + mode) << RADIO_MODE_MODE_Pos);  // Configure BLE mode
 #if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
     // From errata v1.6 - 3.15 [117] RADIO: Changing MODE requires additional configuration
-    *((volatile uint32_t *)0x41008588) = *((volatile uint32_t *)0x01FF0080);
+    if (mode == DB_RADIO_BLE_2MBit) {
+        *((volatile uint32_t *)0x41008588) = *((volatile uint32_t *)0x01FF0084);
+    } else {
+        *((volatile uint32_t *)0x41008588) = *((volatile uint32_t *)0x01FF0080);
+    }
+
 #endif
 
     if (mode == DB_RADIO_BLE_1MBit || mode == DB_RADIO_BLE_2MBit) {
