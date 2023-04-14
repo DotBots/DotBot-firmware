@@ -49,8 +49,10 @@ static uart_vars_t _uart_vars;  ///< variable handling the UART context
 void db_uart_init(const gpio_t *rx_pin, const gpio_t *tx_pin, uint32_t baudrate, uart_rx_cb_t callback) {
 
 #if defined(NRF5340_XXAA)
-    // On nrf53 configure constant latency mode for better performances
-    NRF_POWER->TASKS_CONSTLAT = 1;
+    if (baudrate > 460800) {
+        // On nrf53 configure constant latency mode for better performances with high baudrates
+        NRF_POWER->TASKS_CONSTLAT = 1;
+    }
 #endif
 
     // configure UART pins (RX as input, TX as output);
