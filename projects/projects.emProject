@@ -545,6 +545,7 @@
         <configuration Name="Common" file_type="Assembly" />
       </file>
     </folder>
+    <configuration Name="Debug" linker_printf_fp_enabled="Float" />
   </project>
   <project Name="01drv_pid">
     <configuration

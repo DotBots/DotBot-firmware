@@ -233,6 +233,7 @@ void control_loop_callback(void) {
 
     if (_sailbot_vars.next_waypoint_idx >= _sailbot_vars.waypoints.length) {
         // Reset the rudder and sail when the last waypoint is reached
+        _sailbot_vars.autonomous_operation = false;
         servos_set(0, _sailbot_vars.sail_trim);
         return;
     }
@@ -322,9 +323,15 @@ static float calculate_error(float heading, float bearing) {
 
 static void _timeout_check(void) {
     uint32_t ticks = db_timer_ticks();
-    if (ticks > _sailbot_vars.ts_last_packet_received + TIMEOUT_CHECK_DELAY_TICKS && _sailbot_vars.ts_last_packet_received > 0 && !_sailbot_vars.autonomous_operation) {
-        // set the servos
-        servos_set(0, _sailbot_vars.sail_trim);
+    if (ticks > _sailbot_vars.ts_last_packet_received + TIMEOUT_CHECK_DELAY_TICKS && _sailbot_vars.ts_last_packet_received > 0) {
+        if (_sailbot_vars.autonomous_operation && _sailbot_vars.radio_override) {
+            _sailbot_vars.radio_override = false;
+        }
+
+        if (!_sailbot_vars.autonomous_operation) {
+          // set the servos
+          servos_set(0, _sailbot_vars.sail_trim);
+        }
     }
 }
 
