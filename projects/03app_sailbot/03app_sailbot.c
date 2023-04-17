@@ -329,8 +329,8 @@ static void _timeout_check(void) {
         }
 
         if (!_sailbot_vars.autonomous_operation) {
-          // set the servos
-          servos_set(0, _sailbot_vars.sail_trim);
+            // set the servos
+            servos_set(0, _sailbot_vars.sail_trim);
         }
     }
 }
