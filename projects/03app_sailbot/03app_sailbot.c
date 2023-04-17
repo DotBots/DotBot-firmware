@@ -54,8 +54,8 @@
 
 // user-select defines
 // make sure CONST_COS_PHI_0 latitude is approximately at the middle of the map
-#define CONST_ORIGIN_COORD_SYSTEM_LAT  CONST_METRO_BERCY_LAT
-#define CONST_ORIGIN_COORD_SYSTEM_LONG CONST_METRO_BERCY_LONG
+#define CONST_ORIGIN_COORD_SYSTEM_LAT  CONST_METRO_LIBERTE_LAT
+#define CONST_ORIGIN_COORD_SYSTEM_LONG CONST_METRO_LIBERTE_LONG
 #define CONST_COS_PHI_0                CONST_COS_PHI_0_INRIA_PARIS
 
 typedef struct {
