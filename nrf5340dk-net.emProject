@@ -1,5 +1,5 @@
 <!DOCTYPE CrossStudio_Project_File>
-<solution Name="dotbot-firmware-nrf5340-net" target="8" version="2">
+<solution Name="dotbot-firmware-nrf5340dk-net" target="8" version="2">
   <configuration
     LIBRARY_IO_TYPE="RTT"
     Name="Common"
@@ -23,7 +23,7 @@
     build_output_file_name="$(OutDir)/$(ProjectName)-$(BuildTarget)$(EXE)"
     build_treat_warnings_as_errors="Yes"
     c_additional_options="-Wno-strict-prototypes"
-    c_preprocessor_definitions="ARM_MATH_ARMV8MML;NRF5340_XXAA;NRF_NETWORK;__NRF_FAMILY;__NO_FPU_ENABLE;FLASH_PLACEMENT=1"
+    c_preprocessor_definitions="ARM_MATH_ARMV8MML;NRF5340_XXAA;NRF_NETWORK;__NRF_FAMILY;__NO_FPU_ENABLE;FLASH_PLACEMENT=1;BOARD_NRF5340DK"
     c_user_include_directories="$(SolutionDir)/../bsp;$(SolutionDir)/../drv;$(PackagesDir)/nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
     debug_register_definition_file="$(PackagesDir)/nRF/XML/nrf5340_network_Registers.xml"
     debug_stack_pointer_start="__stack_end__"
@@ -37,7 +37,7 @@
     linker_output_format="hex"
     linker_printf_fmt_level="int"
     linker_printf_width_precision_supported="Yes"
-    macros="BuildTarget=nrf5340-net;ClockImplementationFile=clock_nrf5340_net.c;Lh2ImplementationFile=lh2.c;PwmImplementationFile=pwm_nrf5340_net.c;RadioImplementationFile=radio.c;RngImplementationFile=rng.c;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf5340_network.h;DeviceCommonHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceSystemFile=$(PackagesDir)/nRF/Device/Source/system_nrf5340_network.c;DeviceVectorsFile=$(PackagesDir)/nRF/Source/nrf5340_network_Vectors.s;DeviceCommonVectorsFile=$(PackagesDir)/nRF/Source/nRF_Startup.s;SeggerThumbStartup=$(ProjectDir)/../../../nRF/nrf5340/SEGGER_THUMB_Startup.s;DeviceLinkerScript=$(ProjectDir)/../../../nRF/nrf5340/nRF_Flash_Variant3.icf;DeviceMemoryMap=$(PackagesDir)/nRF/XML/nRF5340_xxAA_Network_MemoryMap.xml;DeviceFamily=nRF;Target=nRF5340_xxAA_Network"
+    macros="BuildTarget=nrf5340dk-net;ClockImplementationFile=clock_nrf5340_net.c;Lh2ImplementationFile=lh2.c;PwmImplementationFile=pwm_nrf5340_net.c;RadioImplementationFile=radio.c;RngImplementationFile=rng.c;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf5340_network.h;DeviceCommonHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceSystemFile=$(PackagesDir)/nRF/Device/Source/system_nrf5340_network.c;DeviceVectorsFile=$(PackagesDir)/nRF/Source/nrf5340_network_Vectors.s;DeviceCommonVectorsFile=$(PackagesDir)/nRF/Source/nRF_Startup.s;SeggerThumbStartup=$(ProjectDir)/../../../nRF/nrf5340/SEGGER_THUMB_Startup.s;DeviceLinkerScript=$(ProjectDir)/../../../nRF/nrf5340/nRF_Flash_Variant3.icf;DeviceMemoryMap=$(PackagesDir)/nRF/XML/nRF5340_xxAA_Network_MemoryMap.xml;DeviceFamily=nRF;Target=nRF5340_xxAA_Network"
     project_type="Executable"
     target_reset_script="Reset();"
     target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
@@ -55,6 +55,7 @@
     gcc_optimization_level="Level 2 balanced" />
   <import file_name="bsp/bsp.emProject" />
   <import file_name="drv/drv.emProject" />
-  <import file_name="projects/projects.emProject" />
+  <import file_name="projects/projects-bsp-drv.emProject" />
+  <import file_name="projects/projects-gateway.emProject" />
   <import file_name="projects/projects-nrf5340-net.emProject" />
 </solution>

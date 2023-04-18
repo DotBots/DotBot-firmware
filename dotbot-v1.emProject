@@ -1,5 +1,5 @@
 <!DOCTYPE CrossStudio_Project_File>
-<solution Name="dotbot-firmware-nrf52833" target="8" version="2">
+<solution Name="dotbot-firmware-dotbot-v1" target="8" version="2">
   <configuration
     CMSIS_CORE="Yes"
     LIBRARY_IO_TYPE="RTT"
@@ -26,7 +26,7 @@
     build_output_file_name="$(OutDir)/$(ProjectName)-$(BuildTarget)$(EXE)"
     build_treat_warnings_as_errors="Yes"
     c_additional_options="-Wno-missing-field-initializers"
-    c_preprocessor_definitions="ARM_MATH_CM4;NRF52833_XXAA;__nRF_FAMILY;CONFIG_NFCT_PINS_AS_GPIOS;FLASH_PLACEMENT=1"
+    c_preprocessor_definitions="ARM_MATH_CM4;NRF52833_XXAA;__nRF_FAMILY;CONFIG_NFCT_PINS_AS_GPIOS;FLASH_PLACEMENT=1;BOARD_DOTBOT_V1"
     c_user_include_directories="$(SolutionDir)/../bsp;$(SolutionDir)/../drv;$(PackagesDir)/nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
     debug_register_definition_file="$(ProjectDir)/../../nRF/nrf52833/nrf52833.svd"
     debug_stack_pointer_start="__stack_end__"
@@ -39,7 +39,7 @@
     linker_memory_map_file="$(ProjectDir)/../../nRF/nrf52833/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml"
     linker_output_format="hex"
     linker_section_placement_file="$(ProjectDir)/../../nRF/nrf52833/flash_placement.xml"
-    macros="BuildTarget=nrf52833;ClockImplementationFile=clock.c;Lh2ImplementationFile=lh2.c;PwmImplementationFile=pwm.c;RadioImplementationFile=radio.c;RngImplementationFile=rng.c;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceCommonHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceSystemFile=$(ProjectDir)/../../../nRF/nrf52833/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/../../../nRF/nrf52833/Device/Startup/ses_startup_nrf52833.s;DeviceCommonVectorsFile=$(ProjectDir)/../../../nRF/nrf52833/Device/Startup/ses_startup_nrf_common.s;SeggerThumbStartup=$(ProjectDir)/../../../nRF/nrf52833/SEGGER_THUMB_Startup.s;DeviceLinkerScript=$(ProjectDir)/../../../nRF/nrf52833/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/../../../nRF/nrf52833/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
+    macros="BuildTarget=dotbot-v1;ClockImplementationFile=clock.c;Lh2ImplementationFile=lh2.c;PwmImplementationFile=pwm.c;RadioImplementationFile=radio.c;RngImplementationFile=rng.c;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52833.h;DeviceCommonHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceSystemFile=$(ProjectDir)/../../../nRF/nrf52833/Device/Source/system_nrf52.c;DeviceVectorsFile=$(ProjectDir)/../../../nRF/nrf52833/Device/Startup/ses_startup_nrf52833.s;DeviceCommonVectorsFile=$(ProjectDir)/../../../nRF/nrf52833/Device/Startup/ses_startup_nrf_common.s;SeggerThumbStartup=$(ProjectDir)/../../../nRF/nrf52833/SEGGER_THUMB_Startup.s;DeviceLinkerScript=$(ProjectDir)/../../../nRF/nrf52833/Device/Linker/ses_nrf52833_xxaa.icf;DeviceMemoryMap=$(ProjectDir)/../../../nRF/nrf52833/Device/MemoryMap/nRF52833_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
     project_type="Executable"
     target_reset_script="Reset();"
     target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
@@ -57,5 +57,6 @@
     gcc_optimization_level="Level 2 balanced" />
   <import file_name="bsp/bsp.emProject" />
   <import file_name="drv/drv.emProject" />
-  <import file_name="projects/projects.emProject" />
+  <import file_name="projects/projects-bsp-drv.emProject" />
+  <import file_name="projects/projects-dotbot.emProject" />
 </solution>

@@ -14,22 +14,30 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: ["nrf52833", "nrf5340-app", "nrf5340-net"]
+        target: ["dotbot-v1", "nrf52833dk", "nrf52840dk", "nrf5340dk-app", "nrf5340dk-net", "sailbot-v1"]
         config: ["Debug", "Release"]
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
       - name: Build projects
-        run: NRF_TARGET=${{ matrix.target }} BUILD_CONFIG=${{ matrix.config }} make docker
+        run: BUILD_TARGET=${{ matrix.target }} BUILD_CONFIG=${{ matrix.config }} make docker
       - name: Build for release and convert elf artifacts to hex
         if: matrix.target == 'nrf52833' && matrix.config == 'Release'
-        run: NRF_TARGET=${{ matrix.target }} DOCKER_TARGETS="artifacts" BUILD_CONFIG=${{ matrix.config }} make docker
+        run: BUILD_TARGET=${{ matrix.target }} DOCKER_TARGETS="artifacts" BUILD_CONFIG=${{ matrix.config }} make docker
       - name: Upload artifact
-        if: matrix.target == 'nrf52833' && matrix.config == 'Release'
+        if: contains(fromJSON('["dotbot-v1", "nrf52833dk", "nrf52840dk", "sailbot-v1"]'), matrix.target) && matrix.config == 'Release'
         uses: actions/upload-artifact@v3
         with:
           name: artifacts
           path: artifacts/*
+
+  build-success:
+    # this is only run if all builds succeeded
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: build succeeded
+      run: exit 0
 
   style:
     runs-on: ubuntu-latest
@@ -49,7 +57,7 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
-    needs: [docker, style, build]
+    needs: [docker, style, build-success]
     if: >-
       github.event_name == 'push' &&
       startsWith(github.event.ref, 'refs/tags')
