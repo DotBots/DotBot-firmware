@@ -9,27 +9,8 @@
 #include <nrf.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "board_config.h"
 #include "gpio.h"
-
-//=========================== variables ========================================
-
-#if defined(NRF5340_XXAA)
-static const gpio_t led1 = { .port = 0, .pin = 28 };
-static const gpio_t led2 = { .port = 0, .pin = 29 };
-static const gpio_t led3 = { .port = 0, .pin = 30 };
-static const gpio_t btn1 = { .port = 0, .pin = 23 };
-static const gpio_t btn2 = { .port = 0, .pin = 24 };
-static const gpio_t btn3 = { .port = 0, .pin = 8 };
-static const gpio_t btn4 = { .port = 0, .pin = 9 };
-#else
-static const gpio_t led1 = { .port = 0, .pin = 13 };
-static const gpio_t led2 = { .port = 0, .pin = 14 };
-static const gpio_t led3 = { .port = 0, .pin = 15 };
-static const gpio_t btn1 = { .port = 0, .pin = 11 };
-static const gpio_t btn2 = { .port = 0, .pin = 12 };
-static const gpio_t btn3 = { .port = 0, .pin = 24 };
-static const gpio_t btn4 = { .port = 0, .pin = 25 };
-#endif
 
 //=========================== callbacks ========================================
 
@@ -38,32 +19,54 @@ static void _btn_toggle_callback(void *ctx) {
     db_gpio_toggle(gpio);
 }
 
+#if defined(DB_BTN3_PORT)
 static void _btn_clear_callback(void *ctx) {
     const gpio_t *gpio = (const gpio_t *)ctx;
     db_gpio_clear(gpio);
 }
+#endif
 
+#if defined(DB_BTN4_PORT)
 static void _btn_set_callback(void *ctx) {
     const gpio_t *gpio = (const gpio_t *)ctx;
     db_gpio_set(gpio);
 }
+#endif
 
 //=========================== main =============================================
 
 int main(void) {
-    db_gpio_init(&led1, DB_GPIO_OUT);
-    db_gpio_set(&led1);
 
-    db_gpio_init(&led2, DB_GPIO_OUT);
-    db_gpio_set(&led2);
+#if defined(DB_LED1_PORT)
+    db_gpio_init(&db_led1, DB_GPIO_OUT);
+    db_gpio_set(&db_led1);
+#endif
 
-    db_gpio_init(&led3, DB_GPIO_OUT);
-    db_gpio_set(&led3);
+#if defined(DB_LED2_PORT)
+    db_gpio_init(&db_led2, DB_GPIO_OUT);
+    db_gpio_set(&db_led2);
+#endif
 
-    db_gpio_init_irq(&btn1, DB_GPIO_IN_PU, DB_GPIO_IRQ_EDGE_RISING, _btn_toggle_callback, (void *)&led1);
-    db_gpio_init_irq(&btn2, DB_GPIO_IN_PU, DB_GPIO_IRQ_EDGE_RISING, _btn_toggle_callback, (void *)&led2);
-    db_gpio_init_irq(&btn3, DB_GPIO_IN_PU, DB_GPIO_IRQ_EDGE_RISING, _btn_clear_callback, (void *)&led3);
-    db_gpio_init_irq(&btn4, DB_GPIO_IN_PU, DB_GPIO_IRQ_EDGE_RISING, _btn_set_callback, (void *)&led3);
+#if defined(DB_LED3_PORT)
+    db_gpio_init(&db_led3, DB_GPIO_OUT);
+    db_gpio_set(&db_led3);
+#endif
+
+#if defined(DB_BTN1_PORT)
+    db_gpio_init_irq(&db_btn1, DB_GPIO_IN_PU, DB_GPIO_IRQ_EDGE_RISING, _btn_toggle_callback, (void *)&db_led1);
+#endif
+
+#if defined(DB_BTN2_PORT)
+    db_gpio_init_irq(&db_btn2, DB_GPIO_IN_PU, DB_GPIO_IRQ_EDGE_RISING, _btn_toggle_callback, (void *)&db_led2);
+#endif
+
+#if defined(DB_BTN3_PORT)
+    db_gpio_init_irq(&db_btn3, DB_GPIO_IN_PU, DB_GPIO_IRQ_EDGE_RISING, _btn_clear_callback, (void *)&db_led3);
+#endif
+
+#if defined(DB_BTN4_PORT)
+    db_gpio_init_irq(&db_btn4, DB_GPIO_IN_PU, DB_GPIO_IRQ_EDGE_RISING, _btn_set_callback, (void *)&db_led3);
+#endif
 
     while (1) {
         __WFE();

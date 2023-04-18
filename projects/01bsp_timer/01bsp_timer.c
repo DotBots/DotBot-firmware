@@ -14,6 +14,7 @@
 #include <nrf.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "board_config.h"
 #include "gpio.h"
 #include "timer.h"
 
@@ -21,11 +22,7 @@
 
 //=========================== variables =========================================
 
-#if defined(NRF5340_XXAA)
-static const gpio_t led1 = { .port = 0, .pin = 28 };
-#else
-static const gpio_t led1 = { .port = 0, .pin = 13 };
-#endif
+static const gpio_t led1 = { .port = DB_LED1_PORT, .pin = DB_LED1_PIN };
 
 //=========================== main =========================================
 

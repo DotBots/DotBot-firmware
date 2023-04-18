@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "board.h"
+#include "board_config.h"
 #include "i2c.h"
 #include "timer_hf.h"
 
@@ -33,11 +34,6 @@ typedef struct {
     int16_t z;  ///< Z axis
 } lsm303agr_acc_data_t;
 
-//=========================== variables ========================================
-
-static const gpio_t scl = { .port = 0, .pin = 10 };
-static const gpio_t sda = { .port = 0, .pin = 9 };
-
 //=========================== main =============================================
 
 /**
@@ -46,7 +42,7 @@ static const gpio_t sda = { .port = 0, .pin = 9 };
 int main(void) {
     db_board_init();
     db_timer_hf_init();
-    db_i2c_init(&scl, &sda);
+    db_i2c_init(&db_scl, &db_sda);
     db_i2c_begin();
     uint8_t who_am_i;
     db_i2c_read_regs(LSM303AGR_ADDR, LSM303AGR_WHO_AM_I_REG, &who_am_i, 1);

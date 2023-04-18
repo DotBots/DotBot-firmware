@@ -13,6 +13,7 @@
 #include <string.h>
 // Include BSP headers
 #include "board.h"
+#include "board_config.h"
 #include "gpio.h"
 #include "hdlc.h"
 #include "protocol.h"
@@ -56,22 +57,6 @@ typedef struct {
 
 //=========================== variables ========================================
 
-#if defined(NRF5340_XXAA)
-static const gpio_t _rx_pin = { .pin = 0, .port = 1 };
-static const gpio_t _tx_pin = { .pin = 1, .port = 1 };
-static const gpio_t _btn1   = { .port = 0, .pin = 23 };
-static const gpio_t _btn2   = { .port = 0, .pin = 24 };
-static const gpio_t _btn3   = { .port = 0, .pin = 8 };
-static const gpio_t _btn4   = { .port = 0, .pin = 9 };
-#else
-static const gpio_t _rx_pin = { .pin = 8, .port = 0 };
-static const gpio_t _tx_pin = { .pin = 6, .port = 0 };
-static const gpio_t _btn1   = { .port = 0, .pin = 11 };
-static const gpio_t _btn2   = { .port = 0, .pin = 12 };
-static const gpio_t _btn3   = { .port = 0, .pin = 24 };
-static const gpio_t _btn4   = { .port = 0, .pin = 25 };
-#endif
-
 static gateway_vars_t _gw_vars;
 
 //=========================== callbacks ========================================
@@ -114,30 +99,30 @@ int main(void) {
     _gw_vars.radio_queue.current = 0;
     _gw_vars.radio_queue.last    = 0;
     _gw_vars.handshake_done      = false;
-    db_uart_init(&_rx_pin, &_tx_pin, DB_UART_BAUDRATE, &uart_callback);
+    db_uart_init(&db_uart_rx, &db_uart_tx, DB_UART_BAUDRATE, &uart_callback);
 
     db_radio_rx_enable();
 
-    db_gpio_init(&_btn2, DB_GPIO_IN_PU);
-    db_gpio_init(&_btn3, DB_GPIO_IN_PU);
-    db_gpio_init(&_btn4, DB_GPIO_IN_PU);
-    db_gpio_init(&_btn1, DB_GPIO_IN_PU);
+    db_gpio_init(&db_btn2, DB_GPIO_IN_PU);
+    db_gpio_init(&db_btn3, DB_GPIO_IN_PU);
+    db_gpio_init(&db_btn4, DB_GPIO_IN_PU);
+    db_gpio_init(&db_btn1, DB_GPIO_IN_PU);
 
     while (1) {
         protocol_move_raw_command_t command;
         // Read Button 1 (P0.11)
-        if (!db_gpio_read(&_btn1)) {
+        if (!db_gpio_read(&db_btn1)) {
             command.left_y = 100;
-        } else if (!db_gpio_read(&_btn2)) {
+        } else if (!db_gpio_read(&db_btn2)) {
             command.left_y = -100;
         } else {
             command.left_y = 0;
         }
 
         // Read Button 2 (P0.12)
-        if (!db_gpio_read(&_btn3)) {
+        if (!db_gpio_read(&db_btn3)) {
             command.right_y = 100;
-        } else if (!db_gpio_read(&_btn4)) {
+        } else if (!db_gpio_read(&db_btn4)) {
             command.right_y = -100;
         } else {
             command.right_y = 0;

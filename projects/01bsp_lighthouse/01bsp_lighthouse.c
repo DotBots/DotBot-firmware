@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "board.h"
+#include "board_config.h"
 #include "lh2.h"
 
 //=========================== defines ==========================================
@@ -23,32 +24,6 @@
 //=========================== variables ========================================
 
 static db_lh2_t _lh2;
-
-#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
-///! LH2 event gpio
-static const gpio_t _lh2_e_gpio = {
-    .port = 0,
-    .pin  = 26,
-};
-
-///! LH2 data gpio
-static const gpio_t _lh2_d_gpio = {
-    .port = 0,
-    .pin  = 25,
-};
-#else
-///! LH2 event gpio
-static const gpio_t _lh2_e_gpio = {
-    .port = 0,
-    .pin  = 30,
-};
-
-///! LH2 data gpio
-static const gpio_t _lh2_d_gpio = {
-    .port = 0,
-    .pin  = 29,
-};
-#endif
 
 //=========================== main =============================================
 
@@ -60,7 +35,7 @@ int main(void) {
     db_board_init();
 
     // Initialize the LH2
-    db_lh2_init(&_lh2, &_lh2_d_gpio, &_lh2_e_gpio);
+    db_lh2_init(&_lh2, &db_lh2_d, &db_lh2_e);
     db_lh2_start(&_lh2);
 
     while (1) {

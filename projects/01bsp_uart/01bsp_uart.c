@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "board.h"
+#include "board_config.h"
 #include "gpio.h"
 #include "uart.h"
 
@@ -24,14 +25,6 @@ typedef struct {
 } uart_vars_t;
 
 //=========================== variables ========================================
-
-#if defined(NRF5340_XXAA)
-static const gpio_t _rx_pin = { .pin = 0, .port = 1 };
-static const gpio_t _tx_pin = { .pin = 1, .port = 1 };
-#else
-static const gpio_t _rx_pin = { .pin = 9, .port = 0 };
-static const gpio_t _tx_pin = { .pin = 10, .port = 0 };
-#endif
 
 static uart_vars_t _uart_vars = { 0 };
 
@@ -53,7 +46,7 @@ static void uart_callback(uint8_t byte) {
  */
 int main(void) {
     db_board_init();
-    db_uart_init(&_rx_pin, &_tx_pin, DB_UART_BAUDRATE, &uart_callback);
+    db_uart_init(&db_uart_rx, &db_uart_tx, DB_UART_BAUDRATE, &uart_callback);
 
     while (1) {
         __WFE();
