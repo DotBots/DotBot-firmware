@@ -19,13 +19,17 @@
 
 //=========================== variables =========================================
 
-static const gpio_t _reg_pin = { .pin = 20, .port = 0 };
+#if defined(DB_REGULATOR_PORT)
+static const gpio_t _reg_pin = { .port = DB_REGULATOR_PORT, .pin = DB_REGULATOR_PIN };
+#endif
 
 //=========================== public ==========================================
 
 void db_board_init(void) {
 
-    // Turn ON the DotBot board regulator
+#if defined(DB_REGULATOR_PORT)
+    // Turn ON the DotBot board regulator if provided
     db_gpio_init(&_reg_pin, DB_GPIO_OUT);
     db_gpio_set(&_reg_pin);
+#endif
 }

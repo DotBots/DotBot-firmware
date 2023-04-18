@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <nrf.h>
 
+#include "board_config.h"
 #include "gpio.h"
 #include "motors.h"
 #include "pwm.h"
@@ -23,28 +24,10 @@
 // 4 PWM channels are used
 #define PWM_CHANNELS (4)
 
-//=========================== variables =========================================
-
-#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
-static const gpio_t _pwm_pins[PWM_CHANNELS] = {
-    { .port = 0, .pin = 28 },  // AIN1
-    { .port = 0, .pin = 29 },  // AIN2
-    { .port = 0, .pin = 30 },  // BIN1
-    { .port = 0, .pin = 31 },  // BIN2
-};
-#else
-static const gpio_t _pwm_pins[PWM_CHANNELS] = {
-    { .port = 0, .pin = 2 },   // AIN1
-    { .port = 0, .pin = 28 },  // AIN2
-    { .port = 1, .pin = 9 },   // BIN1
-    { .port = 0, .pin = 11 },  // BIN2
-};
-#endif
-
 //=========================== public ==========================================
 
 void db_motors_init(void) {
-    db_pwm_init(_pwm_pins, PWM_CHANNELS, M_TOP);
+    db_pwm_init(db_motors_pins, PWM_CHANNELS, M_TOP);
 }
 
 void db_motors_set_speed(int16_t l_speed, int16_t r_speed) {

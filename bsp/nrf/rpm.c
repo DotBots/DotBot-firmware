@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <nrf.h>
+#include "board_config.h"
 #include "rpm.h"
 #include "gpio.h"
 #include "timer.h"
@@ -70,14 +71,6 @@ typedef struct {
 
 //=========================== variables ========================================
 
-#if defined(NRF5340_XXAA)
-static const gpio_t _left_pin  = { .port = 0, .pin = 23 };
-static const gpio_t _right_pin = { .port = 0, .pin = 24 };
-#else
-static const gpio_t _left_pin  = { .port = 0, .pin = 17 };
-static const gpio_t _right_pin = { .port = 0, .pin = 15 };
-#endif
-
 /*
  * Global variable used to store cycle counts at the beginning and at the end of
  * an RTC timeframe (50ms), for each side
@@ -104,17 +97,17 @@ static void _update_counters(void);
 
 void db_rpm_init(void) {
     // Configure pin connected to left magnetic encoder sensor, input pullup
-    db_gpio_init(&_left_pin, DB_GPIO_IN_PU);
+    db_gpio_init(&db_rpm_left_pin, DB_GPIO_IN_PU);
     NRF_GPIOTE->CONFIG[RPM_LEFT_GPIOTE_CHAN] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
-                                               (_left_pin.pin << GPIOTE_CONFIG_PSEL_Pos) |
-                                               (_left_pin.port << GPIOTE_CONFIG_PORT_Pos) |
+                                               (db_rpm_left_pin.pin << GPIOTE_CONFIG_PSEL_Pos) |
+                                               (db_rpm_left_pin.port << GPIOTE_CONFIG_PORT_Pos) |
                                                (GPIOTE_CONFIG_POLARITY_LoToHi << GPIOTE_CONFIG_POLARITY_Pos);
 
     // Configure pin connected to right magnetic encoder sensor, input pullup
-    db_gpio_init(&_right_pin, DB_GPIO_IN_PU);
+    db_gpio_init(&db_rpm_right_pin, DB_GPIO_IN_PU);
     NRF_GPIOTE->CONFIG[RPM_RIGHT_GPIOTE_CHAN] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
-                                                (_right_pin.pin << GPIOTE_CONFIG_PSEL_Pos) |
-                                                (_right_pin.port << GPIOTE_CONFIG_PORT_Pos) |
+                                                (db_rpm_right_pin.pin << GPIOTE_CONFIG_PSEL_Pos) |
+                                                (db_rpm_right_pin.port << GPIOTE_CONFIG_PORT_Pos) |
                                                 (GPIOTE_CONFIG_POLARITY_LoToHi << GPIOTE_CONFIG_POLARITY_Pos);
 
     // Configure and clear timers
