@@ -5,10 +5,10 @@ DOCKER_TARGETS ?= all
 PACKAGES_DIR_OPT ?=
 SEGGER_DIR ?= /opt/segger
 BUILD_CONFIG ?= Debug
-NRF_TARGET ?= nrf52833
-PROJECT_FILE ?= dotbot-firmware-$(NRF_TARGET).emProject
+BUILD_TARGET ?= dotbot-v1
+PROJECT_FILE ?= $(BUILD_TARGET).emProject
 
-ifeq (nrf5340-app,$(NRF_TARGET))
+ifeq (nrf5340dk-app,$(BUILD_TARGET))
   PROJECTS ?= \
     01bsp_gpio \
     01bsp_i2c \
@@ -29,7 +29,7 @@ ifeq (nrf5340-app,$(NRF_TARGET))
     03app_nrf5340_app \
     03app_sailbot \
     #
-else ifeq (nrf5340-net,$(NRF_TARGET))
+else ifeq (nrf5340dk-net,$(BUILD_TARGET))
   PROJECTS ?= \
     01bsp_gpio \
     01bsp_i2c \
@@ -46,23 +46,34 @@ else ifeq (nrf5340-net,$(NRF_TARGET))
     01drv_pid \
     03app_dotbot_gateway \
     03app_nrf5340_net \
-    03app_sailbot \
     #
 else
   PROJECTS ?= $(shell find projects/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/projects// | sort)
 endif
 
-# remove nrf5340 specific apps for nrf52833 build
-ifeq (nrf52833,$(NRF_TARGET))
+# remove incompatible apps (nrf5340, sailbot gateway) for dotbot-v1 build
+ifeq (dotbot-v1,$(BUILD_TARGET))
+  PROJECTS := $(filter-out 03app_dotbot_gateway 03app_sailbot 03app_nrf5340_%,$(PROJECTS))
+  ARTIFACT_PROJECTS := 03app_dotbot
+endif
+
+# remove incompatible apps (nrf5340, dotbot, gateway) for sailbot-v1 build
+ifeq (sailbot-v1,$(BUILD_TARGET))
+  PROJECTS := $(filter-out 03app_dotbot_gateway 03app_dotbot 03app_nrf5340_%,$(PROJECTS))
+  ARTIFACT_PROJECTS := 03app_sailbot
+endif
+
+# remove incompatible apps (nrf5340) for nrf52833dk/nrf52840dk build
+ifneq (,$(filter nrf52833dk nrf52840dk,$(BUILD_TARGET)))
   PROJECTS := $(filter-out 03app_nrf5340_%,$(PROJECTS))
+  ARTIFACT_PROJECTS ?= 03app_dotbot_gateway
 endif
 
 SRCS ?= $(shell find bsp/ -name "*.[c|h]") $(shell find drv/ -name "*.[c|h]") $(shell find projects/ -name "*.[c|h]")
 CLANG_FORMAT ?= clang-format
 CLANG_FORMAT_TYPE ?= file
 
-ARTIFACT_PROJECTS ?= 03app_dotbot 03app_sailbot 03app_dotbot_gateway
-ARTIFACT_ELF = $(foreach app,$(ARTIFACT_PROJECTS),projects/$(app)/Output/$(NRF_TARGET)/$(BUILD_CONFIG)/Exe/$(app)-$(NRF_TARGET).elf)
+ARTIFACT_ELF = $(foreach app,$(ARTIFACT_PROJECTS),projects/$(app)/Output/$(BUILD_TARGET)/$(BUILD_CONFIG)/Exe/$(app)-$(BUILD_TARGET).elf)
 ARTIFACT_HEX = $(ARTIFACT_ELF:.elf=.hex)
 ARTIFACTS = $(ARTIFACT_ELF) $(ARTIFACT_HEX)
 
@@ -101,7 +112,7 @@ artifacts: $(ARTIFACT_PROJECTS)
 
 docker:
 	docker run --rm -i \
-		-e NRF_TARGET="$(NRF_TARGET)" \
+		-e BUILD_TARGET="$(BUILD_TARGET)" \
 		-e BUILD_CONFIG="$(BUILD_CONFIG)" \
 		-e PACKAGES_DIR_OPT="-packagesdir $(SEGGER_DIR)/packages" \
 		-e PROJECTS="$(PROJECTS)" \
