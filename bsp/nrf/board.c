@@ -13,6 +13,7 @@
 #include <nrf.h>
 
 #include "board.h"
+#include "board_config.h"
 #include "gpio.h"
 
 //=========================== defines =========================================

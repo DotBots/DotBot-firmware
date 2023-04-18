@@ -11,14 +11,15 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "board_config.h"
 #include "gpio.h"
 #include "i2c.h"
 #include "lis2mdl.h"
 
 //=========================== defines ==========================================
 
-static const gpio_t scl     = { .port = 1, .pin = 9 };
-static const gpio_t sda     = { .port = 0, .pin = 11 };
+static const gpio_t scl     = { .port = DB_I2C_SCL_PORT, .pin = DB_I2C_SCL_PIN };
+static const gpio_t sda     = { .port = DB_I2C_SDA_PORT, .pin = DB_I2C_SDA_PIN };
 static const gpio_t mag_int = { .port = 0, .pin = 17 };
 // static const gpio_t button_2 = { .port = 0, .pin = 12 };
 

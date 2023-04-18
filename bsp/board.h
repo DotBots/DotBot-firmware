@@ -12,8 +12,6 @@
  * @copyright Inria, 2022
  */
 
-#include "board_config.h"
-
 /**
  * @brief Turn ON the DotBot board
  *

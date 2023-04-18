@@ -13,6 +13,64 @@
  */
 
 /**
+ * @name    Debug pins definitions
+ * @{
+ */
+#define DB_DEBUG1_PORT 0
+#define DB_DEBUG1_PIN  9
+#define DB_DEBUG2_PORT 0
+#define DB_DEBUG2_PIN  10
+#define DB_DEBUG3_PORT 0
+#define DB_DEBUG3_PIN  31
+/** @} */
+
+/**
+ * @name    LEDs pins definitions
+ * @{
+ */
+#define DB_LED1_PORT DB_DEBUG1_PORT
+#define DB_LED1_PIN  DB_DEBUG1_PIN
+/** @} */
+
+/**
+ * @name    Buttons pins definitions
+ * @{
+ */
+#define DB_BTN1_PORT DB_DEBUG2_PORT
+#define DB_BTN1_PIN  DB_DEBUG2_PIN
+/** @} */
+
+/**
+ * @name    I2C pins definitions
+ * @{
+ */
+#define DB_I2C_SCL_PORT DB_DEBUG1_PORT
+#define DB_I2C_SCL_PIN  DB_DEBUG1_PIN
+#define DB_I2C_SDA_PORT DB_DEBUG2_PORT
+#define DB_I2C_SDA_PIN  DB_DEBUG2_PIN
+/** @} */
+
+/**
+ * @name    UART pins definitions
+ * @{
+ */
+#define DB_UART_RX_PORT DB_DEBUG1_PORT
+#define DB_UART_RX_PIN  DB_DEBUG1_PIN
+#define DB_UART_TX_PORT DB_DEBUG2_PORT
+#define DB_UART_TX_PIN  DB_DEBUG2_PIN
+/** @} */
+
+/**
+ * @name    LH2 event and data pins definitions
+ * @{
+ */
+#define DB_LH2_E_PORT 0
+#define DB_LH2_E_PIN  30
+#define DB_LH2_D_PORT 0
+#define DB_LH2_D_PIN  29
+/** @} */
+
+/**
  * @name    Regulator pin definitions
  * @{
  */
