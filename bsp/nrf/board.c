@@ -29,15 +29,3 @@ void db_board_init(void) {
     db_gpio_init(&_reg_pin, DB_GPIO_OUT);
     db_gpio_set(&_reg_pin);
 }
-
-void db_board_regulator_on(void) {
-
-    // Turn ON the DotBot board regulator
-    db_gpio_set(&_reg_pin);
-}
-
-void db_board_regulator_off(void) {
-
-    // Turn OFF the DotBot board regulator
-    db_gpio_clear(&_reg_pin);
-}
