@@ -1,5 +1,5 @@
 <!DOCTYPE CrossStudio_Project_File>
-<solution Name="projects-dotbot" target="8" version="2">
+<solution Name="projects-sailbot" target="8" version="2">
   <project Name="03app_sailbot">
     <configuration
       Name="Common"
