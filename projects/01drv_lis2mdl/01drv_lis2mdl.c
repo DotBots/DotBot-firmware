@@ -38,6 +38,7 @@ typedef struct {
 int main(void) {
     // Init the IMU
     lis2mdl_init(NULL);
+    lsm6ds_init(NULL);
 
 #if CALIBRATION_PROCEDURE
     lis2mdl_compass_data_t offset;

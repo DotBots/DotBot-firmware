@@ -21,6 +21,7 @@
 static const gpio_t scl     = { .port = DB_I2C_SCL_PORT, .pin = DB_I2C_SCL_PIN };
 static const gpio_t sda     = { .port = DB_I2C_SDA_PORT, .pin = DB_I2C_SDA_PIN };
 static const gpio_t mag_int = { .port = 0, .pin = 17 };
+//static const gpio_t imu_int = { .port = 0, .pin = 20};
 // static const gpio_t button_2 = { .port = 0, .pin = 12 };
 
 #define LIS2MDL_ADDR           (0x1E)
@@ -53,21 +54,46 @@ static const gpio_t mag_int = { .port = 0, .pin = 17 };
 // 1 / 6842, where 6842 is sensitivy from the datasheet
 #define LIS2MDL_SENSITIVITY 1.5f
 
+#define LSM6DS_ADDR         (0x6a)
+#define LSM6DS_WHO_AM_I_REG (0x0f)
+
+#define LSM6DS_WHO_AM_I_VAL (0x6a)
+
 typedef struct {
     lis2mdl_data_ready_cb_t callback;
     bool                    data_ready;
     float                   heading;
 } lis2mdl_vars_t;
 
+typedef struct {
+    lsm6ds_data_ready_cb_t callback;
+    bool                   data_ready;
+    lsm6ds_acc_data_t      acc;
+} lsm6ds_vars_t;
+
 //=========================== variables ========================================
 
 static lis2mdl_vars_t _lis2mdl_vars;
+static lsm6ds_vars_t  _lsm6ds_vars;
 
 //=========================== prototypes ========================================
 
 void lis2mdl_i2c_read_magnetometer(lis2mdl_compass_data_t *out);
 
 //============================== public ========================================
+
+void lsm6ds_init(lsm6ds_data_ready_cb_t callback) {
+    uint8_t who_am_i;
+    //uint8_t tmp;
+
+    _lsm6ds_vars.callback = callback;
+
+    // I2C already initialized?
+    db_i2c_begin();
+    db_i2c_read_regs(LSM6DS_ADDR, LSM6DS_WHO_AM_I_REG, &who_am_i, 1);
+    assert(who_am_i == LSM6DS_WHO_AM_I_VAL);
+    db_i2c_end();
+}
 
 void lis2mdl_init(lis2mdl_data_ready_cb_t callback) {
     uint8_t who_am_i;
