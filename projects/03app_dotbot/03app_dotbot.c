@@ -17,6 +17,7 @@
 #include <stdio.h>
 // Include BSP headers
 #include "board.h"
+#include "board_config.h"
 #include "device.h"
 #include "lh2.h"
 #include "protocol.h"
@@ -58,18 +59,6 @@ typedef struct {
 } dotbot_vars_t;
 
 //=========================== variables ========================================
-
-///! LH2 event gpio
-static const gpio_t _lh2_e_gpio = {
-    .port = 0,
-    .pin  = 30,
-};
-
-///! LH2 data gpio
-static const gpio_t _lh2_d_gpio = {
-    .port = 0,
-    .pin  = 29,
-};
 
 static dotbot_vars_t _dotbot_vars;
 
@@ -182,7 +171,7 @@ int main(void) {
     db_timer_set_periodic_ms(0, DB_TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
     db_timer_set_periodic_ms(1, DB_ADVERTIZEMENT_DELAY_MS, &_advertise);
     db_timer_set_periodic_ms(2, DB_LH2_UPDATE_DELAY_MS, &_update_lh2);
-    db_lh2_init(&_dotbot_vars.lh2, &_lh2_d_gpio, &_lh2_e_gpio);
+    db_lh2_init(&_dotbot_vars.lh2, &db_lh2_d, &db_lh2_e);
     db_lh2_start(&_dotbot_vars.lh2);
 
     while (1) {

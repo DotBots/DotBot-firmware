@@ -11,6 +11,7 @@
 #include <stdlib.h>
 // Include BSP packages
 #include "board.h"
+#include "board_config.h"
 #include "gpio.h"
 #include "radio.h"
 #include "timer_hf.h"
@@ -30,11 +31,7 @@ static const uint8_t packet_tx[] = {
     0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x00   // ABCDEFG
 };
 
-#if defined(NRF5340_XXAA)
-static const gpio_t _dbg_pin = { .port = 0, .pin = 28 };
-#else
-static const gpio_t _dbg_pin = { .port = 0, .pin = 13 };
-#endif
+static const gpio_t _dbg_pin = { .port = DB_DEBUG1_PORT, .pin = DB_DEBUG1_PIN };
 
 //=========================== functions =========================================
 

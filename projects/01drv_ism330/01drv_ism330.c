@@ -9,6 +9,7 @@
 #include <nrf.h>
 #include <stdlib.h>
 #include "board.h"
+#include "board_config.h"
 #include "timer_hf.h"
 #include "ism330.h"
 
@@ -19,24 +20,12 @@
 static ism330_acc_data_t  acc_data;
 static ism330_gyro_data_t gyro_data;
 
-///! IMU SDA pin
-static const gpio_t _ism330_sda_gpio = {
-    .port = 0,
-    .pin  = 10,
-};
-
-///! IMU SCL pin
-static const gpio_t _ism330_scl_gpio = {
-    .port = 0,
-    .pin  = 9,
-};
-
 //=========================== main =============================================
 
 int main(void) {
 
     db_board_init();
-    db_ism330_init(&_ism330_sda_gpio, &_ism330_scl_gpio);
+    db_ism330_init(&db_sda, &db_scl);
     db_timer_hf_init();
 
     db_timer_hf_delay_ms(500);

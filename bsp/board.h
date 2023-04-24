@@ -21,14 +21,4 @@
  */
 void db_board_init(void);
 
-/**
- * @brief Turn ON the on-board regulator
- */
-void db_board_regulator_on(void);
-
-/**
- * @brief Turn OFF the on-board regulator
- */
-void db_board_regulator_off(void);
-
 #endif
