@@ -105,6 +105,9 @@ int main(void) {
     _sailbot_vars.radio_override       = false;
     _sailbot_vars.sail_trim            = 50;
 
+    // Initialize the protocol
+    db_protocol_init();
+
     // Configure Radio as a receiver
     db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);  // Set the callback function.
     db_radio_set_frequency(8);                           // Set the RX frequency to 2408 MHz.

@@ -153,6 +153,7 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
 int main(void) {
     db_board_init();
     db_log_flash_init(LOG_DATA_DOTBOT);
+    db_protocol_init();
     db_rgbled_init();
     db_motors_init();
     db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);
