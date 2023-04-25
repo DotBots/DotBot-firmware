@@ -19,7 +19,7 @@ RUN apt-get update && \
         && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-ARG SEGGER_STUDIO_VERSION=v710a
+ARG SEGGER_STUDIO_VERSION=v712a
 ARG SEGGER_STUDIO_ARCHIVE=Setup_EmbeddedStudio_ARM_${SEGGER_STUDIO_VERSION}_linux_x64.tar.gz
 ARG SEGGER_STUDIO_URL=https://www.segger.com/downloads/embedded-studio/${SEGGER_STUDIO_ARCHIVE}
 RUN echo 'Installing Segger Studio' >&2 && \
