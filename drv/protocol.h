@@ -16,7 +16,7 @@
 
 //=========================== defines ==========================================
 
-#define DB_FIRMWARE_VERSION  (7)                   ///< Version of the firmware
+#define DB_FIRMWARE_VERSION  (8)                   ///< Version of the firmware
 #define DB_SWARM_ID          (0x0000)              ///< Default swarm ID
 #define DB_BROADCAST_ADDRESS 0xffffffffffffffffUL  ///< Broadcast address
 #define DB_GATEWAY_ADDRESS   0x0000000000000000UL  ///< Gateway address
@@ -52,6 +52,7 @@ typedef struct __attribute__((packed)) {
     uint16_t           swarm_id;     ///< Swarm ID
     application_type_t application;  ///< Application type
     uint8_t            version;      ///< Version of the firmware
+    uint32_t           msg_id;       ///< Message ID
     command_type_t     type;         ///< Type of command following this header
 } protocol_header_t;
 
@@ -90,6 +91,11 @@ typedef struct __attribute__((packed)) {
 } protocol_gps_waypoints_t;
 
 //=========================== public ===========================================
+
+/**
+ * @brief   Initializes the RNG used as a source for random message IDs
+ */
+void db_protocol_init(void);
 
 /**
  * @brief   Write the protocol header in a buffer
