@@ -40,6 +40,14 @@
     <file file_name="nrf/motors.c" />
     <file file_name="motors.h" />
   </project>
+  <project Name="00bsp_nvmc">
+    <configuration
+      Name="Common"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf/nvmc.c" />
+    <file file_name="nvmc.h" />
+  </project>
   <project Name="00bsp_dotbot_rgbled">
     <configuration
       Name="Common"
