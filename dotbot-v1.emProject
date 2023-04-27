@@ -58,4 +58,5 @@
   <import file_name="drv/drv.emProject" />
   <import file_name="projects/projects-bsp-drv.emProject" />
   <import file_name="projects/projects-dotbot.emProject" />
+  <import file_name="projects/projects-log-dump.emProject" />
 </solution>
