@@ -37,8 +37,7 @@ typedef struct {
  */
 int main(void) {
     // Init the IMU
-    lis2mdl_init(NULL);
-    lsm6ds_init(NULL);
+    imu9d_init(NULL, NULL);
 
 #if CALIBRATION_PROCEDURE
     lis2mdl_compass_data_t offset;
@@ -48,14 +47,22 @@ int main(void) {
         ;
     }
 #else
-    float heading;
+    float   heading;
+    int16_t roll;
 
     while (1) {
         // processor idle until an interrupt occurs and is handled
-        if (lis2mdl_data_ready()) {
-            lis2mdl_read_heading();
-            heading = lis2mdl_last_heading() * 180 / CONST_PI;
-            printf("heading: %f\n", heading);
+        while (lis2mdl_data_ready() || lsm6ds_data_ready()) {
+            if (lis2mdl_data_ready()) {
+                lis2mdl_read_heading();
+                heading = lis2mdl_last_heading() * 180 / CONST_PI;
+                printf("heading: %f\n", heading);
+            }
+            if (lsm6ds_data_ready()) {
+                lsm6ds_read_accelerometer();
+                roll = lsm6ds_last_roll();
+                printf("roll: %d\n", roll);
+            }
         }
         __WFE();
     }
