@@ -3,12 +3,12 @@
   <project Name="03app_dotbot">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_lh2(bsp);00bsp_dotbot_motors(bsp);00bsp_timer(bsp);00drv_dotbot_hdlc(drv);00drv_dotbot_protocol(drv);00bsp_dotbot_rgbled(bsp);00bsp_radio(bsp)"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_lh2(bsp);00bsp_dotbot_motors(bsp);00bsp_timer(bsp);00drv_dotbot_hdlc(drv);00drv_dotbot_protocol(drv);00bsp_dotbot_rgbled(bsp);00bsp_radio(bsp);00drv_log_flash(drv)"
       project_directory="03app_dotbot"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -17,14 +17,14 @@
       </file>
     </folder>
     <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
       <file file_name="$(DeviceLinkerScript)">
         <configuration Name="Common" file_type="Linker Script" />
       </file>
       <file file_name="$(DeviceMemoryMap)">
         <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
     <folder Name="Source Files">
@@ -32,11 +32,11 @@
       <file file_name="03app_dotbot.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="$(SeggerThumbStartup)" />
       <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
+      <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
 </solution>
