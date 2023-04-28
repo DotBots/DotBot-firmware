@@ -83,7 +83,6 @@ void lis2mdl_init(lis2mdl_data_ready_cb_t callback) {
 
     // init I2C
     db_i2c_init(&scl, &sda);
-
     db_i2c_begin();
     db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_WHO_AM_I_REG, &who_am_i, 1);
     assert(who_am_i == LIS2MDL_WHO_AM_I_VAL);
@@ -100,6 +99,7 @@ void lis2mdl_init(lis2mdl_data_ready_cb_t callback) {
 
     db_i2c_end();
 
+    // trigger dummy read of data
     lis2mdl_i2c_read_magnetometer(&dummy_data);
 }
 
