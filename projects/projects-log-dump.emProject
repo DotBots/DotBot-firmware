@@ -1,10 +1,10 @@
 <!DOCTYPE CrossStudio_Project_File>
-<solution Name="projects-dotbot" target="8" version="2">
-  <project Name="03app_dotbot">
+<solution Name="projects-log-dump" target="8" version="2">
+  <project Name="03app_log_dump">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_lh2(bsp);00bsp_dotbot_motors(bsp);00bsp_timer(bsp);00drv_dotbot_hdlc(drv);00drv_dotbot_protocol(drv);00bsp_dotbot_rgbled(bsp);00bsp_radio(bsp);00drv_log_flash(drv)"
-      project_directory="03app_dotbot"
+      project_dependencies="00drv_log_flash(drv);00bsp_timer_hf(bsp)"
+      project_directory="03app_log_dump"
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(DeviceCommonHeaderFile)" />
@@ -29,7 +29,7 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="03app_dotbot.c" />
+      <file file_name="main.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="$(DeviceCommonVectorsFile)" />

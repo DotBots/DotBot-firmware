@@ -59,6 +59,7 @@
   <import file_name="projects/projects-bsp-drv.emProject" />
   <import file_name="projects/projects-dotbot.emProject" />
   <import file_name="projects/projects-gateway.emProject" />
+  <import file_name="projects/projects-log-dump.emProject" />
   <import file_name="projects/projects-sailbot.emProject" />
   <import file_name="projects/projects-nrf5340-app.emProject" />
 </solution>
