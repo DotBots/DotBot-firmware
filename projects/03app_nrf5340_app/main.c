@@ -69,6 +69,13 @@ int main(void) {
                                     SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
                                     SPU_PERIPHID_PERM_PRESENT_IsPresent << SPU_PERIPHID_PERM_PRESENT_Pos);
 
+    // Define FLASHREGION 62-64 as non secure (half of the network core flash)
+    for (uint8_t region = 62; region < 64; region++) {
+        NRF_SPU_S->FLASHREGION[region].PERM = (SPU_FLASHREGION_PERM_READ_Enable << SPU_FLASHREGION_PERM_READ_Pos |
+                                               SPU_FLASHREGION_PERM_WRITE_Enable << SPU_FLASHREGION_PERM_WRITE_Pos |
+                                               SPU_FLASHREGION_PERM_SECATTR_Non_Secure << SPU_FLASHREGION_PERM_SECATTR_Pos);
+    }
+
     // Configure non secure DPPI channels
     NRF_SPU_S->DPPI[0].PERM = 0;
 
