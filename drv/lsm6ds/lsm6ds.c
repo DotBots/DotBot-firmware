@@ -100,7 +100,7 @@ void lsm6ds_init(lsm6ds_data_ready_cb_t callback) {
     lsm6ds_i2c_read_accelerometer(&dummy_data);
 }
 
-void lsm6ds_read_accelerometer() {
+void lsm6ds_read_accelerometer(void) {
     lsm6ds_acc_data_t raw_data;
 
     lsm6ds_i2c_read_accelerometer(&raw_data);
