@@ -14,6 +14,7 @@ ifeq (nrf5340dk-app,$(BUILD_TARGET))
     01bsp_i2c \
     01bsp_lighthouse \
     01bsp_motors \
+    01bsp_nvmc \
     01bsp_radio_txrx \
     01bsp_radio_lr_txrx \
     01bsp_rgbled \
@@ -26,6 +27,7 @@ ifeq (nrf5340dk-app,$(BUILD_TARGET))
     01drv_pid \
     03app_dotbot \
     03app_dotbot_gateway \
+    03app_log_dump \
     03app_nrf5340_app \
     03app_sailbot \
     #
@@ -34,6 +36,7 @@ else ifeq (nrf5340dk-net,$(BUILD_TARGET))
     01bsp_gpio \
     01bsp_i2c \
     01bsp_motors \
+    01bsp_nvmc \
     01bsp_radio_txrx \
     01bsp_radio_lr_txrx \
     01bsp_rgbled \
@@ -45,6 +48,7 @@ else ifeq (nrf5340dk-net,$(BUILD_TARGET))
     01drv_lis2mdl \
     01drv_pid \
     03app_dotbot_gateway \
+    03app_log_dump \
     03app_nrf5340_net \
     #
 else
