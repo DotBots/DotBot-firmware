@@ -47,8 +47,7 @@ int main(void) {
         ;
     }
 #else
-    float   heading;
-    int16_t roll;
+    float heading;
 
     while (1) {
         // processor idle until an interrupt occurs and is handled

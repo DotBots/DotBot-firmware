@@ -65,9 +65,7 @@ static lis2mdl_vars_t _lis2mdl_vars;
 //=========================== prototypes ========================================
 
 void        lis2mdl_i2c_read_magnetometer(lis2mdl_compass_data_t *out);
-void        lsm6ds_i2c_read_accelerometer(lsm6ds_acc_data_t *out);
 static void cb_mag_int(void *ctx);
-static void cb_imu_int(void *ctx);
 
 //============================== public ========================================
 
