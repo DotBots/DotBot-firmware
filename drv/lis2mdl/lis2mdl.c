@@ -126,8 +126,9 @@ bool lsm6ds_data_ready(void) {
 }
 
 void lsm6ds_init(lsm6ds_data_ready_cb_t callback) {
-    uint8_t who_am_i;
-    uint8_t tmp;
+    uint8_t           who_am_i;
+    uint8_t           tmp;
+    lsm6ds_acc_data_t dummy_data;
 
     _lsm6ds_vars.callback = callback;
 
@@ -150,7 +151,7 @@ void lsm6ds_init(lsm6ds_data_ready_cb_t callback) {
     db_i2c_end();
 
     // do a fake read to trigger
-    lsm6ds_read_accelerometer();
+    lsm6ds_i2c_read_accelerometer(&dummy_data);
 }
 
 void lsm6ds_read_accelerometer() {
@@ -196,8 +197,9 @@ void lsm6ds_i2c_read_accelerometer(lsm6ds_acc_data_t *out) {
 }
 
 void lis2mdl_init(lis2mdl_data_ready_cb_t callback) {
-    uint8_t who_am_i;
-    uint8_t tmp;
+    uint8_t                who_am_i;
+    uint8_t                tmp;
+    lis2mdl_compass_data_t dummy_data;
 
     _lis2mdl_vars.callback = callback;
 
@@ -217,7 +219,7 @@ void lis2mdl_init(lis2mdl_data_ready_cb_t callback) {
 
     db_i2c_end();
 
-    lis2mdl_read_heading();
+    lis2mdl_i2c_read_magnetometer(&dummy_data);
 }
 
 // function should be invoked only upon DATA RDY interrupt, outside of the interrupt context
