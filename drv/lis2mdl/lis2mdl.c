@@ -93,21 +93,28 @@ static lsm6ds_vars_t  _lsm6ds_vars;
 
 //=========================== prototypes ========================================
 
-void lis2mdl_i2c_read_magnetometer(lis2mdl_compass_data_t *out);
-void lsm6ds_i2c_read_accelerometer(lsm6ds_acc_data_t *out);
-void interrupt_init(const gpio_t *imu, const gpio_t *magnetometer);
+void      lis2mdl_i2c_read_magnetometer(lis2mdl_compass_data_t *out);
+void      lsm6ds_i2c_read_accelerometer(lsm6ds_acc_data_t *out);
+void      interrupt_init(const gpio_t *imu, const gpio_t *magnetometer);
+gpio_cb_t cb_mag_int(void *ctx);
+gpio_cb_t cb_imu_int(void *ctx);
 
 //============================== public ========================================
 
 void imu9d_init(lsm6ds_data_ready_cb_t accelerometer_callback, lis2mdl_data_ready_cb_t magnetometer_callback) {
 
+    // init the interrupts
+    db_gpio_init_irq(&mag_int, DB_GPIO_IN_PD, DB_GPIO_IRQ_EDGE_RISING, cb_mag_int, NULL);
+    db_gpio_init_irq(&imu_int, DB_GPIO_IN_PD, DB_GPIO_IRQ_EDGE_RISING, cb_imu_int, NULL);
+
     // init I2C
     db_i2c_init(&scl, &sda);
 
+    // init the magnetometer sensor
     lis2mdl_init(magnetometer_callback);
-    lsm6ds_init(accelerometer_callback);
 
-    interrupt_init(&imu_int, &mag_int);
+    // init the 6D IMU with accelerometer
+    lsm6ds_init(accelerometer_callback);
 }
 
 int8_t lsm6ds_last_roll(void) {
@@ -141,6 +148,9 @@ void lsm6ds_init(lsm6ds_data_ready_cb_t callback) {
     db_i2c_write_regs(LSM6DS_ADDR, LSM6DS_INT1_CTRL_REG, &tmp, 1);
 
     db_i2c_end();
+
+    // do a fake read to trigger
+    lsm6ds_read_accelerometer();
 }
 
 void lsm6ds_read_accelerometer() {
@@ -185,35 +195,6 @@ void lsm6ds_i2c_read_accelerometer(lsm6ds_acc_data_t *out) {
     _lsm6ds_vars.data_ready = false;
 }
 
-void interrupt_init(const gpio_t *imu, const gpio_t *magnetometer) {
-    // Configure DATARDY GPIO as input and generate an interrupt on rising edge
-
-    NRF_P0->PIN_CNF[magnetometer->pin] = (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos) |        // Set Pin as input
-                                         (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos) |  // Activate the input
-                                         (GPIO_PIN_CNF_PULL_Pulldown << GPIO_PIN_CNF_PULL_Pos) |   // Activate the Pull-down resistor
-                                         (GPIO_PIN_CNF_SENSE_High << GPIO_PIN_CNF_SENSE_Pos);      // Sense for high level
-
-    NRF_P0->PIN_CNF[imu->pin] = (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos) |        // Set Pin as input
-                                (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos) |  // Activate the input
-                                (GPIO_PIN_CNF_PULL_Pulldown << GPIO_PIN_CNF_PULL_Pos) |   // Activate the Pull-down resistor
-                                (GPIO_PIN_CNF_SENSE_High << GPIO_PIN_CNF_SENSE_Pos);      // Sense for high level
-
-    NRF_GPIOTE->CONFIG[0] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
-                            (magnetometer->pin << GPIOTE_CONFIG_PSEL_Pos) |
-                            (magnetometer->port << GPIOTE_CONFIG_PORT_Pos) |
-                            (GPIOTE_CONFIG_POLARITY_LoToHi << GPIOTE_CONFIG_POLARITY_Pos);
-
-    NRF_GPIOTE->CONFIG[1] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
-                            (imu->pin << GPIOTE_CONFIG_PSEL_Pos) |
-                            (imu->port << GPIOTE_CONFIG_PORT_Pos) |
-                            (GPIOTE_CONFIG_POLARITY_LoToHi << GPIOTE_CONFIG_POLARITY_Pos);
-
-    NRF_GPIOTE->INTENSET = GPIOTE_INTENSET_PORT_Enabled << GPIOTE_INTENSET_PORT_Pos;
-
-    NVIC_ClearPendingIRQ(GPIOTE_IRQn);
-    NVIC_EnableIRQ(GPIOTE_IRQn);
-}
-
 void lis2mdl_init(lis2mdl_data_ready_cb_t callback) {
     uint8_t who_am_i;
     uint8_t tmp;
@@ -235,6 +216,8 @@ void lis2mdl_init(lis2mdl_data_ready_cb_t callback) {
     db_i2c_write_regs(LIS2MDL_ADDR, LIS2MDL_CFG_REG_C_REG, &tmp, 1);
 
     db_i2c_end();
+
+    lis2mdl_read_heading();
 }
 
 // function should be invoked only upon DATA RDY interrupt, outside of the interrupt context
@@ -317,28 +300,20 @@ bool lis2mdl_data_ready(void) {
 }
 
 //============================== interrupts ====================================
+gpio_cb_t cb_mag_int(void *ctx) {
+    // set data_ready to true
+    _lis2mdl_vars.data_ready = true;
+    // invoke application callback if initialized
+    if (_lis2mdl_vars.callback != NULL) {
+        _lis2mdl_vars.callback();
+    }
+}
 
-void GPIOTE_IRQHandler(void) {
-    uint32_t pins;
-    pins = NRF_P0->IN;
-
-    if (NRF_GPIOTE->EVENTS_PORT) {
-        NRF_GPIOTE->EVENTS_PORT = 0;
-        if (pins & GPIO_IN_PIN17_Msk) {  // if pin 17 is high, data is ready
-            // set data_ready to true
-            _lis2mdl_vars.data_ready = true;
-            // invoke application callback if initialized
-            if (_lis2mdl_vars.callback != NULL) {
-                _lis2mdl_vars.callback();
-            }
-        }
-        if (pins & GPIO_IN_PIN20_Msk) {
-            // set data_ready to true
-            _lsm6ds_vars.data_ready = true;
-            //  invoke application callback if initialized
-            if (_lsm6ds_vars.callback != NULL) {
-                _lsm6ds_vars.callback();
-            }
-        }
+gpio_cb_t cb_imu_int(void *ctx) {
+    // set data_ready to true
+    _lsm6ds_vars.data_ready = true;
+    //  invoke application callback if initialized
+    if (_lsm6ds_vars.callback != NULL) {
+        _lsm6ds_vars.callback();
     }
 }
