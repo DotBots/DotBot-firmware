@@ -102,4 +102,20 @@
 #define DB_RPM_RIGHT_PIN  15
 /** @} */
 
+/**
+ * @name    LSM6DS pin definitions
+ * @{
+ */
+#define DB_LSM6DS_INT_PORT 0
+#define DB_LSM6DS_INT_PIN  20
+/** @} */
+
+/**
+ * @name    LIS2MDL pin definitions
+ * @{
+ */
+#define DB_LIS2MDL_INT_PORT 0
+#define DB_LIS2MDL_INT_PIN  17
+/** @} */
+
 #endif

@@ -20,7 +20,7 @@
 
 static const gpio_t scl     = { .port = DB_I2C_SCL_PORT, .pin = DB_I2C_SCL_PIN };
 static const gpio_t sda     = { .port = DB_I2C_SDA_PORT, .pin = DB_I2C_SDA_PIN };
-static const gpio_t imu_int = { .port = 0, .pin = 20 };
+static const gpio_t imu_int = { .port = DB_LSM6DS_INT_PORT, .pin = DB_LSM6DS_INT_PIN };
 
 #define LSM6DS_ADDR              (0x6a)
 #define LSM6DS_WHO_AM_I_REG      (0x0f)

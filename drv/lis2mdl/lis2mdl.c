@@ -20,7 +20,7 @@
 
 static const gpio_t scl     = { .port = DB_I2C_SCL_PORT, .pin = DB_I2C_SCL_PIN };
 static const gpio_t sda     = { .port = DB_I2C_SDA_PORT, .pin = DB_I2C_SDA_PIN };
-static const gpio_t mag_int = { .port = 0, .pin = 17 };
+static const gpio_t mag_int = { .port = DB_LIS2MDL_INT_PORT, .pin = DB_LIS2MDL_INT_PIN };
 
 #define LIS2MDL_ADDR           (0x1E)
 #define LIS2MDL_OFFSET_X_REG_L (0x45)
