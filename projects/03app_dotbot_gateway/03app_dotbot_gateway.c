@@ -90,6 +90,7 @@ static void radio_callback(uint8_t *packet, uint8_t length) {
  */
 int main(void) {
     db_board_init();
+    db_protocol_init();
 
     // Configure Radio as transmitter
     db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);  // All RX packets received are forwarded in an HDLC frame over UART
