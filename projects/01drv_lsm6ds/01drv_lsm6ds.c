@@ -41,5 +41,3 @@ int main(void) {
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
     __NOP();
 }
-
-//=========================== functions =========================================
