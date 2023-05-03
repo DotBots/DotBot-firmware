@@ -25,9 +25,27 @@ typedef struct {
 
 typedef void (*lsm6ds_data_ready_cb_t)(void);  ///< Callback function prototype, it is called on each available sample
 
-void   lsm6ds_init(lsm6ds_data_ready_cb_t callback);
-bool   lsm6ds_data_ready(void);
-void   lsm6ds_read_accelerometer(void);
+/**
+ * @brief Initialize the LSM6DS chip
+ *
+ * @param[in] scl       callback pointer invoked whenever data is ready
+ */
+void lsm6ds_init(lsm6ds_data_ready_cb_t callback);
+
+/**
+ * @brief Checks whether LSM6DS data is ready for fetch
+ */
+bool lsm6ds_data_ready(void);
+
+/**
+ * @brief Reads accelerometer data on LSM6DS over I2C
+ */
+void lsm6ds_read_accelerometer(void);
+
+/**
+ * @brief Read the value of last roll angle
+   @return Roll angle
+ */
 int8_t lsm6ds_last_roll(void);
 
 #endif
