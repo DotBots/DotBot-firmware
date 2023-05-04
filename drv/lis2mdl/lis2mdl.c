@@ -1,7 +1,7 @@
 /**
  * @file lis2mdl.c
  * @author Mališa Vučinić <malisa.vucinic@inria.fr>
- * @brief Module for controlling the IMU on Kyosho Fortune 612 SailBot.
+ * @brief Module for controlling the LIS2MDL magnetometer.
  *
  * @copyright Inria, 2022
  *
@@ -20,8 +20,7 @@
 
 static const gpio_t scl     = { .port = DB_I2C_SCL_PORT, .pin = DB_I2C_SCL_PIN };
 static const gpio_t sda     = { .port = DB_I2C_SDA_PORT, .pin = DB_I2C_SDA_PIN };
-static const gpio_t mag_int = { .port = 0, .pin = 17 };
-// static const gpio_t button_2 = { .port = 0, .pin = 12 };
+static const gpio_t mag_int = { .port = DB_LIS2MDL_INT_PORT, .pin = DB_LIS2MDL_INT_PIN };
 
 #define LIS2MDL_ADDR           (0x1E)
 #define LIS2MDL_OFFSET_X_REG_L (0x45)
@@ -65,16 +64,22 @@ static lis2mdl_vars_t _lis2mdl_vars;
 
 //=========================== prototypes ========================================
 
-void lis2mdl_i2c_read_magnetometer(lis2mdl_compass_data_t *out);
+void        lis2mdl_i2c_read_magnetometer(lis2mdl_compass_data_t *out);
+static void cb_mag_int(void *ctx);
 
 //============================== public ========================================
 
 void lis2mdl_init(lis2mdl_data_ready_cb_t callback) {
-    uint8_t who_am_i;
-    uint8_t tmp;
+    uint8_t                who_am_i;
+    uint8_t                tmp;
+    lis2mdl_compass_data_t dummy_data;
 
     _lis2mdl_vars.callback = callback;
 
+    // init the interrupts
+    db_gpio_init_irq(&mag_int, DB_GPIO_IN_PD, DB_GPIO_IRQ_EDGE_RISING, cb_mag_int, NULL);
+
+    // init I2C
     db_i2c_init(&scl, &sda);
     db_i2c_begin();
     db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_WHO_AM_I_REG, &who_am_i, 1);
@@ -92,21 +97,8 @@ void lis2mdl_init(lis2mdl_data_ready_cb_t callback) {
 
     db_i2c_end();
 
-    // Configure DATARDY GPIO as input and generate an interrupt on rising edge
-    NRF_P0->PIN_CNF[mag_int.pin] = (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos) |        // Set Pin as input
-                                   (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos) |  // Activate the input
-                                   (GPIO_PIN_CNF_PULL_Pulldown << GPIO_PIN_CNF_PULL_Pos) |   // Activate the Pull-down resistor
-                                   (GPIO_PIN_CNF_SENSE_High << GPIO_PIN_CNF_SENSE_Pos);      // Sense for high level
-
-    NRF_GPIOTE->CONFIG[0] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
-                            (mag_int.pin << GPIOTE_CONFIG_PSEL_Pos) |
-                            (mag_int.port << GPIOTE_CONFIG_PORT_Pos) |
-                            (GPIOTE_CONFIG_POLARITY_LoToHi << GPIOTE_CONFIG_POLARITY_Pos);
-
-    NRF_GPIOTE->INTENSET = GPIOTE_INTENSET_PORT_Enabled << GPIOTE_INTENSET_PORT_Pos;
-
-    NVIC_EnableIRQ(GPIOTE_IRQn);
-    NVIC_ClearPendingIRQ(GPIOTE_IRQn);
+    // trigger dummy read of data
+    lis2mdl_i2c_read_magnetometer(&dummy_data);
 }
 
 // function should be invoked only upon DATA RDY interrupt, outside of the interrupt context
@@ -119,6 +111,7 @@ void lis2mdl_i2c_read_magnetometer(lis2mdl_compass_data_t *out) {
     db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_STATUS_REG, &tmp, 1);
 
     if ((tmp & 0x8) == 0) {
+        db_i2c_end();
         return;
     }
 
@@ -189,19 +182,12 @@ bool lis2mdl_data_ready(void) {
 
 //============================== interrupts ====================================
 
-void GPIOTE_IRQHandler(void) {
-    uint32_t pins;
-    pins = NRF_P0->IN;
-
-    if (NRF_GPIOTE->EVENTS_PORT) {
-        NRF_GPIOTE->EVENTS_PORT = 0;
-        if (pins & GPIO_IN_PIN17_Msk) {  // if pin 17 is high, data is ready
-            // set data_ready to true
-            _lis2mdl_vars.data_ready = true;
-            // invoke application callback if initialized
-            if (_lis2mdl_vars.callback != NULL) {
-                _lis2mdl_vars.callback();
-            }
-        }
+static void cb_mag_int(void *ctx) {
+    (void)ctx;
+    // set data_ready to true
+    _lis2mdl_vars.data_ready = true;
+    // invoke application callback if initialized
+    if (_lis2mdl_vars.callback != NULL) {
+        _lis2mdl_vars.callback();
     }
 }

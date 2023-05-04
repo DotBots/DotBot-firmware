@@ -34,11 +34,20 @@
   <project Name="00drv_lis2mdl">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_i2c(bsp)"
+      project_dependencies="00bsp_i2c(bsp);00bsp_gpio(bsp)"
       project_directory="lis2mdl"
       project_type="Library" />
     <file file_name="lis2mdl.c" />
     <file file_name="../lis2mdl.h" />
+  </project>
+  <project Name="00drv_lsm6ds">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_i2c(bsp);00bsp_gpio(bsp)"
+      project_directory="lsm6ds"
+      project_type="Library" />
+    <file file_name="lsm6ds.c" />
+    <file file_name="../lsm6ds.h" />
   </project>
   <project Name="00drv_log_flash">
     <configuration

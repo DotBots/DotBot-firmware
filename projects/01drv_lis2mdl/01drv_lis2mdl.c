@@ -1,7 +1,7 @@
 /**
- * @file 03app_sailbot.c
+ * @file 01drv_lis2mdl.c
  * @author Mališa Vučinić <malisa.vucinic@inria.fr>
- * @brief This is an example on how to use the IMU driver.
+ * @brief This is an example on how to use the LIS2MDL driver.
  *
  * Load this program on your board, set CALIBRATION_PROCEDURE to 1 if calibration is needed.
  * With CALIBRATION_PROCEDURE set to 0, compass heading is printed as debug output.
@@ -36,7 +36,7 @@ typedef struct {
  *  @brief The program starts executing here.
  */
 int main(void) {
-    // Init the IMU
+    // Init the magnetometer
     lis2mdl_init(NULL);
 
 #if CALIBRATION_PROCEDURE
