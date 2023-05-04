@@ -28,7 +28,7 @@ typedef void (*lsm6ds_data_ready_cb_t)(void);  ///< Callback function prototype,
 /**
  * @brief Initialize the LSM6DS chip
  *
- * @param[in] scl       callback pointer invoked whenever data is ready
+ * @param[in] callback       callback pointer invoked whenever data is ready
  */
 void lsm6ds_init(lsm6ds_data_ready_cb_t callback);
 
