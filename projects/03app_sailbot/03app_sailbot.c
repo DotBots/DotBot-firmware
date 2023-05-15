@@ -22,6 +22,7 @@
 #include "servos.h"
 #include "gps.h"
 #include "lis2mdl.h"
+#include "lsm6ds.h"
 #include "protocol.h"
 #include "timer.h"
 #include "timer_hf.h"
@@ -35,6 +36,7 @@
 #define WAYPOINT_DISTANCE_THRESHOLD (10)    ///< in meters
 
 #define SAIL_TRIM_ANGLE_UNIT_STEP (10)     //< unit step increase/decrease when trimming the sails
+#define ROLL_COMPASS_INVALID      (15)     ///< roll angle threshold (in degrees) to declare magnetometer reading invalid
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
 #define TIMEOUT_CHECK_DELAY_MS    (200)    ///< 200 ms delay between packet received timeout checks
 #define ADVERTISEMENT_PERIOD_MS   (500)    ///< send an advertisement every 500 ms
@@ -113,8 +115,11 @@ int main(void) {
     db_radio_set_frequency(8);                           // Set the RX frequency to 2408 MHz.
     db_radio_rx_enable();                                // Start receiving packets.
 
-    // Init the IMU
+    // Init the LIS2MDL magnetometer
     lis2mdl_init(NULL);
+
+    // Init the LSM6DS IMU
+    lsm6ds_init(NULL);
 
     // Configure Motors
     servos_init();
@@ -139,6 +144,9 @@ int main(void) {
         // if IMU data is ready, trigger the I2C transfer from outside the interrupt context
         if (lis2mdl_data_ready()) {
             lis2mdl_read_heading();
+        }
+        if (lsm6ds_data_ready()) {
+            lsm6ds_read_accelerometer();
         }
         __WFE();
     }
@@ -224,8 +232,17 @@ void control_loop_callback(void) {
         return;
     }
 
+    // get roll angle
+    int8_t roll = lsm6ds_last_roll();
+
     // get heading
     float heading = lis2mdl_last_heading();
+
+    if (roll >= ROLL_COMPASS_INVALID || roll <= -ROLL_COMPASS_INVALID) {
+        // boat is overly tilted, magnetometer reading is likely wrong
+        // TODO release sails by a little bit
+        return;
+    }
 
     _send_gps_data(gps_data, (uint16_t)(heading * 180 / M_PI));
 
