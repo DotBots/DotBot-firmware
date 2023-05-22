@@ -176,11 +176,12 @@ float lis2mdl_last_uncompensated_heading(void) {
 float lis2mdl_last_tilt_compensated_heading(float roll, float pitch) {
     // Discard the sign of roll and pitch
     roll = fabsf(roll);
-    //pitch += fabsf(pitch);
+    pitch = fabsf(pitch);
 
-    float by2 = (float)-_lis2mdl_vars.last_raw_data.z * sinf(roll) + (float)_lis2mdl_vars.last_raw_data.x * cosf(roll);
+    float by2 = (float)_lis2mdl_vars.last_raw_data.z * sinf(roll) + (float)_lis2mdl_vars.last_raw_data.x * cosf(roll);
+    float bz2 = (float)-_lis2mdl_vars.last_raw_data.x * sinf(roll) + _lis2mdl_vars.last_raw_data.z * cosf(roll);
 
-    float bx3 = (float)_lis2mdl_vars.last_raw_data.y;
+    float bx3 = (float)_lis2mdl_vars.last_raw_data.y * cosf(pitch) + (float) bz2 * sinf(pitch);
 
     float ret = atan2f(by2, bx3) + M_PI;
 
