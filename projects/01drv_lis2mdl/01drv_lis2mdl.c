@@ -59,11 +59,11 @@ int main(void) {
         }
         if (lsm6ds_data_ready()) {
             lsm6ds_read_accelerometer();
-            float roll = lsm6ds_last_roll();
-            float pitch = lsm6ds_last_pitch();
-            int16_t compensated_heading = (int16_t) (lis2mdl_last_tilt_compensated_heading(roll, pitch) * 180.0 / CONST_PI);
-            int16_t uncompensated_heading = (int16_t) (lis2mdl_last_uncompensated_heading() * 180.0 / CONST_PI);
-            printf("uncompensated=%d compensated=%d roll=%d pitch=%d\n", uncompensated_heading, compensated_heading, (int16_t) (roll * 180.0 / CONST_PI), (int16_t) (pitch * 180.0/CONST_PI));
+            float   roll                  = lsm6ds_last_roll();
+            float   pitch                 = lsm6ds_last_pitch();
+            int16_t compensated_heading   = (int16_t)(lis2mdl_last_tilt_compensated_heading(roll, pitch) * 180.0 / CONST_PI);
+            int16_t uncompensated_heading = (int16_t)(lis2mdl_last_uncompensated_heading() * 180.0 / CONST_PI);
+            printf("uncompensated=%d compensated=%d roll=%d pitch=%d\n", uncompensated_heading, compensated_heading, (int16_t)(roll * 180.0 / CONST_PI), (int16_t)(pitch * 180.0 / CONST_PI));
         }
         __WFE();
     }

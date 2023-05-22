@@ -137,7 +137,6 @@ void lis2mdl_i2c_read_magnetometer(lis2mdl_compass_data_t *out) {
     out->y -= SAILBOT_REV10_OFFSET_Y;
     out->z -= SAILBOT_REV10_OFFSET_Z;
 
-    //printf("Mx=%d My=%d Mz=%d\n",out->x, out->y, out->z);
     _lis2mdl_vars.data_ready = false;
 }
 
@@ -175,13 +174,13 @@ float lis2mdl_last_uncompensated_heading(void) {
 
 float lis2mdl_last_tilt_compensated_heading(float roll, float pitch) {
     // Discard the sign of roll and pitch
-    roll = fabsf(roll);
+    roll  = fabsf(roll);
     pitch = fabsf(pitch);
 
     float by2 = (float)_lis2mdl_vars.last_raw_data.z * sinf(roll) + (float)_lis2mdl_vars.last_raw_data.x * cosf(roll);
     float bz2 = (float)-_lis2mdl_vars.last_raw_data.x * sinf(roll) + _lis2mdl_vars.last_raw_data.z * cosf(roll);
 
-    float bx3 = (float)_lis2mdl_vars.last_raw_data.y * cosf(pitch) + (float) bz2 * sinf(pitch);
+    float bx3 = (float)_lis2mdl_vars.last_raw_data.y * cosf(pitch) + (float)bz2 * sinf(pitch);
 
     float ret = atan2f(by2, bx3) + M_PI;
 

@@ -115,8 +115,8 @@ void lsm6ds_read_accelerometer(void) {
     _lsm6ds_vars.roll = atan2f(-raw_data.x, raw_data.z);
 
     // convert to pitch angle
-    float gz2 = (float) -raw_data.x * sin(_lsm6ds_vars.roll) + (float) raw_data.z * cos(_lsm6ds_vars.roll);
-     _lsm6ds_vars.pitch = atanf((float) raw_data.y / gz2);
+    float gz2          = (float)-raw_data.x * sin(_lsm6ds_vars.roll) + (float)raw_data.z * cos(_lsm6ds_vars.roll);
+    _lsm6ds_vars.pitch = atanf((float)raw_data.y / gz2);
 
     return;
 }

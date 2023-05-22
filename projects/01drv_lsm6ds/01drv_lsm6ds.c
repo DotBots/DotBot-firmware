@@ -18,7 +18,7 @@
 
 #include "lsm6ds.h"
 
-#define CONST_PI              (3.14159265359f)
+#define CONST_PI (3.14159265359f)
 
 //=========================== main =========================================
 
@@ -33,8 +33,8 @@ int main(void) {
         // processor idle until an interrupt occurs and is handled
         if (lsm6ds_data_ready()) {
             lsm6ds_read_accelerometer();
-            int16_t roll = (int16_t) (lsm6ds_last_roll() * 180 / CONST_PI);
-            int16_t pitch = (int16_t) (lsm6ds_last_pitch() * 180 / CONST_PI);
+            int16_t roll  = (int16_t)(lsm6ds_last_roll() * 180 / CONST_PI);
+            int16_t pitch = (int16_t)(lsm6ds_last_pitch() * 180 / CONST_PI);
             printf("roll: %d pitch = %d\n", roll, pitch);
         }
         __WFE();
