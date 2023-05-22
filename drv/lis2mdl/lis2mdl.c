@@ -56,7 +56,6 @@ typedef struct {
     lis2mdl_data_ready_cb_t callback;
     bool                    data_ready;
     lis2mdl_compass_data_t  last_raw_data;
-    float                   uncompensated_heading;
 } lis2mdl_vars_t;
 
 //=========================== variables ========================================
