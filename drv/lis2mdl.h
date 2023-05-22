@@ -28,7 +28,8 @@ typedef void (*lis2mdl_data_ready_cb_t)(void);  ///< Callback function prototype
 void  lis2mdl_init(lis2mdl_data_ready_cb_t callback);
 bool  lis2mdl_data_ready(void);
 void  lis2mdl_read_heading(void);
-float lis2mdl_last_heading(void);
+float lis2mdl_last_uncompensated_heading(void);
+float lis2mdl_last_tilt_compensated_heading(float roll, float pitch);
 void  lis2mdl_magnetometer_calibrate(lis2mdl_compass_data_t *offset);
 
 #endif

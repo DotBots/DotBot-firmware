@@ -18,14 +18,14 @@
 
 #include "lsm6ds.h"
 
+#define CONST_PI              (3.14159265359f)
+
 //=========================== main =========================================
 
 /**
  *  @brief The program starts executing here.
  */
 int main(void) {
-    int16_t roll;
-
     // Init the IMU
     lsm6ds_init(NULL);
 
@@ -33,8 +33,9 @@ int main(void) {
         // processor idle until an interrupt occurs and is handled
         if (lsm6ds_data_ready()) {
             lsm6ds_read_accelerometer();
-            roll = lsm6ds_last_roll();
-            printf("roll: %d\n", roll);
+            int16_t roll = (int16_t) (lsm6ds_last_roll() * 180 / CONST_PI);
+            int16_t pitch = (int16_t) (lsm6ds_last_pitch() * 180 / CONST_PI);
+            printf("roll: %d pitch = %d\n", roll, pitch);
         }
         __WFE();
     }

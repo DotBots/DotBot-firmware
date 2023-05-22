@@ -46,6 +46,12 @@ void lsm6ds_read_accelerometer(void);
  * @brief Read the value of last roll angle
    @return Roll angle
  */
-int8_t lsm6ds_last_roll(void);
+float lsm6ds_last_roll(void);
+
+/**
+ * @brief Read the value of last pitch angle
+   @return Pitch angle
+ */
+float lsm6ds_last_pitch(void);
 
 #endif

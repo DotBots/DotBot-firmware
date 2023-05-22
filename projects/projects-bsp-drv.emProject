@@ -549,7 +549,7 @@
   <project Name="01drv_lis2mdl">
     <configuration
       Name="Common"
-      project_dependencies="00drv_lis2mdl(drv)"
+      project_dependencies="00drv_lis2mdl(drv);01drv_lsm6ds(projects-bsp-drv)"
       project_directory="01drv_lis2mdl"
       project_type="Executable" />
     <folder Name="Device Files">
@@ -586,7 +586,7 @@
     </folder>
     <configuration Name="Debug" linker_printf_fp_enabled="Float" />
   </project>
-   <project Name="01drv_lsm6ds">
+  <project Name="01drv_lsm6ds">
     <configuration
       Name="Common"
       project_dependencies="00drv_lsm6ds(drv)"

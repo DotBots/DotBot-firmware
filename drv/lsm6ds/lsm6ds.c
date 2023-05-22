@@ -46,7 +46,8 @@ static const gpio_t imu_int = { .port = DB_LSM6DS_INT_PORT, .pin = DB_LSM6DS_INT
 typedef struct {
     lsm6ds_data_ready_cb_t callback;
     bool                   data_ready;
-    int16_t                roll;
+    float                  roll;
+    float                  pitch;
 } lsm6ds_vars_t;
 
 //=========================== variables ========================================
@@ -60,8 +61,12 @@ static void cb_imu_int(void *ctx);
 
 //============================== public ========================================
 
-int8_t lsm6ds_last_roll(void) {
+float lsm6ds_last_roll(void) {
     return _lsm6ds_vars.roll;
+}
+
+float lsm6ds_last_pitch(void) {
+    return _lsm6ds_vars.pitch;
 }
 
 bool lsm6ds_data_ready(void) {
@@ -107,7 +112,12 @@ void lsm6ds_read_accelerometer(void) {
     lsm6ds_i2c_read_accelerometer(&raw_data);
 
     // convert to roll angle
-    _lsm6ds_vars.roll = (int16_t)(atan2f(raw_data.x, raw_data.z) * 180 / M_PI);
+    _lsm6ds_vars.roll = atan2f(-raw_data.x, raw_data.z);
+
+    // convert to pitch angle
+    float gz2 = (float) -raw_data.x * sin(_lsm6ds_vars.roll) + (float) raw_data.z * cos(_lsm6ds_vars.roll);
+     _lsm6ds_vars.pitch = atanf((float) raw_data.y / gz2);
+
     return;
 }
 

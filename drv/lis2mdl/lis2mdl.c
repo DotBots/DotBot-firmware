@@ -55,7 +55,8 @@ static const gpio_t mag_int = { .port = DB_LIS2MDL_INT_PORT, .pin = DB_LIS2MDL_I
 typedef struct {
     lis2mdl_data_ready_cb_t callback;
     bool                    data_ready;
-    float                   heading;
+    lis2mdl_compass_data_t  last_raw_data;
+    float                   uncompensated_heading;
 } lis2mdl_vars_t;
 
 //=========================== variables ========================================
@@ -131,6 +132,12 @@ void lis2mdl_i2c_read_magnetometer(lis2mdl_compass_data_t *out) {
     out->z |= (int16_t)tmp << 8;
     db_i2c_end();
 
+    // compensate for hard-iron offsets
+    out->x -= SAILBOT_REV10_OFFSET_X;
+    out->y -= SAILBOT_REV10_OFFSET_Y;
+    out->z -= SAILBOT_REV10_OFFSET_Z;
+
+    //printf("Mx=%d My=%d Mz=%d\n",out->x, out->y, out->z);
     _lis2mdl_vars.data_ready = false;
 }
 
@@ -155,25 +162,29 @@ void lis2mdl_magnetometer_calibrate(lis2mdl_compass_data_t *offset) {
 }
 
 void lis2mdl_read_heading(void) {
-    lis2mdl_compass_data_t raw_data;
-    float                  x;
-    float                  y;
+    lis2mdl_i2c_read_magnetometer(&_lis2mdl_vars.last_raw_data);
 
-    lis2mdl_i2c_read_magnetometer(&raw_data);
-
-    // convert to heading
-
-    // convert raw data to uT and account for offset
-    x = (float)(raw_data.x - SAILBOT_REV10_OFFSET_X) * LIS2MDL_SENSITIVITY;
-    y = (float)(raw_data.y - SAILBOT_REV10_OFFSET_Y) * LIS2MDL_SENSITIVITY;
-
-    // atan2(x,y) for north-clockwise convention, + Pi for 0 to 2PI heading
-    _lis2mdl_vars.heading = atan2f(x, y) + M_PI;
     return;
 }
 
-float lis2mdl_last_heading(void) {
-    return _lis2mdl_vars.heading;
+float lis2mdl_last_uncompensated_heading(void) {
+    // convert to heading
+    // atan2(x,y) for north-clockwise convention, + Pi for 0 to 2PI heading
+    return atan2f(_lis2mdl_vars.last_raw_data.x, _lis2mdl_vars.last_raw_data.y) + M_PI;
+}
+
+float lis2mdl_last_tilt_compensated_heading(float roll, float pitch) {
+    // Discard the sign of roll and pitch
+    roll = fabsf(roll);
+    //pitch += fabsf(pitch);
+
+    float by2 = (float)-_lis2mdl_vars.last_raw_data.z * sinf(roll) + (float)_lis2mdl_vars.last_raw_data.x * cosf(roll);
+
+    float bx3 = (float)_lis2mdl_vars.last_raw_data.y;
+
+    float ret = atan2f(by2, bx3) + M_PI;
+
+    return ret;
 }
 
 bool lis2mdl_data_ready(void) {

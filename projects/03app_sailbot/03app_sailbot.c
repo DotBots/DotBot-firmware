@@ -225,7 +225,7 @@ void control_loop_callback(void) {
     }
 
     // get heading
-    float heading = lis2mdl_last_heading();
+    float heading = lis2mdl_last_uncompensated_heading();
 
     _send_gps_data(gps_data, (uint16_t)(heading * 180 / M_PI));
 
