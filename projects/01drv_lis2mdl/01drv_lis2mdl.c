@@ -17,6 +17,7 @@
 // Include BSP packages
 
 #include "lis2mdl.h"
+#include "lsm6ds.h"
 
 //=========================== defines =========================================
 
@@ -39,6 +40,9 @@ int main(void) {
     // Init the magnetometer
     lis2mdl_init(NULL);
 
+    // Init the IMU to read pitch and roll values to compensate heading
+    lsm6ds_init(NULL);
+
 #if CALIBRATION_PROCEDURE
     lis2mdl_compass_data_t offset;
 
@@ -47,14 +51,19 @@ int main(void) {
         ;
     }
 #else
-    float heading;
 
     while (1) {
         // processor idle until an interrupt occurs and is handled
         if (lis2mdl_data_ready()) {
             lis2mdl_read_heading();
-            heading = lis2mdl_last_heading() * 180 / CONST_PI;
-            printf("heading: %f\n", heading);
+        }
+        if (lsm6ds_data_ready()) {
+            lsm6ds_read_accelerometer();
+            float roll = lsm6ds_last_roll();
+            float pitch = lsm6ds_last_pitch();
+            int16_t compensated_heading = (int16_t) (lis2mdl_last_tilt_compensated_heading(roll, pitch) * 180.0 / CONST_PI);
+            int16_t uncompensated_heading = (int16_t) (lis2mdl_last_uncompensated_heading() * 180.0 / CONST_PI);
+            printf("uncompensated=%d compensated=%d roll=%d pitch=%d\n", uncompensated_heading, compensated_heading, (int16_t) (roll * 180.0 / CONST_PI), (int16_t) (pitch * 180.0/CONST_PI));
         }
         __WFE();
     }
