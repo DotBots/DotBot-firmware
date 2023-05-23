@@ -22,6 +22,7 @@
 #include "servos.h"
 #include "gps.h"
 #include "lis2mdl.h"
+#include "lsm6ds.h"
 #include "protocol.h"
 #include "timer.h"
 #include "timer_hf.h"
@@ -113,8 +114,11 @@ int main(void) {
     db_radio_set_frequency(8);                           // Set the RX frequency to 2408 MHz.
     db_radio_rx_enable();                                // Start receiving packets.
 
-    // Init the IMU
+    // Init the magnetometer
     lis2mdl_init(NULL);
+
+    // Init the accelerometer
+    lsm6ds_init(NULL);
 
     // Configure Motors
     servos_init();
@@ -139,6 +143,9 @@ int main(void) {
         // if IMU data is ready, trigger the I2C transfer from outside the interrupt context
         if (lis2mdl_data_ready()) {
             lis2mdl_read_heading();
+        }
+        if (lsm6ds_data_ready()) {
+            lsm6ds_read_accelerometer();
         }
         __WFE();
     }
@@ -224,8 +231,12 @@ void control_loop_callback(void) {
         return;
     }
 
-    // get heading
-    float heading = lis2mdl_last_uncompensated_heading();
+    // get values of roll and pitch from the accelerometer
+    float roll  = lsm6ds_last_roll();
+    float pitch = lsm6ds_last_pitch();
+
+    // get tilt-compensated heading
+    float heading = lis2mdl_last_tilt_compensated_heading(roll, pitch);
 
     _send_gps_data(gps_data, (uint16_t)(heading * 180 / M_PI));
 
