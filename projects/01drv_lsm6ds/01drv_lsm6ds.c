@@ -3,8 +3,8 @@
  * @author Mališa Vučinić <malisa.vucinic@inria.fr>
  * @brief This is an example on how to use the LSM6DS driver.
  *
- * Load this program on your board in debug mode, roll will be continuously
- * printed.
+ * Load this program on your board in debug mode, accelerometer values will
+ * be printed continously.
  *
  * @copyright Inria, 2022
  *
@@ -18,8 +18,6 @@
 
 #include "lsm6ds.h"
 
-#define CONST_PI (3.14159265359f)
-
 //=========================== main =========================================
 
 /**
@@ -29,13 +27,13 @@ int main(void) {
     // Init the IMU
     lsm6ds_init(NULL);
 
+    printf("X,Y,Z\n");
     while (1) {
         // processor idle until an interrupt occurs and is handled
         if (lsm6ds_data_ready()) {
-            lsm6ds_read_accelerometer();
-            int16_t roll  = (int16_t)(lsm6ds_last_roll() * 180 / CONST_PI);
-            int16_t pitch = (int16_t)(lsm6ds_last_pitch() * 180 / CONST_PI);
-            printf("roll: %d pitch = %d\n", roll, pitch);
+            lsm6ds_acc_data_t acc;
+            lsm6ds_read_accelerometer(&acc);
+            printf("%d,%d,%d\n", acc.x, acc.y, acc.z);
         }
         __WFE();
     }

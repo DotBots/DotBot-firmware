@@ -49,6 +49,15 @@
     <file file_name="lsm6ds.c" />
     <file file_name="../lsm6ds.h" />
   </project>
+  <project Name="00drv_imu">
+    <configuration
+      Name="Common"
+      project_dependencies="00drv_lis2mdl(drv);00drv_lsm6ds(drv)"
+      project_directory="imu"
+      project_type="Library" />
+    <file file_name="imu.c" />
+    <file file_name="../imu.h" />
+  </project>
   <project Name="00drv_log_flash">
     <configuration
       Name="Common"

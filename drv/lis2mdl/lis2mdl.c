@@ -1,7 +1,7 @@
 /**
  * @file lis2mdl.c
  * @author Mališa Vučinić <malisa.vucinic@inria.fr>
- * @brief Module for controlling the LIS2MDL magnetometer.
+ * @brief Module for reading the LIS2MDL magnetometer.
  *
  * @copyright Inria, 2022
  *
@@ -55,7 +55,6 @@ static const gpio_t mag_int = { .port = DB_LIS2MDL_INT_PORT, .pin = DB_LIS2MDL_I
 typedef struct {
     lis2mdl_data_ready_cb_t callback;
     bool                    data_ready;
-    lis2mdl_compass_data_t  last_raw_data;
 } lis2mdl_vars_t;
 
 //=========================== variables ========================================
@@ -139,51 +138,10 @@ void lis2mdl_i2c_read_magnetometer(lis2mdl_compass_data_t *out) {
     _lis2mdl_vars.data_ready = false;
 }
 
-void lis2mdl_magnetometer_calibrate(lis2mdl_compass_data_t *offset) {
-    (void)offset;
-    lis2mdl_compass_data_t current;
-
-    printf("X,Y,Z\n");
-
-    // loop forever
-    while (1) {
-
-        // save max and min values
-        if (lis2mdl_data_ready()) {
-            lis2mdl_i2c_read_magnetometer(&current);
-            printf("%d,%d,%d\n", current.x, current.y, current.z);
-        }
-        __WFE();
-    }
+void lis2mdl_read_magnetometer(lis2mdl_compass_data_t *out) {
+    lis2mdl_i2c_read_magnetometer(out);
 
     return;
-}
-
-void lis2mdl_read_heading(void) {
-    lis2mdl_i2c_read_magnetometer(&_lis2mdl_vars.last_raw_data);
-
-    return;
-}
-
-float lis2mdl_last_uncompensated_heading(void) {
-    // convert to heading
-    // atan2(x,y) for north-clockwise convention, + Pi for 0 to 2PI heading
-    return atan2f(_lis2mdl_vars.last_raw_data.x, _lis2mdl_vars.last_raw_data.y) + M_PI;
-}
-
-float lis2mdl_last_tilt_compensated_heading(float roll, float pitch) {
-    // Discard the sign of roll and pitch
-    roll  = fabsf(roll);
-    pitch = fabsf(pitch);
-
-    float by2 = (float)_lis2mdl_vars.last_raw_data.z * sinf(roll) + (float)_lis2mdl_vars.last_raw_data.x * cosf(roll);
-    float bz2 = (float)-_lis2mdl_vars.last_raw_data.x * sinf(roll) + _lis2mdl_vars.last_raw_data.z * cosf(roll);
-
-    float bx3 = (float)_lis2mdl_vars.last_raw_data.y * cosf(pitch) + (float)bz2 * sinf(pitch);
-
-    float ret = atan2f(by2, bx3) + M_PI;
-
-    return ret;
 }
 
 bool lis2mdl_data_ready(void) {
