@@ -117,11 +117,8 @@ int main(void) {
     db_radio_set_frequency(8);                           // Set the RX frequency to 2408 MHz.
     db_radio_rx_enable();                                // Start receiving packets.
 
-    // Init the magnetometer
-    lis2mdl_init(NULL);
-
-    // Init the accelerometer
-    lsm6ds_init(NULL);
+    // Init the IMU chips
+    imu_init(NULL, NULL);
 
     // Configure Motors
     servos_init();

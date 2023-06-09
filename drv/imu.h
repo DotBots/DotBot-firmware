@@ -16,6 +16,14 @@
 #include "lsm6ds.h"
 
 /**
+ * @brief Initialize the IMU chips
+ *
+ * @param[in] lis2mdl_callback callback pointer invoked whenever LIS2MDL data is ready, can be NULL
+ * @param[in] lsm6ds_callback callback pointer invoked whenever LSM6DS data is ready, can be NULL
+ */
+void imu_init(lis2mdl_data_ready_cb_t lis2mdl_callback, lsm6ds_data_ready_cb_t lsm6ds_callback);
+
+/**
  * @brief Calculate roll angle
  *
  * @param[in] acc_reading Raw accelerometer reading struct

@@ -23,10 +23,6 @@
 typedef struct {
 } drv_imu_vars_t;
 
-//=========================== variables =========================================
-
-//=========================== prototypes =========================================
-
 //=========================== main =========================================
 
 /**
@@ -36,11 +32,8 @@ int main(void) {
     lis2mdl_compass_data_t mag = { 0 };
     lsm6ds_acc_data_t      acc = { 0 };
 
-    // Init the magnetometer
-    lis2mdl_init(NULL);
-
-    // Init the IMU to read pitch and roll values to compensate heading
-    lsm6ds_init(NULL);
+    // Init the IMU chips
+    imu_init(NULL, NULL);
 
     while (1) {
         // processor idle until an interrupt occurs and is handled
@@ -62,5 +55,3 @@ int main(void) {
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
     __NOP();
 }
-
-//=========================== functions =========================================

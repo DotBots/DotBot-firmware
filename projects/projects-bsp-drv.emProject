@@ -629,7 +629,7 @@
   <project Name="01drv_imu">
     <configuration
       Name="Common"
-      project_dependencies="00drv_lis2mdl(drv);00drv_lsm6ds(drv);00drv_imu(drv)"
+      project_dependencies="00drv_imu(drv)"
       project_directory="01drv_imu"
       project_type="Executable" />
     <folder Name="Device Files">
