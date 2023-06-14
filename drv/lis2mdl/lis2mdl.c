@@ -1,7 +1,7 @@
 /**
  * @file lis2mdl.c
  * @author Mališa Vučinić <malisa.vucinic@inria.fr>
- * @brief Module for controlling the LIS2MDL magnetometer.
+ * @brief Module for reading the LIS2MDL magnetometer.
  *
  * @copyright Inria, 2022
  *
@@ -55,7 +55,6 @@ static const gpio_t mag_int = { .port = DB_LIS2MDL_INT_PORT, .pin = DB_LIS2MDL_I
 typedef struct {
     lis2mdl_data_ready_cb_t callback;
     bool                    data_ready;
-    float                   heading;
 } lis2mdl_vars_t;
 
 //=========================== variables ========================================
@@ -131,49 +130,18 @@ void lis2mdl_i2c_read_magnetometer(lis2mdl_compass_data_t *out) {
     out->z |= (int16_t)tmp << 8;
     db_i2c_end();
 
+    // compensate for hard-iron offsets
+    out->x -= SAILBOT_REV10_OFFSET_X;
+    out->y -= SAILBOT_REV10_OFFSET_Y;
+    out->z -= SAILBOT_REV10_OFFSET_Z;
+
     _lis2mdl_vars.data_ready = false;
 }
 
-void lis2mdl_magnetometer_calibrate(lis2mdl_compass_data_t *offset) {
-    (void)offset;
-    lis2mdl_compass_data_t current;
-
-    printf("X,Y,Z\n");
-
-    // loop forever
-    while (1) {
-
-        // save max and min values
-        if (lis2mdl_data_ready()) {
-            lis2mdl_i2c_read_magnetometer(&current);
-            printf("%d,%d,%d\n", current.x, current.y, current.z);
-        }
-        __WFE();
-    }
+void lis2mdl_read_magnetometer(lis2mdl_compass_data_t *out) {
+    lis2mdl_i2c_read_magnetometer(out);
 
     return;
-}
-
-void lis2mdl_read_heading(void) {
-    lis2mdl_compass_data_t raw_data;
-    float                  x;
-    float                  y;
-
-    lis2mdl_i2c_read_magnetometer(&raw_data);
-
-    // convert to heading
-
-    // convert raw data to uT and account for offset
-    x = (float)(raw_data.x - SAILBOT_REV10_OFFSET_X) * LIS2MDL_SENSITIVITY;
-    y = (float)(raw_data.y - SAILBOT_REV10_OFFSET_Y) * LIS2MDL_SENSITIVITY;
-
-    // atan2(x,y) for north-clockwise convention, + Pi for 0 to 2PI heading
-    _lis2mdl_vars.heading = atan2f(x, y) + M_PI;
-    return;
-}
-
-float lis2mdl_last_heading(void) {
-    return _lis2mdl_vars.heading;
 }
 
 bool lis2mdl_data_ready(void) {

@@ -39,13 +39,9 @@ bool lsm6ds_data_ready(void);
 
 /**
  * @brief Reads accelerometer data on LSM6DS over I2C
+ *
+ * @param[out] out Struct to write data to
  */
-void lsm6ds_read_accelerometer(void);
-
-/**
- * @brief Read the value of last roll angle
-   @return Roll angle
- */
-int8_t lsm6ds_last_roll(void);
+void lsm6ds_read_accelerometer(lsm6ds_acc_data_t *out);
 
 #endif

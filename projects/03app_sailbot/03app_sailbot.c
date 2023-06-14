@@ -22,6 +22,8 @@
 #include "servos.h"
 #include "gps.h"
 #include "lis2mdl.h"
+#include "lsm6ds.h"
+#include "imu.h"
 #include "protocol.h"
 #include "timer.h"
 #include "timer_hf.h"
@@ -72,6 +74,8 @@ typedef struct {
     uint8_t                  radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
     bool                     autonomous_operation;               ///< Flag used to enable/disable autonomous operation
     bool                     radio_override;                     ///< Flag used to override autonomous operation when radio-controlled
+    lis2mdl_compass_data_t   last_magnetometer;                  ///< Last reading of the magnetometer
+    lsm6ds_acc_data_t        last_accelerometer;                 ///< Last reading of the accelerometer
 } sailbot_vars_t;
 
 //=========================== variables =========================================
@@ -113,8 +117,8 @@ int main(void) {
     db_radio_set_frequency(8);                           // Set the RX frequency to 2408 MHz.
     db_radio_rx_enable();                                // Start receiving packets.
 
-    // Init the IMU
-    lis2mdl_init(NULL);
+    // Init the IMU chips
+    imu_init(NULL, NULL);
 
     // Configure Motors
     servos_init();
@@ -138,7 +142,10 @@ int main(void) {
         // processor idle until an interrupt occurs and is handled
         // if IMU data is ready, trigger the I2C transfer from outside the interrupt context
         if (lis2mdl_data_ready()) {
-            lis2mdl_read_heading();
+            lis2mdl_read_magnetometer(&_sailbot_vars.last_magnetometer);
+        }
+        if (lsm6ds_data_ready()) {
+            lsm6ds_read_accelerometer(&_sailbot_vars.last_accelerometer);
         }
         __WFE();
     }
@@ -224,8 +231,8 @@ void control_loop_callback(void) {
         return;
     }
 
-    // get heading
-    float heading = lis2mdl_last_heading();
+    // get tilt-compensated heading
+    float heading = imu_calculate_tilt_compensated_heading(&_sailbot_vars.last_magnetometer, &_sailbot_vars.last_accelerometer);
 
     _send_gps_data(gps_data, (uint16_t)(heading * 180 / M_PI));
 

@@ -5,7 +5,7 @@
  * @file lis2mdl.h
  * @addtogroup sailbot
  *
- * @brief  Module for controlling the IMU on the SailBot.
+ * @brief  Module for reading the LIS2MDL magnetometer.
  *
  * @author Mališa Vučinić <malisa.vucinic@inria.fr>
  *
@@ -25,10 +25,23 @@ typedef struct {
 
 typedef void (*lis2mdl_data_ready_cb_t)(void);  ///< Callback function prototype, it is called on each available sample
 
-void  lis2mdl_init(lis2mdl_data_ready_cb_t callback);
-bool  lis2mdl_data_ready(void);
-void  lis2mdl_read_heading(void);
-float lis2mdl_last_heading(void);
-void  lis2mdl_magnetometer_calibrate(lis2mdl_compass_data_t *offset);
+/**
+ * @brief Initialize the LIS2MDL chip
+ *
+ * @param[in] callback       callback pointer invoked whenever data is ready
+ */
+void lis2mdl_init(lis2mdl_data_ready_cb_t callback);
+
+/**
+ * @brief Checks whether LIS2MDL data is ready for fetch
+ */
+bool lis2mdl_data_ready(void);
+
+/**
+ * @brief Reads magnetometer data on LIS2MDL over I2C
+ *
+ * @param[out] out Struct to write data to
+ */
+void lis2mdl_read_magnetometer(lis2mdl_compass_data_t *out);
 
 #endif

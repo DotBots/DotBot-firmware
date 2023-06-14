@@ -3,7 +3,7 @@
   <project Name="03app_sailbot">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_radio(bsp);00bsp_uart(bsp);00drv_dotbot_protocol(drv);00bsp_pwm(bsp);00bsp_timer_hf(bsp);00bsp_timer(bsp);00bsp_i2c(bsp);00drv_lis2mdl(drv)"
+      project_dependencies="00bsp_radio(bsp);00bsp_uart(bsp);00drv_dotbot_protocol(drv);00bsp_pwm(bsp);00bsp_timer_hf(bsp);00bsp_timer(bsp);00bsp_i2c(bsp);00drv_imu(drv)"
       project_directory="03app_sailbot"
       project_type="Executable" />
     <folder Name="Device Files">
