@@ -16,6 +16,8 @@
 
 #if defined(BOARD_DOTBOT_V1)
 #include "conf/dotbot_v1_config.h"
+#elif defined(BOARD_DOTBOT_V2)
+#include "conf/dotbot_v2_config.h"
 #elif defined(BOARD_SAILBOT_V1)
 #include "conf/sailbot_v1_config.h"
 #elif defined(BOARD_NRF52840DK)
