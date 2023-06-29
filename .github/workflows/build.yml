@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: ["dotbot-v1", "nrf52833dk", "nrf52840dk", "nrf5340dk-app", "nrf5340dk-net", "sailbot-v1"]
+        target: ["dotbot-v1", "dotbot-v2", "nrf52833dk", "nrf52840dk", "nrf5340dk-app", "nrf5340dk-net", "sailbot-v1"]
         config: ["Debug", "Release"]
     steps:
       - name: Checkout repo
@@ -22,10 +22,10 @@ jobs:
       - name: Build projects
         run: BUILD_TARGET=${{ matrix.target }} BUILD_CONFIG=${{ matrix.config }} make docker
       - name: Build for release and convert elf artifacts to hex
-        if: matrix.target == 'nrf52833' && matrix.config == 'Release'
+        if: matrix.target == 'dotbot-v1' && matrix.config == 'Release'
         run: BUILD_TARGET=${{ matrix.target }} DOCKER_TARGETS="artifacts" BUILD_CONFIG=${{ matrix.config }} make docker
       - name: Upload artifact
-        if: contains(fromJSON('["dotbot-v1", "nrf52833dk", "nrf52840dk", "sailbot-v1"]'), matrix.target) && matrix.config == 'Release'
+        if: contains(fromJSON('["dotbot-v1", "dotbot-v2", "nrf52833dk", "nrf52840dk", "sailbot-v1"]'), matrix.target) && matrix.config == 'Release'
         uses: actions/upload-artifact@v3
         with:
           name: artifacts
