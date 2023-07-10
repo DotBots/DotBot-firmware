@@ -107,6 +107,20 @@
 /** @} */
 
 /**
+ * @name    QDEC pins definitions
+ * @{
+ */
+#define DB_QDEC_LEFT_A_PORT  1
+#define DB_QDEC_LEFT_A_PIN   12
+#define DB_QDEC_LEFT_B_PORT  1
+#define DB_QDEC_LEFT_B_PIN   11
+#define DB_QDEC_RIGHT_A_PORT 0
+#define DB_QDEC_RIGHT_A_PIN  21
+#define DB_QDEC_RIGHT_B_PORT 0
+#define DB_QDEC_RIGHT_B_PIN  31
+/** @} */
+
+/**
  * @name    LSM6DS pin definitions
  * @{
  */
