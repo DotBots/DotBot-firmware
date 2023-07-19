@@ -75,4 +75,13 @@
     <file file_name="pid/pid.c" />
     <file file_name="pid.h" />
   </project>
+  <project Name="00drv_rgbled_pwm">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_pwm(bsp)"
+      project_directory="rgbled_pwm"
+      project_type="Library" />
+    <file file_name="rgbled_pwm.c" />
+    <file file_name="../rgbled_pwm.h" />
+  </project>
 </solution>
