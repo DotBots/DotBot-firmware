@@ -38,6 +38,8 @@ static inline void _network_call(ipc_event_type_t req, ipc_event_type_t ack) {
 //=========================== public ===========================================
 
 void db_rng_init(void) {
+    // On nrf53 configure constant latency mode for better performances
+    NRF_POWER_S->TASKS_CONSTLAT = 1;
 
     // IPC (address at 0x41012000 => periph ID is 18)
     NRF_SPU_S->PERIPHID[18].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
@@ -64,14 +66,7 @@ void db_rng_init(void) {
 
     // Start the network core
     if (NRF_RESET_S->NETWORK.FORCEOFF != 0) {
-        db_timer_hf_init();
-        *(volatile uint32_t *)0x50005618ul = 1ul;
-        NRF_RESET_S->NETWORK.FORCEOFF      = (RESET_NETWORK_FORCEOFF_FORCEOFF_Release << RESET_NETWORK_FORCEOFF_FORCEOFF_Pos);
-        db_timer_hf_delay_us(5);  // Wait for at least five microseconds
-        NRF_RESET_S->NETWORK.FORCEOFF = (RESET_NETWORK_FORCEOFF_FORCEOFF_Hold << RESET_NETWORK_FORCEOFF_FORCEOFF_Pos);
-        db_timer_hf_delay_us(5);  // Wait for at least one microsecond
-        NRF_RESET_S->NETWORK.FORCEOFF      = (RESET_NETWORK_FORCEOFF_FORCEOFF_Release << RESET_NETWORK_FORCEOFF_FORCEOFF_Pos);
-        *(volatile uint32_t *)0x50005618ul = 0ul;
+        NRF_RESET_S->NETWORK.FORCEOFF = 0;
         _network_call(DB_IPC_NONE, DB_IPC_NET_READY_ACK);
     }
 
