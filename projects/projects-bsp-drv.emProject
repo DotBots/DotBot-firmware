@@ -7,8 +7,8 @@
       project_directory="01bsp_gpio"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -17,14 +17,14 @@
       </file>
     </folder>
     <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
       <file file_name="$(DeviceLinkerScript)">
         <configuration Name="Common" file_type="Linker Script" />
       </file>
       <file file_name="$(DeviceMemoryMap)">
         <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
     <folder Name="Source Files">
@@ -32,11 +32,11 @@
       <file file_name="01bsp_gpio.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="$(SeggerThumbStartup)" />
       <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
+      <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
   <project Name="01bsp_i2c">
@@ -46,8 +46,8 @@
       project_directory="01bsp_i2c"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -56,14 +56,14 @@
       </file>
     </folder>
     <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
       <file file_name="$(DeviceLinkerScript)">
         <configuration Name="Common" file_type="Linker Script" />
       </file>
       <file file_name="$(DeviceMemoryMap)">
         <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
     <folder Name="Source Files">
@@ -71,11 +71,11 @@
       <file file_name="01bsp_i2c.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="$(SeggerThumbStartup)" />
       <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
+      <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
   <project Name="01bsp_lighthouse">
@@ -85,8 +85,8 @@
       project_directory="01bsp_lighthouse"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -95,14 +95,14 @@
       </file>
     </folder>
     <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
       <file file_name="$(DeviceLinkerScript)">
         <configuration Name="Common" file_type="Linker Script" />
       </file>
       <file file_name="$(DeviceMemoryMap)">
         <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
     <folder Name="Source Files">
@@ -110,11 +110,11 @@
       <file file_name="01bsp_lighthouse.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="$(SeggerThumbStartup)" />
       <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
+      <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
   <project Name="01bsp_motors">
@@ -124,8 +124,8 @@
       project_directory="01bsp_motors"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -134,14 +134,14 @@
       </file>
     </folder>
     <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
       <file file_name="$(DeviceLinkerScript)">
         <configuration Name="Common" file_type="Linker Script" />
       </file>
       <file file_name="$(DeviceMemoryMap)">
         <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
     <folder Name="Source Files">
@@ -149,11 +149,11 @@
       <file file_name="01bsp_motors.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="$(SeggerThumbStartup)" />
       <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
+      <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
   <project Name="01bsp_nvmc">
@@ -163,8 +163,8 @@
       project_directory="01bsp_nvmc"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -173,14 +173,14 @@
       </file>
     </folder>
     <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
       <file file_name="$(DeviceLinkerScript)">
         <configuration Name="Common" file_type="Linker Script" />
       </file>
       <file file_name="$(DeviceMemoryMap)">
         <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
     <folder Name="Source Files">
@@ -188,11 +188,11 @@
       <file file_name="01bsp_nvmc.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="$(SeggerThumbStartup)" />
       <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
+      <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
   <project Name="01bsp_radio_lr_txrx">
@@ -202,8 +202,8 @@
       project_directory="01bsp_radio_lr_txrx"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -212,14 +212,14 @@
       </file>
     </folder>
     <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
       <file file_name="$(DeviceLinkerScript)">
         <configuration Name="Common" file_type="Linker Script" />
       </file>
       <file file_name="$(DeviceMemoryMap)">
         <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
     <folder Name="Source Files">
@@ -227,11 +227,11 @@
       <file file_name="01bsp_radio_lr_txrx.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="$(SeggerThumbStartup)" />
       <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
+      <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
   <project Name="01bsp_radio_txrx">
@@ -241,8 +241,8 @@
       project_directory="01bsp_radio_txrx"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -251,14 +251,14 @@
       </file>
     </folder>
     <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
       <file file_name="$(DeviceLinkerScript)">
         <configuration Name="Common" file_type="Linker Script" />
       </file>
       <file file_name="$(DeviceMemoryMap)">
         <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
     <folder Name="Source Files">
@@ -266,11 +266,11 @@
       <file file_name="01bsp_radio_txrx.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="$(SeggerThumbStartup)" />
       <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
+      <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
   <project Name="01bsp_rgbled">
@@ -280,8 +280,8 @@
       project_directory="01bsp_rgbled"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -290,14 +290,14 @@
       </file>
     </folder>
     <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
       <file file_name="$(DeviceLinkerScript)">
         <configuration Name="Common" file_type="Linker Script" />
       </file>
       <file file_name="$(DeviceMemoryMap)">
         <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
     <folder Name="Source Files">
@@ -305,11 +305,11 @@
       <file file_name="01bsp_rgbled.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="$(SeggerThumbStartup)" />
       <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
+      <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
   <project Name="01bsp_rng">
@@ -319,8 +319,8 @@
       project_directory="01bsp_rng"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -329,14 +329,14 @@
       </file>
     </folder>
     <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
       <file file_name="$(DeviceLinkerScript)">
         <configuration Name="Common" file_type="Linker Script" />
       </file>
       <file file_name="$(DeviceMemoryMap)">
         <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
     <folder Name="Source Files">
@@ -344,11 +344,11 @@
       <file file_name="01bsp_rng.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="$(SeggerThumbStartup)" />
       <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
+      <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
   <project Name="01bsp_rpm">
@@ -358,8 +358,8 @@
       project_directory="01bsp_rpm"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -368,14 +368,14 @@
       </file>
     </folder>
     <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
       <file file_name="$(DeviceLinkerScript)">
         <configuration Name="Common" file_type="Linker Script" />
       </file>
       <file file_name="$(DeviceMemoryMap)">
         <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
     <folder Name="Source Files">
@@ -383,11 +383,11 @@
       <file file_name="01bsp_rpm.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="$(SeggerThumbStartup)" />
       <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
+      <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
   <project Name="01bsp_timer">
@@ -397,8 +397,8 @@
       project_directory="01bsp_timer"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -407,14 +407,14 @@
       </file>
     </folder>
     <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
       <file file_name="$(DeviceLinkerScript)">
         <configuration Name="Common" file_type="Linker Script" />
       </file>
       <file file_name="$(DeviceMemoryMap)">
         <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
     <folder Name="Source Files">
@@ -422,11 +422,11 @@
       <file file_name="01bsp_timer.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="$(SeggerThumbStartup)" />
       <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
+      <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
   <project Name="01bsp_timer_hf">
@@ -436,8 +436,8 @@
       project_directory="01bsp_timer_hf"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -446,14 +446,14 @@
       </file>
     </folder>
     <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
       <file file_name="$(DeviceLinkerScript)">
         <configuration Name="Common" file_type="Linker Script" />
       </file>
       <file file_name="$(DeviceMemoryMap)">
         <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
     <folder Name="Source Files">
@@ -461,11 +461,11 @@
       <file file_name="01bsp_timer_hf.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="$(SeggerThumbStartup)" />
       <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
+      <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
   <project Name="01bsp_uart">
@@ -475,8 +475,8 @@
       project_directory="01bsp_uart"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -485,14 +485,14 @@
       </file>
     </folder>
     <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
       <file file_name="$(DeviceLinkerScript)">
         <configuration Name="Common" file_type="Linker Script" />
       </file>
       <file file_name="$(DeviceMemoryMap)">
         <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
     <folder Name="Source Files">
@@ -500,11 +500,51 @@
       <file file_name="01bsp_uart.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="$(SeggerThumbStartup)" />
       <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
+      <file file_name="$(SeggerThumbStartup)" />
+    </folder>
+  </project>
+  <project Name="01drv_imu">
+    <configuration
+      Name="Common"
+      project_dependencies="00drv_imu(drv)"
+      project_directory="01drv_imu"
+      project_type="Executable" />
+    <configuration Name="Debug" linker_printf_fp_enabled="Float" />
+    <folder Name="Device Files">
+      <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceSystemFile)">
+        <configuration
+          Name="Common"
+          default_code_section=".init"
+          default_const_section=".init_rodata" />
+      </file>
+    </folder>
+    <folder Name="Script Files">
+      <file file_name="$(DeviceLinkerScript)">
+        <configuration Name="Common" file_type="Linker Script" />
+      </file>
+      <file file_name="$(DeviceMemoryMap)">
+        <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
+      </file>
+    </folder>
+    <folder Name="Source Files">
+      <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
+      <file file_name="01drv_imu.c" />
+    </folder>
+    <folder Name="System Files">
+      <file file_name="$(DeviceCommonVectorsFile)" />
+      <file file_name="$(DeviceVectorsFile)">
+        <configuration Name="Common" file_type="Assembly" />
+      </file>
+      <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
   <project Name="01drv_ism330">
@@ -514,8 +554,8 @@
       project_directory="01drv_ism330"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -524,14 +564,14 @@
       </file>
     </folder>
     <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
       <file file_name="$(DeviceLinkerScript)">
         <configuration Name="Common" file_type="Linker Script" />
       </file>
       <file file_name="$(DeviceMemoryMap)">
         <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
     <folder Name="Source Files">
@@ -539,11 +579,11 @@
       <file file_name="01drv_ism330.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="$(SeggerThumbStartup)" />
       <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
+      <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
   <project Name="01drv_lis2mdl">
@@ -552,9 +592,10 @@
       project_dependencies="00drv_lis2mdl(drv)"
       project_directory="01drv_lis2mdl"
       project_type="Executable" />
+    <configuration Name="Debug" linker_printf_fp_enabled="Float" />
     <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -563,14 +604,14 @@
       </file>
     </folder>
     <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
       <file file_name="$(DeviceLinkerScript)">
         <configuration Name="Common" file_type="Linker Script" />
       </file>
       <file file_name="$(DeviceMemoryMap)">
         <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
     <folder Name="Source Files">
@@ -578,13 +619,12 @@
       <file file_name="01drv_lis2mdl.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="$(SeggerThumbStartup)" />
       <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
+      <file file_name="$(SeggerThumbStartup)" />
     </folder>
-    <configuration Name="Debug" linker_printf_fp_enabled="Float" />
   </project>
   <project Name="01drv_lsm6ds">
     <configuration
@@ -592,9 +632,10 @@
       project_dependencies="00drv_lsm6ds(drv)"
       project_directory="01drv_lsm6ds"
       project_type="Executable" />
+    <configuration Name="Debug" linker_printf_fp_enabled="Float" />
     <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -603,14 +644,14 @@
       </file>
     </folder>
     <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
       <file file_name="$(DeviceLinkerScript)">
         <configuration Name="Common" file_type="Linker Script" />
       </file>
       <file file_name="$(DeviceMemoryMap)">
         <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
     <folder Name="Source Files">
@@ -618,53 +659,12 @@
       <file file_name="01drv_lsm6ds.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="$(SeggerThumbStartup)" />
       <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
-    </folder>
-    <configuration Name="Debug" linker_printf_fp_enabled="Float" />
-  </project>
-  <project Name="01drv_imu">
-    <configuration
-      Name="Common"
-      project_dependencies="00drv_imu(drv)"
-      project_directory="01drv_imu"
-      project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
-        <configuration Name="Common" file_type="Memory Map" />
-      </file>
-    </folder>
-    <folder Name="Source Files">
-      <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="01drv_imu.c" />
-    </folder>
-    <folder Name="System Files">
       <file file_name="$(SeggerThumbStartup)" />
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
     </folder>
-    <configuration Name="Debug" linker_printf_fp_enabled="Float" />
   </project>
   <project Name="01drv_pid">
     <configuration
@@ -673,8 +673,8 @@
       project_directory="01drv_pid"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -683,14 +683,14 @@
       </file>
     </folder>
     <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
       <file file_name="$(DeviceLinkerScript)">
         <configuration Name="Common" file_type="Linker Script" />
       </file>
       <file file_name="$(DeviceMemoryMap)">
         <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
     <folder Name="Source Files">
@@ -698,11 +698,11 @@
       <file file_name="01drv_pid.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="$(SeggerThumbStartup)" />
       <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
+      <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
 </solution>
