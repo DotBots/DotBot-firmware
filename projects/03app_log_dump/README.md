@@ -4,7 +4,7 @@ This application looks for log data stored on flash and dumps them to stdio.
 
 ## Usage
 
-To retrieve the logs, use  In Segger Embedded Studio as follows:
+To retrieve the logs, use Segger Embedded Studio as follows:
 1. Start a debug session (F5) and run the program (F5 again)
 2. Click inside the Debug Terminal window so it has focus, then press "s". The
 program will print the logs (or an error message if none is found and the version is

@@ -152,7 +152,9 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
  */
 int main(void) {
     db_board_init();
+#ifdef ENABLE_DOTBOT_LOG_DATA
     db_log_flash_init(LOG_DATA_DOTBOT);
+#endif
     db_protocol_init();
     db_rgbled_init();
     db_motors_init();
@@ -285,6 +287,7 @@ static void _update_control_loop(void) {
 
     db_motors_set_speed(left_speed, right_speed);
 
+#ifdef ENABLE_DOTBOT_LOG_DATA
     // Log control loop internal data and output on flash
     _dotbot_vars.log_data.direction          = (int32_t)_dotbot_vars.direction;
     _dotbot_vars.log_data.pos_x              = _dotbot_vars.last_location.x;
@@ -297,6 +300,7 @@ static void _update_control_loop(void) {
     _dotbot_vars.log_data.left_speed         = left_speed;
     _dotbot_vars.log_data.right_speed        = right_speed;
     db_log_flash_write(&_dotbot_vars.log_data, sizeof(db_log_dotbot_data_t));
+#endif
 }
 
 static void _compute_angle(const protocol_lh2_location_t *next, const protocol_lh2_location_t *origin, int16_t *angle) {
