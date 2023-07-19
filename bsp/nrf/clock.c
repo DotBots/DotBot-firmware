@@ -15,7 +15,11 @@
 //=========================== defines ==========================================
 
 #ifndef NRF53_XOSC32_CAPACITANCE
+#ifdef BOARD_DOTBOT_V2
+#define NRF53_XOSC32_CAPACITANCE 25
+#else
 #define NRF53_XOSC32_CAPACITANCE 8  ///< Depends on the 32MHz crytal used, its capacitance is 8pF on nRF5340-DK
+#endif
 #endif
 
 typedef struct {
