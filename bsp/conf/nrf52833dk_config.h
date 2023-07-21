@@ -122,4 +122,16 @@
 #define DB_LIS2MDL_INT_PIN  DB_DEBUG3_PIN
 /** @} */
 
+/**
+ * @name    RGB LED pwm pins definitions
+ * @{
+ */
+#define DB_RGB_LED_PWM_RED_PORT   DB_DEBUG1_PORT
+#define DB_RGB_LED_PWM_RED_PIN    DB_DEBUG1_PIN
+#define DB_RGB_LED_PWM_GREEN_PORT DB_DEBUG2_PORT
+#define DB_RGB_LED_PWM_GREEN_PIN  DB_DEBUG2_PIN
+#define DB_RGB_LED_PWM_BLUE_PORT  DB_DEBUG3_PORT
+#define DB_RGB_LED_PWM_BLUE_PIN   DB_DEBUG3_PIN
+/** @} */
+
 #endif
