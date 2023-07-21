@@ -27,7 +27,7 @@
 //=========================== public ==========================================
 
 void db_motors_init(void) {
-    db_pwm_init(db_motors_pins, PWM_CHANNELS, M_TOP);
+    db_pwm_init(0, db_motors_pins, PWM_CHANNELS, M_TOP);
 }
 
 void db_motors_set_speed(int16_t l_speed, int16_t r_speed) {
@@ -74,5 +74,5 @@ void db_motors_set_speed(int16_t l_speed, int16_t r_speed) {
     }
 
     // Update PWM values
-    db_pwm_channels_set(pwm_seq);
+    db_pwm_channels_set(0, pwm_seq);
 }
