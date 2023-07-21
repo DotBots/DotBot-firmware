@@ -46,7 +46,7 @@ uint16_t calculate_pwm_length(int8_t angle, uint16_t upper_bound, uint16_t lower
  *  @brief Initialization routine of the PWM module.
  */
 void servos_init(void) {
-    db_pwm_init(_pwm_pins, PWM_CHANNELS, M_TOP);
+    db_pwm_init(0, _pwm_pins, PWM_CHANNELS, M_TOP);
 }
 
 void servos_set(int8_t rudder_angle, int8_t sail_angle) {
@@ -56,15 +56,15 @@ void servos_set(int8_t rudder_angle, int8_t sail_angle) {
     pwm[SERVO_RUDDER] = calculate_pwm_length(rudder_angle, RUDDER_POSITION_UPPER_BOUND, RUDDER_POSITION_LOWER_BOUND);
     pwm[SERVO_SAILS]  = calculate_pwm_length(sail_angle, SAIL_POSITION_UPPER_BOUND, SAIL_POSITION_LOWER_BOUND);
 
-    db_pwm_channels_set(pwm);
+    db_pwm_channels_set(0, pwm);
 }
 
 void servos_rudder_turn(int8_t angle) {
-    db_pwm_channel_set((uint8_t)SERVO_RUDDER, calculate_pwm_length(angle, RUDDER_POSITION_UPPER_BOUND, RUDDER_POSITION_LOWER_BOUND));
+    db_pwm_channel_set(0, (uint8_t)SERVO_RUDDER, calculate_pwm_length(angle, RUDDER_POSITION_UPPER_BOUND, RUDDER_POSITION_LOWER_BOUND));
 }
 
 void servos_sail_turn(int8_t angle) {
-    db_pwm_channel_set((uint8_t)SERVO_SAILS, calculate_pwm_length(angle, SAIL_POSITION_UPPER_BOUND, SAIL_POSITION_LOWER_BOUND));
+    db_pwm_channel_set(0, (uint8_t)SERVO_SAILS, calculate_pwm_length(angle, SAIL_POSITION_UPPER_BOUND, SAIL_POSITION_LOWER_BOUND));
 }
 
 //=========================== private =========================================
