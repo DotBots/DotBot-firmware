@@ -115,7 +115,7 @@ int main(void) {
     // Configure Radio as a receiver
     db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);  // Set the callback function.
     db_radio_set_frequency(8);                           // Set the RX frequency to 2408 MHz.
-    db_radio_rx_enable();                                // Start receiving packets.
+    db_radio_rx();                                       // Start receiving packets.
 
     // Init the IMU chips
     imu_init(NULL, NULL);
@@ -302,9 +302,8 @@ static void _send_gps_data(const nmea_gprmc_t *data, uint16_t heading) {
     memcpy(_sailbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(uint16_t) + sizeof(int32_t), &longitude, sizeof(int32_t));
 
     size_t length = sizeof(protocol_header_t) + sizeof(uint16_t) + 2 * sizeof(int32_t);
-    db_radio_rx_disable();
+    db_radio_disable();
     db_radio_tx(_sailbot_vars.radio_buffer, length);
-    db_radio_rx_enable();
 }
 
 static int8_t map_error_to_rudder_angle(float error) {
@@ -348,9 +347,8 @@ static void _timeout_check(void) {
 static void _advertise(void) {
     db_protocol_header_to_buffer(_sailbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, SailBot, DB_PROTOCOL_ADVERTISEMENT);
     size_t length = sizeof(protocol_header_t);
-    db_radio_rx_disable();
+    db_radio_disable();
     db_radio_tx(_sailbot_vars.radio_buffer, length);
-    db_radio_rx_enable();
 }
 
 static void convert_geographical_to_cartesian(cartesian_coordinate_t *out, const protocol_gps_coordinate_t *in) {

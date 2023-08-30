@@ -91,14 +91,14 @@ int main(void) {
                 break;
             case DB_IPC_RADIO_RX_EN_REQ:
                 mutex_lock();
-                db_radio_rx_enable();
+                db_radio_rx();
                 ipc_shared_data.event                   = DB_IPC_RADIO_RX_EN_ACK;
                 NRF_IPC_NS->TASKS_SEND[DB_IPC_CHAN_ACK] = 1;
                 mutex_unlock();
                 break;
             case DB_IPC_RADIO_RX_DIS_REQ:
                 mutex_lock();
-                db_radio_rx_disable();
+                db_radio_disable();
                 ipc_shared_data.event                   = DB_IPC_RADIO_RX_DIS_ACK;
                 NRF_IPC_NS->TASKS_SEND[DB_IPC_CHAN_ACK] = 1;
                 mutex_unlock();

@@ -102,7 +102,7 @@ int main(void) {
     _gw_vars.handshake_done      = false;
     db_uart_init(&db_uart_rx, &db_uart_tx, DB_UART_BAUDRATE, &uart_callback);
 
-    db_radio_rx_enable();
+    db_radio_rx();
 
     db_gpio_init(&db_btn2, DB_GPIO_IN_PU);
     db_gpio_init(&db_btn3, DB_GPIO_IN_PU);
@@ -131,9 +131,8 @@ int main(void) {
 
         if (command.left_y != 0 || command.right_y != 0) {
             db_protocol_cmd_move_raw_to_buffer(_gw_vars.radio_tx_buffer, DB_BROADCAST_ADDRESS, DotBot, &command);
-            db_radio_rx_disable();
+            db_radio_disable();
             db_radio_tx(_gw_vars.radio_tx_buffer, sizeof(protocol_header_t) + sizeof(protocol_move_raw_command_t));
-            db_radio_rx_enable();
         }
 
         while (_gw_vars.radio_queue.current != _gw_vars.radio_queue.last) {
@@ -154,9 +153,8 @@ int main(void) {
                     size_t msg_len = db_hdlc_decode(_gw_vars.hdlc_rx_buffer);
                     if (msg_len) {
                         _gw_vars.hdlc_state = DB_HDLC_STATE_IDLE;
-                        db_radio_rx_disable();
+                        db_radio_disable();
                         db_radio_tx(_gw_vars.hdlc_rx_buffer, msg_len);
-                        db_radio_rx_enable();
                     }
                 } break;
                 default:
@@ -165,7 +163,4 @@ int main(void) {
             _gw_vars.uart_queue.current = (_gw_vars.uart_queue.current + 1) & (DB_UART_QUEUE_SIZE - 1);
         }
     }
-
-    // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
-    __NOP();
 }
