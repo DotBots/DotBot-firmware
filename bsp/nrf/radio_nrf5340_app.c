@@ -95,8 +95,8 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
     NVIC_SetPriority(IPC_IRQn, IPC_IRQ_PRIORITY);
 
     // Start the network core
-    if (NRF_RESET_S->NETWORK.FORCEOFF != 0) {
-        NRF_RESET_S->NETWORK.FORCEOFF = 0;
+    if (!is_network_core_powered_on()) {
+        power_on_network_core();
         _network_call(DB_IPC_NONE, DB_IPC_NET_READY_ACK);
     }
 
