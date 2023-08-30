@@ -75,7 +75,7 @@ void db_radio_set_network_address(uint32_t addr);
  * (with the functions db_radio_init db_radio_set_frequency).
  *
  * NOTE: The radio must not be receiving packets when calling this function.
- * (first call db_radio_rx_disable if needed)
+ * (first call db_radio_disable if needed)
  *
  * @param[in] packet pointer to the array of data to send over the radio (max size = 32)
  * @param[in] length Number of bytes to send (max size = 32)
@@ -90,11 +90,11 @@ void db_radio_tx(uint8_t *packet, uint8_t length);
  * (with the functions db_radio_init db_radio_set_frequency).
  *
  */
-void db_radio_rx_enable(void);
+void db_radio_rx(void);
 
 /**
- * @brief Stops receiving packets through the Radio
+ * @brief Disables the radio, no packet can be received and energy consumption is minimal
  */
-void db_radio_rx_disable(void);
+void db_radio_disable(void);
 
 #endif
