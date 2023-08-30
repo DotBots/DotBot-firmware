@@ -138,12 +138,12 @@ void db_radio_tx(uint8_t *tx_buffer, uint8_t length) {
     _network_call(DB_IPC_RADIO_TX_REQ, DB_IPC_RADIO_TX_ACK);
 }
 
-void db_radio_rx_enable(void) {
+void db_radio_rx(void) {
     mutex_lock();
     _network_call(DB_IPC_RADIO_RX_EN_REQ, DB_IPC_RADIO_RX_EN_ACK);
 }
 
-void db_radio_rx_disable(void) {
+void db_radio_disable(void) {
     mutex_lock();
     _network_call(DB_IPC_RADIO_RX_DIS_REQ, DB_IPC_RADIO_RX_DIS_ACK);
 }

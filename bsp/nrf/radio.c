@@ -30,7 +30,13 @@
 #define RADIO_INTERRUPT_PRIORITY 1
 #endif
 
-#define RADIO_TIFS 150U  ///< Inter frame spacing in us
+#define RADIO_TIFS          1000U  ///< Inter frame spacing in us
+#define RADIO_SHORTS_COMMON (RADIO_SHORTS_READY_START_Enabled << RADIO_SHORTS_READY_START_Pos) | (RADIO_SHORTS_END_DISABLE_Enabled << RADIO_SHORTS_END_DISABLE_Pos)
+#define RADIO_INTERRUPTS    (RADIO_INTENSET_DISABLED_Enabled << RADIO_INTENSET_DISABLED_Pos) | (RADIO_INTENSET_ADDRESS_Enabled << RADIO_INTENSET_ADDRESS_Pos)
+#define RADIO_STATE_IDLE    0x00
+#define RADIO_STATE_RX      0x01
+#define RADIO_STATE_TX      0x02
+#define RADIO_STATE_BUSY    0x04
 
 typedef struct __attribute__((packed)) {
     uint8_t header;                       ///< PDU header (depends on the type of PDU - advertising physical channel or Data physical channel)
@@ -41,6 +47,7 @@ typedef struct __attribute__((packed)) {
 typedef struct {
     ble_radio_pdu_t pdu;       ///< Variable that stores the radio PDU (protocol data unit) that arrives and the radio packets that are about to be sent.
     radio_cb_t      callback;  ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
+    uint8_t         state;     ///< Internal state of the radio
 } radio_vars_t;
 
 //=========================== variables ========================================
@@ -61,7 +68,7 @@ static radio_vars_t radio_vars = { 0 };
 
 //========================== prototypes ========================================
 
-static void radio_init_addresses(void);
+static void _radio_enable(void);
 
 //=========================== public ===========================================
 
@@ -76,7 +83,7 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
     NRF_RADIO->POWER = (RADIO_POWER_POWER_Disabled << RADIO_POWER_POWER_Pos);
     NRF_RADIO->POWER = (RADIO_POWER_POWER_Enabled << RADIO_POWER_POWER_Pos);
 
-#if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
+#if defined(NRF5340_XXAA)
     // Copy all the RADIO trim values from FICR into the target addresses (from errata v1.6 - 3.29 [158])
     for (uint32_t index = 0; index < 32ul && NRF_FICR_NS->TRIMCNF[index].ADDR != (uint32_t *)0xFFFFFFFFul; index++) {
         if (((uint32_t)NRF_FICR_NS->TRIMCNF[index].ADDR & 0xFFFFF000ul) == (volatile uint32_t)NRF_RADIO_NS) {
@@ -87,7 +94,7 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
 
     // General configuration of the radio.
     NRF_RADIO->MODE = ((RADIO_MODE_MODE_Ble_1Mbit + mode) << RADIO_MODE_MODE_Pos);  // Configure BLE mode
-#if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
+#if defined(NRF5340_XXAA)
     // From errata v1.6 - 3.15 [117] RADIO: Changing MODE requires additional configuration
     if (mode == DB_RADIO_BLE_2MBit) {
         *((volatile uint32_t *)0x41008588) = *((volatile uint32_t *)0x01FF0084);
@@ -109,15 +116,14 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
                            (0 << RADIO_PCNF1_STATLEN_Pos) |
                            (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |    // Make the on air packet be little endian (this enables some useful features)
                            (RADIO_PCNF1_WHITEEN_Enabled << RADIO_PCNF1_WHITEEN_Pos);  // Enable data whitening feature.
-    } else {
-        // Long ranges modes (125KBit/500KBit)
-#if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
+    } else {                                                                          // Long ranges modes (125KBit/500KBit)
+#if defined(NRF5340_XXAA)
         NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_0dBm << RADIO_TXPOWER_TXPOWER_Pos);  // 0dBm Power output
 #else
         NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_Pos8dBm << RADIO_TXPOWER_TXPOWER_Pos);  // 8dBm Power output
 #endif
 
-        // Coded PHY (Long range)
+        // Coded PHY (Long Range)
         NRF_RADIO->PCNF0 = (0 << RADIO_PCNF0_S1LEN_Pos) |
                            (1 << RADIO_PCNF0_S0LEN_Pos) |
                            (8 << RADIO_PCNF0_LFLEN_Pos) |
@@ -132,31 +138,36 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
                            (PAYLOAD_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos);
     }
 
-    radio_init_addresses();
+    // Configuring the on-air radio address.
+    NRF_RADIO->BASE0 = DEFAULT_NETWORK_ADDRESS;
+    // only send using logical address 0
+    NRF_RADIO->TXADDRESS = 0UL;
+    // only receive from logical address 0
+    NRF_RADIO->RXADDRESSES = (RADIO_RXADDRESSES_ADDR0_Enabled << RADIO_RXADDRESSES_ADDR0_Pos);
 
     // Inter frame spacing in us
     NRF_RADIO->TIFS = RADIO_TIFS;
 
     // CRC Config
-    NRF_RADIO->CRCCNF  = (RADIO_CRCCNF_LEN_Two << RADIO_CRCCNF_LEN_Pos);  // Checksum uses 2 bytes, and is enabled.
-    NRF_RADIO->CRCINIT = 0xFFFFUL;                                        // initial value
-    NRF_RADIO->CRCPOLY = 0x11021UL;                                       // CRC poly: x^16 + x^12^x^5 + 1
+    NRF_RADIO->CRCCNF  = (RADIO_CRCCNF_LEN_Three << RADIO_CRCCNF_LEN_Pos) | (RADIO_CRCCNF_SKIPADDR_Skip << RADIO_CRCCNF_SKIPADDR_Pos);  // Checksum uses 3 bytes, and is enabled.
+    NRF_RADIO->CRCINIT = 0xFFFFUL;                                                                                                      // initial value
+    NRF_RADIO->CRCPOLY = 0x00065b;                                                                                                      // CRC poly: x^16 + x^12^x^5 + 1
 
-    // pointer to packet payload
+    // Configure pointer to PDU for EasyDMA
     NRF_RADIO->PACKETPTR = (uint32_t)&radio_vars.pdu;
 
     // Assign the callback function that will be called when a radio packet is received.
     radio_vars.callback = callback;
+    radio_vars.state    = RADIO_STATE_IDLE;
 
     // Configure the external High-frequency Clock. (Needed for correct operation)
     db_hfclk_init();
 
     // Configure the Interruptions
-    NVIC_DisableIRQ(RADIO_IRQn);  // Disable interruptions while configuring
-    NRF_RADIO->INTENSET = (RADIO_INTENSET_END_Enabled << RADIO_INTENSET_END_Pos |
-                           RADIO_INTENSET_CRCOK_Enabled << RADIO_INTENSET_CRCOK_Pos);  // Enable interruption for when a valid packet arrives
-    NVIC_SetPriority(RADIO_IRQn, RADIO_INTERRUPT_PRIORITY);                            // Set priority for Radio interrupts to 1
-    NVIC_ClearPendingIRQ(RADIO_IRQn);
+    NVIC_SetPriority(RADIO_IRQn, RADIO_INTERRUPT_PRIORITY);  // Set priority for Radio interrupts to 1
+    // Clear all radio interruptions
+    NRF_RADIO->INTENCLR = 0xffffffff;
+    NVIC_EnableIRQ(RADIO_IRQn);
 }
 
 void db_radio_set_frequency(uint8_t freq) {
@@ -173,58 +184,45 @@ void db_radio_set_network_address(uint32_t addr) {
 }
 
 void db_radio_tx(uint8_t *tx_buffer, uint8_t length) {
-    // Load the tx_buffer into memory.
     radio_vars.pdu.length = length;
     memcpy(radio_vars.pdu.payload, tx_buffer, length);
 
-    // Configure the Short to expedite the packet transmission
-    NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Enabled << RADIO_SHORTS_READY_START_Pos) |  // yeet the packet as soon as the radio is ready - slow startup transmitters are for nerds, scumdog for l4f3
-                        (RADIO_SHORTS_END_DISABLE_Enabled << RADIO_SHORTS_END_DISABLE_Pos);   // Disable the radio as soon as the packet is sent
+    NRF_RADIO->SHORTS   = RADIO_SHORTS_COMMON | (RADIO_SHORTS_DISABLED_RXEN_Enabled << RADIO_SHORTS_DISABLED_RXEN_Pos);
+    NRF_RADIO->INTENSET = RADIO_INTERRUPTS;
 
-    // Activate the RADIO and send the package
-    NRF_RADIO->EVENTS_DISABLED = 0;                                    // Clear the flag before starting the radio.
-    NRF_RADIO->TASKS_TXEN      = RADIO_TASKS_TXEN_TASKS_TXEN_Trigger;  // Enable the Radio and let the shortcuts deal with all the
-                                                                       // steps to send the packet and disable the radio
-    while (NRF_RADIO->EVENTS_DISABLED == 0) {}                         // Wait for the radio to actually send the package.
+    if (radio_vars.state == RADIO_STATE_IDLE) {
+        radio_vars.state = RADIO_STATE_TX;
+        _radio_enable();
+        NRF_RADIO->TASKS_TXEN = RADIO_TASKS_TXEN_TASKS_TXEN_Trigger << RADIO_TASKS_TXEN_TASKS_TXEN_Pos;
+    }
+    while (radio_vars.state != RADIO_STATE_RX) {}
 }
 
-void db_radio_rx_enable(void) {
+void db_radio_rx(void) {
+    NRF_RADIO->SHORTS   = RADIO_SHORTS_COMMON | (RADIO_SHORTS_DISABLED_TXEN_Enabled << RADIO_SHORTS_DISABLED_TXEN_Pos);
+    NRF_RADIO->INTENSET = RADIO_INTERRUPTS;
 
-    // Configure the Shortcuts to expedite the packet reception.
-    NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Enabled << RADIO_SHORTS_READY_START_Pos) |
-                        (RADIO_SHORTS_END_START_Enabled << RADIO_SHORTS_END_START_Pos);
-
-    // Start the Radio for reception
-    NRF_RADIO->EVENTS_RXREADY = 0;                                    // Clear the flag before enabling the Radio.
-    NRF_RADIO->TASKS_RXEN     = RADIO_TASKS_RXEN_TASKS_RXEN_Trigger;  // Enable radio reception.
-    while (NRF_RADIO->EVENTS_RXREADY == 0) {}                         // Wait for the radio to actually start receiving.
-
-    // Enable Radio interruptions
-    NVIC_EnableIRQ(RADIO_IRQn);
-    NVIC_SetPriority(RADIO_IRQn, RADIO_INTERRUPT_PRIORITY);  // Set priority for Radio interrupts to 1
-    NVIC_ClearPendingIRQ(RADIO_IRQn);
+    if (radio_vars.state == RADIO_STATE_IDLE) {
+        radio_vars.state = RADIO_STATE_RX;
+        _radio_enable();
+        NRF_RADIO->TASKS_RXEN = RADIO_TASKS_RXEN_TASKS_RXEN_Trigger;
+    }
 }
 
-void db_radio_rx_disable(void) {
-
-    NRF_RADIO->EVENTS_DISABLED = 0;                                          // Clear the flag before starting the radio.
-    NRF_RADIO->TASKS_DISABLE   = RADIO_TASKS_DISABLE_TASKS_DISABLE_Trigger;  // Disable radio reception.
-    while (NRF_RADIO->EVENTS_DISABLED == 0) {}                               // Wait for the radio to actually disable itself.
-
-    // Disable Radio interruptions
-    NVIC_DisableIRQ(RADIO_IRQn);
+void db_radio_disable(void) {
+    NRF_RADIO->INTENCLR        = RADIO_INTERRUPTS;
+    NRF_RADIO->SHORTS          = 0;
+    NRF_RADIO->EVENTS_DISABLED = 0;
+    NRF_RADIO->TASKS_DISABLE   = RADIO_TASKS_DISABLE_TASKS_DISABLE_Trigger << RADIO_TASKS_DISABLE_TASKS_DISABLE_Pos;
+    while (NRF_RADIO->EVENTS_DISABLED == 0) {}
+    radio_vars.state = RADIO_STATE_IDLE;
 }
 
 //=========================== private ==========================================
 
-static void radio_init_addresses(void) {
-    // Configuring the on-air radio address.
-    NRF_RADIO->BASE0 = DEFAULT_NETWORK_ADDRESS;
-
-    // only send using logical address 0
-    NRF_RADIO->TXADDRESS = 0UL;
-    // only receive from logical address 0
-    NRF_RADIO->RXADDRESSES = (RADIO_RXADDRESSES_ADDR0_Enabled << RADIO_RXADDRESSES_ADDR0_Pos);
+static void _radio_enable(void) {
+    NRF_RADIO->EVENTS_DISABLED = 0;
+    NRF_RADIO->INTENSET        = RADIO_INTERRUPTS;
 }
 
 //=========================== interrupt handlers ===============================
@@ -239,19 +237,24 @@ static void radio_init_addresses(void) {
  */
 void RADIO_IRQHandler(void) {
 
-    // Check if the interrupt was caused by a fully received package
-    if (NRF_RADIO->EVENTS_END) {
-        NRF_RADIO->EVENTS_END = 0;
+    if (NRF_RADIO->EVENTS_ADDRESS) {
+        NRF_RADIO->EVENTS_ADDRESS = 0;
+        radio_vars.state |= RADIO_STATE_BUSY;
     }
 
-    // Check if the interrupt was caused by a fully received package
-    if (NRF_RADIO->EVENTS_CRCOK) {
+    if (NRF_RADIO->EVENTS_DISABLED) {
         // Clear the Interrupt flag
-        NRF_RADIO->EVENTS_CRCOK = 0;
+        NRF_RADIO->EVENTS_DISABLED = 0;
 
-        if (radio_vars.callback) {
-            // Call callback defined by user.
-            radio_vars.callback(radio_vars.pdu.payload, radio_vars.pdu.length);
+        if (radio_vars.state == (RADIO_STATE_BUSY | RADIO_STATE_RX)) {
+            radio_vars.state = RADIO_STATE_TX;
+            if (NRF_RADIO->CRCSTATUS != RADIO_CRCSTATUS_CRCSTATUS_CRCOk) {
+                puts("Invalid CRC");
+            } else if (radio_vars.callback) {
+                radio_vars.callback(radio_vars.pdu.payload, radio_vars.pdu.length);
+            }
+        } else {  // TX
+            radio_vars.state = RADIO_STATE_RX;
         }
     }
 }
