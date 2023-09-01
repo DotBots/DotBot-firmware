@@ -25,16 +25,17 @@
 static radio_cb_t _radio_callback = NULL;
 
 static bool _ack_received[] = {
-    [DB_IPC_NET_READY_ACK]    = false,
-    [DB_IPC_RADIO_INIT_ACK]   = false,
-    [DB_IPC_RADIO_FREQ_ACK]   = false,
-    [DB_IPC_RADIO_CHAN_ACK]   = false,
-    [DB_IPC_RADIO_ADDR_ACK]   = false,
-    [DB_IPC_RADIO_RX_EN_ACK]  = false,
-    [DB_IPC_RADIO_RX_DIS_ACK] = false,
-    [DB_IPC_RADIO_TX_ACK]     = false,
-    [DB_IPC_RNG_INIT_ACK]     = false,
-    [DB_IPC_RNG_READ_ACK]     = false,
+    [DB_IPC_NET_READY_ACK]  = false,
+    [DB_IPC_RADIO_INIT_ACK] = false,
+    [DB_IPC_RADIO_FREQ_ACK] = false,
+    [DB_IPC_RADIO_CHAN_ACK] = false,
+    [DB_IPC_RADIO_ADDR_ACK] = false,
+    [DB_IPC_RADIO_RX_ACK]   = false,
+    [DB_IPC_RADIO_DIS_ACK]  = false,
+    [DB_IPC_RADIO_TX_ACK]   = false,
+    [DB_IPC_RADIO_RSSI_ACK] = false,
+    [DB_IPC_RNG_INIT_ACK]   = false,
+    [DB_IPC_RNG_READ_ACK]   = false,
 };
 
 //========================== functions =========================================
@@ -140,7 +141,7 @@ void db_radio_tx(uint8_t *tx_buffer, uint8_t length) {
 
 void db_radio_rx(void) {
     mutex_lock();
-    _network_call(DB_IPC_RADIO_RX_EN_REQ, DB_IPC_RADIO_RX_EN_ACK);
+    _network_call(DB_IPC_RADIO_RX_REQ, DB_IPC_RADIO_RX_ACK);
 }
 
 int8_t db_radio_rssi(void) {
@@ -151,7 +152,7 @@ int8_t db_radio_rssi(void) {
 
 void db_radio_disable(void) {
     mutex_lock();
-    _network_call(DB_IPC_RADIO_RX_DIS_REQ, DB_IPC_RADIO_RX_DIS_ACK);
+    _network_call(DB_IPC_RADIO_DIS_REQ, DB_IPC_RADIO_DIS_ACK);
 }
 
 //=========================== interrupt handlers ===============================
