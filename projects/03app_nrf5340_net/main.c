@@ -110,6 +110,13 @@ int main(void) {
                 NRF_IPC_NS->TASKS_SEND[DB_IPC_CHAN_ACK] = 1;
                 mutex_unlock();
                 break;
+            case DB_IPC_RADIO_RSSI_REQ:
+                mutex_lock();
+                ipc_shared_data.radio.rssi              = db_radio_rssi();
+                ipc_shared_data.event                   = DB_IPC_RADIO_RSSI_ACK;
+                NRF_IPC_NS->TASKS_SEND[DB_IPC_CHAN_ACK] = 1;
+                mutex_unlock();
+                break;
             case DB_IPC_RNG_INIT_REQ:
                 mutex_lock();
                 db_rng_init();

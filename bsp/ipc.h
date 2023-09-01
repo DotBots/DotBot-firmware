@@ -43,6 +43,8 @@ typedef enum {
     DB_IPC_RADIO_RX_DIS_ACK,  ///< Acknowledment for radio rx disable
     DB_IPC_RADIO_TX_REQ,      ///< Request for radio tx
     DB_IPC_RADIO_TX_ACK,      ///< Acknowledment for radio tx
+    DB_IPC_RADIO_RSSI_REQ,    ///< Request for RSSI
+    DB_IPC_RADIO_RSSI_ACK,    ///< Acknowledment for RSSI
     DB_IPC_RNG_INIT_REQ,      ///< Request for rng init
     DB_IPC_RNG_INIT_ACK,      ///< Acknowledment for rng init
     DB_IPC_RNG_READ_REQ,      ///< Request for rng read
@@ -67,6 +69,7 @@ typedef struct __attribute__((packed)) {
     uint32_t            addr;       ///< db_set_network_address function parameters
     ipc_radio_pdu_t     tx_pdu;     ///< PDU to send
     ipc_radio_pdu_t     rx_pdu;     ///< Received pdu
+    int8_t              rssi;       ///< RSSI value
 } ipc_radio_data_t;
 
 typedef struct {

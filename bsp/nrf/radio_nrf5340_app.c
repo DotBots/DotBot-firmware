@@ -143,6 +143,12 @@ void db_radio_rx(void) {
     _network_call(DB_IPC_RADIO_RX_EN_REQ, DB_IPC_RADIO_RX_EN_ACK);
 }
 
+int8_t db_radio_rssi(void) {
+    mutex_lock();
+    _network_call(DB_IPC_RADIO_RSSI_REQ, DB_IPC_RADIO_RSSI_ACK);
+    return ipc_shared_data.radio.rssi;
+}
+
 void db_radio_disable(void) {
     mutex_lock();
     _network_call(DB_IPC_RADIO_RX_DIS_REQ, DB_IPC_RADIO_RX_DIS_ACK);
