@@ -67,6 +67,15 @@
     <file file_name="log_flash/log_flash.c" />
     <file file_name="log_flash.h" />
   </project>
+  <project Name="00drv_move">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_motors(bsp);00bsp_qdec(bsp);00bsp_timer(bsp)"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="move/move.c" />
+    <file file_name="move.h" />
+  </project>
   <project Name="00drv_pid">
     <configuration
       Name="Common"
