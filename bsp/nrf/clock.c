@@ -50,7 +50,7 @@ void db_hfclk_init(void) {
     const uint32_t slope_sign      = ((FICR_XOSC32MTRIM_SLOPE_Msk >> FICR_XOSC32MTRIM_SLOPE_Pos) - ((FICR_XOSC32MTRIM_SLOPE_Msk >> FICR_XOSC32MTRIM_SLOPE_Pos) >> 1));
     const int32_t  slope           = (int32_t)(((NRF_FICR_S->XOSC32MTRIM & FICR_XOSC32MTRIM_SLOPE_Msk) >> FICR_XOSC32MTRIM_SLOPE_Pos) ^ slope_sign) - (int32_t)slope_sign;
     const uint32_t offset          = (uint32_t)(NRF_FICR_S->XOSC32MTRIM & FICR_XOSC32MTRIM_OFFSET_Msk) >> FICR_XOSC32MTRIM_OFFSET_Pos;
-    const uint32_t cap_value       = ((((slope + 56) * (NRF53_XOSC32_CAPACITANCE_X2 - 14)) + ((offset - 8) << 4) + 32) >> 6) + 1;
+    const uint32_t cap_value       = ((((slope + 56) * (NRF53_XOSC32_CAPACITANCE_X2 - 14)) + ((offset - 8) << 4) + 32) >> 6);
     NRF_OSCILLATORS_S->XOSC32MCAPS = (OSCILLATORS_XOSC32MCAPS_ENABLE_Enabled << OSCILLATORS_XOSC32MCAPS_ENABLE_Pos) | cap_value;
     NRF_CLOCK->HFCLKSRC            = CLOCK_HFCLKSRC_SRC_HFXO << CLOCK_HFCLKSRC_SRC_Pos;
     // Enable 128MHZ core clock, only possible with application core
