@@ -109,6 +109,9 @@ int main(void) {
     db_gpio_init(&db_btn4, DB_GPIO_IN_PU);
     db_gpio_init(&db_btn1, DB_GPIO_IN_PU);
 
+    int8_t prev_left  = 0;
+    int8_t prev_right = 0;
+
     while (1) {
         protocol_move_raw_command_t command;
         // Read Button 1 (P0.11)
@@ -129,10 +132,14 @@ int main(void) {
             command.right_y = 0;
         }
 
-        if (command.left_y != 0 || command.right_y != 0) {
+        bool send_command = (command.left_y != 0) || (command.right_y != 0) || (command.left_y == 0 && command.left_y != prev_left) || (command.right_y == 0 && command.right_y != prev_right);
+        if (send_command) {
             db_protocol_cmd_move_raw_to_buffer(_gw_vars.radio_tx_buffer, DB_BROADCAST_ADDRESS, DotBot, &command);
             db_radio_disable();
             db_radio_tx(_gw_vars.radio_tx_buffer, sizeof(protocol_header_t) + sizeof(protocol_move_raw_command_t));
+
+            prev_left  = command.left_y;
+            prev_right = command.right_y;
         }
 
         while (_gw_vars.radio_queue.current != _gw_vars.radio_queue.last) {
