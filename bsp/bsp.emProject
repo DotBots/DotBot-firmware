@@ -10,7 +10,7 @@
       Name="Common"
       project_directory="."
       project_type="Library" />
-    <file file_name="nrf/$(ClockImplementationFile)" />
+    <file file_name="nrf/clock.c" />
     <file file_name="clock.h" />
   </project>
   <project Name="00bsp_dotbot_board">

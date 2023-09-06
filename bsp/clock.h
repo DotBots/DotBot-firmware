@@ -12,8 +12,12 @@
  * @copyright Inria, 2022
  */
 
-#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+#if defined(NRF5340_XXAA)
+#if defined(NRF_APPLICATION)
 #define NRF_CLOCK NRF_CLOCK_S
+#else
+#define NRF_CLOCK NRF_CLOCK_NS
+#endif
 #endif
 
 /**
