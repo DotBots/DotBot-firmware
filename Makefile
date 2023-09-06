@@ -15,6 +15,7 @@ ifeq (nrf5340dk-app,$(BUILD_TARGET))
     01bsp_lighthouse \
     01bsp_motors \
     01bsp_nvmc \
+    01bsp_qdec \
     01bsp_radio_txrx \
     01bsp_radio_lr_txrx \
     01bsp_rgbled \
@@ -56,20 +57,25 @@ else
 endif
 
 # remove incompatible apps (nrf5340, sailbot gateway) for dotbot (v1, v2) builds
-ifneq (,$(filter dotbot-v%,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 03app_dotbot_gateway 03app_sailbot 03app_nrf5340_%,$(PROJECTS))
+ifneq (,$(filter dotbot-v1,$(BUILD_TARGET)))
+  PROJECTS := $(filter-out 01bsp_qdec 03app_dotbot_gateway 03app_sailbot 03app_nrf5340_%,$(PROJECTS))
+  ARTIFACT_PROJECTS := 03app_dotbot
+endif
+
+ifneq (,$(filter dotbot-v2,$(BUILD_TARGET)))
+  PROJECTS := $(filter-out 03app_dotbot_gateway 03app_sailbot 03app_nrf5340_net,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
 endif
 
 # remove incompatible apps (nrf5340, dotbot, gateway) for sailbot-v1 build
 ifeq (sailbot-v1,$(BUILD_TARGET))
-  PROJECTS := $(filter-out 03app_dotbot_gateway 03app_dotbot 03app_nrf5340_%,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 03app_dotbot_gateway 03app_dotbot 03app_nrf5340_%,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_sailbot
 endif
 
 # remove incompatible apps (nrf5340) for nrf52833dk/nrf52840dk build
 ifneq (,$(filter nrf52833dk nrf52840dk,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 03app_nrf5340_%,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 03app_nrf5340_%,$(PROJECTS))
   ARTIFACT_PROJECTS ?= 03app_dotbot_gateway
 endif
 

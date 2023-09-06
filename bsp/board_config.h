@@ -102,4 +102,26 @@ static const gpio_t db_rpm_right_pin = {
     .port = DB_RPM_RIGHT_PORT, .pin = DB_RPM_RIGHT_PORT
 };
 
+#ifdef DB_QDEC_LEFT_A_PORT
+///! Left wheel encoder pin A
+static const gpio_t db_qdec_left_a_pin = {
+    .port = DB_QDEC_LEFT_A_PORT, .pin = DB_QDEC_LEFT_A_PIN
+};
+
+///! Left wheel encoder pin B
+static const gpio_t db_qdec_left_b_pin = {
+    .port = DB_QDEC_LEFT_B_PORT, .pin = DB_QDEC_LEFT_B_PIN
+};
+
+///! Right wheel encoder pin A
+static const gpio_t db_qdec_right_a_pin = {
+    .port = DB_QDEC_RIGHT_A_PORT, .pin = DB_QDEC_RIGHT_A_PIN
+};
+
+///! Right wheel encoder pin B
+static const gpio_t db_qdec_right_b_pin = {
+    .port = DB_QDEC_RIGHT_B_PORT, .pin = DB_QDEC_RIGHT_B_PIN
+};
+#endif
+
 #endif

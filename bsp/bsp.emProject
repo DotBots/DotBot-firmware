@@ -91,6 +91,15 @@
     <file file_name="nrf/$(PwmImplementationFile)" />
     <file file_name="pwm.h" />
   </project>
+  <project Name="00bsp_qdec">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_gpio"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf/qdec.c" />
+    <file file_name="qdec.h" />
+  </project>
   <project Name="00bsp_radio">
     <configuration
       Name="Common"
