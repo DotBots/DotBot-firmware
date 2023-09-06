@@ -92,7 +92,7 @@ int main(void) {
     }
 
     // Start the network core
-    NRF_RESET_NS->NETWORK.FORCEOFF = 0;
+    NRF_RESET_S->NETWORK.FORCEOFF = 0;
 
     while (1) {
         __WFE();

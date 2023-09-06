@@ -61,7 +61,7 @@ static gateway_vars_t _gw_vars;
 
 //=========================== callbacks ========================================
 
-static void uart_callback(uint8_t data) {
+static void _uart_callback(uint8_t data) {
     if (!_gw_vars.handshake_done) {
         uint8_t version = DB_FIRMWARE_VERSION;
         db_uart_write(&version, 1);
@@ -74,7 +74,7 @@ static void uart_callback(uint8_t data) {
     _gw_vars.uart_queue.last                             = (_gw_vars.uart_queue.last + 1) & (DB_UART_QUEUE_SIZE - 1);
 }
 
-static void radio_callback(uint8_t *packet, uint8_t length) {
+static void _radio_callback(uint8_t *packet, uint8_t length) {
     if (!_gw_vars.handshake_done) {
         return;
     }
@@ -93,14 +93,14 @@ int main(void) {
     db_protocol_init();
 
     // Configure Radio as transmitter
-    db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);  // All RX packets received are forwarded in an HDLC frame over UART
-    db_radio_set_frequency(8);                           // Set the radio frequency to 2408 MHz.
+    db_radio_init(&_radio_callback, DB_RADIO_BLE_1MBit);  // All RX packets received are forwarded in an HDLC frame over UART
+    db_radio_set_frequency(8);                            // Set the radio frequency to 2408 MHz.
     // Initialize the gateway context
     _gw_vars.buttons             = 0x0000;
     _gw_vars.radio_queue.current = 0;
     _gw_vars.radio_queue.last    = 0;
     _gw_vars.handshake_done      = false;
-    db_uart_init(&db_uart_rx, &db_uart_tx, DB_UART_BAUDRATE, &uart_callback);
+    db_uart_init(&db_uart_rx, &db_uart_tx, DB_UART_BAUDRATE, &_uart_callback);
 
     db_radio_rx();
 

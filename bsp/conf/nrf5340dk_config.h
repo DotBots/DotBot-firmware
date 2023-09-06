@@ -66,8 +66,8 @@
  * @name    UART pins definitions
  * @{
  */
-#define DB_UART_RX_PORT 0
-#define DB_UART_RX_PIN  1
+#define DB_UART_RX_PORT 1
+#define DB_UART_RX_PIN  0
 #define DB_UART_TX_PORT 1
 #define DB_UART_TX_PIN  1
 /** @} */
