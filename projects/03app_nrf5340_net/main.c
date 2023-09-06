@@ -34,10 +34,8 @@ void radio_callback(uint8_t *packet, uint8_t length) {
 
 int main(void) {
 
-#if defined(NRF5340_XXAA)
     // Configure constant latency mode for better performances
     NRF_POWER_NS->TASKS_CONSTLAT = 1;
-#endif
 
     NRF_IPC_NS->INTENSET                       = 1 << DB_IPC_CHAN_REQ;
     NRF_IPC_NS->SEND_CNF[DB_IPC_CHAN_ACK]      = 1 << DB_IPC_CHAN_ACK;

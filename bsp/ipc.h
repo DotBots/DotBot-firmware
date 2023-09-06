@@ -96,6 +96,23 @@ static inline void mutex_unlock(void) {
     NRF_MUTEX->MUTEX[0] = 0;
 }
 
+#if defined(NRF_APPLICATION)
+static inline void power_on_network_core(void) {
+    NRF_POWER_S->TASKS_CONSTLAT        = 1;
+    *(volatile uint32_t *)0x50005618ul = 1ul;
+    NRF_RESET_S->NETWORK.FORCEOFF      = (RESET_NETWORK_FORCEOFF_FORCEOFF_Release << RESET_NETWORK_FORCEOFF_FORCEOFF_Pos);
+    db_timer_hf_delay_us(5);  // Wait for at least five microseconds
+    NRF_RESET_S->NETWORK.FORCEOFF = (RESET_NETWORK_FORCEOFF_FORCEOFF_Hold << RESET_NETWORK_FORCEOFF_FORCEOFF_Pos);
+    db_timer_hf_delay_us(1);  // Wait for at least one microsecond
+    NRF_RESET_S->NETWORK.FORCEOFF      = (RESET_NETWORK_FORCEOFF_FORCEOFF_Release << RESET_NETWORK_FORCEOFF_FORCEOFF_Pos);
+    *(volatile uint32_t *)0x50005618ul = 0ul;
+}
+
+static inline bool is_network_core_powered_on(void) {
+    return NRF_RESET_S->NETWORK.FORCEOFF == (RESET_NETWORK_FORCEOFF_FORCEOFF_Release << RESET_NETWORK_FORCEOFF_FORCEOFF_Pos);
+}
+#endif
+
 /**
  * @brief Variable in RAM containing the shared data structure
  */

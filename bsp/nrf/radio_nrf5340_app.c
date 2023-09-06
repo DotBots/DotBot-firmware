@@ -58,15 +58,10 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
 
     db_hfclk_init();
 
-    // VREQCTRL (address at 0x41004000 => periph ID is 4)
-    NRF_SPU_S->PERIPHID[4].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
-                                   SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
-                                   SPU_PERIPHID_PERM_PRESENT_IsPresent << SPU_PERIPHID_PERM_PRESENT_Pos);
-
-    // POWER (address at 0x41005000 => periph ID is 5)
-    NRF_SPU_S->PERIPHID[5].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
-                                   SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
-                                   SPU_PERIPHID_PERM_PRESENT_IsPresent << SPU_PERIPHID_PERM_PRESENT_Pos);
+    // Disable all DCDC regulators (use LDO)
+    NRF_REGULATORS_S->VREGRADIO.DCDCEN = (REGULATORS_VREGRADIO_DCDCEN_DCDCEN_Disabled << REGULATORS_VREGRADIO_DCDCEN_DCDCEN_Pos);
+    NRF_REGULATORS_S->VREGMAIN.DCDCEN  = (REGULATORS_VREGMAIN_DCDCEN_DCDCEN_Disabled << REGULATORS_VREGMAIN_DCDCEN_DCDCEN_Pos);
+    NRF_REGULATORS_S->VREGH.DCDCEN     = (REGULATORS_VREGH_DCDCEN_DCDCEN_Disabled << REGULATORS_VREGH_DCDCEN_DCDCEN_Pos);
 
     // RADIO (address at 0x41008000 => periph ID is 8)
     NRF_SPU_S->PERIPHID[8].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
@@ -100,8 +95,8 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
     NVIC_SetPriority(IPC_IRQn, IPC_IRQ_PRIORITY);
 
     // Start the network core
-    if (NRF_RESET_NS->NETWORK.FORCEOFF != 0) {
-        NRF_RESET_NS->NETWORK.FORCEOFF = 0;
+    if (!is_network_core_powered_on()) {
+        power_on_network_core();
         _network_call(DB_IPC_NONE, DB_IPC_NET_READY_ACK);
     }
 

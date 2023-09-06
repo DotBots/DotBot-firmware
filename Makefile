@@ -55,8 +55,8 @@ else
   PROJECTS ?= $(shell find projects/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/projects// | sort)
 endif
 
-# remove incompatible apps (nrf5340, sailbot gateway) for dotbot-v1 build
-ifeq (dotbot-v1,$(BUILD_TARGET))
+# remove incompatible apps (nrf5340, sailbot gateway) for dotbot (v1, v2) builds
+ifneq (,$(filter dotbot-v%,$(BUILD_TARGET)))
   PROJECTS := $(filter-out 03app_dotbot_gateway 03app_sailbot 03app_nrf5340_%,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
 endif
