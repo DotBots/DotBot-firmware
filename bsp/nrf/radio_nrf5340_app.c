@@ -25,7 +25,6 @@
 static radio_cb_t _radio_callback = NULL;
 
 static bool _ack_received[] = {
-    [DB_IPC_NET_READY_ACK]  = false,
     [DB_IPC_RADIO_INIT_ACK] = false,
     [DB_IPC_RADIO_FREQ_ACK] = false,
     [DB_IPC_RADIO_CHAN_ACK] = false,
@@ -95,10 +94,7 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
     NVIC_SetPriority(IPC_IRQn, IPC_IRQ_PRIORITY);
 
     // Start the network core
-    if (!is_network_core_powered_on()) {
-        power_on_network_core();
-        _network_call(DB_IPC_NONE, DB_IPC_NET_READY_ACK);
-    }
+    release_network_core();
 
     if (callback) {
         _radio_callback = callback;

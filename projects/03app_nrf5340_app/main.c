@@ -9,6 +9,7 @@
 #include <nrf.h>
 
 #include "clock.h"
+#include "ipc.h"
 
 int main(void) {
 
@@ -91,7 +92,7 @@ int main(void) {
         NRF_P1_S->PIN_CNF[pin] = GPIO_PIN_CNF_MCUSEL_NetworkMCU << GPIO_PIN_CNF_MCUSEL_Pos;
     }
 
-    // Start the network core
+    // Release the network core
     NRF_RESET_S->NETWORK.FORCEOFF = 0;
 
     while (1) {

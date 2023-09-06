@@ -46,10 +46,7 @@ int main(void) {
     NVIC_ClearPendingIRQ(IPC_IRQn);
     NVIC_SetPriority(IPC_IRQn, 1);
 
-    mutex_lock();
-    ipc_shared_data.event                   = DB_IPC_NET_READY_ACK;
-    NRF_IPC_NS->TASKS_SEND[DB_IPC_CHAN_ACK] = 1;
-    mutex_unlock();
+    ipc_shared_data.net_ready = true;
 
     while (1) {
         __WFE();

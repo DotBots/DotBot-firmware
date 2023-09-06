@@ -18,7 +18,6 @@
 //========================== variables =========================================
 
 static bool _ack_received[] = {
-    [DB_IPC_NET_READY_ACK] = false,
     [DB_IPC_RNG_INIT_ACK]  = false,
     [DB_IPC_RNG_READ_ACK]  = false,
 };
@@ -65,10 +64,7 @@ void db_rng_init(void) {
     NVIC_SetPriority(IPC_IRQn, IPC_IRQ_PRIORITY);
 
     // Start the network core
-    if (!is_network_core_powered_on()) {
-        power_on_network_core();
-        _network_call(DB_IPC_NONE, DB_IPC_NET_READY_ACK);
-    }
+    release_network_core();
 
     mutex_lock();
     _network_call(DB_IPC_RNG_INIT_REQ, DB_IPC_RNG_INIT_ACK);

@@ -28,7 +28,6 @@
 
 typedef enum {
     DB_IPC_NONE,            ///< Sorry, but nothing
-    DB_IPC_NET_READY_ACK,   ///< Network core is ready
     DB_IPC_RADIO_INIT_REQ,  ///< Request for radio initialization
     DB_IPC_RADIO_INIT_ACK,  ///< Acknowledment for radio initialization
     DB_IPC_RADIO_FREQ_REQ,  ///< Request for radio set frequency
@@ -77,10 +76,16 @@ typedef struct {
 } ipc_rng_data_t;
 
 typedef struct __attribute__((packed)) {
-    ipc_event_type_t event;  ///< IPC event
-    ipc_radio_data_t radio;  ///< Radio shared data
-    ipc_rng_data_t   rng;    ///< Rng share data
+    bool             net_ready;  ///< Network core is ready
+    ipc_event_type_t event;      ///< IPC event
+    ipc_radio_data_t radio;      ///< Radio shared data
+    ipc_rng_data_t   rng;        ///< Rng share data
 } ipc_shared_data_t;
+
+/**
+ * @brief Variable in RAM containing the shared data structure
+ */
+volatile __attribute__((section(".ARM.__at_0x20004000"))) ipc_shared_data_t ipc_shared_data;
 
 /**
  * @brief Lock the mutex, blocks until the mutex is locked
@@ -97,7 +102,12 @@ static inline void mutex_unlock(void) {
 }
 
 #if defined(NRF_APPLICATION)
-static inline void power_on_network_core(void) {
+static inline void release_network_core(void) {
+    // Do nothing if network core is already started and ready
+    if (ipc_shared_data.net_ready) {
+        return;
+    }
+
     NRF_POWER_S->TASKS_CONSTLAT        = 1;
     *(volatile uint32_t *)0x50005618ul = 1ul;
     NRF_RESET_S->NETWORK.FORCEOFF      = (RESET_NETWORK_FORCEOFF_FORCEOFF_Release << RESET_NETWORK_FORCEOFF_FORCEOFF_Pos);
@@ -106,16 +116,9 @@ static inline void power_on_network_core(void) {
     db_timer_hf_delay_us(1);  // Wait for at least one microsecond
     NRF_RESET_S->NETWORK.FORCEOFF      = (RESET_NETWORK_FORCEOFF_FORCEOFF_Release << RESET_NETWORK_FORCEOFF_FORCEOFF_Pos);
     *(volatile uint32_t *)0x50005618ul = 0ul;
-}
 
-static inline bool is_network_core_powered_on(void) {
-    return NRF_RESET_S->NETWORK.FORCEOFF == (RESET_NETWORK_FORCEOFF_FORCEOFF_Release << RESET_NETWORK_FORCEOFF_FORCEOFF_Pos);
+    while (!ipc_shared_data.net_ready) {}
 }
 #endif
-
-/**
- * @brief Variable in RAM containing the shared data structure
- */
-volatile __attribute__((section(".ARM.__at_0x20004000"))) ipc_shared_data_t ipc_shared_data;
 
 #endif
