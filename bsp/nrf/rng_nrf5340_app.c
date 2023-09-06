@@ -39,11 +39,6 @@ static inline void _network_call(ipc_event_type_t req, ipc_event_type_t ack) {
 
 void db_rng_init(void) {
 
-    // RNG (address at 0x41009000 => periph ID is 8)
-    NRF_SPU_S->PERIPHID[9].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
-                                   SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
-                                   SPU_PERIPHID_PERM_PRESENT_IsPresent << SPU_PERIPHID_PERM_PRESENT_Pos);
-
     // IPC (address at 0x41012000 => periph ID is 18)
     NRF_SPU_S->PERIPHID[18].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
                                     SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
