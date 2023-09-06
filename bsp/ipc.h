@@ -27,26 +27,28 @@
 #define IPC_IRQ_PRIORITY (1)
 
 typedef enum {
-    DB_IPC_NONE,              ///< Sorry, but nothing
-    DB_IPC_NET_READY_ACK,     ///< Network core is ready
-    DB_IPC_RADIO_INIT_REQ,    ///< Request for radio initialization
-    DB_IPC_RADIO_INIT_ACK,    ///< Acknowledment for radio initialization
-    DB_IPC_RADIO_FREQ_REQ,    ///< Request for radio set frequency
-    DB_IPC_RADIO_FREQ_ACK,    ///< Acknowledment for radio set frequency
-    DB_IPC_RADIO_CHAN_REQ,    ///< Request for radio set channel
-    DB_IPC_RADIO_CHAN_ACK,    ///< Acknowledment for radio set channel
-    DB_IPC_RADIO_ADDR_REQ,    ///< Request for radio set network address
-    DB_IPC_RADIO_ADDR_ACK,    ///< Acknowledment for radio set network address
-    DB_IPC_RADIO_RX_EN_REQ,   ///< Request for radio rx enable
-    DB_IPC_RADIO_RX_EN_ACK,   ///< Acknowledment for radio rx enable
-    DB_IPC_RADIO_RX_DIS_REQ,  ///< Request for radio rx disable
-    DB_IPC_RADIO_RX_DIS_ACK,  ///< Acknowledment for radio rx disable
-    DB_IPC_RADIO_TX_REQ,      ///< Request for radio tx
-    DB_IPC_RADIO_TX_ACK,      ///< Acknowledment for radio tx
-    DB_IPC_RNG_INIT_REQ,      ///< Request for rng init
-    DB_IPC_RNG_INIT_ACK,      ///< Acknowledment for rng init
-    DB_IPC_RNG_READ_REQ,      ///< Request for rng read
-    DB_IPC_RNG_READ_ACK,      ///< Acknowledment for rng read
+    DB_IPC_NONE,            ///< Sorry, but nothing
+    DB_IPC_NET_READY_ACK,   ///< Network core is ready
+    DB_IPC_RADIO_INIT_REQ,  ///< Request for radio initialization
+    DB_IPC_RADIO_INIT_ACK,  ///< Acknowledment for radio initialization
+    DB_IPC_RADIO_FREQ_REQ,  ///< Request for radio set frequency
+    DB_IPC_RADIO_FREQ_ACK,  ///< Acknowledment for radio set frequency
+    DB_IPC_RADIO_CHAN_REQ,  ///< Request for radio set channel
+    DB_IPC_RADIO_CHAN_ACK,  ///< Acknowledment for radio set channel
+    DB_IPC_RADIO_ADDR_REQ,  ///< Request for radio set network address
+    DB_IPC_RADIO_ADDR_ACK,  ///< Acknowledment for radio set network address
+    DB_IPC_RADIO_RX_REQ,    ///< Request for radio rx
+    DB_IPC_RADIO_RX_ACK,    ///< Acknowledment for radio rx
+    DB_IPC_RADIO_DIS_REQ,   ///< Request for radio disable
+    DB_IPC_RADIO_DIS_ACK,   ///< Acknowledment for radio disable
+    DB_IPC_RADIO_TX_REQ,    ///< Request for radio tx
+    DB_IPC_RADIO_TX_ACK,    ///< Acknowledment for radio tx
+    DB_IPC_RADIO_RSSI_REQ,  ///< Request for RSSI
+    DB_IPC_RADIO_RSSI_ACK,  ///< Acknowledment for RSSI
+    DB_IPC_RNG_INIT_REQ,    ///< Request for rng init
+    DB_IPC_RNG_INIT_ACK,    ///< Acknowledment for rng init
+    DB_IPC_RNG_READ_REQ,    ///< Request for rng read
+    DB_IPC_RNG_READ_ACK,    ///< Acknowledment for rng read
 } ipc_event_type_t;
 
 typedef enum {
@@ -67,6 +69,7 @@ typedef struct __attribute__((packed)) {
     uint32_t            addr;       ///< db_set_network_address function parameters
     ipc_radio_pdu_t     tx_pdu;     ///< PDU to send
     ipc_radio_pdu_t     rx_pdu;     ///< Received pdu
+    int8_t              rssi;       ///< RSSI value
 } ipc_radio_data_t;
 
 typedef struct {

@@ -53,7 +53,7 @@ static const gpio_t _dbg_pin = { .port = DB_DEBUG1_PORT, .pin = DB_DEBUG1_PIN };
 
 static void radio_callback(uint8_t *packet, uint8_t length) {
     db_gpio_toggle(&_dbg_pin);
-    printf("packet received (%dB): %s\n", length, (char *)packet);
+    printf("packet received (%dB): %s, RSSI: %i\n", length, (char *)packet, db_radio_rssi());
 }
 
 //=========================== main ===============================================

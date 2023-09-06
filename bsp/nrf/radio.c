@@ -31,12 +31,16 @@
 #endif
 
 #define RADIO_TIFS          1000U  ///< Inter frame spacing in us
-#define RADIO_SHORTS_COMMON (RADIO_SHORTS_READY_START_Enabled << RADIO_SHORTS_READY_START_Pos) | (RADIO_SHORTS_END_DISABLE_Enabled << RADIO_SHORTS_END_DISABLE_Pos)
-#define RADIO_INTERRUPTS    (RADIO_INTENSET_DISABLED_Enabled << RADIO_INTENSET_DISABLED_Pos) | (RADIO_INTENSET_ADDRESS_Enabled << RADIO_INTENSET_ADDRESS_Pos)
-#define RADIO_STATE_IDLE    0x00
-#define RADIO_STATE_RX      0x01
-#define RADIO_STATE_TX      0x02
-#define RADIO_STATE_BUSY    0x04
+#define RADIO_SHORTS_COMMON (RADIO_SHORTS_READY_START_Enabled << RADIO_SHORTS_READY_START_Pos) |                 \
+                                (RADIO_SHORTS_END_DISABLE_Enabled << RADIO_SHORTS_END_DISABLE_Pos) |             \
+                                (RADIO_SHORTS_ADDRESS_RSSISTART_Enabled << RADIO_SHORTS_ADDRESS_RSSISTART_Pos) | \
+                                (RADIO_SHORTS_DISABLED_RSSISTOP_Enabled << RADIO_SHORTS_DISABLED_RSSISTOP_Pos)
+#define RADIO_INTERRUPTS (RADIO_INTENSET_DISABLED_Enabled << RADIO_INTENSET_DISABLED_Pos) | \
+                             (RADIO_INTENSET_ADDRESS_Enabled << RADIO_INTENSET_ADDRESS_Pos)
+#define RADIO_STATE_IDLE 0x00
+#define RADIO_STATE_RX   0x01
+#define RADIO_STATE_TX   0x02
+#define RADIO_STATE_BUSY 0x04
 
 typedef struct __attribute__((packed)) {
     uint8_t header;                       ///< PDU header (depends on the type of PDU - advertising physical channel or Data physical channel)
@@ -199,7 +203,8 @@ void db_radio_tx(uint8_t *tx_buffer, uint8_t length) {
 }
 
 void db_radio_rx(void) {
-    NRF_RADIO->SHORTS   = RADIO_SHORTS_COMMON | (RADIO_SHORTS_DISABLED_TXEN_Enabled << RADIO_SHORTS_DISABLED_TXEN_Pos);
+    NRF_RADIO->SHORTS = RADIO_SHORTS_COMMON |
+                        (RADIO_SHORTS_DISABLED_TXEN_Enabled << RADIO_SHORTS_DISABLED_TXEN_Pos);
     NRF_RADIO->INTENSET = RADIO_INTERRUPTS;
 
     if (radio_vars.state == RADIO_STATE_IDLE) {
@@ -216,6 +221,10 @@ void db_radio_disable(void) {
     NRF_RADIO->TASKS_DISABLE   = RADIO_TASKS_DISABLE_TASKS_DISABLE_Trigger << RADIO_TASKS_DISABLE_TASKS_DISABLE_Pos;
     while (NRF_RADIO->EVENTS_DISABLED == 0) {}
     radio_vars.state = RADIO_STATE_IDLE;
+}
+
+int8_t db_radio_rssi(void) {
+    return (uint8_t)NRF_RADIO->RSSISAMPLE * -1;
 }
 
 //=========================== private ==========================================

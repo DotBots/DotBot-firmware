@@ -93,6 +93,13 @@ void db_radio_tx(uint8_t *packet, uint8_t length);
 void db_radio_rx(void);
 
 /**
+ * @brief Reads the RSSI of a received packet
+ *
+ * Should be called after a packet is received, e.g. in the radio callback
+ */
+int8_t db_radio_rssi(void);
+
+/**
  * @brief Disables the radio, no packet can be received and energy consumption is minimal
  */
 void db_radio_disable(void);
