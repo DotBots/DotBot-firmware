@@ -103,7 +103,7 @@
   <project Name="00bsp_radio">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_clock;00bsp_timer_hf(bsp)"
+      project_dependencies="00bsp_clock"
       project_directory="."
       project_type="Library" />
     <file file_name="nrf/$(RadioImplementationFile)" />
@@ -112,7 +112,6 @@
   <project Name="00bsp_rng">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_timer_hf(bsp)"
       project_directory="."
       project_type="Library" />
     <file file_name="nrf/$(RngImplementationFile)" />
