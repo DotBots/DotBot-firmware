@@ -27,34 +27,22 @@
 #define IPC_IRQ_PRIORITY (1)
 
 typedef enum {
-    DB_IPC_NONE,            ///< Sorry, but nothing
-    DB_IPC_NET_READY_ACK,   ///< Network core is ready
+    DB_IPC_REQ_NONE,        ///< Sorry, but nothing
     DB_IPC_RADIO_INIT_REQ,  ///< Request for radio initialization
-    DB_IPC_RADIO_INIT_ACK,  ///< Acknowledment for radio initialization
     DB_IPC_RADIO_FREQ_REQ,  ///< Request for radio set frequency
-    DB_IPC_RADIO_FREQ_ACK,  ///< Acknowledment for radio set frequency
     DB_IPC_RADIO_CHAN_REQ,  ///< Request for radio set channel
-    DB_IPC_RADIO_CHAN_ACK,  ///< Acknowledment for radio set channel
     DB_IPC_RADIO_ADDR_REQ,  ///< Request for radio set network address
-    DB_IPC_RADIO_ADDR_ACK,  ///< Acknowledment for radio set network address
     DB_IPC_RADIO_RX_REQ,    ///< Request for radio rx
-    DB_IPC_RADIO_RX_ACK,    ///< Acknowledment for radio rx
     DB_IPC_RADIO_DIS_REQ,   ///< Request for radio disable
-    DB_IPC_RADIO_DIS_ACK,   ///< Acknowledment for radio disable
     DB_IPC_RADIO_TX_REQ,    ///< Request for radio tx
-    DB_IPC_RADIO_TX_ACK,    ///< Acknowledment for radio tx
     DB_IPC_RADIO_RSSI_REQ,  ///< Request for RSSI
-    DB_IPC_RADIO_RSSI_ACK,  ///< Acknowledment for RSSI
     DB_IPC_RNG_INIT_REQ,    ///< Request for rng init
-    DB_IPC_RNG_INIT_ACK,    ///< Acknowledment for rng init
     DB_IPC_RNG_READ_REQ,    ///< Request for rng read
-    DB_IPC_RNG_READ_ACK,    ///< Acknowledment for rng read
-} ipc_event_type_t;
+} ipc_req_t;
 
 typedef enum {
     DB_IPC_CHAN_REQ      = 0,  ///< Channel used for request events
-    DB_IPC_CHAN_ACK      = 1,  ///< Channel used for acknownlegment events
-    DB_IPC_CHAN_RADIO_RX = 2,  ///< Channel used for radio RX events
+    DB_IPC_CHAN_RADIO_RX = 1,  ///< Channel used for radio RX events
 } ipc_channels_t;
 
 typedef struct __attribute__((packed)) {
@@ -77,10 +65,17 @@ typedef struct {
 } ipc_rng_data_t;
 
 typedef struct __attribute__((packed)) {
-    ipc_event_type_t event;  ///< IPC event
-    ipc_radio_data_t radio;  ///< Radio shared data
-    ipc_rng_data_t   rng;    ///< Rng share data
+    bool             net_ready;  ///< Network core is ready
+    bool             net_ack;    ///< Network core acked the latest request
+    ipc_req_t        req;        ///< IPC network request
+    ipc_radio_data_t radio;      ///< Radio shared data
+    ipc_rng_data_t   rng;        ///< Rng share data
 } ipc_shared_data_t;
+
+/**
+ * @brief Variable in RAM containing the shared data structure
+ */
+volatile __attribute__((section(".ARM.__at_0x20004000"))) ipc_shared_data_t ipc_shared_data;
 
 /**
  * @brief Lock the mutex, blocks until the mutex is locked
@@ -97,25 +92,28 @@ static inline void mutex_unlock(void) {
 }
 
 #if defined(NRF_APPLICATION)
-static inline void power_on_network_core(void) {
-    NRF_POWER_S->TASKS_CONSTLAT        = 1;
-    *(volatile uint32_t *)0x50005618ul = 1ul;
-    NRF_RESET_S->NETWORK.FORCEOFF      = (RESET_NETWORK_FORCEOFF_FORCEOFF_Release << RESET_NETWORK_FORCEOFF_FORCEOFF_Pos);
-    db_timer_hf_delay_us(5);  // Wait for at least five microseconds
-    NRF_RESET_S->NETWORK.FORCEOFF = (RESET_NETWORK_FORCEOFF_FORCEOFF_Hold << RESET_NETWORK_FORCEOFF_FORCEOFF_Pos);
-    db_timer_hf_delay_us(1);  // Wait for at least one microsecond
-    NRF_RESET_S->NETWORK.FORCEOFF      = (RESET_NETWORK_FORCEOFF_FORCEOFF_Release << RESET_NETWORK_FORCEOFF_FORCEOFF_Pos);
-    *(volatile uint32_t *)0x50005618ul = 0ul;
-}
+static inline void db_ipc_network_call(ipc_req_t req) {
+    if (req != DB_IPC_REQ_NONE) {
+        ipc_shared_data.req                    = req;
+        NRF_IPC_S->TASKS_SEND[DB_IPC_CHAN_REQ] = 1;
+    }
+    while (!ipc_shared_data.net_ack) {}
+    ipc_shared_data.net_ack = false;
+};
 
-static inline bool is_network_core_powered_on(void) {
-    return NRF_RESET_S->NETWORK.FORCEOFF == (RESET_NETWORK_FORCEOFF_FORCEOFF_Release << RESET_NETWORK_FORCEOFF_FORCEOFF_Pos);
+static inline void release_network_core(void) {
+    // Do nothing if network core is already started and ready
+    if (!NRF_RESET_S->NETWORK.FORCEOFF && ipc_shared_data.net_ready) {
+        return;
+    } else if (!NRF_RESET_S->NETWORK.FORCEOFF) {
+        ipc_shared_data.net_ready = false;
+    }
+
+    NRF_POWER_S->TASKS_CONSTLAT   = 1;
+    NRF_RESET_S->NETWORK.FORCEOFF = (RESET_NETWORK_FORCEOFF_FORCEOFF_Release << RESET_NETWORK_FORCEOFF_FORCEOFF_Pos);
+
+    while (!ipc_shared_data.net_ready) {}
 }
 #endif
-
-/**
- * @brief Variable in RAM containing the shared data structure
- */
-volatile __attribute__((section(".ARM.__at_0x20004000"))) ipc_shared_data_t ipc_shared_data;
 
 #endif

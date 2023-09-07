@@ -15,32 +15,11 @@
 #include "ipc.h"
 #include "rng.h"
 
-//========================== variables =========================================
-
-static bool _ack_received[] = {
-    [DB_IPC_NET_READY_ACK] = false,
-    [DB_IPC_RNG_INIT_ACK]  = false,
-    [DB_IPC_RNG_READ_ACK]  = false,
-};
-
 //========================== functions =========================================
-
-static inline void _network_call(ipc_event_type_t req, ipc_event_type_t ack) {
-    if (req != DB_IPC_NONE) {
-        ipc_shared_data.event                  = req;
-        NRF_IPC_S->TASKS_SEND[DB_IPC_CHAN_REQ] = 1;
-        mutex_unlock();
-    }
-    while (!_ack_received[ack]) {}
-    _ack_received[ack] = false;
-};
 
 //=========================== public ===========================================
 
 void db_rng_init(void) {
-    // On nrf53 configure constant latency mode for better performances
-    NRF_POWER_S->TASKS_CONSTLAT = 1;
-
     // IPC (address at 0x41012000 => periph ID is 18)
     NRF_SPU_S->PERIPHID[18].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
                                     SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
@@ -56,37 +35,19 @@ void db_rng_init(void) {
                                     SPU_RAMREGION_PERM_WRITE_Enable << SPU_RAMREGION_PERM_WRITE_Pos |
                                     SPU_RAMREGION_PERM_SECATTR_Non_Secure << SPU_RAMREGION_PERM_SECATTR_Pos);
 
-    NRF_IPC_S->INTENSET                     = 1 << DB_IPC_CHAN_ACK;
-    NRF_IPC_S->SEND_CNF[DB_IPC_CHAN_REQ]    = 1 << DB_IPC_CHAN_REQ;
-    NRF_IPC_S->RECEIVE_CNF[DB_IPC_CHAN_ACK] = 1 << DB_IPC_CHAN_ACK;
+    NRF_IPC_S->SEND_CNF[DB_IPC_CHAN_REQ] = 1 << DB_IPC_CHAN_REQ;
 
     NVIC_EnableIRQ(IPC_IRQn);
     NVIC_ClearPendingIRQ(IPC_IRQn);
     NVIC_SetPriority(IPC_IRQn, IPC_IRQ_PRIORITY);
 
     // Start the network core
-    if (!is_network_core_powered_on()) {
-        power_on_network_core();
-        _network_call(DB_IPC_NONE, DB_IPC_NET_READY_ACK);
-    }
+    release_network_core();
 
-    mutex_lock();
-    _network_call(DB_IPC_RNG_INIT_REQ, DB_IPC_RNG_INIT_ACK);
+    db_ipc_network_call(DB_IPC_RNG_INIT_REQ);
 }
 
 void db_rng_read(uint8_t *value) {
-    mutex_lock();
-    _network_call(DB_IPC_RNG_READ_REQ, DB_IPC_RNG_READ_ACK);
+    db_ipc_network_call(DB_IPC_RNG_READ_REQ);
     *value = ipc_shared_data.rng.value;
-}
-
-//=========================== interrupt handlers ===============================
-
-void IPC_IRQHandler(void) {
-    if (NRF_IPC_S->EVENTS_RECEIVE[DB_IPC_CHAN_ACK]) {
-        NRF_IPC_S->EVENTS_RECEIVE[DB_IPC_CHAN_ACK] = 0;
-        mutex_lock();
-        _ack_received[ipc_shared_data.event] = true;
-        mutex_unlock();
-    }
 }
