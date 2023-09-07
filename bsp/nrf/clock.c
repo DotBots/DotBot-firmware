@@ -54,7 +54,7 @@ void db_hfclk_init(void) {
     const uint32_t cap_value       = ((((slope + 56) * (NRF53_XOSC32_CAPACITANCE_X2 - 14)) + ((offset - 8) << 4) + 32) >> 6);
     NRF_OSCILLATORS_S->XOSC32MCAPS = (OSCILLATORS_XOSC32MCAPS_ENABLE_Enabled << OSCILLATORS_XOSC32MCAPS_ENABLE_Pos) | cap_value;
 #endif
-    NRF_CLOCK->HFCLKSRC            = CLOCK_HFCLKSRC_SRC_HFXO << CLOCK_HFCLKSRC_SRC_Pos;
+    NRF_CLOCK->HFCLKSRC = CLOCK_HFCLKSRC_SRC_HFXO << CLOCK_HFCLKSRC_SRC_Pos;
     // Enable 128MHZ core clock, only possible with application core
     NRF_CLOCK->HFCLKCTRL = CLOCK_HFCLKCTRL_HCLK_Div1 << CLOCK_HFCLKCTRL_HCLK_Pos;
 #endif
@@ -86,12 +86,12 @@ void db_lfclk_init(void) {
 #endif
 
     NRF_CLOCK->LFCLKSRC = (CLOCK_LFCLKSRC_SRC_LFXO << CLOCK_LFCLKSRC_SRC_Pos);
-#else  // NRF_NETWORK use internal RC oscillator
+#else   // NRF_NETWORK use internal RC oscillator
     NRF_CLOCK->LFCLKSRC = (CLOCK_LFCLKSRC_SRC_LFRC << CLOCK_LFCLKSRC_SRC_Pos);
-#endif // defined(NRF_APPLICATION)
-#else  // nrf52
+#endif  // defined(NRF_APPLICATION)
+#else   // nrf52
     NRF_CLOCK->LFCLKSRC = (CLOCK_LFCLKSRC_SRC_Xtal << CLOCK_LFCLKSRC_SRC_Pos);
-#endif // defined(NRF5340_XXAA)
+#endif  // defined(NRF5340_XXAA)
 
     NRF_CLOCK->TASKS_LFCLKSTART = 1;
     while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0) {}

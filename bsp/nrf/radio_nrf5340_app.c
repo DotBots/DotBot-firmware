@@ -24,37 +24,9 @@
 
 static radio_cb_t _radio_callback = NULL;
 
-static bool _ack_received[] = {
-    [DB_IPC_RADIO_INIT_ACK] = false,
-    [DB_IPC_RADIO_FREQ_ACK] = false,
-    [DB_IPC_RADIO_CHAN_ACK] = false,
-    [DB_IPC_RADIO_ADDR_ACK] = false,
-    [DB_IPC_RADIO_RX_ACK]   = false,
-    [DB_IPC_RADIO_DIS_ACK]  = false,
-    [DB_IPC_RADIO_TX_ACK]   = false,
-    [DB_IPC_RADIO_RSSI_ACK] = false,
-    [DB_IPC_RNG_INIT_ACK]   = false,
-    [DB_IPC_RNG_READ_ACK]   = false,
-};
-
-//========================== functions =========================================
-
-static inline void _network_call(ipc_event_type_t req, ipc_event_type_t ack) {
-    if (req != DB_IPC_NONE) {
-        ipc_shared_data.event                  = req;
-        NRF_IPC_S->TASKS_SEND[DB_IPC_CHAN_REQ] = 1;
-        mutex_unlock();
-    }
-    while (!_ack_received[ack]) {}
-    _ack_received[ack] = false;
-}
-
 //=========================== public ===========================================
 
 void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
-    // On nrf53 configure constant latency mode for better performances
-    NRF_POWER_S->TASKS_CONSTLAT = 1;
-
     db_hfclk_init();
 
     // Disable all DCDC regulators (use LDO)
@@ -84,9 +56,8 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
                                     SPU_RAMREGION_PERM_WRITE_Enable << SPU_RAMREGION_PERM_WRITE_Pos |
                                     SPU_RAMREGION_PERM_SECATTR_Non_Secure << SPU_RAMREGION_PERM_SECATTR_Pos);
 
-    NRF_IPC_S->INTENSET                          = (1 << DB_IPC_CHAN_ACK | 1 << DB_IPC_CHAN_RADIO_RX);
+    NRF_IPC_S->INTENSET                          = 1 << DB_IPC_CHAN_RADIO_RX;
     NRF_IPC_S->SEND_CNF[DB_IPC_CHAN_REQ]         = 1 << DB_IPC_CHAN_REQ;
-    NRF_IPC_S->RECEIVE_CNF[DB_IPC_CHAN_ACK]      = 1 << DB_IPC_CHAN_ACK;
     NRF_IPC_S->RECEIVE_CNF[DB_IPC_CHAN_RADIO_RX] = 1 << DB_IPC_CHAN_RADIO_RX;
 
     NVIC_EnableIRQ(IPC_IRQn);
@@ -100,61 +71,47 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
         _radio_callback = callback;
     }
 
-    mutex_lock();
     ipc_shared_data.radio.mode = mode;
-    _network_call(DB_IPC_RADIO_INIT_REQ, DB_IPC_RADIO_INIT_ACK);
+    db_ipc_network_call(DB_IPC_RADIO_INIT_REQ);
 }
 
 void db_radio_set_frequency(uint8_t freq) {
-    mutex_lock();
     ipc_shared_data.radio.frequency = freq;
-    _network_call(DB_IPC_RADIO_FREQ_REQ, DB_IPC_RADIO_FREQ_ACK);
+    db_ipc_network_call(DB_IPC_RADIO_FREQ_REQ);
 }
 
 void db_radio_set_channel(uint8_t channel) {
-    mutex_lock();
     ipc_shared_data.radio.channel = channel;
-    _network_call(DB_IPC_RADIO_CHAN_REQ, DB_IPC_RADIO_CHAN_ACK);
+    db_ipc_network_call(DB_IPC_RADIO_CHAN_REQ);
 }
 
 void db_radio_set_network_address(uint32_t addr) {
-    mutex_lock();
     ipc_shared_data.radio.addr = addr;
-    _network_call(DB_IPC_RADIO_ADDR_REQ, DB_IPC_RADIO_ADDR_ACK);
+    db_ipc_network_call(DB_IPC_RADIO_ADDR_REQ);
 }
 
 void db_radio_tx(uint8_t *tx_buffer, uint8_t length) {
-    mutex_lock();
     ipc_shared_data.radio.tx_pdu.length = length;
     memcpy((void *)ipc_shared_data.radio.tx_pdu.buffer, tx_buffer, length);
-    _network_call(DB_IPC_RADIO_TX_REQ, DB_IPC_RADIO_TX_ACK);
+    db_ipc_network_call(DB_IPC_RADIO_TX_REQ);
 }
 
 void db_radio_rx(void) {
-    mutex_lock();
-    _network_call(DB_IPC_RADIO_RX_REQ, DB_IPC_RADIO_RX_ACK);
+    db_ipc_network_call(DB_IPC_RADIO_RX_REQ);
 }
 
 int8_t db_radio_rssi(void) {
-    mutex_lock();
-    _network_call(DB_IPC_RADIO_RSSI_REQ, DB_IPC_RADIO_RSSI_ACK);
+    db_ipc_network_call(DB_IPC_RADIO_RSSI_REQ);
     return ipc_shared_data.radio.rssi;
 }
 
 void db_radio_disable(void) {
-    mutex_lock();
-    _network_call(DB_IPC_RADIO_DIS_REQ, DB_IPC_RADIO_DIS_ACK);
+    db_ipc_network_call(DB_IPC_RADIO_DIS_REQ);
 }
 
 //=========================== interrupt handlers ===============================
 
 void IPC_IRQHandler(void) {
-    if (NRF_IPC_S->EVENTS_RECEIVE[DB_IPC_CHAN_ACK]) {
-        NRF_IPC_S->EVENTS_RECEIVE[DB_IPC_CHAN_ACK] = 0;
-        mutex_lock();
-        _ack_received[ipc_shared_data.event] = true;
-        mutex_unlock();
-    }
     if (NRF_IPC_S->EVENTS_RECEIVE[DB_IPC_CHAN_RADIO_RX]) {
         NRF_IPC_S->EVENTS_RECEIVE[DB_IPC_CHAN_RADIO_RX] = 0;
         if (_radio_callback) {
