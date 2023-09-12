@@ -74,10 +74,14 @@ typedef struct {
     uint32_t                 waypoints_threshold;                ///< Distance threshold to next waypoint
     uint8_t                  next_waypoint_idx;                  ///< Index of next waypoint to reach
     uint8_t                  radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
+    bool                     advertise;                          ///< Flag used to indicate that advertisement needs to be sent
+    bool                     send_log_data;                      ///< Flag used to indicate that log data needs to be sent
     bool                     autonomous_operation;               ///< Flag used to enable/disable autonomous operation
     bool                     radio_override;                     ///< Flag used to override autonomous operation when radio-controlled
     lis2mdl_compass_data_t   last_magnetometer;                  ///< Last reading of the magnetometer
     lsm6ds_acc_data_t        last_accelerometer;                 ///< Last reading of the accelerometer
+    nmea_gprmc_t            *last_gps_data;
+    uint16_t                 last_heading;
 } sailbot_vars_t;
 
 //=========================== variables =========================================
@@ -109,6 +113,8 @@ int main(void) {
 
     _sailbot_vars.autonomous_operation = false;
     _sailbot_vars.radio_override       = false;
+    _sailbot_vars.advertise            = false;
+    _sailbot_vars.send_log_data        = false;
     _sailbot_vars.sail_trim            = 50;
 
     // Initialize the protocol
@@ -128,7 +134,6 @@ int main(void) {
 
     // init the timers
     db_timer_init();
-    db_timer_hf_init();
 
     // Configure GPS without callback
     gps_init(NULL);
@@ -136,8 +141,7 @@ int main(void) {
     // set timer callbacks
     db_timer_set_periodic_ms(0, TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
     db_timer_set_periodic_ms(1, ADVERTISEMENT_PERIOD_MS, &_advertise);
-
-    db_timer_hf_set_periodic_us(0, CONTROL_LOOP_PERIOD_MS * 1000, &control_loop_callback);
+    db_timer_set_periodic_ms(2, CONTROL_LOOP_PERIOD_MS, &control_loop_callback);
 
     // Wait for radio packets to arrive
     while (1) {
@@ -148,6 +152,17 @@ int main(void) {
         }
         if (lsm6ds_data_ready()) {
             lsm6ds_read_accelerometer(&_sailbot_vars.last_accelerometer);
+        }
+        if (_sailbot_vars.advertise) {
+            db_protocol_header_to_buffer(_sailbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, SailBot, DB_PROTOCOL_ADVERTISEMENT);
+            size_t length = sizeof(protocol_header_t);
+            db_radio_disable();
+            db_radio_tx(_sailbot_vars.radio_buffer, length);
+            _sailbot_vars.advertise = false;
+        }
+        if (_sailbot_vars.send_log_data) {
+            _send_gps_data(_sailbot_vars.last_gps_data, _sailbot_vars.last_heading);
+            _sailbot_vars.send_log_data = false;
         }
         __WFE();
     }
@@ -227,16 +242,17 @@ void radio_callback(uint8_t *packet, uint8_t length) {
 
 void control_loop_callback(void) {
     // Read the GPS
-    nmea_gprmc_t *gps_data = gps_last_known_position();
+    _sailbot_vars.last_gps_data = gps_last_known_position();
 
-    if (!gps_data->valid) {
+    if (!_sailbot_vars.last_gps_data->valid) {
         return;
     }
 
     // get tilt-compensated heading
-    float heading = imu_calculate_tilt_compensated_heading(&_sailbot_vars.last_magnetometer, &_sailbot_vars.last_accelerometer);
+    float heading              = imu_calculate_tilt_compensated_heading(&_sailbot_vars.last_magnetometer, &_sailbot_vars.last_accelerometer);
+    _sailbot_vars.last_heading = (uint16_t)(heading * 180 / M_PI);
 
-    _send_gps_data(gps_data, (uint16_t)(heading * 180 / M_PI));
+    _sailbot_vars.send_log_data = true;
 
     if (!_sailbot_vars.autonomous_operation) {
         // Do nothing if not in autonomous operation
@@ -261,8 +277,8 @@ void control_loop_callback(void) {
     convert_geographical_to_cartesian(&target, &_sailbot_vars.waypoints.coordinates[_sailbot_vars.next_waypoint_idx]);
 
     // save the current GPS position on stack to avoid concurrency issues between control_loop_callback() and the GPS module
-    current_position_gps.latitude  = (int32_t)(gps_data->latitude * 1e6);
-    current_position_gps.longitude = (int32_t)(gps_data->longitude * 1e6);
+    current_position_gps.latitude  = (int32_t)(_sailbot_vars.last_gps_data->latitude * 1e6);
+    current_position_gps.longitude = (int32_t)(_sailbot_vars.last_gps_data->longitude * 1e6);
 
     // convert geographical data given by GPS to our local coordinate system
     convert_geographical_to_cartesian(&position, &current_position_gps);
@@ -347,10 +363,7 @@ static void _timeout_check(void) {
 }
 
 static void _advertise(void) {
-    db_protocol_header_to_buffer(_sailbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, SailBot, DB_PROTOCOL_ADVERTISEMENT);
-    size_t length = sizeof(protocol_header_t);
-    db_radio_disable();
-    db_radio_tx(_sailbot_vars.radio_buffer, length);
+    _sailbot_vars.advertise = true;
 }
 
 static void convert_geographical_to_cartesian(cartesian_coordinate_t *out, const protocol_gps_coordinate_t *in) {
