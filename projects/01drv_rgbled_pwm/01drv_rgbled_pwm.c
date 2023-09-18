@@ -41,19 +41,19 @@ int main(void) {
     while (1) {
 #ifdef DB_RGB_LED_PWM_RED_PORT
         db_rgbled_pwm_set_color(255, 0, 0);
-        db_timer_delay_s(2);
+        db_timer_delay_ms(100);
         db_rgbled_pwm_set_color(0, 255, 0);
-        db_timer_delay_s(2);
+        db_timer_delay_ms(100);
         db_rgbled_pwm_set_color(0, 0, 255);
-        db_timer_delay_s(2);
+        db_timer_delay_ms(100);
         db_rgbled_pwm_set_color(255, 255, 0);
-        db_timer_delay_s(2);
+        db_timer_delay_ms(100);
         db_rgbled_pwm_set_color(0, 255, 255);
-        db_timer_delay_s(2);
+        db_timer_delay_ms(100);
         db_rgbled_pwm_set_color(255, 0, 255);
 #else
         puts("RGB LED pwm not supported!");
 #endif
-        db_timer_delay_s(2);
+        db_timer_delay_ms(100);
     }
 }
