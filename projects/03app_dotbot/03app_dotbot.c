@@ -39,8 +39,17 @@
 #define DB_DIRECTION_THRESHOLD    (0.01)   ///< Threshold to update the direction
 #define DB_DIRECTION_INVALID      (-1000)  ///< Invalid angle e.g out of [0, 360] range
 #define DB_MAX_SPEED              (60)     ///< Max speed in autonomous control mode
-#define DB_REDUCE_SPEED_FACTOR    (0.9)    ///< Reduction factor applied to speed when close to target or error angle is too large
-#define DB_ANGULAR_SPEED_FACTOR   (30)     ///< Constant applied to the normalized angle to target error
+#if defined(BOARD_DOTBOT_V2)
+#define DB_REDUCE_SPEED_FACTOR  (0.7)  ///< Reduction factor applied to speed when close to target or error angle is too large
+#define DB_REDUCE_SPEED_ANGLE   (25)   ///< Max angle amplitude where speed reduction factor is applied
+#define DB_ANGULAR_SPEED_FACTOR (35)   ///< Constant applied to the normalized angle to target error
+#define DB_ANGULAR_SIDE_FACTOR  (-1)   ///< Angular side factor
+#else                                  // BOARD_DOTBOT_V1
+#define DB_REDUCE_SPEED_FACTOR  (0.9)  ///< Reduction factor applied to speed when close to target or error angle is too large
+#define DB_REDUCE_SPEED_ANGLE   (20)   ///< Max angle amplitude where speed reduction factor is applied
+#define DB_ANGULAR_SPEED_FACTOR (30)   ///< Constant applied to the normalized angle to target error
+#define DB_ANGULAR_SIDE_FACTOR  (1)    ///< Angular side factor
+#endif
 
 typedef struct {
     uint32_t                 ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
@@ -264,12 +273,12 @@ static void _update_control_loop(void) {
         } else if (error_angle > 180) {
             error_angle -= 360;
         }
-        if (error_angle > 20 || error_angle < -20) {
+        if (error_angle > DB_REDUCE_SPEED_ANGLE || error_angle < -DB_REDUCE_SPEED_ANGLE) {
             speedReductionFactor = DB_REDUCE_SPEED_FACTOR;
         }
-        angular_speed = (int16_t)(((float)error_angle / 180) * 30);
-        left_speed    = (int16_t)(((DB_MAX_SPEED * speedReductionFactor) - angular_speed));
-        right_speed   = (int16_t)(((DB_MAX_SPEED * speedReductionFactor) + angular_speed));
+        angular_speed = (int16_t)(((float)error_angle / 180) * DB_ANGULAR_SPEED_FACTOR);
+        left_speed    = (int16_t)(((DB_MAX_SPEED * speedReductionFactor) - (angular_speed * DB_ANGULAR_SIDE_FACTOR)));
+        right_speed   = (int16_t)(((DB_MAX_SPEED * speedReductionFactor) + (angular_speed * DB_ANGULAR_SIDE_FACTOR)));
         if (left_speed > DB_MAX_SPEED) {
             left_speed = DB_MAX_SPEED;
         }
