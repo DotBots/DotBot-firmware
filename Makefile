@@ -25,6 +25,7 @@ ifeq (nrf5340dk-app,$(BUILD_TARGET))
     01bsp_timer_hf \
     01bsp_uart \
     01drv_lis2mdl \
+    01drv_move \
     01drv_pid \
     03app_dotbot \
     03app_dotbot_gateway \
@@ -58,7 +59,7 @@ endif
 
 # remove incompatible apps (nrf5340, sailbot gateway) for dotbot (v1, v2) builds
 ifneq (,$(filter dotbot-v1,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 01bsp_qdec 03app_dotbot_gateway 03app_sailbot 03app_nrf5340_%,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 01drv_move 03app_dotbot_gateway 03app_sailbot 03app_nrf5340_%,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
 endif
 
@@ -69,13 +70,13 @@ endif
 
 # remove incompatible apps (nrf5340, dotbot, gateway) for sailbot-v1 build
 ifeq (sailbot-v1,$(BUILD_TARGET))
-  PROJECTS := $(filter-out 01bsp_qdec 03app_dotbot_gateway 03app_dotbot 03app_nrf5340_%,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 01drv_move 03app_dotbot_gateway 03app_dotbot 03app_nrf5340_%,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_sailbot
 endif
 
 # remove incompatible apps (nrf5340) for nrf52833dk/nrf52840dk build
 ifneq (,$(filter nrf52833dk nrf52840dk,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 01bsp_qdec 03app_nrf5340_%,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 01drv_move 03app_nrf5340_%,$(PROJECTS))
   ARTIFACT_PROJECTS ?= 03app_dotbot_gateway
 endif
 
