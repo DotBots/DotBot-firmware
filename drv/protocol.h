@@ -25,17 +25,18 @@
 
 /// Command type
 typedef enum {
-    DB_PROTOCOL_CMD_MOVE_RAW  = 0,   ///< Move raw command type
-    DB_PROTOCOL_CMD_RGB_LED   = 1,   ///< RGB LED command type
-    DB_PROTOCOL_LH2_RAW_DATA  = 2,   ///< Lighthouse 2 raw data
-    DB_PROTOCOL_LH2_LOCATION  = 3,   ///< Lighthouse processed locations
-    DB_PROTOCOL_ADVERTISEMENT = 4,   ///< DotBot advertisements
-    DB_PROTOCOL_GPS_LOCATION  = 5,   ///< GPS data from SailBot
-    DB_PROTOCOL_DOTBOT_DATA   = 6,   ///< DotBot specific data (for now location and direction)
-    DB_PROTOCOL_CONTROL_MODE  = 7,   ///< Robot remote control mode (automatic or manual)
-    DB_PROTOCOL_LH2_WAYPOINTS = 8,   ///< List of LH2 waypoints to follow
-    DB_PROTOCOL_GPS_WAYPOINTS = 9,   ///< List of GPS waypoints to follow
-    DB_PROTOCOL_SAILBOT_DATA  = 10,  ///< SailBot specific data (for now GPS and direction)
+    DB_PROTOCOL_CMD_MOVE_RAW   = 0,   ///< Move raw command type
+    DB_PROTOCOL_CMD_RGB_LED    = 1,   ///< RGB LED command type
+    DB_PROTOCOL_LH2_RAW_DATA   = 2,   ///< Lighthouse 2 raw data
+    DB_PROTOCOL_LH2_LOCATION   = 3,   ///< Lighthouse processed locations
+    DB_PROTOCOL_ADVERTISEMENT  = 4,   ///< DotBot advertisements
+    DB_PROTOCOL_GPS_LOCATION   = 5,   ///< GPS data from SailBot
+    DB_PROTOCOL_DOTBOT_DATA    = 6,   ///< DotBot specific data (for now location and direction)
+    DB_PROTOCOL_CONTROL_MODE   = 7,   ///< Robot remote control mode (automatic or manual)
+    DB_PROTOCOL_LH2_WAYPOINTS  = 8,   ///< List of LH2 waypoints to follow
+    DB_PROTOCOL_GPS_WAYPOINTS  = 9,   ///< List of GPS waypoints to follow
+    DB_PROTOCOL_SAILBOT_DATA   = 10,  ///< SailBot specific data (for now GPS and direction)
+    DB_PROTOCOL_CMD_XGO_ACTION = 11,  ///< XGO action command
 } command_type_t;
 
 /// Application type
@@ -43,6 +44,7 @@ typedef enum {
     DotBot  = 0,  ///< DotBot application
     SailBot = 1,  ///< SailBot application
     FreeBot = 2,  ///< FreeBot application
+    XGO     = 3,  ///< XGO application
 } application_type_t;
 
 /// Control mode
