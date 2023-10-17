@@ -1,6 +1,6 @@
 <!DOCTYPE CrossStudio_Project_File>
 <solution Name="Testbed" target="8" version="2">
-  <project Name="Bootloader">
+  <project Name="bootloader">
     <configuration
       LIBRARY_IO_TYPE="None"
       Name="Common"
@@ -42,19 +42,19 @@
       <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
-  <project Name="Partition0">
+  <project Name="partition0">
     <configuration
       Name="Common"
       linker_memory_map_file="$(ProjectDir)/$(Target)_MemoryMap.xml"
-      project_dependencies="Bootloader;00bsp_gpio(bsp);00bsp_timer(bsp)"
+      project_dependencies="bootloader;00bsp_gpio(bsp);00bsp_timer(bsp)"
       project_directory="partition0"
       project_type="Executable" />
     <configuration
       Name="Debug"
-      debug_additional_load_file="$(ProjectDir)/../bootloader/Output/$(BuildTarget)/Debug/Exe/Bootloader-$(BuildTarget).hex" />
+      debug_additional_load_file="$(ProjectDir)/../bootloader/Output/$(BuildTarget)/Debug/Exe/bootloader-$(BuildTarget).hex" />
     <configuration
       Name="Release"
-      debug_additional_load_file="$(ProjectDir)/../bootloader/Output/$(BuildTarget)/Release/Exe/Bootloader-$(BuildTarget).hex"
+      debug_additional_load_file="$(ProjectDir)/../bootloader/Output/$(BuildTarget)/Release/Exe/bootloader-$(BuildTarget).hex"
       linker_output_format="bin" />
     <folder Name="CMSIS Files">
       <file file_name="$(DeviceHeaderFile)" />
@@ -88,7 +88,7 @@
       <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
-  <project Name="Partition1">
+  <project Name="partition1">
     <configuration
       Name="Common"
       linker_memory_map_file="$(ProjectDir)/$(Target)_MemoryMap.xml"

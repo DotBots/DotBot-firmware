@@ -57,21 +57,26 @@ else
   PROJECTS ?= $(shell find projects/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/projects// | sort)
 endif
 
+TESTBED_APPS ?= $(shell find testbed/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/testbed// | sort)
+
 # remove incompatible apps (nrf5340, sailbot gateway) for dotbot (v1, v2) builds
 ifneq (,$(filter dotbot-v1,$(BUILD_TARGET)))
   PROJECTS := $(filter-out 01bsp_qdec 01drv_move 03app_dotbot_gateway 03app_sailbot 03app_nrf5340_%,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
+  TESTBED_APPS := $(filter-out bootloader partition0 partition1,$(TESTBED_APPS))
 endif
 
 ifneq (,$(filter dotbot-v2,$(BUILD_TARGET)))
   PROJECTS := $(filter-out 03app_dotbot_gateway 03app_sailbot 03app_nrf5340_net,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
+  TESTBED_APPS := $(filter-out bootloader partition0 partition1,$(TESTBED_APPS))
 endif
 
 # remove incompatible apps (nrf5340, dotbot, gateway) for sailbot-v1 build
 ifeq (sailbot-v1,$(BUILD_TARGET))
   PROJECTS := $(filter-out 01bsp_qdec 01drv_move 03app_dotbot_gateway 03app_dotbot 03app_nrf5340_%,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_sailbot
+  TESTBED_APPS := $(filter-out bootloader partition0 partition1,$(TESTBED_APPS))
 endif
 
 # remove incompatible apps (nrf5340) for nrf52833dk/nrf52840dk build
@@ -91,11 +96,16 @@ ARTIFACTS = $(ARTIFACT_ELF) $(ARTIFACT_HEX)
 
 .PHONY: $(PROJECTS) $(ARTIFACT_PROJECTS) artifacts docker docker-release format check-format
 
-all: $(PROJECTS)
+all: $(PROJECTS) $(TESTBED_APPS)
 
 $(PROJECTS):
 	@echo "\e[1mBuilding project $@\e[0m"
 	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -project $@ -config $(BUILD_CONFIG) $(PACKAGES_DIR_OPT) -rebuild -verbose
+	@echo "\e[1mDone\e[0m\n"
+
+$(TESTBED_APPS):
+	@echo "\e[1mBuilding testbed application $@\e[0m"
+	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -project $@ -config Release $(PACKAGES_DIR_OPT) -rebuild -verbose
 	@echo "\e[1mDone\e[0m\n"
 
 list-projects:
