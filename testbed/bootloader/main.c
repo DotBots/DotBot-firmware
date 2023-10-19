@@ -20,10 +20,22 @@
 
 //=========================== defines =========================================
 
-#define MAIN_IMAGE_ADDRESS       (0x00002000UL + DB_FLASH_OFFSET)
-#define MAIN_IMAGE_SIZE          (0x00006FFFUL + DB_FLASH_OFFSET)  // 28K
-#define USER_IMAGE_ADDRESS       (0x00008000UL + DB_FLASH_OFFSET)
-#define USER_IMAGE_SIZE          (0x000F8000UL + DB_FLASH_OFFSET)  // 1M - 40K
+#if defined(NRF52833_XXAA)
+#define SLOT0_IMAGE_ADDRESS       (0x00002000UL)
+#define SLOT0_IMAGE_SIZE          (0x0003F000UL) // 252K
+#define SLOT1_IMAGE_ADDRESS       (0x00041000UL)
+#define SLOT1_IMAGE_SIZE          (0x0003F000UL) // 252K
+#elif defined(NRF5340_XXAA_NETWORK)
+#define SLOT0_IMAGE_ADDRESS       (0x01002000UL + DB_FLASH_OFFSET)
+#define SLOT0_IMAGE_SIZE          (0x0001F000UL) // 124K
+#define SLOT1_IMAGE_ADDRESS       (0x01021000UL + DB_FLASH_OFFSET)
+#define SLOT1_IMAGE_SIZE          (0x0001F000UL) // 124K
+#else
+#define SLOT0_IMAGE_ADDRESS       (0x00002000UL)
+#define SLOT0_IMAGE_SIZE          (0x0007F000UL)  // 508K
+#define SLOT1_IMAGE_ADDRESS       (0x00081000UL)
+#define SLOT1_IMAGE_SIZE          (0x0007F000UL)  // 508K
+#endif
 
 #define DB_UART_MAX_BYTES (64U)
 #define DB_UART_BAUDRATE  (115200U)
@@ -49,12 +61,12 @@ static const db_partitions_table_t bootstrap_table = {
     .active_image = 0,
     .partitions = {
         {
-            .address = MAIN_IMAGE_ADDRESS,
-            .size = MAIN_IMAGE_SIZE,
+            .address = SLOT0_IMAGE_ADDRESS,
+            .size = SLOT0_IMAGE_SIZE,
         },
         {
-            .address = USER_IMAGE_ADDRESS,
-            .size = USER_IMAGE_SIZE,
+            .address = SLOT1_IMAGE_ADDRESS,
+            .size = SLOT1_IMAGE_SIZE,
         },
     },
 };
@@ -80,6 +92,8 @@ static void _write_partitions_table(const db_partitions_table_t *table) {
     db_write_partitions_table(table);
     NVIC_SystemReset();  // Reboot
 }
+
+//=========================== callbacks ========================================
 
 static void _blink_led4(void) {
     db_gpio_toggle(&db_led4);

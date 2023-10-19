@@ -157,11 +157,12 @@ int main(void) {
                     break;
                 case DB_HDLC_STATE_READY:
                 {
-                    size_t msg_len = db_hdlc_decode(_gw_vars.hdlc_rx_buffer);
+                    size_t msg_len = db_hdlc_decode(&_gw_vars.hdlc_rx_buffer[0]);
                     if (msg_len) {
                         _gw_vars.hdlc_state = DB_HDLC_STATE_IDLE;
                         db_radio_disable();
-                        db_radio_tx(_gw_vars.hdlc_rx_buffer, msg_len);
+                        db_radio_tx(&_gw_vars.hdlc_rx_buffer[0], msg_len);
+                        __NOP();
                     }
                 } break;
                 default:
