@@ -195,23 +195,22 @@ void db_radio_tx(uint8_t *tx_buffer, uint8_t length) {
     NRF_RADIO->INTENSET = RADIO_INTERRUPTS;
 
     if (radio_vars.state == RADIO_STATE_IDLE) {
-        radio_vars.state = RADIO_STATE_TX;
         _radio_enable();
         NRF_RADIO->TASKS_TXEN = RADIO_TASKS_TXEN_TASKS_TXEN_Trigger << RADIO_TASKS_TXEN_TASKS_TXEN_Pos;
     }
-    while (radio_vars.state != RADIO_STATE_RX) {}
+    radio_vars.state = RADIO_STATE_TX;
+    while (radio_vars.state != RADIO_STATE_TX) {}
 }
 
 void db_radio_rx(void) {
-    NRF_RADIO->SHORTS = RADIO_SHORTS_COMMON |
-                        (RADIO_SHORTS_DISABLED_TXEN_Enabled << RADIO_SHORTS_DISABLED_TXEN_Pos);
+    NRF_RADIO->SHORTS   = RADIO_SHORTS_COMMON | (RADIO_SHORTS_DISABLED_RXEN_Enabled << RADIO_SHORTS_DISABLED_RXEN_Pos);
     NRF_RADIO->INTENSET = RADIO_INTERRUPTS;
 
     if (radio_vars.state == RADIO_STATE_IDLE) {
-        radio_vars.state = RADIO_STATE_RX;
         _radio_enable();
         NRF_RADIO->TASKS_RXEN = RADIO_TASKS_RXEN_TASKS_RXEN_Trigger;
     }
+    radio_vars.state = RADIO_STATE_RX;
 }
 
 void db_radio_disable(void) {
@@ -256,12 +255,12 @@ void RADIO_IRQHandler(void) {
         NRF_RADIO->EVENTS_DISABLED = 0;
 
         if (radio_vars.state == (RADIO_STATE_BUSY | RADIO_STATE_RX)) {
-            radio_vars.state = RADIO_STATE_TX;
             if (NRF_RADIO->CRCSTATUS != RADIO_CRCSTATUS_CRCSTATUS_CRCOk) {
                 puts("Invalid CRC");
             } else if (radio_vars.callback) {
                 radio_vars.callback(radio_vars.pdu.payload, radio_vars.pdu.length);
             }
+            radio_vars.state = RADIO_STATE_RX;
         } else {  // TX
             radio_vars.state = RADIO_STATE_RX;
         }
