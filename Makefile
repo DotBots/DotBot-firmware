@@ -85,7 +85,7 @@ ifneq (,$(filter nrf52833dk nrf52840dk,$(BUILD_TARGET)))
   ARTIFACT_PROJECTS ?= 03app_dotbot_gateway
 endif
 
-SRCS ?= $(shell find bsp/ -name "*.[c|h]") $(shell find drv/ -name "*.[c|h]") $(shell find projects/ -name "*.[c|h]")
+SRCS ?= $(shell find bsp/ -name "*.[c|h]") $(shell find drv/ -name "*.[c|h]") $(shell find projects/ -name "*.[c|h]") $(shell find testbed/ -name "*.[c|h]")
 CLANG_FORMAT ?= clang-format
 CLANG_FORMAT_TYPE ?= file
 
