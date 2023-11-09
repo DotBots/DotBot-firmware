@@ -19,12 +19,15 @@
 #include "timer.h"
 
 #include "ota.h"
+#include "partition.h"
 
 //=========================== defines ==========================================
 
 typedef struct {
-    bool packet_received;
-    db_ota_pkt_t ota_packet;
+    db_partitions_table_t table;
+    db_ota_cpu_type_t     cpu;
+    bool                  packet_received;
+    uint8_t               message_buffer[UINT8_MAX];
 } application_vars_t;
 
 //=========================== variables ========================================
@@ -34,12 +37,7 @@ static application_vars_t _app_vars = { 0 };
 //=========================== callbacks ========================================
 
 static void _radio_callback(uint8_t *pkt, uint8_t len) {
-    if (len < sizeof(db_ota_pkt_t)) {
-        printf("Invalid OTA packet (%d != %d)\n", len, sizeof(db_ota_pkt_t));
-        return;
-    }
-
-    memcpy(&_app_vars.ota_packet, pkt, sizeof(db_ota_pkt_t));
+    memcpy(&_app_vars.message_buffer, pkt, len);
     _app_vars.packet_received = true;
 }
 
@@ -52,10 +50,24 @@ static void _toggle_led(void) {
     db_gpio_toggle(&db_led2);
 }
 
+//=========================== private ==========================================
+
+static void _ota_reply(const uint8_t *message, size_t len) {
+    db_radio_disable();
+    db_radio_tx(message, len);
+}
+
+static const db_ota_conf_t _ota_config = {
+    .mode  = DB_OTA_MODE_DEFAULT,
+    .reply = _ota_reply,
+};
+
 //================================ main ========================================
 
 int main(void) {
     printf("Booting on partition %d (Build: %s)", DOTBOT_PARTITION, DOTBOT_BUILD_TIME);
+
+    db_ota_init(&_ota_config);
 
     db_radio_init(&_radio_callback, DB_RADIO_BLE_1MBit);
     db_radio_set_frequency(8);
@@ -75,18 +87,7 @@ int main(void) {
 
         if (_app_vars.packet_received) {
             _app_vars.packet_received = false;
-            if (_app_vars.ota_packet.index == 0) {
-                puts("Starting firmware update");
-                db_ota_start();
-            }
-
-            printf("Writing firmware chunk %u/%u\r", _app_vars.ota_packet.index, _app_vars.ota_packet.chunk_count);
-            db_ota_write_chunk(&_app_vars.ota_packet);
-
-            if (_app_vars.ota_packet.index == _app_vars.ota_packet.chunk_count - 1) {
-                puts("Finalizing");
-                db_ota_finish();
-            }
+            db_ota_handle_message(_app_vars.message_buffer);
         }
     }
 }

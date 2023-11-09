@@ -45,7 +45,6 @@ typedef struct {
 } gateway_uart_queue_t;
 
 typedef struct {
-    db_hdlc_state_t              hdlc_state;                               ///< Current state of the HDLC decoding engine
     uint8_t                      hdlc_rx_buffer[DB_BUFFER_MAX_BYTES * 2];  ///< Buffer where message received on UART is stored
     uint8_t                      hdlc_tx_buffer[DB_BUFFER_MAX_BYTES * 2];  ///< Internal buffer used for sending serial HDLC frames
     uint32_t                     buttons;                                  ///< Buttons state (one byte per button)
@@ -149,8 +148,8 @@ int main(void) {
         }
 
         while (_gw_vars.uart_queue.current != _gw_vars.uart_queue.last) {
-            _gw_vars.hdlc_state = db_hdlc_rx_byte(_gw_vars.uart_queue.buffer[_gw_vars.uart_queue.current]);
-            switch ((uint8_t)_gw_vars.hdlc_state) {
+            db_hdlc_state_t hdlc_state = db_hdlc_rx_byte(_gw_vars.uart_queue.buffer[_gw_vars.uart_queue.current]);
+            switch ((uint8_t)hdlc_state) {
                 case DB_HDLC_STATE_IDLE:
                 case DB_HDLC_STATE_RECEIVING:
                 case DB_HDLC_STATE_ERROR:
@@ -159,10 +158,8 @@ int main(void) {
                 {
                     size_t msg_len = db_hdlc_decode(&_gw_vars.hdlc_rx_buffer[0]);
                     if (msg_len) {
-                        _gw_vars.hdlc_state = DB_HDLC_STATE_IDLE;
                         db_radio_disable();
                         db_radio_tx(&_gw_vars.hdlc_rx_buffer[0], msg_len);
-                        __NOP();
                     }
                 } break;
                 default:

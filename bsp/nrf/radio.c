@@ -187,7 +187,7 @@ void db_radio_set_network_address(uint32_t addr) {
     NRF_RADIO->BASE0 = addr;
 }
 
-void db_radio_tx(uint8_t *tx_buffer, uint8_t length) {
+void db_radio_tx(const uint8_t *tx_buffer, uint8_t length) {
     radio_vars.pdu.length = length;
     memcpy(radio_vars.pdu.payload, tx_buffer, length);
 

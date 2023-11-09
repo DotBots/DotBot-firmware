@@ -7,7 +7,7 @@
       c_preprocessor_definitions="__NO_SYSTEM_INIT;__NO_FPU_ENABLE"
       linker_memory_map_file="$(ProjectDir)/$(Target)_MemoryMap.xml"
       linker_output_format="hex"
-      project_dependencies="00bsp_gpio(bsp);00bsp_uart(bsp);00bsp_timer_hf(bsp);00bsp_partition(bsp);00bsp_nvmc(bsp)"
+      project_dependencies="00bsp_gpio(bsp);00bsp_uart(bsp);00bsp_timer_hf(bsp);00bsp_partition(bsp);00bsp_nvmc(bsp);00drv_dotbot_hdlc(drv);00drv_ota(drv)"
       project_directory="bootloader"
       project_type="Executable" />
     <folder Name="CMSIS Files">
@@ -45,10 +45,10 @@
   <project Name="partition0">
     <configuration
       Name="Common"
-      c_preprocessor_definitions='DOTBOT_PARTITION=0;DOTBOT_BUILD_TIME="$(Date) - $(Time)"'
+      c_preprocessor_definitions="DOTBOT_PARTITION=0;DOTBOT_BUILD_TIME=&quot;$(Date) - $(Time)&quot;"
       debug_additional_load_file="$(ProjectDir)/../bootloader/Output/$(BuildTarget)/$(Configuration)/Exe/bootloader-$(BuildTarget).hex"
-      linker_output_format="bin"
       linker_memory_map_file="$(ProjectDir)/$(Target)_MemoryMap.xml"
+      linker_output_format="bin"
       project_dependencies="00bsp_gpio(bsp);00bsp_timer(bsp);00drv_ota(drv);00bsp_radio(bsp);bootloader(Testbed)"
       project_directory="partition0"
       project_type="Executable" />
@@ -87,9 +87,9 @@
   <project Name="partition1">
     <configuration
       Name="Common"
-      c_preprocessor_definitions='DOTBOT_PARTITION=1;DOTBOT_BUILD_TIME="$(Date) - $(Time)"'
-      linker_output_format="bin"
+      c_preprocessor_definitions="DOTBOT_PARTITION=1;DOTBOT_BUILD_TIME=&quot;$(Date) - $(Time)&quot;"
       linker_memory_map_file="$(ProjectDir)/$(Target)_MemoryMap.xml"
+      linker_output_format="bin"
       project_dependencies="00bsp_gpio(bsp);00bsp_timer(bsp);00bsp_radio(bsp);00drv_ota(drv)"
       project_directory="partition1"
       project_type="Executable" />

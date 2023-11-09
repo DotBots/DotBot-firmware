@@ -20,14 +20,14 @@ This directory contains 3 applications that be used for the DotBot testbed suppo
 - [partition0](./partition0/) contains a sample application that is linked so that
   it can be written at address 0x2000, after the bootloader and partition tables
   pages. This application simply blinks an LED (LED1 on nRF DKs) and also
-  contains the logic to download 32B chunks of an image and to write them on
+  contains the logic to download 128B chunks of an image and to write them on
   partition 1,
 
 - [partition1](./partition1/) contains another sample application that is
   linked so that it can be written at address 0x41000 on nrf52833 or 0x81000 on
   nrf52840/nrf5340-app, after the image on partition 0. This application also
   simply blinks an LED (LED2 on nRF DKs) and contains the logic to download
-  32B chunks of an image and to write them on partition 0.
+  128B chunks of an image and to write them on partition 0.
 
 With the default partition table used by the bootloader, the flash memory is
 organized as follows:
@@ -57,27 +57,26 @@ The start address of partition 0 and partition 1 applications is defined in the
 match the start address of each partition defined in the bootloader
 [main.c](bootloader/main.c).
 
-2 Python scripts are also provided:
-- [dotbot-flash.py](./dotdot-flash.py): this script reads a .bin firmware file
-  and sends to the device over UART. The board has to be rebooted in bootloader
-  mode for this script to work (hold button 4 pressed during reset).
+The [dotbot-flash.py](./dotdot-flash.py) Python script is also provided: it
+reads a .bin firmware file and sends to a device over UART. The device can either
+be:
+  - rebooted in bootloader mode (hold button 4 pressed during reset).
   Make sure to build the image with an offset on flash that corresponds to the
-  current active partition in the partition table. This script also requires
-  [nrfjprog](https://www.nordicsemi.com/Products/Development-tools/nrf-command-line-tools)
-  available in the host system,
-
-- [dotbot-flash-ota.py](./dotdot-flash-ota.py): this scripts reads a .bin firmware
-  file and sends to a board running the [DotBot gateway](../projects/03app_dotbot_gateway/)
-  application, which in turns forwards it over radio. The firmware is split in
-  32kiB chunk and reconstructed on flash by an application running a code like
-  in [partition0](./partition0/)/[partition1](./partition1/) applications. Make
+  current active partition in the partition table,
+  - a DK board running running the [DotBot gateway](../projects/03app_dotbot_gateway/)
+  application, which is just forwarding the bytes received from UART over radio.
+  In this case, the firmware is split in 128B chunks and reconstructed on flash
+  by an application running a code like in
+  [partition0](./partition0/)/[partition1](./partition1/) applications. Make
   sure that the firmware was built with the right offset on flash, following
   this rule: if the active image is on partition 0, the new firmware has to be
   built for partition 1 and vice versa.
-  This script requires the [pydotbot](https://pypi.org/project/pydotbot/)
-  package to be installed on the system.
 
-To install the Python scripts dependencies (pydotbot, click and tqdm), run:
+Among different common Python packages, this script requires the
+[pydotbot](https://pypi.org/project/pydotbot/) package to be installed on the
+system.
+
+To install all the Python dependencies (pydotbot, click and tqdm), run:
 
 ```
 pip install -r requirements.txt

@@ -90,7 +90,7 @@ void db_radio_set_network_address(uint32_t addr) {
     db_ipc_network_call(DB_IPC_RADIO_ADDR_REQ);
 }
 
-void db_radio_tx(uint8_t *tx_buffer, uint8_t length) {
+void db_radio_tx(const uint8_t *tx_buffer, uint8_t length) {
     ipc_shared_data.radio.tx_pdu.length = length;
     memcpy((void *)ipc_shared_data.radio.tx_pdu.buffer, tx_buffer, length);
     db_ipc_network_call(DB_IPC_RADIO_TX_REQ);
