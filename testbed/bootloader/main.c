@@ -57,6 +57,7 @@ typedef struct {
 
 //=========================== variables ========================================
 
+// clang-format off
 static const db_partitions_table_t bootstrap_table = {
     .magic        = DB_PARTITIONS_TABLE_MAGIC,
     .length       = 2,
@@ -72,6 +73,7 @@ static const db_partitions_table_t bootstrap_table = {
         },
     },
 };
+// clang-format on
 
 static bootloader_vars_t _bootloader_vars = { 0 };
 
