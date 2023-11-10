@@ -112,7 +112,7 @@ static void _uart_callback(uint8_t byte) {
 
 static void _bootloader_reply(const uint8_t *message, size_t len) {
     size_t frame_len = db_hdlc_encode(message, len, _bootloader_vars.hdlc_buffer);
-    db_uart_write(_bootloader_vars.hdlc_buffer, frame_len);
+    db_uart_write(0, _bootloader_vars.hdlc_buffer, frame_len);
 }
 
 static const db_ota_conf_t _bootloader_ota_config = {
@@ -142,7 +142,7 @@ int main(void) {
         db_gpio_init(&db_btn2, DB_GPIO_IN_PU);
         db_timer_hf_init();
         db_timer_hf_set_periodic_us(0, 100000, &_blink_led4);
-        db_uart_init(&db_uart_rx, &db_uart_tx, DB_UART_BAUDRATE, &_uart_callback);
+        db_uart_init(0, &db_uart_rx, &db_uart_tx, DB_UART_BAUDRATE, &_uart_callback);
         db_ota_init(&_bootloader_ota_config);
     }
 
