@@ -176,8 +176,6 @@ class DotBotFlasher:
     "-y",
     "--yes",
     is_flag=True,
-    show_default=True,
-    default=False,
     help="Continue flashing without prompt.",
 )
 @click.argument("image", type=click.File(mode="rb", lazy=True))
@@ -217,7 +215,7 @@ def main(port, yes, image):
         print("Error: Target partition is too small.")
         return
     if yes is False:
-        click.confirm("Do you want to continue?", abort=True)
+        click.confirm("Do you want to continue?", default=True, abort=True)
     flasher.flash()
     print("Done")
 
