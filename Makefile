@@ -61,22 +61,26 @@ TESTBED_APPS ?= $(shell find testbed/ -maxdepth 1 -mindepth 1 -type d | tr -d "/
 
 # remove incompatible apps (nrf5340, sailbot gateway) for dotbot (v1, v2) builds
 ifneq (,$(filter dotbot-v1,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 01bsp_qdec 01drv_move 03app_dotbot_gateway 03app_sailbot 03app_nrf5340_%,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 01crypto_% 01drv_move 03app_dotbot_gateway 03app_sailbot 03app_nrf5340_%,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
   TESTBED_APPS := $(filter-out bootloader partition0 partition1,$(TESTBED_APPS))
 endif
 
 ifneq (,$(filter dotbot-v2,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 03app_dotbot_gateway 03app_sailbot 03app_nrf5340_net,$(PROJECTS))
+  PROJECTS := $(filter-out 01crypto_% 03app_dotbot_gateway 03app_sailbot 03app_nrf5340_net,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
   TESTBED_APPS := $(filter-out bootloader partition0 partition1,$(TESTBED_APPS))
 endif
 
 # remove incompatible apps (nrf5340, dotbot, gateway) for sailbot-v1 build
 ifeq (sailbot-v1,$(BUILD_TARGET))
-  PROJECTS := $(filter-out 01bsp_qdec 01drv_move 03app_dotbot_gateway 03app_dotbot 03app_nrf5340_%,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 01crypto_% 01drv_move 03app_dotbot_gateway 03app_dotbot 03app_nrf5340_%,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_sailbot
   TESTBED_APPS := $(filter-out bootloader partition0 partition1,$(TESTBED_APPS))
+endif
+
+ifneq (,$(filter nrf52833dk,$(BUILD_TARGET)))
+  PROJECTS := $(filter-out 01crypto_%,$(PROJECTS))
 endif
 
 # remove incompatible apps (nrf5340) for nrf52833dk/nrf52840dk build
@@ -85,7 +89,7 @@ ifneq (,$(filter nrf52833dk nrf52840dk,$(BUILD_TARGET)))
   ARTIFACT_PROJECTS ?= 03app_dotbot_gateway
 endif
 
-SRCS ?= $(shell find bsp/ -name "*.[c|h]") $(shell find drv/ -name "*.[c|h]") $(shell find projects/ -name "*.[c|h]") $(shell find testbed/ -name "*.[c|h]")
+SRCS ?= $(shell find bsp/ -name "*.[c|h]") $(shell find crypto/ -name "*.[c|h]") $(shell find drv/ -name "*.[c|h]") $(shell find projects/ -name "*.[c|h]") $(shell find testbed/ -name "*.[c|h]")
 CLANG_FORMAT ?= clang-format
 CLANG_FORMAT_TYPE ?= file
 
