@@ -230,21 +230,21 @@ void gps_init(gps_rx_cb_t callback) {
     NRF_P0->OUTSET = 1 << _en_pin.pin;  // set pin HIGH
 
     // configure UART at 9600 bauds
-    db_uart_init(&_rx_pin, &_tx_pin, 9600, &uart_callback);
+    db_uart_init(0, &_rx_pin, &_tx_pin, 9600, &uart_callback);
     db_timer_delay_ms(10);
 
     // command the module to increase the baud rate to 38400
-    db_uart_write(nmea_cmd_set_baud_rate_115200, 20);
+    db_uart_write(0, nmea_cmd_set_baud_rate_115200, 20);
 
     // reinit myself at 38400 bauds
-    db_uart_init(&_rx_pin, &_tx_pin, 115200, &uart_callback);
+    db_uart_init(0, &_rx_pin, &_tx_pin, 115200, &uart_callback);
     db_timer_delay_ms(10);
 
-    db_uart_write(nmea_cmd_set_nmea_output, 51);
+    db_uart_write(0, nmea_cmd_set_nmea_output, 51);
     db_timer_delay_ms(10);
 
     // command to module to use 1hz output data rate
-    db_uart_write(nmea_cmd_set_1hz_data_rate, 17);
+    db_uart_write(0, nmea_cmd_set_1hz_data_rate, 17);
 
     _gps_vars.callback = callback;
 }

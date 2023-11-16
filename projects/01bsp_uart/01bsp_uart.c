@@ -34,7 +34,7 @@ static void uart_callback(uint8_t byte) {
     _uart_vars.buffer[_uart_vars.pos] = byte;
     _uart_vars.pos++;
     if (byte == '\n' || _uart_vars.pos == DB_UART_MAX_BYTES - 1) {
-        db_uart_write(_uart_vars.buffer, _uart_vars.pos - 1);
+        db_uart_write(0, _uart_vars.buffer, _uart_vars.pos - 1);
         _uart_vars.pos = 0;
     }
 }
@@ -46,7 +46,7 @@ static void uart_callback(uint8_t byte) {
  */
 int main(void) {
     db_board_init();
-    db_uart_init(&db_uart_rx, &db_uart_tx, DB_UART_BAUDRATE, &uart_callback);
+    db_uart_init(0, &db_uart_rx, &db_uart_tx, DB_UART_BAUDRATE, &uart_callback);
 
     while (1) {
         __WFE();

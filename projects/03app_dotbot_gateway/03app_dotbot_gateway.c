@@ -63,7 +63,7 @@ static gateway_vars_t _gw_vars;
 static void _uart_callback(uint8_t data) {
     if (!_gw_vars.handshake_done) {
         uint8_t version = DB_FIRMWARE_VERSION;
-        db_uart_write(&version, 1);
+        db_uart_write(0, &version, 1);
         if (data == version) {
             _gw_vars.handshake_done = true;
         }
@@ -99,7 +99,7 @@ int main(void) {
     _gw_vars.radio_queue.current = 0;
     _gw_vars.radio_queue.last    = 0;
     _gw_vars.handshake_done      = false;
-    db_uart_init(&db_uart_rx, &db_uart_tx, DB_UART_BAUDRATE, &_uart_callback);
+    db_uart_init(0, &db_uart_rx, &db_uart_tx, DB_UART_BAUDRATE, &_uart_callback);
 
     db_radio_rx();
 
@@ -143,7 +143,7 @@ int main(void) {
 
         while (_gw_vars.radio_queue.current != _gw_vars.radio_queue.last) {
             size_t frame_len = db_hdlc_encode(_gw_vars.radio_queue.packets[_gw_vars.radio_queue.current].buffer, _gw_vars.radio_queue.packets[_gw_vars.radio_queue.current].length, _gw_vars.hdlc_tx_buffer);
-            db_uart_write(_gw_vars.hdlc_tx_buffer, frame_len);
+            db_uart_write(0, _gw_vars.hdlc_tx_buffer, frame_len);
             _gw_vars.radio_queue.current = (_gw_vars.radio_queue.current + 1) & (DB_RADIO_QUEUE_SIZE - 1);
         }
 
