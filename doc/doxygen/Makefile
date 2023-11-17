@@ -1,8 +1,8 @@
 .PHONY: all clean
 
 all:
-	@mkdir -p html/static
-	@cp -R ../../static/* html/static/.
+	@mkdir -p html/_static
+	@cp -R ../../_static/* html/_static/.
 	@doxygen
 
 clean:
