@@ -1,10 +1,11 @@
 /**
- * @file main.c
- * @author Alexandre Abadie <alexandre.abadie@inria.fr>
+ * @file
+ * @defgroup project_log_dump       Log dump application
+ * @ingroup projects
  * @brief This application is used to read and print the logs available on flash
  *
- * @copyright Inria, 2023
- *
+ * @author Alexandre Abadie <alexandre.abadie@inria.fr>
+ * @copyright Inria, 2022-2023
  */
 
 #include <stdbool.h>

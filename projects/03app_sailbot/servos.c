@@ -1,5 +1,6 @@
 /**
- * @file servos.c
+ * @file
+ * @ingroup project_sailbot_servos
  * @author Mališa Vučinić <malisa.vucinic@inria.fr>
  * @brief Module for controlling servos on Kyosho Fortune 612 SailBot.
  *

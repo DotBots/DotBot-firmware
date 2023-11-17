@@ -1,12 +1,14 @@
 /**
- * @file 03app_sailbot.c
- * @author Mališa Vučinić <malisa.vucinic@inria.fr>
- * @brief This is the radio-controlled SailBot app.
+ * @file
+ * @defgroup project_sailbot    SailBot application
+ * @ingroup projects
+ * @brief This is the radio-controlled SailBot app
  *
  * Load this program on your board. Now the SailBot can be remotely controlled
  * from a nearby nRF52840-DK.
  *
  *
+ * @author Mališa Vučinić <malisa.vucinic@inria.fr>
  * @copyright Inria, 2022
  *
  */

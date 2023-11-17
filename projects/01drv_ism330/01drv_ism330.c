@@ -1,5 +1,6 @@
 /**
- * @file 01drv_ism330.c
+ * @file
+ * @ingroup samples_drv
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  * @brief This is a short example of how to use the ISM330 IMU available on the DotBot
  *

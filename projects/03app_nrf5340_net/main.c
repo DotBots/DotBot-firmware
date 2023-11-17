@@ -1,11 +1,13 @@
 /**
- * @file main.c
- * @author Alexandre Abadie <alexandre.abadie@inria.fr>
+ * @file
+ * @defgroup project_nrf5340_net_core   nRF5340 network core
+ * @ingroup projects
  * @brief This application is used to control the radio and rng peripherals and to interact with the application core
  *
+ * @author Alexandre Abadie <alexandre.abadie@inria.fr>
  * @copyright Inria, 2023
- *
  */
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>

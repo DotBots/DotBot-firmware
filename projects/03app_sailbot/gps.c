@@ -1,5 +1,6 @@
 /**
- * @file gps.c
+ * @file
+ * @ingroup project_sailbot_gps
  * @author Mališa Vučinić <malisa.vucinic@inria.fr>
  * @brief Module for reading the GPS on Kyosho Fortune 612 SailBot.
  *

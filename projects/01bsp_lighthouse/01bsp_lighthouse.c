@@ -1,5 +1,6 @@
 /**
- * @file 01bsp_lighthouse.c
+ * @file
+ * @ingroup samples_bsp
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  * @brief This is a short example of how to interface with the lighthouse v2 chip in the DotBot board.
  *

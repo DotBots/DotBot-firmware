@@ -1,5 +1,6 @@
 /**
- * @file 01drv_pid.c
+ * @file
+ * @ingroup samples_drv
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  * @brief This is the main DotBot app.
  *

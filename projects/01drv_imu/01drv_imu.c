@@ -1,5 +1,6 @@
 /**
- * @file 01drv_lis2mdl.c
+ * @file
+ * @ingroup samples_drv
  * @author Mališa Vučinić <malisa.vucinic@inria.fr>
  * @brief This is an example on how to use the IMU driver.
  *

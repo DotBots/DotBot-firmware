@@ -1,15 +1,17 @@
 /**
- * @file 03app_dotbot.c
- * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
- * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- * @brief This application is used to control a single dotbot remotely
+ * @file
+ * @defgroup project_dotbot    DotBot application
+ * @ingroup projects
+ * @brief This is the radio-controlled DotBot app
  *
  * The remote control can be either a keyboard, a joystick or buttons on the gateway
  * itself
  *
+ * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
+ * @author Alexandre Abadie <alexandre.abadie@inria.fr>
  * @copyright Inria, 2022
- *
  */
+
 #include <nrf.h>
 #include <stdlib.h>
 #include <string.h>

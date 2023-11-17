@@ -1,5 +1,6 @@
 /**
- * @file 01bsp_gpio.c
+ * @file
+ * @ingroup samples_bsp
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
  * @brief This is a short example of how to use the GPIO api.
  *

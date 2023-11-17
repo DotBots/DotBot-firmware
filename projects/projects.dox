@@ -1,0 +1,27 @@
+/**
+ * @defgroup     samples Sample applications
+ * @brief        Sample applications
+ */
+
+/**
+ * @defgroup     projects Main projects applications
+ * @brief        Main projects applications
+ */
+
+/**
+ * @defgroup     samples_bsp BSP samples
+ * @ingroup      samples
+ * @brief        Board support package sample applications
+ */
+
+/**
+ * @defgroup     samples_crypto Crypto samples
+ * @ingroup      samples
+ * @brief        Crypto sample applications
+ */
+
+/**
+ * @defgroup    samples_drv High Level libraries samples
+ * @ingroup      samples
+ * @brief       High Level libraries sample applications
+ */

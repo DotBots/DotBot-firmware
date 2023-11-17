@@ -2,8 +2,9 @@
 #define __GPS_H
 
 /**
- * @file gps.h
- * @addtogroup sailbot
+ * @file
+ * @defgroup project_sailbot_gps GPS
+ * @ingroup project_sailbot
  *
  * @brief  Module for reading the GPS on Kyosho Fortune 612 SailBot.
  *

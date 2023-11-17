@@ -1,5 +1,6 @@
 /**
- * @file 01bsp_rng.c
+ * @file
+ * @ingroup samples_bsp
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
  * @brief This is a short example of how to use the RNG api.
  *

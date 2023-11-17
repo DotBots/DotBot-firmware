@@ -1,5 +1,6 @@
 /**
- * @file 01bsp_timer.c
+ * @file
+ * @ingroup samples_bsp
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
  * @brief This is a short example of how to add delays and periodic callbacks in an application.
  *
