@@ -2,14 +2,15 @@
 #define __BOARD_CONFIG_H
 
 /**
- * @file board_config.h
- * @addtogroup BSP
+ * @defgroup    bsp_board_config    Board configuration
+ * @ingroup     bsp_board
+ * @brief       Board specific definitions
  *
- * @brief  Board specific definitions.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2023
+ * @}
  */
 
 #include "gpio.h"

@@ -2,21 +2,22 @@
 #define __TIMER_H
 
 /**
- * @file timer.h
- * @addtogroup BSP
+ * @defgroup    bsp_timer   Low Frequency Timer
+ * @ingroup     bsp
+ * @brief       High level timing functions on top of the RTC peripheral
  *
- * @brief  Cross-platform declaration "timer" bsp module.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2022
+ * @}
  */
 
 #include <stdint.h>
 
 //=========================== defines ==========================================
 
-typedef void (*timer_cb_t)(void);
+typedef void (*timer_cb_t)(void);  ///< Callback function prototype, it is called when the timer fires an event
 
 //=========================== prototypes =======================================
 

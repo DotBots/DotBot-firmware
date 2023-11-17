@@ -1,3 +1,14 @@
+/**
+ * @file
+ * @ingroup crypto
+ *
+ * @brief  ED25519 signature implementation using CryptoCell.
+ *
+ * @author Alexandre Abadie <alexandre.abadie@inria.fr>
+ *
+ * @copyright Inria, 2023
+ */
+
 #include <stdint.h>
 #include <string.h>
 

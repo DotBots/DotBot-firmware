@@ -1,3 +1,14 @@
+/**
+ * @file
+ * @ingroup crypto
+ *
+ * @brief  SHA256 hashing implementation using CryptoCell.
+ *
+ * @author Alexandre Abadie <alexandre.abadie@inria.fr>
+ *
+ * @copyright Inria, 2023
+ */
+
 #include <stdint.h>
 
 #include <nrf.h>

@@ -1,6 +1,6 @@
 /**
- * @file timer.c
- * @addtogroup BSP
+ * @file
+ * @ingroup bsp_timer
  *
  * @brief  nRF52833-specific definition of the "timer" bsp module.
  *

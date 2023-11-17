@@ -1,6 +1,6 @@
 /**
- * @file hdlc.c
- * @addtogroup DRV
+ * @file
+ * @ingroup drv_hdlc
  *
  * @brief  nRF52833-specific definition of the "hdlc" driver module.
  *

@@ -2,14 +2,15 @@
 #define __DEVICE_H
 
 /**
- * @file device.h
- * @addtogroup BSP
+ * @defgroup    bsp_device  Device information
+ * @ingroup     bsp
+ * @brief       Provides functions to retrieve device unique identifier and address
  *
- * @brief  Cross-platform declaration "device" bsp module.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2022
+ * @}
  */
 
 #include <stdint.h>

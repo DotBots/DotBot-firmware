@@ -1,15 +1,16 @@
-#ifndef __RGBLEDS_H
-#define __RGBLEDS_H
+#ifndef __RGBLED_H
+#define __RGBLED_H
 
 /**
- * @file rgbled.h
- * @addtogroup BSP
+ * @defgroup    bsp_rgbled      RGB LED driver
+ * @ingroup     bsp
+ * @brief       Control the rgbled driver (through SPI)
  *
- * @brief  Cross-platform declaration "leds" bsp module.
- *
+ * @{
+ * @file
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
- *
  * @copyright Inria, 2022
+ * @}
  */
 
 #include <nrf.h>
@@ -31,10 +32,10 @@ void db_rgbled_init(void);
  *  Assembles the 1-wire encoded command to change the color of the RGB led.
  *  Afterward, an SPI transfer is necessary to actually update the LED color.
  *
- * @param[in] r red value of the led color [0 - 255]
- * @param[in] g green value of the led color [0 - 255]
- * @param[in] b blue value of the led color [0 - 255]
+ * @param[in] red   red value of the led color [0 - 255]
+ * @param[in] green green value of the led color [0 - 255]
+ * @param[in] blue  blue value of the led color [0 - 255]
  */
-void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b);
+void db_rgbled_set(uint8_t red, uint8_t green, uint8_t blue);
 
-#endif
+#endif  // __RGBLED_H

@@ -1,5 +1,6 @@
 /**
- * @file imu.c
+ * @file
+ * @ingroup drv_imu
  * @author Mališa Vučinić <malisa.vucinic@inria.fr>
  * @brief Module for calculating the Euler angles.
  *

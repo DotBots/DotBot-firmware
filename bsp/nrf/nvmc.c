@@ -1,6 +1,6 @@
 /**
- * @file nvmc.c
- * @addtogroup BSP
+ * @file
+ * @ingroup bsp_nvmc
  *
  * @brief  Implementation of the "nvmc" bsp module.
  *

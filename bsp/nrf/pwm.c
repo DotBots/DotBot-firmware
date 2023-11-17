@@ -1,6 +1,6 @@
 /**
- * @file pwm.c
- * @addtogroup BSP
+ * @file
+ * @ingroup bsp_pwm
  *
  * @brief  nRF52833-specific definition of the "pwm" bsp module.
  *

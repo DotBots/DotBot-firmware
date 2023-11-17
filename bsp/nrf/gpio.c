@@ -1,6 +1,6 @@
 /**
- * @file gpio.c
- * @addtogroup BSP
+ * @file
+ * @ingroup bsp_gpio
  *
  * @brief  nRF52833-specific definition of the "gpio" bsp module.
  *

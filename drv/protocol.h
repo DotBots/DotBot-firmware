@@ -2,14 +2,15 @@
 #define __PROTOCOL_H
 
 /**
- * @file procotol.h
- * @addtogroup BSP
+ * @defgroup    drv_protocol    DotBot protocol implementation
+ * @ingroup     drv
+ * @brief       Definitions and implementations of the DotBot protocol
  *
- * @brief  Cross-platform declaration "protocol" driver module.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2022
+ * @}
  */
 
 #include <stdint.h>
@@ -22,6 +23,7 @@
 #define DB_GATEWAY_ADDRESS   0x0000000000000000UL  ///< Gateway address
 #define DB_MAX_WAYPOINTS     (16)                  ///< Max number of waypoints
 
+/// Command type
 typedef enum {
     DB_PROTOCOL_CMD_MOVE_RAW  = 0,   ///< Move raw command type
     DB_PROTOCOL_CMD_RGB_LED   = 1,   ///< RGB LED command type
@@ -36,16 +38,19 @@ typedef enum {
     DB_PROTOCOL_SAILBOT_DATA  = 10,  ///< SailBot specific data (for now GPS and direction)
 } command_type_t;
 
+/// Application type
 typedef enum {
     DotBot  = 0,  ///< DotBot application
     SailBot = 1,  ///< SailBot application
 } application_type_t;
 
+/// Control mode
 typedef enum {
     ControlManual = 0,  ///< Manual mode
     ControlAuto   = 1,  ///< Automatic mode
 } protocol_control_mode_t;
 
+/// DotBot protocol header
 typedef struct __attribute__((packed)) {
     uint64_t           dst;          ///< Destination address of this packet
     uint64_t           src;          ///< Source address of this packet
@@ -56,6 +61,7 @@ typedef struct __attribute__((packed)) {
     command_type_t     type;         ///< Type of command following this header
 } protocol_header_t;
 
+/// DotBot protocol move raw command
 typedef struct __attribute__((packed)) {
     int8_t left_x;   ///< Horizontal coordinate for left side
     int8_t left_y;   ///< Vertical coordinate for left side
@@ -63,28 +69,33 @@ typedef struct __attribute__((packed)) {
     int8_t right_y;  ///< Vertical coordinate for right side
 } protocol_move_raw_command_t;
 
+/// DotBot protocol RGB LED command
 typedef struct __attribute__((packed)) {
     uint8_t r;  ///< Red component value
     uint8_t g;  ///< Green component value
     uint8_t b;  ///< Blue component value
 } protocol_rgbled_command_t;
 
+/// DotBot protocol LH2 computed location
 typedef struct __attribute__((packed)) {
     uint32_t x;  ///< X coordinate, multiplied by 1e6
     uint32_t y;  ///< Y coordinate, multiplied by 1e6
     uint32_t z;  ///< Z coordinate, multiplied by 1e6
 } protocol_lh2_location_t;
 
+/// DotBot protocol LH2 waypoints
 typedef struct __attribute__((packed)) {
     uint8_t                 length;                    ///< Number of waypoints
     protocol_lh2_location_t points[DB_MAX_WAYPOINTS];  ///< Array containing a list of lh2 point coordinates
 } protocol_lh2_waypoints_t;
 
+/// DotBot protocol GPS coordinates
 typedef struct __attribute__((packed)) {
     int32_t latitude;   ///< Latitude, multiplied by 1e6
     int32_t longitude;  ///< Longitude, multiplied by 1e6
 } protocol_gps_coordinate_t;
 
+/// DotBot protocol GPS waypoints
 typedef struct __attribute__((packed)) {
     uint8_t                   length;                         ///< Number of waypoints
     protocol_gps_coordinate_t coordinates[DB_MAX_WAYPOINTS];  ///< Array containing a list of GPS coordinates

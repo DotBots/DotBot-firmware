@@ -2,14 +2,15 @@
 #define __PWM_H
 
 /**
- * @file pwm.h
- * @addtogroup BSP
+ * @defgroup    bsp_pwm PWM
+ * @ingroup     bsp
+ * @brief       Control the PWM peripherals
  *
- * @brief  Cross-platform declaration "pwm" bsp module.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2022
+ * @}
  */
 
 #include <stdint.h>
@@ -19,7 +20,7 @@
 
 //=========================== defines ==========================================
 
-typedef uint8_t pwm_t;
+typedef uint8_t pwm_t;  ///< PWM peripheral index
 
 //=========================== public ===========================================
 

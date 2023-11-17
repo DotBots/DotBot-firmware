@@ -1,6 +1,6 @@
 /**
- * @file rng.c
- * @addtogroup BSP
+ * @file
+ * @ingroup bsp_rng
  *
  * @brief  nRF52833-specific definition of the "rng" bsp module.
  *

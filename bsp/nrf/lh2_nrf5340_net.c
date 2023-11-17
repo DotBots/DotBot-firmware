@@ -1,6 +1,6 @@
 /**
- * @file lh2_nrf5340_net.c
- * @addtogroup BSP
+ * @file
+ * @ingroup bsp_lh2
  *
  * @brief  nRF5340-net-specific definition of the "lh2" bsp module.
  *

@@ -1,6 +1,6 @@
 /**
- * @file rgbled.c
- * @addtogroup BSP
+ * @file
+ * @ingroup bsp_rgbled
  *
  * @brief  nRF52833-specific definition of the "rgb_led" bsp module.
  *
@@ -76,7 +76,7 @@ void db_rgbled_init(void) {
     DB_NRF_SPIM->TASKS_START = SPIM_TASKS_START_TASKS_START_Trigger << SPIM_TASKS_START_TASKS_START_Pos;  // trigger the SPI transfer
 }
 
-void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b) {
+void db_rgbled_set(uint8_t red, uint8_t green, uint8_t blue) {
 
     // Make sure we update a cleared buffer
     memset(rgbled_vars.ledBuffer, 0, LED_BUFFER_SIZE);
@@ -101,7 +101,7 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b) {
     for (int i = 7; i >= 0; i--) {
 
         // Extract 1 bit from the blue color.
-        int blue_bit = (b >> i) & 0x01;
+        int blue_bit = (blue >> i) & 0x01;
         // if the current bit is a one, copy the 5bits that represent a '1'. in the one-wire-protocol, on to the correct position in the buffer.
         if (blue_bit) {
 
@@ -141,7 +141,7 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b) {
     // Iterate over all the bits of the red color. (decreasing order, we write MSB first.)
     for (int i = 7; i >= 0; i--) {
         // Extract 1 bit from the red color.
-        int red_bit = (r >> i) & 0x01;
+        int red_bit = (red >> i) & 0x01;
         // if the current bit is a one, copy the 5bits that represent a '1'. in the one-wire-protocol, on to the correct position in the buffer.
         if (red_bit) {
             // iterate over all the bits in the 5bit encoded '1'.
@@ -179,7 +179,7 @@ void db_rgbled_set(uint8_t r, uint8_t g, uint8_t b) {
     // Iterate over all the bits of the green color. (decreasing order, we write MSB first.)
     for (int i = 7; i >= 0; i--) {
         // Extract 1 bit from the green color.
-        int green_bit = (g >> i) & 0x01;
+        int green_bit = (green >> i) & 0x01;
         // if the current bit is a one, copy the 5bits that represent a '1'. in the one-wire-protocol, on to the correct position in the buffer.
         if (green_bit) {
             // iterate over all the bits in the 5bit encoded '1'.

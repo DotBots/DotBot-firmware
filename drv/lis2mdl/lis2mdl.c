@@ -1,5 +1,6 @@
 /**
- * @file lis2mdl.c
+ * @file
+ * @ingroup drv_lis2mdl
  * @author Mališa Vučinić <malisa.vucinic@inria.fr>
  * @brief Module for reading the LIS2MDL magnetometer.
  *

@@ -1,6 +1,6 @@
 /**
- * @file pid.c
- * @addtogroup BSP
+ * @file
+ * @ingroup drv_pid
  *
  * @brief  nRF52833-specific definition of the "pid" bsp module.
  *

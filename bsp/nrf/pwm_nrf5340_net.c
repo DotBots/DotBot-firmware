@@ -1,6 +1,6 @@
 /**
- * @file pwm_nrf5340_net.c
- * @addtogroup BSP
+ * @file
+ * @ingroup bsp_pwm
  *
  * @brief  nRF5340-network-specific definition of the "pwm" bsp module.
  *

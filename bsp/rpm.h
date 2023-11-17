@@ -2,14 +2,15 @@
 #define __RPM_H
 
 /**
- * @file rpm.h
- * @addtogroup BSP
+ * @defgroup    bsp_rpm     RPM driver
+ * @ingroup     bsp
+ * @brief       Control the RPM driver (dotbot v1 only)
  *
- * @brief  Cross-platform declaration "rpm" bsp module.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2022
+ * @}
  */
 
 #include <stdint.h>

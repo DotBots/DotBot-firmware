@@ -1,6 +1,6 @@
 /**
- * @file board.c
- * @addtogroup BSP
+ * @file
+ * @ingroup bsp_board
  *
  * @brief  nRF52833-specific definition of the "board" bsp module.
  *

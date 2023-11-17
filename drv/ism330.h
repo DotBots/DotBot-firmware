@@ -2,15 +2,17 @@
 #define __ISM330_H
 
 /**
- * @file ism300.h
- * @addtogroup DRV
+ * @defgroup    drv_ism330      ISM330 IMU driver
+ * @ingroup     drv
+ * @brief       Driver for the ST ISM330 IMU
  *
- * @brief  drv module for the ISM330DHCXTR IMU.
- *
+ * @{
+ * @file
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
- *
  * @copyright Inria, 2023
+ * @}
  */
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <nrf.h>
@@ -18,47 +20,59 @@
 
 //=========================== defines ==========================================
 
-// IMU address
+/// IMU address
 #define ISM330_ADDRESS 0X6A
 
-// Accelerometer Registers
-#define ISM330_REG_OUTX_L_A 0x28
-#define ISM330_REG_OUTX_H_A 0x29
-#define ISM330_REG_OUTY_L_A 0x2A
-#define ISM330_REG_OUTY_H_A 0x2B
-#define ISM330_REG_OUTZ_L_A 0x2C
-#define ISM330_REG_OUTZ_H_A 0x2D
+/**
+ * @brief   Accelerometer Registers
+ * @{
+ */
+#define ISM330_REG_OUTX_L_A 0x28  ///< Accelerometer OUTX Low
+#define ISM330_REG_OUTX_H_A 0x29  ///< Accelerometer OUTX High
+#define ISM330_REG_OUTY_L_A 0x2A  ///< Accelerometer OUTY Low
+#define ISM330_REG_OUTY_H_A 0x2B  ///< Accelerometer OUTY High
+#define ISM330_REG_OUTZ_L_A 0x2C  ///< Accelerometer OUTZ Low
+#define ISM330_REG_OUTZ_H_A 0x2D  ///< Accelerometer OUTZ High
+/** @} */
 
-// Gyroscope Registers
-#define ISM330_REG_OUTX_L_G 0x22
-#define ISM330_REG_OUTX_H_G 0x23
-#define ISM330_REG_OUTY_L_G 0x24
-#define ISM330_REG_OUTY_H_G 0x25
-#define ISM330_REG_OUTZ_L_G 0x26
-#define ISM330_REG_OUTZ_H_G 0x27
+/**
+ * @brief   Gyroscope Registers
+ * @{
+ */
+#define ISM330_REG_OUTX_L_G 0x22  ///< Gyroscope OUTX Low
+#define ISM330_REG_OUTX_H_G 0x23  ///< Gyroscope OUTX High
+#define ISM330_REG_OUTY_L_G 0x24  ///< Gyroscope OUTY Low
+#define ISM330_REG_OUTY_H_G 0x25  ///< Gyroscope OUTY High
+#define ISM330_REG_OUTZ_L_G 0x26  ///< Gyroscope OUTZ Low
+#define ISM330_REG_OUTZ_H_G 0x27  ///< Gyroscope OUTZ High
+/** @} */
 
-// Configuration Registers
-#define ISM330_REG_CTRL1_XL 0x10
-#define ISM330_REG_CTRL2_G  0x11
-#define ISM330_REG_CTRL3_C  0x12
-#define ISM330_REG_CTRL4_C  0x13
-#define ISM330_REG_CTRL5_C  0x14
-#define ISM330_REG_CTRL6_C  0x15
-#define ISM330_REG_CTRL7_G  0x16
-#define ISM330_REG_CTRL8_XL 0x17
-#define ISM330_REG_CTRL9_XL 0x18
-#define ISM330_REG_CTRL10_C 0x19
+/**
+ * @brief   Configuration Registers
+ * @{
+ */
+#define ISM330_REG_CTRL1_XL 0x10  ///< Control Register 1
+#define ISM330_REG_CTRL2_G  0x11  ///< Control Register 2
+#define ISM330_REG_CTRL3_C  0x12  ///< Control Register 3
+#define ISM330_REG_CTRL4_C  0x13  ///< Control Register 4
+#define ISM330_REG_CTRL5_C  0x14  ///< Control Register 5
+#define ISM330_REG_CTRL6_C  0x15  ///< Control Register 6
+#define ISM330_REG_CTRL7_G  0x16  ///< Control Register 7
+#define ISM330_REG_CTRL8_XL 0x17  ///< Control Register 8
+#define ISM330_REG_CTRL9_XL 0x18  ///< Control Register 9
+#define ISM330_REG_CTRL10_C 0x19  ///< Control Register 10
+/** @} */
 
 //=========================== variables ========================================
 
-///! Data type to store the accelerometer data in [cm/s^2]
+/// Data type to store the accelerometer data in [cm/s^2]
 typedef struct {
     float x;  ///< X axis
     float y;  ///< Y axis
     float z;  ///< Z axis
 } ism330_acc_data_t;
 
-///! Data type to store the gyrometer data in [rad/s]
+/// Data type to store the gyrometer data in [rad/s]
 typedef struct {
     float x;  ///< X axis
     float y;  ///< Y axis
@@ -74,7 +88,7 @@ typedef struct {
  * @param[in]   sda  pointer to gpio serial data pin
  * @param[in]   scl  pointer to gpio serial clock pin
  */
-void db_ism330_init(const gpio_t *sda, const gpio_t *sck);
+void db_ism330_init(const gpio_t *sda, const gpio_t *scl);
 
 /**
  * @brief Read the X, Y and Z values for the accelerometer.

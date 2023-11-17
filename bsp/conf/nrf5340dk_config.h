@@ -2,14 +2,15 @@
 #define __BOARD_NRF5340DK_CONFIG_H
 
 /**
- * @file nrf5340dk_config.h
- * @addtogroup BSP
+ * @defgroup    bsp_board_config_nrf5340dk    nRF5340DK
+ * @ingroup     bsp_board_config
+ * @brief       nRF5340DK board configuration
  *
- * @brief  nRF5340DK board specific definitions.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2023
+ * @}
  */
 
 /**

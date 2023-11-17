@@ -2,15 +2,17 @@
 #define __I2C_H
 
 /**
- * @file i2c.h
- * @addtogroup BSP
+ * @defgroup    bsp_i2c I2C
+ * @ingroup     bsp
+ * @brief       Control the I2C peripheral
  *
- * @brief  Cross-platform declaration "i2c" bsp module.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2022
+ * @}
  */
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <nrf.h>

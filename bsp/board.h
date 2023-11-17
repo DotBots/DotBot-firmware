@@ -2,22 +2,21 @@
 #define __BOARD_H
 
 /**
- * @file board.h
- * @addtogroup BSP
+ * @defgroup    bsp_board   Board
+ * @ingroup     bsp
+ * @brief       Cross-platform declaration "board" bsp module
  *
- * @brief  Cross-platform declaration "board" bsp module.
- *
+ * @{
+ * @file
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
- *
  * @copyright Inria, 2022
+ * @}
  */
 
 /**
  * @brief Turn ON the DotBot board
  *
- * Especifically turn on the Board Regulator
- * all the on board regulators ENABLE pins
- * are tied to the nRF pin P0.20
+ * Especifically turn on the board regulator if there's one
  */
 void db_board_init(void);
 

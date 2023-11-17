@@ -1,6 +1,6 @@
 /**
- * @file i2c.c
- * @addtogroup BSP
+ * @file
+ * @ingroup bsp_i2c
  *
  * @brief  nRF52833-specific definition of the "i2c" bsp module.
  *

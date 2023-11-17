@@ -1,6 +1,6 @@
 /**
- * @file qdec.c
- * @addtogroup BSP
+ * @file
+ * @ingroup bsp_qdec
  *
  * @brief  nRF5340-specific definition of the "qdec" bsp module.
  *

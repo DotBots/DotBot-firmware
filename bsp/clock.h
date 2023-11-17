@@ -2,14 +2,15 @@
 #define __CLOCK_H
 
 /**
- * @file clock.h
- * @addtogroup BSP
+ * @defgroup    bsp_clock   Clock
+ * @ingroup     bsp
+ * @brief       Functions to initialize low and high frequency clocks
  *
- * @brief  Cross-platform declaration "clock" bsp module.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2022
+ * @}
  */
 
 #if defined(NRF5340_XXAA)

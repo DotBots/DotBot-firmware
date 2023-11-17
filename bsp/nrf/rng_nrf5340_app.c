@@ -1,6 +1,6 @@
 /**
- * @file rng_nrf5340_app.c
- * @addtogroup BSP
+ * @file
+ * @ingroup bsp_rng
  *
  * @brief  nrf5340-app-specific definition of the "rng" bsp module.
  *

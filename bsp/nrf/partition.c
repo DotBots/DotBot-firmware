@@ -1,6 +1,6 @@
 /**
- * @file partition.c
- * @addtogroup BSP
+ * @file
+ * @ingroup bsp_partition
  *
  * @brief  Implementation of the "partition" bsp module.
  *

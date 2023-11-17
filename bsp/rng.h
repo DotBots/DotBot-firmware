@@ -2,14 +2,15 @@
 #define __RNG_H
 
 /**
- * @file rng.h
- * @addtogroup BSP
+ * @defgroup    bsp_rng     Random Number Generator
+ * @ingroup     bsp
+ * @brief       Read the RNG peripheral
  *
- * @brief  Cross-platform declaration "RNG" bsp module.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2023
+ * @}
  */
 
 #include <stdint.h>
