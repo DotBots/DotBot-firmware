@@ -73,10 +73,10 @@ You can combine buttons 1 & 2 to move the DotBot straight forward, buttons 3 & 4
 
 ## Accessing the source code
 
-The source code of the remote control example of the DotBot can be found in
-[projects/03app_dotbot/03app_dotbot.c](projects/03app_dotbot/03app_dotbot.c).
-The source code of the gateway application can be found in
-[projects/03app_dotbot/03app_dotbot_gateway.c](projects/03app_dotbot/03app_dotbot_gateway.c).
+The remote control example of the DotBot can be found in
+[projects/03app_dotbot](https://github.com/DotBots/Dotbot-firmware/tree/main/projects/03app_dotbot).
+The gateway application can be found in
+[projects/03app_dotbot_gateway](https://github.com/DotBots/Dotbot-firmware/tree/main/projects/03app_dotbot_gateway).
 
 The different applications in this repository can be built using
 [SEGGER embedded studio for ARM](https://www.segger.com/downloads/embedded-studio).
