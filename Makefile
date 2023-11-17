@@ -1,4 +1,4 @@
-.PHONY: all list-projects clean
+.PHONY: all list-projects clean doc
 
 DOCKER_IMAGE ?= aabadie/dotbot:latest
 DOCKER_TARGETS ?= all
@@ -144,3 +144,6 @@ docker:
 		-e SEGGER_DIR="$(SEGGER_DIR)" \
 		-v $(PWD):/dotbot $(DOCKER_IMAGE) \
 		make $(DOCKER_TARGETS)
+
+doc:
+	@make -C doc/doxygen
