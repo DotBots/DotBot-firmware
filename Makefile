@@ -1,4 +1,4 @@
-.PHONY: all list-projects clean doc
+.PHONY: all list-projects clean
 
 DOCKER_IMAGE ?= aabadie/dotbot:latest
 DOCKER_TARGETS ?= all
@@ -145,5 +145,11 @@ docker:
 		-v $(PWD):/dotbot $(DOCKER_IMAGE) \
 		make $(DOCKER_TARGETS)
 
+.PHONY: doc docclean
+docclean:
+	make -C doc/doxygen clean --no-print-directory
+	make -C doc/sphinx clean --no-print-directory
+
 doc:
-	@make -C doc/doxygen
+	make -C doc/doxygen all --no-print-directory
+	make -C doc/sphinx html --no-print-directory SPHINXOPTS="-W --keep-going -n"
