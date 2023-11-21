@@ -9,3 +9,5 @@
 
 .. include:: ../../../README.md
    :parser: myst_parser.sphinx_
+
+You are now ready for the :doc:`getting_started` page.

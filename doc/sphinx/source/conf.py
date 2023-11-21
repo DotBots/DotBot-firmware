@@ -47,10 +47,18 @@ html_theme_options = {
         {
             "url": "https://github.com/DotBots/PyDotBot",
             "name": "PyDotBot",
+            "attributes": {
+               "target" : "_blank",
+               "rel" : "noopener me",
+            },
         },
         {
             "url": "https://github.com/DotBots/DotBot-hardware",
             "name": "DotBot hardware",
+            "attributes": {
+               "target" : "_blank",
+               "rel" : "noopener me",
+            },
         },
     ],
     "icon_links": [
@@ -70,16 +78,3 @@ html_theme_options = {
 autosummary_generate = True
 autodoc_typehints = "description"
 autodoc_member_order = "groupwise"
-
-
-def copy_images(app, _):
-    """Copy images from the root _static folder to the sphinx _static folder."""
-    if app.builder.name == 'html':
-        output_dir = os.path.join(app.outdir, "_static")
-        source_dir = os.path.join(app.srcdir, "../../../_static/")
-        for image in glob.glob(f"{source_dir}/*"):
-            shutil.copy(image, output_dir)
-
-
-def setup(app):
-    app.connect('build-finished', copy_images)
