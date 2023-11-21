@@ -1,5 +1,5 @@
 /**
- * @file main.c
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
  * @brief This application is a multi-purpose bootloader
  *

@@ -47,6 +47,16 @@ jobs:
       - name: Check style
         run: make check-format
 
+  doc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: Install Doxygen
+        run: sudo apt-get install -y doxygen graphviz
+      - name: Build documentation
+        run: make doc
+
   docker:
     runs-on: ubuntu-latest
     steps:
@@ -57,7 +67,7 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
-    needs: [docker, style, build-success]
+    needs: [docker, doc, style, build-success]
     if: >-
       github.event_name == 'push' &&
       startsWith(github.event.ref, 'refs/tags')

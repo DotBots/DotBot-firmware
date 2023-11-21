@@ -2,14 +2,15 @@
 #define __UART_H
 
 /**
- * @file uart.h
- * @addtogroup BSP
+ * @defgroup    bsp_uart    UART
+ * @ingroup     bsp
+ * @brief       Control the UART peripheral
  *
- * @brief  Cross-platform declaration "uart" bsp module.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2022
+ * @}
  */
 
 #include <stdint.h>
@@ -18,7 +19,7 @@
 
 //=========================== defines ==========================================
 
-typedef uint8_t uart_t;
+typedef uint8_t uart_t;  ///< UART peripheral index
 
 typedef void (*uart_rx_cb_t)(uint8_t data);  ///< Callback function prototype, it is called on each byte received
 

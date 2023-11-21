@@ -2,14 +2,15 @@
 #define __IMU_H
 
 /**
- * @file imu.h
- * @addtogroup sailbot
+ * @defgroup    drv_imu    IMU driver
+ * @ingroup     drv
+ * @brief       Wraps the lis2mdl and lsm6ds drivers in a single API
  *
- * @brief  Module for calculating the Euler angles (roll, pitch, yaw) of the SailBot.
- *
+ * @{
+ * @file
  * @author Mališa Vučinić <malisa.vucinic@inria.fr>
- *
  * @copyright Inria, 2023
+ * @}
  */
 
 #include "lis2mdl.h"

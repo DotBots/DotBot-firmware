@@ -2,14 +2,15 @@
 #define __BOARD_NRF52833DK_CONFIG_H
 
 /**
- * @file nrf52833dk_config.h
- * @addtogroup BSP
+ * @defgroup    bsp_board_config_nrf52833dk    nRF52833DK
+ * @ingroup     bsp_board_config
+ * @brief       nRF52833DK board configuration
  *
- * @brief  nRF52833DK board specific definitions.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2023
+ * @}
  */
 
 /**

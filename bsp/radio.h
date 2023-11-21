@@ -2,15 +2,20 @@
 #define __RADIO_H
 
 /**
- * @file radio.h
- * @addtogroup BSP
+ * @defgroup    bsp_radio   Radio support
+ * @ingroup     bsp
+ * @brief       Control the radio peripheral
  *
- * @brief  Cross-platform declaration "radio" bsp module.
+ * This radio driver supports BLE 1MBit, 2MBit, Long Range 125KBit and Long Range 500KBit.
  *
+ * @{
+ * @file
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
- *
- * @copyright Inria, 2022
+ * @author Alexandre Abadie <alexandre.abadie@inria.fr>
+ * @copyright Inria, 2022-2023
+ * @}
  */
+
 #include <stdint.h>
 #include <nrf.h>
 
@@ -20,6 +25,7 @@
 #define DEFAULT_NETWORK_ADDRESS 0x12345678UL  ///< Default network address
 #endif
 
+/// BLE modes supported by the radio
 typedef enum {
     DB_RADIO_BLE_1MBit,
     DB_RADIO_BLE_2MBit,

@@ -2,14 +2,15 @@
 #define __HDLC_H
 
 /**
- * @file hdlc.h
- * @addtogroup DRV
+ * @defgroup    drv_hdlc    HDLC protocol
+ * @ingroup     drv
+ * @brief       High-Level Data Link Control protocol library
  *
- * @brief  Cross-platform declaration "hdlc" driver module.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2022
+ * @}
  */
 
 #include <stdlib.h>
@@ -17,6 +18,7 @@
 
 //=========================== definitions ======================================
 
+/// Internal state of the HDLC decoder
 typedef enum {
     DB_HDLC_STATE_IDLE,       ///< Waiting for incoming HDLC frames
     DB_HDLC_STATE_RECEIVING,  ///< An HDLC frame is being received
@@ -36,11 +38,11 @@ db_hdlc_state_t db_hdlc_rx_byte(uint8_t byte);
 /**
  * @brief   Decode an HDLC frame
  *
- * @param[output]   payload     Decoded payload contained in the input buffer
+ * @param[out]  payload     Decoded payload contained in the input buffer
  *
  * @return the number of bytes decoded
  */
-size_t db_hdlc_decode(uint8_t *output);
+size_t db_hdlc_decode(uint8_t *payload);
 
 /**
  * @brief   Encode a buffer in an HDLC frame

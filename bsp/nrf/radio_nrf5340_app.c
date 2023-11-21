@@ -1,6 +1,6 @@
 /**
- * @file radio_nrf5340_app.c
- * @addtogroup BSP
+ * @file
+ * @ingroup bsp_radio
  *
  * @brief  nrf5340-app-specific definition of the "radio" bsp module.
  *

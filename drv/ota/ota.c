@@ -1,6 +1,6 @@
 /**
- * @file ota.c
- * @addtogroup DRV
+ * @file
+ * @ingroup drv_ota
  *
  * @brief  nRF52833-specific definition of the "ota" drv module.
  *

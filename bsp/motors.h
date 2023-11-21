@@ -2,14 +2,16 @@
 #define __MOTORS_H
 
 /**
- * @file motors.h
- * @addtogroup BSP
+ * @defgroup    bsp_motors  Motors driver
+ * @ingroup     bsp
+ * @brief       Control the DC motors
  *
- * @brief  Cross-platform declaration "motors" bsp module.
- *
+ * @{
+ * @file
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
- *
+ * @author Alexandre Abadie <alexandre.abadie@inria.fr>
  * @copyright Inria, 2022
+ * @}
  */
 
 #include <nrf.h>

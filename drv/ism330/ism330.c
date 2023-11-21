@@ -1,6 +1,6 @@
 /**
- * @file ism330.c
- * @addtogroup DRV
+ * @file
+ * @ingroup drv_ism330
  *
  * @brief  drv module for the ISM330DHCXTR IMU.
  *
@@ -22,10 +22,10 @@
 
 //=========================== public functions ================================
 
-void db_ism330_init(const gpio_t *sda, const gpio_t *sck) {
+void db_ism330_init(const gpio_t *sda, const gpio_t *scl) {
 
     // Initialize I2C
-    db_i2c_init(sck, sda);
+    db_i2c_init(scl, sda);
 
     // Read WHOAMI register to verify that the system works
 

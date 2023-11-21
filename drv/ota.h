@@ -2,14 +2,15 @@
 #define __OTA_H
 
 /**
- * @file ota.h
- * @addtogroup BSP
+ * @defgroup    drv_ota    Firmware update library
+ * @ingroup     drv
+ * @brief       Firmware update library either over the air (OTA) or via Bootloader
  *
- * @brief  Cross-platform declaration "ota" drv module.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2023
+ * @}
  */
 
 #include <stdint.h>
@@ -17,26 +18,30 @@
 
 //=========================== defines ==========================================
 
-#define DB_OTA_CHUNK_SIZE (128U)
+#define DB_OTA_CHUNK_SIZE (128U)  ///< Size of a firmware chunk
 
 typedef void (*db_ota_reply_t)(const uint8_t *, size_t);  ///< Transport agnostic function used to reply to the flasher script
 
+///< Firmware update mode
 typedef enum {
-    DB_OTA_MODE_DEFAULT = 0,
-    DB_OTA_MODE_BOOTLOADER,
+    DB_OTA_MODE_DEFAULT = 0,  ///< Default mode: OTA
+    DB_OTA_MODE_BOOTLOADER,   ///< Bootloader mode
 } db_ota_mode_t;
 
+///< Firmware update configuration
 typedef struct {
-    db_ota_reply_t reply;
-    db_ota_mode_t  mode;
+    db_ota_reply_t reply;  ///< Pointer to the function used to reply to the flasher script
+    db_ota_mode_t  mode;   ///< Firmware update mode
 } db_ota_conf_t;
 
+///< Firmware update packet
 typedef struct __attribute__((packed, aligned(4))) {
-    uint32_t index;
-    uint32_t chunk_count;
-    uint8_t  fw_chunk[DB_OTA_CHUNK_SIZE];
+    uint32_t index;                        ///< Index of the chunk
+    uint32_t chunk_count;                  ///< Total number of chunks
+    uint8_t  fw_chunk[DB_OTA_CHUNK_SIZE];  ///< Bytes array of the firmware chunk
 } db_ota_pkt_t;
 
+///< CPU type
 typedef enum {
     DB_OTA_CPU_NRF52833,
     DB_OTA_CPU_NRF52840,
@@ -44,12 +49,14 @@ typedef enum {
     DB_OTA_CPU_UNKNOWN,
 } db_ota_cpu_type_t;
 
+///< Message type
 typedef enum {
     DB_OTA_MESSAGE_TYPE_FW,
     DB_OTA_MESSAGE_TYPE_FW_ACK,
     DB_OTA_MESSAGE_TYPE_INFO,
 } db_ota_message_type_t;
 
+///< OTA message containing information on the running firmware
 typedef struct __attribute__((packed)) {
     db_ota_cpu_type_t     cpu;
     uint32_t              target_partition;
@@ -60,6 +67,8 @@ typedef struct __attribute__((packed)) {
 
 /**
  * @brief   Initialize the OTA firmware update
+ *
+ * @param[in]   config          Pointer to the OTA configuration
  */
 void db_ota_init(const db_ota_conf_t *config);
 

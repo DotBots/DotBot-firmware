@@ -1,6 +1,6 @@
 /**
- * @file motors.c
- * @addtogroup BSP
+ * @file
+ * @ingroup bsp_motors
  *
  * @brief  nRF52833-specific definition of the "motors bsp module.
  *

@@ -1,6 +1,6 @@
 /**
- * @file command.c
- * @addtogroup DRV
+ * @file
+ * @ingroup drv_protocol
  *
  * @brief  nRF52833-specific definition of the "protocol" driver module.
  *

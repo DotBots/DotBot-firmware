@@ -1,5 +1,6 @@
 /**
- * @file 01crypto_hash.c
+ * @file
+ * @ingroup samples_crypto
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
  * @brief This is a short example of how to use the GPIO api.
  *

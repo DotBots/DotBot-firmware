@@ -2,14 +2,15 @@
 #define __IPC_H
 
 /**
- * @file ipc.h
- * @addtogroup BSP
+ * @defgroup    bsp_ipc Inter-Processor Communication
+ * @ingroup     bsp
+ * @brief       Control the IPC peripheral (nRF53 only)
  *
- * @brief  Declaration for "ipc" bsp module.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2023
+ * @}
  */
 
 #include <nrf.h>

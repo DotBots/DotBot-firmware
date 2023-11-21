@@ -1,6 +1,6 @@
 /**
- * @file clock.c
- * @addtogroup BSP
+ * @file
+ * @ingroup bsp_clock
  *
  * @brief  nRF52833-specific definition of the "clock" bsp module.
  *

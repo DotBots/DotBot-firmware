@@ -1,5 +1,6 @@
 /**
- * @file 01drv_lsm6ds.c
+ * @file
+ * @ingroup samples_drv
  * @author Mališa Vučinić <malisa.vucinic@inria.fr>
  * @brief This is an example on how to use the LSM6DS driver.
  *

@@ -1,5 +1,5 @@
 /**
- * @file main.c
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
  * @brief This application can be flashed on partition 0 (at 0x2000)
  *

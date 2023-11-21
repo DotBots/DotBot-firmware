@@ -1,15 +1,18 @@
-#ifndef LH2_H_
-#define LH2_H_
+#ifndef __LH2_H_
+#define __LH2_H_
 
 /**
- * @file lh2.h
- * @addtogroup BSP
+ * @defgroup    bsp_lh2 LightHouse 2 support
+ * @ingroup     bsp
+ * @brief       Control the LH2 sensor
  *
- * @brief  nRF52833-specific definition of the "lh2" bsp module.
- *
- * @author Filip Maksimovic <filip.maksimovic@inria.fr>, Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
- *
+ * @{
+ * @file
+ * @author Filip Maksimovic <filip.maksimovic@inria.fr>
+ * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
+ * @author Alexandre Abadie <alexandre.abadie@inria.fr>
  * @copyright Inria, 2022
+ * @}
  */
 
 #include <nrf.h>
@@ -22,6 +25,7 @@
 
 #define LH2_LOCATIONS_COUNT 2  ///< Number of computed locations
 
+/// LH2 internal state
 typedef enum {
     DB_LH2_IDLE,            ///< the lh2 engine is idle
     DB_LH2_RUNNING,         ///< the lh2 engine is running
@@ -29,17 +33,20 @@ typedef enum {
     DB_LH2_LOCATION_READY,  ///< some lh2 location is ready to be read
 } db_lh2_state_t;
 
+/// LH2 raw data
 typedef struct __attribute__((packed)) {
     uint64_t bits_sweep;           ///< bits sweep is the result of the demodulation, sweep_N indicates which SPI transfer those bits are associated with
     uint8_t  selected_polynomial;  ///< selected poly is the polyomial # (between 0 and 31) that the demodulation code thinks the demodulated bits are a part of, initialize to error state
     int8_t   bit_offset;           ///< bit_offset indicates an offset between the start of the packet, as indicated by envelope dropping, and the 17-bit sequence that is verified to be in a known LFSR sequence
 } db_lh2_raw_data_t;
 
+/// LH2 raw data location
 typedef struct __attribute__((packed)) {
     uint8_t  selected_polynomial;  ///< selected poly is the polyomial # (between 0 and 31) that the demodulation code thinks the demodulated bits are a part of, initialize to error state
     uint32_t lfsr_location;        ///< LFSR location is the position in a given polynomial's LFSR that the decoded data is, initialize to error state
 } db_lh2_location_t;
 
+/// LH2 instance
 typedef struct {
     db_lh2_state_t    state;                           ///< current state of the lh2 engine
     db_lh2_raw_data_t raw_data[LH2_LOCATIONS_COUNT];   ///< raw data decoded from the lighthouse
@@ -92,4 +99,4 @@ void db_lh2_stop(db_lh2_t *lh2);
  */
 void db_lh2_reset(db_lh2_t *lh2);
 
-#endif /* LH2_H_ */
+#endif /* __LH2_H_ */

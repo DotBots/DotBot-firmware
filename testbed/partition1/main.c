@@ -1,5 +1,5 @@
 /**
- * @file main.c
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
  * @brief This application can be flashed on partition 1 (address depends on platform, see FLASH1 field in MemoryMap.xml)
  *

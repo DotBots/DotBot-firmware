@@ -2,14 +2,15 @@
 #define __CRYPTO_UTILS_H
 
 /**
- * @file utils.h
- * @addtogroup Crypto
+ * @defgroup    crypto_utils    Cryptocell utilities
+ * @ingroup     crypto
+ * @brief       Enable/disable the cryptocell
  *
- * @brief  Declaration for crypto module
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2023
+ * @}
  */
 
 #include <stdlib.h>

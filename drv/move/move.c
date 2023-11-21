@@ -1,6 +1,6 @@
 /**
- * @file move.c
- * @addtogroup DRV
+ * @file
+ * @ingroup drv_move
  *
  * @brief  Implemenation of the "move" driver module.
  *

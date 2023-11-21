@@ -1,5 +1,6 @@
 /**
- * @file 01drv_move.c
+ * @file
+ * @ingroup samples_drv
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
  *
  * @copyright Inria, 2023

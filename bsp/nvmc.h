@@ -2,21 +2,27 @@
 #define __NVMC_H
 
 /**
- * @file nvmc.h
- * @addtogroup BSP
+ * @defgroup    bsp_nvmc    Non Volatile Memory Controller driver
+ * @ingroup     bsp
+ * @brief       Read/write/erase flash memory
  *
- * @brief  Cross-platform declaration "nvmc" bsp module.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2023
+ * @}
  */
 
 #include <stdlib.h>
 #include <stdint.h>
 
-//=========================== defines =========================================
+//=========================== defines ==========================================
 
+#if defined(DOXYGEN)
+#define DB_FLASH_PAGE_SIZE    ///< Flash page size
+#define DB_FLASH_PAGE_NUM     ///< Number of flash pages
+#define DB_FLASH_PAGE_OFFSET  ///< Base offset of the flash
+#else
 #if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
 #define DB_FLASH_PAGE_SIZE 2048
 #else
@@ -40,30 +46,31 @@
 #else
 #error "Unsupported nRF CPU"
 #endif
+#endif  // DOXYGEN
 
-//=========================== public ==========================================
+//=========================== public ===========================================
 
 /**
  * @brief Read some data from a given address
- * @param data  Pointer to the output buffer
- * @param addr  Address to read from
- * @param len   Length of data to read
+ * @param[out]  output  Pointer to the output buffer
+ * @param[in]   addr    Address to read from
+ * @param[in]   len     Length of data to read
  */
 void db_nvmc_read(void *output, const uint32_t *addr, size_t len);
 
 /**
  * @brief Erase a page on flash
  *
- * @param page  index of the page to erase
+ * @param[in]   page    index of the page to erase
  */
 void db_nvmc_page_erase(uint32_t page);
 
 /**
  * @brief Write some data at a given address
  *
- * @param addr  Address to write to
- * @param input Pointer to the intput buffer to write
- * @param len   Length of data to write
+ * @param[in]   addr    Address to write to
+ * @param[in]   input   Pointer to the intput buffer to write
+ * @param[in]   len     Length of data to write
  */
 void db_nvmc_write(const uint32_t *addr, const void *input, size_t len);
 

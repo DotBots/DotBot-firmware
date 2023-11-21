@@ -1,6 +1,6 @@
 /**
- * @file uart.c
- * @addtogroup BSP
+ * @file
+ * @ingroup bsp_uart
  *
  * @brief  nRF52833-specific definition of the "uart" bsp module.
  *

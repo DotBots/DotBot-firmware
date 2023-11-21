@@ -1,6 +1,6 @@
 /**
- * @file rgbled_pwm.c
- * @addtogroup DRV
+ * @file
+ * @ingroup drv_rgbled_pwm
  *
  * @brief  Implementation of the "rgbled pwm" driver module.
  *

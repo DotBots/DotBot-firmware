@@ -1,5 +1,6 @@
 /**
- * @file 01bsp_rgbled_pwm.c
+ * @file
+ * @ingroup samples_drv
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
  * @brief This is a short example of how to interface with the RGB LED in the DotBot shield.
  *

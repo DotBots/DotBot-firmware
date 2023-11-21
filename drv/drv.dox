@@ -1,0 +1,4 @@
+/**
+* @defgroup    drv High level libraries
+* @brief       Contains libraries related to sensor drivers, protocols, ota...
+*/

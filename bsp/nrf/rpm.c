@@ -1,6 +1,6 @@
 /**
- * @file rpm.c
- * @addtogroup BSP
+ * @file
+ * @ingroup bsp_rpm
  *
  * @brief  nRF52833-specific definition of the "rpm" bsp module.
  *

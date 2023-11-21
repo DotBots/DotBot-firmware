@@ -2,14 +2,15 @@
 #define __RGBLED_PWM_H
 
 /**
- * @file rgbled_pwm.h
- * @addtogroup DRV
+ * @defgroup    drv_rgbled_pwm  RGB LED driver via PWM
+ * @ingroup     drv
+ * @brief       Driver for RGB LED via PWM
  *
- * @brief  Cross-platform declaration "rgbled pwm" driver module.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2023
+ * @}
  */
 
 #include <stdlib.h>
@@ -20,6 +21,7 @@
 
 //=========================== definitions ======================================
 
+/// RGB LED PWM configuration
 typedef struct {
     const gpio_t pins[3];  // red: 0, green: 1, blue: 2
 } db_rgbled_pwm_conf_t;
@@ -36,7 +38,9 @@ void db_rgbled_pwm_init(const db_rgbled_pwm_conf_t *conf);
 /**
  * @brief   Set the color of the RGB LED
  *
- * @param[output]   payload     Decoded payload contained in the input buffer
+ * @param[in]   red     Red value [0 - 255]
+ * @param[in]   green   Green value [0 - 255]
+ * @param[in]   blue    Blue value [0 - 255]
  */
 void db_rgbled_pwm_set_color(uint8_t red, uint8_t green, uint8_t blue);
 

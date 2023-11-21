@@ -1,11 +1,13 @@
 /**
- * @file main.c
- * @author Alexandre Abadie <alexandre.abadie@inria.fr>
+ * @file
+ * @defgroup project_nrf5340_app_core    nRF5340 application core
+ * @ingroup projects
  * @brief This application is used to configure some peripherals as non secure and power on the network core
  *
+ * @author Alexandre Abadie <alexandre.abadie@inria.fr>
  * @copyright Inria, 2023
- *
  */
+
 #include <nrf.h>
 
 #include "clock.h"

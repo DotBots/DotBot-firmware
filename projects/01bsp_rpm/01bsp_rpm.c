@@ -1,5 +1,6 @@
 /**
- * @file 01bsp_rpm.c
+ * @file
+ * @ingroup samples_bsp
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  * @brief This is a short example of how to interface with the Wheel revolution counter in the DotBot board.
  *

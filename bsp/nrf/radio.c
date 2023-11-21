@@ -1,6 +1,6 @@
 /**
- * @file radio.c
- * @addtogroup BSP
+ * @file
+ * @ingroup bsp_radio
  *
  * @brief  nRF52833-specific definition of the "radio" bsp module.
  *

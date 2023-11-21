@@ -2,14 +2,15 @@
 #define __SHA256_H
 
 /**
- * @file crypto.h
- * @addtogroup Crypto
+ * @defgroup    crypto_sha256   SHA256 hashing support
+ * @ingroup     crypto
+ * @brief       Hash data using SHA256
  *
- * @brief  Declaration for crypto module
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2023
+ * @}
  */
 
 #include <stdlib.h>
@@ -23,15 +24,15 @@ void crypto_sha256_init(void);
 /**
  * @brief   Add new data to the running hash process
  *
- * @param[input]    data            Input data
- * @param[input]    len             Input data length
+ * @param[in]   data            Input data
+ * @param[in]   len             Input data length
  */
 void crypto_sha256_update(const uint8_t *data, size_t len);
 
 /**
  * @brief   Returns the computed hash
  *
- * @param[output]   digest          Computed hash
+ * @param[in]   digest          Computed hash
  */
 void crypto_sha256(uint8_t *digest);
 

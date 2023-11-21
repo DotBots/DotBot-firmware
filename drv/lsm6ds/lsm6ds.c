@@ -1,5 +1,6 @@
 /**
- * @file lsm6ds.c
+ * @file
+ * @ingroup drv_lsm6ds
  * @author Mališa Vučinić <malisa.vucinic@inria.fr>
  * @brief Driver for controlling the LSM6DS IMU.
  *

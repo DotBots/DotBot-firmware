@@ -2,14 +2,15 @@
 #define __ED25519_H
 
 /**
- * @file ed25519.h
- * @addtogroup Crypto
+ * @defgroup    crypto_ed25519  Ed25519 signature support
+ * @ingroup     crypto
+ * @brief       Sign/verify data using Ed25519
  *
- * @brief  Declaration for ed25519 signature module
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2023
+ * @}
  */
 
 #include <stdlib.h>
@@ -19,11 +20,11 @@
 /**
  * @brief   Compute the ED25519 signature of a data
  *
- * @param[output]   signature       Computed signature
- * @param[input]    data            Input data
- * @param[input]    data_len        Input data length
- * @param[input]    private_key     Private key used to sign the data, must be 32 Bytes
- * @param[input]    public_key      Public key used to sign the data, must be 32 Bytes
+ * @param[out]  signature       Computed signature
+ * @param[in]   data            Input data
+ * @param[in]   data_len        Input data length
+ * @param[in]   private_key     Private key used to sign the data, must be 32 Bytes
+ * @param[in]   public_key      Public key used to sign the data, must be 32 Bytes
  *
  * @return the size of the computed signature, must be 64
  */
@@ -32,11 +33,11 @@ size_t crypto_ed25519_sign(uint8_t *signature, const uint8_t *data, size_t data_
 /**
  * @brief   Verify the ED25519 signature of a data
  *
- * @param[input]    signature       Signature
- * @param[input]    signature_len   Signature length
- * @param[input]    data            Input data
- * @param[input]    data_len        Input data length
- * @param[input]    public_key      Public key used to verify the data, must be 32 Bytes
+ * @param[in]   signature       Signature
+ * @param[in]   signature_len   Signature length
+ * @param[in]   data            Input data
+ * @param[in]   data_len        Input data length
+ * @param[in]   public_key      Public key used to verify the data, must be 32 Bytes
  *
  * @return true if the signature could be verified, false otherwise
  */

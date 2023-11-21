@@ -2,14 +2,15 @@
 #define __BOARD_SAILBOT_V1_CONFIG_H
 
 /**
- * @file sailbot_v1_config.h
- * @addtogroup BSP
+ * @defgroup    bsp_board_config_sailbot-v1    Sailbot v1
+ * @ingroup     bsp_board_config
+ * @brief       Sailbot v1 board configuration
  *
- * @brief  Sailbot v1 board specific definitions.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2023
+ * @}
  */
 
 /**

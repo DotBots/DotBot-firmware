@@ -2,14 +2,15 @@
 #define __BOARD_DOTBOT_V2_CONFIG_H
 
 /**
- * @file dotbot_v2_config.h
- * @addtogroup BSP
+ * @defgroup    bsp_board_config_dotbot-v2    DotBot v2
+ * @ingroup     bsp_board_config
+ * @brief       DotBot v2 board configuration
  *
- * @brief  DotBot vZ board specific definitions.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2023
+ * @}
  */
 
 /**

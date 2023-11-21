@@ -2,14 +2,15 @@
 #define __MOVE_H
 
 /**
- * @file move.h
- * @addtogroup DRV
+ * @defgroup    drv_move    High level move commands for DotBot
+ * @ingroup     drv
+ * @brief       High level move commands for DotBot: move straight, rotate
  *
- * @brief  Cross-platform declaration "move" driver module.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2023
+ * @}
  */
 
 #include <stdint.h>

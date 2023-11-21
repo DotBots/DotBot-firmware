@@ -2,14 +2,15 @@
 #define __GPIO_H
 
 /**
- * @file gpio.h
- * @addtogroup BSP
+ * @defgroup    bsp_gpio    GPIO
+ * @ingroup     bsp
+ * @brief       GPIO management
  *
- * @brief  Cross-platform declaration "gpio" bsp module.
- *
+ * @{
+ * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- *
  * @copyright Inria, 2022-2023
+ * @}
  */
 
 #include <nrf.h>
@@ -39,6 +40,7 @@
 
 typedef void (*gpio_cb_t)(void *ctx);  ///< Callback function prototype, it is called on each gpio interrupt
 
+/// GPIO mode
 typedef enum {
     DB_GPIO_OUT,    ///< Floating output
     DB_GPIO_IN,     ///< Floating input
@@ -46,12 +48,14 @@ typedef enum {
     DB_GPIO_IN_PD,  ///< Pull down input
 } gpio_mode_t;
 
+/// GPIO interrupt edge
 typedef enum {
     DB_GPIO_IRQ_EDGE_RISING  = GPIOTE_CONFIG_POLARITY_LoToHi,  ///< Rising edge
     DB_GPIO_IRQ_EDGE_FALLING = GPIOTE_CONFIG_POLARITY_HiToLo,  ///< Falling edge
     DB_GPIO_IRQ_EDGE_BOTH    = GPIOTE_CONFIG_POLARITY_Toggle,  ///< Both falling and rising edges
 } gpio_irq_edge_t;
 
+/// GPIO instance
 typedef struct {
     uint8_t port;  ///< Port number of the GPIO
     uint8_t pin;   ///< Pin number of the GPIO

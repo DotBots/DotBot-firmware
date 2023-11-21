@@ -1,6 +1,6 @@
 /**
- * @file log_flash.c
- * @addtogroup DRV
+ * @file
+ * @ingroup drv_log_flash
  *
  * @brief  Implementation of the "log_flash" driver module.
  *

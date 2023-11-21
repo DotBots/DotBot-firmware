@@ -2,8 +2,9 @@
 #define __SERVOS_H
 
 /**
- * @file servos.h
- * @addtogroup sailbot
+ * @file
+ * @defgroup project_sailbot_servos Servos
+ * @ingroup project_sailbot
  *
  * @brief  Module for controlling servos on Kyosho Fortune 612 SailBot.
  *
