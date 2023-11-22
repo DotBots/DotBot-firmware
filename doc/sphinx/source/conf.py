@@ -8,7 +8,7 @@ project = 'DotBot-firmware'
 copyright = '2023, Inria'
 author = 'Alexandre Abadie'
 
-# -- General configuration ---------------------------------------------------
+# -- General configuration ----------------------------------------------------
 extensions = [
     'breathe',
     "myst_parser",
@@ -30,7 +30,7 @@ nitpick_ignore_regex = [
     (r'c:.*', r'[U]*INT\d{1,2}_MAX'),   # ignore INT8_MAX, UINT8_MAX, ...
 ]
 
-# -- Options for breathe ----------------------------------------------------
+# -- Options for breathe ------------------------------------------------------
 breathe_projects = {"DotBot-firmware": "../../doxygen/xml/"}
 breathe_default_project = "DotBot-firmware"
 breathe_show_include = False
@@ -38,7 +38,7 @@ breathe_domain_by_extension = {
     "h" : "c",
 }
 
-# -- Options for HTML output -------------------------------------------------
+# -- Options for HTML output --------------------------------------------------
 html_theme = "pydata_sphinx_theme"
 html_sourcelink_suffix = ""
 html_static_path = ['_static']
