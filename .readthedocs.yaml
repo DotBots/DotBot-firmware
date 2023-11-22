@@ -6,7 +6,6 @@ build:
     python: "3.12"
   apt_packages:
     - doxygen
-    - graphviz
 
 sphinx:
   configuration: doc/sphinx/source/conf.py
