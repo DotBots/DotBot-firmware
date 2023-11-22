@@ -25,7 +25,7 @@
 #include "protocol.h"
 #include "motors.h"
 #include "radio.h"
-#include "rgbled.h"
+#include "rgbled_pwm.h"
 #include "timer.h"
 #include "log_flash.h"
 
@@ -75,6 +75,17 @@ typedef struct {
 
 static dotbot_vars_t _dotbot_vars;
 
+#ifdef DB_RGB_LED_PWM_RED_PORT  // Only available on DotBot v2
+static const db_rgbled_pwm_conf_t rgbled_pwm_conf = {
+    .pwm  = 1,
+    .pins = {
+        { .port = DB_RGB_LED_PWM_RED_PORT, .pin = DB_RGB_LED_PWM_RED_PIN },
+        { .port = DB_RGB_LED_PWM_GREEN_PORT, .pin = DB_RGB_LED_PWM_GREEN_PIN },
+        { .port = DB_RGB_LED_PWM_BLUE_PORT, .pin = DB_RGB_LED_PWM_BLUE_PIN },
+    }
+};
+#endif
+
 //=========================== prototypes =======================================
 
 static void _timeout_check(void);
@@ -119,7 +130,7 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
         case DB_PROTOCOL_CMD_RGB_LED:
         {
             protocol_rgbled_command_t *command = (protocol_rgbled_command_t *)cmd_ptr;
-            db_rgbled_set(command->r, command->g, command->b);
+            db_rgbled_pwm_set_color(command->r, command->g, command->b);
         } break;
         case DB_PROTOCOL_LH2_LOCATION:
         {
@@ -165,7 +176,9 @@ int main(void) {
     db_log_flash_init(LOG_DATA_DOTBOT);
 #endif
     db_protocol_init();
-    db_rgbled_init();
+#ifdef DB_RGB_LED_PWM_RED_PORT
+    db_rgbled_pwm_init(&rgbled_pwm_conf);
+#endif
     db_motors_init();
     db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);
     db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
