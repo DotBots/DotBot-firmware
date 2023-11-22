@@ -1,8 +1,8 @@
 # Configuration file for the Sphinx documentation builder.
 
 import os
-import glob
-import shutil
+import subprocess
+import sys
 
 project = 'DotBot-firmware'
 copyright = '2023, Inria'
@@ -74,7 +74,24 @@ html_theme_options = {
     },
 }
 
-# -- Options for autosummary/autodoc output ------------------------------------
+# -- Options for autosummary/autodoc output -----------------------------------
 autosummary_generate = True
 autodoc_typehints = "description"
 autodoc_member_order = "groupwise"
+
+# Hook for building doxygen documentation -------------------------------------
+
+def run_doxygen(_):
+    """Run the doxygen make command."""
+
+    try:
+        retcode = subprocess.call(f"make -C ../doxygen", shell=True)
+        if retcode < 0:
+            sys.stderr.write(f"doxygen terminated by signal {-retcode}")
+    except OSError as e:
+        sys.stderr.write(f"doxygen execution failed: {e}")
+
+
+def setup(app):
+    """Add hook for building doxygen documentation."""
+    app.connect("builder-inited", run_doxygen)

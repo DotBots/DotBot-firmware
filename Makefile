@@ -151,5 +151,4 @@ docclean:
 	make -C doc/sphinx clean --no-print-directory
 
 doc:
-	make -C doc/doxygen all --no-print-directory
 	make -C doc/sphinx html --no-print-directory SPHINXOPTS="-W --keep-going -n"
