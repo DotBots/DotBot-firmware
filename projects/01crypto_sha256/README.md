@@ -2,7 +2,8 @@
 
 This application shows how to use the SHA256 hashing method.
 
-The [sha256.py](sha256.py) python script is provided to show how to produce the
+The [sha256.py](https://github.com/DotBots/Dotbot-firmware/blob/main/projects/01crypto_sha256/sha256.py)
+python script is provided to show how to produce the
 SHA256 hash of a message. The result is stored in a binary file.
 
 The script requires the

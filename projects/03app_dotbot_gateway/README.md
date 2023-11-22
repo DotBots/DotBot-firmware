@@ -11,7 +11,7 @@ Use the button on the DK to control a DotBot running the 03app_dotbot applicatio
 - button 2: drive the right wheel forward
 - button 4: drive the right wheel backward
 
-You can also use [dotbot-controller tool](https://github.com/DotBot/Botcontroller-python)
+You can also use [dotbot-controller tool](https://github.com/DotBots/PyDotBot)
 to communicate with the firmware from your computer and for example control the
 DotBot using your keyboard.
 

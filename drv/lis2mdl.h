@@ -2,7 +2,7 @@
 #define __LIS2MDL_H
 
 /**
- * @defgroup    drv_lis2msl     LIS2MDL magnetometer driver
+ * @defgroup    drv_lis2mdl     LIS2MDL magnetometer driver
  * @ingroup     drv
  * @brief       Driver for the ST LIS2MDL magnetometer
  *
