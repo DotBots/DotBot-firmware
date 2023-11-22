@@ -84,9 +84,12 @@ autodoc_member_order = "groupwise"
 
 def run_doxygen(_):
     """Run the doxygen make command."""
-
+    if os.environ.get('READTHEDOCS', None) == 'True':
+        doxygen_path = "../../doxygen"
+    else:
+        doxygen_path = "../doxygen"
     try:
-        retcode = subprocess.call(f"make -C ../doxygen", shell=True)
+        retcode = subprocess.call(f"make -C {doxygen_path}", shell=True)
         if retcode < 0:
             sys.stderr.write(f"doxygen terminated by signal {-retcode}")
     except OSError as e:
