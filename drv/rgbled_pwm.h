@@ -23,6 +23,7 @@
 
 /// RGB LED PWM configuration
 typedef struct {
+    pwm_t        pwm;      // Index of PWM to use
     const gpio_t pins[3];  // red: 0, green: 1, blue: 2
 } db_rgbled_pwm_conf_t;
 

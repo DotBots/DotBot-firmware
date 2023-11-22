@@ -24,8 +24,8 @@
 //=========================== public ===========================================
 
 void db_rgbled_pwm_init(const db_rgbled_pwm_conf_t *conf) {
-    db_pwm_init(1, conf->pins, PWM_CHANNELS, PWM_MAX_VALUE);
-    uint16_t pwm_seq[PWM_CHANNELS] = { UINT8_MAX, UINT8_MAX, UINT8_MAX };
+    db_pwm_init(conf->pwm, conf->pins, PWM_CHANNELS, PWM_MAX_VALUE);
+    uint16_t pwm_seq[PWM_CHANNELS] = { 0, 0, 0 };
     db_pwm_channels_set(1, pwm_seq);
 }
 
