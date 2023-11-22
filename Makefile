@@ -151,4 +151,4 @@ docclean:
 	make -C doc/sphinx clean --no-print-directory
 
 doc:
-	make -C doc/sphinx html --no-print-directory SPHINXOPTS="-W --keep-going -n"
+	make -C doc/sphinx linkcheck html --no-print-directory SPHINXOPTS="-W --keep-going -n"

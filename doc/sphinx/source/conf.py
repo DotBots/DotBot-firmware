@@ -22,6 +22,7 @@ extensions = [
 ]
 
 language = "en"
+tls_verify = False
 templates_path = ['_templates']
 nitpick_ignore_regex = [
     (r'c:.*', r'[u]*int\d{1,2}_t'),     # ignore int8_t, uint8_t, ...
