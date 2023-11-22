@@ -16,7 +16,7 @@ The DotBots ecosystem provides Python
 used a gateway.
 
 The DotBots hardware design are published on GitHub at
-[https://github.com/DotBots/DotBot-harware](https://github.com/DotBots/DotBot-harware).
+[https://github.com/DotBots/DotBot-harware](https://github.com/DotBots/DotBot-hardware).
 
 ## Building firmwares
 
@@ -27,7 +27,7 @@ In SEGGER embedded studio, use the package manager
 CMSIS-DSP and nRF packages.
 
 For details on SEGGER Embedded Studio, read the
-[online documentation](https://studio.segger.com/home.htm).
+[online documentation](https://studio.segger.com/index.htm?https://studio.segger.com/home.htm).
 
 ## Flashing firmwares
 

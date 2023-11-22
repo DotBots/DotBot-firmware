@@ -5,7 +5,7 @@ This application shows how to use the ED25519 asymmetric signature library.
 The main.c contains a private key used to sign a message and public key used to
 verify the signature of the message.
 
-The [signature.py](https://github.com/DotBots/Dotbot-firmware/tree/main/projects/01crypto_ed25519/signature.py)
+The [signature.py](https://github.com/DotBots/Dotbot-firmware/blob/main/projects/01crypto_ed25519/signature.py)
 python script is provided so a different key
 pair can be used to sign and verify. The script can be used to generate an new
 key pair and the signature of the test message defined in the application.
