@@ -24,6 +24,7 @@ extensions = [
 language = "en"
 tls_verify = False
 templates_path = ['_templates']
+exclude_patterns = ["_build"]
 nitpick_ignore_regex = [
     (r'c:.*', r'[u]*int\d{1,2}_t'),     # ignore int8_t, uint8_t, ...
     (r'c:.*', r'NRF_.*'),               # ignore NRF_ macros
@@ -43,6 +44,22 @@ breathe_domain_by_extension = {
 html_theme = "pydata_sphinx_theme"
 html_sourcelink_suffix = ""
 html_static_path = ['_static']
+
+# Define the json_url for our version switcher.
+json_url = "https://dotbot-firmware.readthedocs.io/en/latest/_static/switcher.json"
+rtd_version = os.environ.get("READTHEDOCS_VERSION")
+rtd_version_type = os.environ.get("READTHEDOCS_VERSION_TYPE")
+rtd_git_identifier = os.environ.get("READTHEDOCS_GIT_IDENTIFIER")
+# If READTHEDOCS_VERSION doesn't exist, we're not on RTD
+# If it is an integer, we're in a PR build and the version isn't correct.
+# If it's "latest" → change to "dev" (that's what we want the switcher to call it)
+if not rtd_version or rtd_version.isdigit() or rtd_version == "latest":
+    rtd_version = "dev"
+    json_url = "_static/switcher.json"
+elif rtd_version == "stable":
+    rtd_version = f"{rtd_git_identifier}"
+release = rtd_version
+
 html_theme_options = {
     "external_links": [
         {
@@ -73,6 +90,14 @@ html_theme_options = {
     "logo": {
         "text": "DotBot firmware",
     },
+    "navbar_align": "left",
+    "navbar_center": ["version-switcher", "navbar-nav"],
+    "switcher": {
+        "json_url": json_url,
+        "version_match": rtd_version,
+    },
+    "footer_start": ["copyright"],
+    "footer_center": ["sphinx-version"],
 }
 
 # -- Options for autosummary/autodoc output -----------------------------------
