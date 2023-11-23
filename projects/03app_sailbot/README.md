@@ -1,8 +1,10 @@
 # SailBot main application
 
-<p align="center">
-  <img src="https://github.com/DotBots/DotBot-firmware/blob/main/static/03app_sailbot.jpg?raw=true" alt="SailBot platform based on Kyosho's Fortune 612 chassis" width=500 />
-</p>
+<div align="center">
+
+![SailBot platform based on Kyosho's Fortune 612 chassis](../../doc/sphinx/_static/images/03app_sailbot.jpg)
+
+</div>
 
 This app contains the main firmware of the SailBot platform based on Kyosho's Fortune 612 chassis. The app reuses the low-level libraries from the DotBot repository.
 

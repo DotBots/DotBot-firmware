@@ -1,4 +1,4 @@
-## Testbed support
+# Testbed support
 
 This directory contains 3 applications that be used for the DotBot testbed support:
 - [bootloader](https://github.com/DotBots/Dotbot-firmware/tree/main/testbed/bootloader/)
