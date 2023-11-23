@@ -9,9 +9,11 @@
 This repository contains the source code for firmwares usable with the DotBot
 hardware.
 
-<p align="center">
-  <img src="https://github.com/DotBots/DotBot-firmware/blob/main/static/03app_dotbot.gif?raw=true" alt="dotbot app demo"/>
-</p>
+<div align="center">
+
+![DotBot demo](doc/sphinx/_static/images/03app_dotbot.gif)
+
+</div>
 
 ## Related projects
 
