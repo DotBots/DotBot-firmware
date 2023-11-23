@@ -48,10 +48,7 @@ myst_enable_extensions = ["html_image"]
 # -- Options for HTML output --------------------------------------------------
 html_theme = "pydata_sphinx_theme"
 html_sourcelink_suffix = ""
-html_static_path = [
-    "_static",
-    "_static/images",
-]
+html_static_path = ["_static"]
 
 # Define the json_url for our version switcher.
 json_url = "https://dotbot-firmware.readthedocs.io/en/latest/_static/switcher.json"
