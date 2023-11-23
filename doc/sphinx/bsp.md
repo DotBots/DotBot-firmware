@@ -9,23 +9,23 @@ Drivers
 :maxdepth: 2
 :caption: Contents
 
-api/bsp_board
-api/bsp_clock
-api/bsp_device
-api/bsp_gpio
-api/bsp_i2c
-api/bsp_ipc
-api/bsp_lh2
-api/bsp_motors
-api/bsp_nvmc
-api/bsp_partition
-api/bsp_pwm
-api/bsp_qdec
-api/bsp_radio
-api/bsp_rgbled
-api/bsp_rng
-api/bsp_rpm
-api/bsp_timer
-api/bsp_timer_hf
-api/bsp_uart
+_api/bsp_board
+_api/bsp_clock
+_api/bsp_device
+_api/bsp_gpio
+_api/bsp_i2c
+_api/bsp_ipc
+_api/bsp_lh2
+_api/bsp_motors
+_api/bsp_nvmc
+_api/bsp_partition
+_api/bsp_pwm
+_api/bsp_qdec
+_api/bsp_radio
+_api/bsp_rgbled
+_api/bsp_rng
+_api/bsp_rpm
+_api/bsp_timer
+_api/bsp_timer_hf
+_api/bsp_uart
 ```

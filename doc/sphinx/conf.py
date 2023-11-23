@@ -148,7 +148,37 @@ def generate_projects_readme(app):
         generate_readme(app, prefix, dest)
 
 
+API_INCLUDE_TEMPLATE = """{title}
+=================================
+
+.. doxygengroup:: {module}
+.. doxygenfile:: {header}
+
+"""
+EXCLUDE_MODULES = ["board_config"]
+
+
+def generate_api_files(app):
+    output_dir = os.path.join(app.srcdir, "_api")
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+    for module in ["bsp", "crypto", "drv"]:
+        module_dir = os.path.join(app.srcdir, f"../../{module}/")
+        submodules = [os.path.basename(project).split(".")[0] for project in glob.glob(f"{module_dir}/*.h")]
+        submodules = [module for module in submodules if module not in EXCLUDE_MODULES]
+        for submodule in submodules:
+            with open(os.path.join(output_dir, f"{module}_{submodule}.rst"), "w") as f:
+                f.write(
+                    API_INCLUDE_TEMPLATE.format(
+                        title=f"{submodule.capitalize()}",
+                        module=f"{module}_{submodule}",
+                        header=f"{module}/{submodule}.h"
+                    )
+                )
+
+
 def setup(app):
     """Add hook for building doxygen documentation."""
     app.connect("builder-inited", run_doxygen)
+    app.connect("builder-inited", generate_api_files)
     app.connect("builder-inited", generate_projects_readme)

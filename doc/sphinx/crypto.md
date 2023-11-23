@@ -9,7 +9,7 @@ Security
 :maxdepth: 2
 :caption: Table of contents
 
-api/crypto_ed25519
-api/crypto_sha256
-api/crypto_utils
+_api/crypto_ed25519
+_api/crypto_sha256
+_api/crypto_utils
 ```
