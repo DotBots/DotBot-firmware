@@ -11,9 +11,10 @@ from cryptography.hazmat.primitives.serialization import (
 )
 
 PROJECT_DIRECTORY = os.path.join(
-    "../../../projects/01crypto_ed25519",
-    os.path.dirname(os.path.realpath(__file__))
+    os.path.dirname(os.path.realpath(__file__)),
+    "..", "..", ".." ,"projects", "01crypto_ed25519",
 )
+print(PROJECT_DIRECTORY)
 PRIVATE_KEY_PATH = os.path.join(PROJECT_DIRECTORY, "private_key.h")
 PUBLIC_KEY_PATH = os.path.join(PROJECT_DIRECTORY, "public_key.h")
 EXPECTED_SIGNATURE_PATH = os.path.join(PROJECT_DIRECTORY, "expected_signature.h")
@@ -39,6 +40,7 @@ const uint8_t {name}[] = {{
 
 def save_as_c_array(path, name, data):
     data_str = ", ".join([f"0x{data[i:i+2]}" for i in range(0, len(data), 2)])
+    print(f"Saving '{name}' to {os.path.abspath(path)}")
     with open(path, "w") as f:
         f.write(HEADER_FORMAT.format(name=name, name_upper=name.upper(), data=data_str))
 
