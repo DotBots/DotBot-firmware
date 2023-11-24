@@ -14,7 +14,8 @@ This directory contains 3 applications that be used for the DotBot testbed suppo
     tries to boot the image in partition 0 the next time,
   - pressing button 2 will set partition 1 as active and reset the device so it
     tries to boot the image in partition 1 the next time,
-  - using the [dotbot-flash.py](https://github.com/DotBots/DotBot-firmware/blob/main/testbed/dotbot-flash.py) (see below), a new firmware
+  - using the [dotbot-flash.py](../dist/scripts/testbed/dotbot-flash.py) (see below)
+    provided in `dist/scripts/testbed`, a new firmware
     image can be sent over UART to the active partition. Once completed the
     device has to be reset manually so it boots on the newly flashed image.
 
@@ -58,11 +59,10 @@ organized as follows:
 The start address of partition 0 and partition 1 applications is defined in the
 `<Target>_MemoryMap.xml` file available in each application directory and has to
 match the start address of each partition defined in the bootloader
-[main.c](https://github.com/DotBots/Dotbot-firmware/blob/main/testbed/bootloader/main.c).
+`main.c`.
 
-The [dotbot-flash.py](https://github.com/DotBots/DotBot-firmware/blob/main/testbed/dotbot-flash.py)
-Python script is also provided: it
-reads a .bin firmware file and sends to a device over UART. The device can either
+The [dotbot-flash.py](../dist/scripts/testbed/dotbot-flash.py) Python script is also provided:
+it reads a .bin firmware file and sends to a device over UART. The device can either
 be:
   - rebooted in bootloader mode (hold button 4 pressed during reset).
   Make sure to build the image with an offset on flash that corresponds to the
@@ -85,5 +85,5 @@ system.
 To install all the Python dependencies (pydotbot, click and tqdm), run:
 
 ```
-pip install -r requirements.txt
+pip install -r dist/scripts/testbed/requirements.txt
 ```

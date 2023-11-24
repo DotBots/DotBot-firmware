@@ -126,6 +126,7 @@ def run_doxygen(app):
 
 README_INCLUDE_TEMPLATE = """```{{include}} {path_to_readme}
 :relative-images:
+:relative-docs: ../../
 ```
 """
 

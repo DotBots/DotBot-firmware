@@ -3,7 +3,10 @@
 import os
 from cryptography.hazmat.primitives import hashes
 
-PROJECT_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
+PROJECT_DIRECTORY = os.path.join(
+    "../../../projects/01crypto_sha256",
+    os.path.dirname(os.path.realpath(__file__))
+)
 INPUT_MESSAGE = b"HashThis!"
 SHA256_HASH_PATH = os.path.join(PROJECT_DIRECTORY, "expected_sha256.h")
 HEADER_FORMAT = """/*

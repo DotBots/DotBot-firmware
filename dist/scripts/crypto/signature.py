@@ -10,7 +10,10 @@ from cryptography.hazmat.primitives.serialization import (
     NoEncryption,
 )
 
-PROJECT_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
+PROJECT_DIRECTORY = os.path.join(
+    "../../../projects/01crypto_ed25519",
+    os.path.dirname(os.path.realpath(__file__))
+)
 PRIVATE_KEY_PATH = os.path.join(PROJECT_DIRECTORY, "private_key.h")
 PUBLIC_KEY_PATH = os.path.join(PROJECT_DIRECTORY, "public_key.h")
 EXPECTED_SIGNATURE_PATH = os.path.join(PROJECT_DIRECTORY, "expected_signature.h")
