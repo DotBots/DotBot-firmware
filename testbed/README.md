@@ -1,8 +1,7 @@
 # Testbed support
 
 This directory contains 3 applications that be used for the DotBot testbed support:
-- [bootloader](https://github.com/DotBots/Dotbot-firmware/tree/main/testbed/bootloader/)
-  contains a flexible bootloader application that
+- **testbed/bootloader** contains a flexible bootloader application that
   can be used to boot an image written at a given address on the flash memory.
   The bootloader application must be compiled in **Release** mode to make it as
   small as possible so that it stays under 4kiB. By default, the bootloader reads
@@ -14,18 +13,19 @@ This directory contains 3 applications that be used for the DotBot testbed suppo
     tries to boot the image in partition 0 the next time,
   - pressing button 2 will set partition 1 as active and reset the device so it
     tries to boot the image in partition 1 the next time,
-  - using the [dotbot-flash.py](https://github.com/DotBots/DotBot-firmware/blob/main/testbed/dotbot-flash.py) (see below), a new firmware
+  - using the [dotbot-flash.py](../dist/scripts/testbed/dotbot-flash.py) (see below)
+    provided in `dist/scripts/testbed`, a new firmware
     image can be sent over UART to the active partition. Once completed the
     device has to be reset manually so it boots on the newly flashed image.
 
-- [partition0](https://github.com/DotBots/Dotbot-firmware/tree/main/testbed/partition0/)
+- **testbed/partition0**
   contains a sample application that is linked so that
   it can be written at address 0x2000, after the bootloader and partition tables
   pages. This application simply blinks an LED (LED1 on nRF DKs) and also
   contains the logic to download 128B chunks of an image and to write them on
   partition 1,
 
-- [partition1](https://github.com/DotBots/Dotbot-firmware/tree/main/testbed/partition1/)
+- **testbed/partition1**
   contains another sample application that is
   linked so that it can be written at address 0x41000 on nrf52833 or 0x81000 on
   nrf52840/nrf5340-app, after the image on partition 0. This application also
@@ -58,11 +58,10 @@ organized as follows:
 The start address of partition 0 and partition 1 applications is defined in the
 `<Target>_MemoryMap.xml` file available in each application directory and has to
 match the start address of each partition defined in the bootloader
-[main.c](https://github.com/DotBots/Dotbot-firmware/blob/main/testbed/bootloader/main.c).
+`main.c`.
 
-The [dotbot-flash.py](https://github.com/DotBots/DotBot-firmware/blob/main/testbed/dotbot-flash.py)
-Python script is also provided: it
-reads a .bin firmware file and sends to a device over UART. The device can either
+The [dotbot-flash.py](../dist/scripts/testbed/dotbot-flash.py) Python script is also provided:
+it reads a .bin firmware file and sends to a device over UART. The device can either
 be:
   - rebooted in bootloader mode (hold button 4 pressed during reset).
   Make sure to build the image with an offset on flash that corresponds to the
@@ -72,8 +71,7 @@ be:
   application, which is just forwarding the bytes received from UART over radio.
   In this case, the firmware is split in 128B chunks and reconstructed on flash
   by an application running a code like in
-  [partition0](https://github.com/DotBots/Dotbot-firmware/tree/main/testbed/partition0/)/
-  [partition1](https://github.com/DotBots/Dotbot-firmware/tree/main/testbed/partition1/)
+  **testbed/partition0**/**testbed/partition1**
   applications. Make sure that the firmware was built with the right offset on flash, following
   this rule: if the active image is on partition 0, the new firmware has to be
   built for partition 1 and vice versa.
@@ -85,5 +83,5 @@ system.
 To install all the Python dependencies (pydotbot, click and tqdm), run:
 
 ```
-pip install -r requirements.txt
+pip install -r dist/scripts/testbed/requirements.txt
 ```
