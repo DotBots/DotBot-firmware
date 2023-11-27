@@ -22,12 +22,13 @@
 // Max value of the PWM counter register (100us => 10kHz)
 #define M_TOP (100)
 // 4 PWM channels are used
+#define PWM_DEV      (0)
 #define PWM_CHANNELS (4)
 
 //=========================== public ==========================================
 
 void db_motors_init(void) {
-    db_pwm_init(0, db_motors_pins, PWM_CHANNELS, M_TOP);
+    db_pwm_init(PWM_DEV, db_motors_pins, PWM_CHANNELS, M_TOP);
 }
 
 void db_motors_set_speed(int16_t l_speed, int16_t r_speed) {
@@ -74,5 +75,5 @@ void db_motors_set_speed(int16_t l_speed, int16_t r_speed) {
     }
 
     // Update PWM values
-    db_pwm_channels_set(0, pwm_seq);
+    db_pwm_channels_set(PWM_DEV, pwm_seq);
 }

@@ -141,10 +141,10 @@
  * @name    RGB LED pwm pins definitions
  * @{
  */
-#define DB_RGB_LED_PWM_RED_PORT   1
-#define DB_RGB_LED_PWM_RED_PIN    7
-#define DB_RGB_LED_PWM_GREEN_PORT 0
-#define DB_RGB_LED_PWM_GREEN_PIN  10
+#define DB_RGB_LED_PWM_RED_PORT   0
+#define DB_RGB_LED_PWM_RED_PIN    10
+#define DB_RGB_LED_PWM_GREEN_PORT 1
+#define DB_RGB_LED_PWM_GREEN_PIN  7
 #define DB_RGB_LED_PWM_BLUE_PORT  1
 #define DB_RGB_LED_PWM_BLUE_PIN   6
 /** @} */
