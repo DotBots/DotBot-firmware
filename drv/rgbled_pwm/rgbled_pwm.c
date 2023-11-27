@@ -21,15 +21,18 @@
 #define PWM_CHANNELS  (3)
 #define PWM_MAX_VALUE (UINT8_MAX)
 
+static pwm_t _pwm_dev = 0;
+
 //=========================== public ===========================================
 
 void db_rgbled_pwm_init(const db_rgbled_pwm_conf_t *conf) {
-    db_pwm_init(conf->pwm, conf->pins, PWM_CHANNELS, PWM_MAX_VALUE);
+    _pwm_dev = conf->pwm;
+    db_pwm_init(_pwm_dev, conf->pins, PWM_CHANNELS, PWM_MAX_VALUE);
     uint16_t pwm_seq[PWM_CHANNELS] = { 0, 0, 0 };
-    db_pwm_channels_set(1, pwm_seq);
+    db_pwm_channels_set(_pwm_dev, pwm_seq);
 }
 
 void db_rgbled_pwm_set_color(uint8_t red, uint8_t green, uint8_t blue) {
-    uint16_t pwm_seq[PWM_CHANNELS] = { UINT8_MAX - red, UINT8_MAX - green, UINT8_MAX - blue };
-    db_pwm_channels_set(1, pwm_seq);
+    uint16_t pwm_seq[PWM_CHANNELS] = { red, green, blue };
+    db_pwm_channels_set(_pwm_dev, pwm_seq);
 }
