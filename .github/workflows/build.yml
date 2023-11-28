@@ -22,10 +22,10 @@ jobs:
       - name: Build projects
         run: BUILD_TARGET=${{ matrix.target }} BUILD_CONFIG=${{ matrix.config }} make docker
       - name: Build for release and convert elf artifacts to hex
-        if: matrix.target == 'dotbot-v1' && matrix.config == 'Release'
+        if: matrix.config == 'Release'
         run: BUILD_TARGET=${{ matrix.target }} DOCKER_TARGETS="artifacts" BUILD_CONFIG=${{ matrix.config }} make docker
       - name: Upload artifact
-        if: contains(fromJSON('["dotbot-v1", "dotbot-v2", "nrf52833dk", "nrf52840dk", "sailbot-v1"]'), matrix.target) && matrix.config == 'Release'
+        if: matrix.config == 'Release'
         uses: actions/upload-artifact@v3
         with:
           name: artifacts
