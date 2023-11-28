@@ -86,7 +86,15 @@ endif
 # remove incompatible apps (nrf5340) for nrf52833dk/nrf52840dk build
 ifneq (,$(filter nrf52833dk nrf52840dk,$(BUILD_TARGET)))
   PROJECTS := $(filter-out 01bsp_qdec 01drv_move 03app_nrf5340_%,$(PROJECTS))
-  ARTIFACT_PROJECTS ?= 03app_dotbot_gateway
+  ARTIFACT_PROJECTS := 03app_dotbot_gateway
+endif
+
+ifneq (,$(filter nrf5340dk-app,$(BUILD_TARGET)))
+  ARTIFACT_PROJECTS := 03app_dotbot_gateway
+endif
+
+ifneq (,$(filter nrf5340dk-net,$(BUILD_TARGET)))
+  ARTIFACT_PROJECTS := 03app_nrf5340_net
 endif
 
 SRCS ?= $(shell find bsp/ -name "*.[c|h]") $(shell find crypto/ -name "*.[c|h]") $(shell find drv/ -name "*.[c|h]") $(shell find projects/ -name "*.[c|h]") $(shell find testbed/ -name "*.[c|h]")
