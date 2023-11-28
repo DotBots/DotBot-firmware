@@ -1,13 +1,24 @@
 # Getting started
 
-The following instructions will guide through running the default remote control example in your DotBot board.
+The following instructions will guide through running the default remote
+control example in your DotBot board. You will flash the `03app_dotbot_gateway`
+application on an nRF52840-DK that will act as the remote control and you will
+flash the `03app_dotbot` application on the DotBot.
 
 ## Materials
 
 - 1x DotBot board
-- 1x nRF52840-DK development board
+- 1x nRF5340-DK development board
 - 1x 10pin IDC programming cable
 - 1x micro USB able
+
+## Flashing the firmwares
+
+All DotBots and DKs are based on Nordic Semiconductors microcontrollers, so
+we recommend that you use Nordic programming tools to flash firmwares:
+
+- [nRF Command Line Tools](https://infocenter.nordicsemi.com/topic/ug_nrf_cltools/UG/cltools/nrf_command_line_tools_lpage.html)
+- [nRF Connect Programmer](https://infocenter.nordicsemi.com/topic/ug_nc_programmer/UG/nrf_connect_programmer/ncp_introduction.html)
 
 ## Download the firmware onto the boards
 
