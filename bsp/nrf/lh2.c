@@ -151,7 +151,7 @@ static const uint32_t _end_buffers[4][16] = {
 ///! NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module
 static const gpio_t _lh2_spi_fake_sck_gpio = {
     .port = 1,
-    .pin  = 6,
+    .pin  = 3,
 };
 
 static lh2_vars_t _lh2_vars;  ///< local data of the LH2 driver
