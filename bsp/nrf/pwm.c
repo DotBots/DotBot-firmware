@@ -26,8 +26,8 @@
 // Variable that stores the PWM duty cycle for all four PWM channels
 
 typedef struct {
-    uint16_t seq[PWM_COUNT][DB_PWM_MAX_CHANNELS];
-    size_t   num_channels[PWM_COUNT];
+    uint16_t seq[DB_PWM_MAX_CHANNELS];
+    size_t   num_channels;
 } pwm_vars_t;
 
 //=========================== variables ========================================
@@ -45,15 +45,15 @@ static NRF_PWM_Type *_pwm_devs[PWM_COUNT] = {
     NRF_PWM3,
 #endif
 };
-static pwm_vars_t pwm_vars;
+static pwm_vars_t pwm_vars[PWM_COUNT];
 
 //=========================== public ===========================================
 
 void db_pwm_init(pwm_t pwm, const gpio_t *pins, size_t num_channels, uint16_t mtop) {
 
-    pwm_vars.num_channels[pwm] = num_channels;
+    pwm_vars[pwm].num_channels = num_channels;
     // configure PWM channel pins;
-    for (uint8_t channel = 0; channel < pwm_vars.num_channels[pwm]; channel++) {
+    for (uint8_t channel = 0; channel < pwm_vars[pwm].num_channels; channel++) {
         // Configure the PWM pins as output.
         db_gpio_init(&pins[channel], DB_GPIO_OUT);
         _pwm_devs[pwm]->PSEL.OUT[channel] = (pins[channel].port << PWM_PSEL_OUT_PORT_Pos) |
@@ -75,7 +75,7 @@ void db_pwm_init(pwm_t pwm, const gpio_t *pins, size_t num_channels, uint16_t mt
                               (PWM_DECODER_MODE_RefreshCount << PWM_DECODER_MODE_Pos);  // Reload the duty cycle values after every period, no delay
 
     // Configure the EasyDMA variables for loading the duty cycle values.
-    _pwm_devs[pwm]->SEQ[0].PTR = ((uint32_t)(pwm_vars.seq[pwm]) << PWM_SEQ_PTR_PTR_Pos);
+    _pwm_devs[pwm]->SEQ[0].PTR = ((uint32_t)(pwm_vars[pwm].seq) << PWM_SEQ_PTR_PTR_Pos);
     _pwm_devs[pwm]->SEQ[0].CNT = (DB_PWM_MAX_CHANNELS << PWM_SEQ_CNT_CNT_Pos);
 
     _pwm_devs[pwm]->SEQ[0].REFRESH  = 0UL;
@@ -85,17 +85,17 @@ void db_pwm_init(pwm_t pwm, const gpio_t *pins, size_t num_channels, uint16_t mt
     _pwm_devs[pwm]->SHORTS = (PWM_SHORTS_LOOPSDONE_SEQSTART0_Enabled << PWM_SHORTS_LOOPSDONE_SEQSTART0_Pos);
 
     // For safety, initialize all PWMs to zero.
-    for (uint8_t channel = 0; channel < pwm_vars.num_channels[pwm]; channel++) {
+    for (uint8_t channel = 0; channel < pwm_vars[pwm].num_channels; channel++) {
         // Assigning values must go between 0 and M_TOP (100). the "| 1 <<15" is to set the polarity of the pwm waveform,
         // This way a value of 30 means the waveform is High 30% of the time, and the idle value of the PWM channels is 0v.
-        pwm_vars.seq[pwm][channel] = 0 | 1 << 15;
+        pwm_vars[pwm].seq[channel] = 0 | 1 << 15;
     }
 }
 
 void db_pwm_channel_set(pwm_t pwm, uint8_t channel, uint16_t value) {
     assert(channel < DB_PWM_MAX_CHANNELS);
 
-    pwm_vars.seq[pwm][channel] = value | 1 << 15;
+    pwm_vars[pwm].seq[channel] = value | 1 << 15;
     // Update PWM values
     _pwm_devs[pwm]->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
 }
@@ -103,8 +103,8 @@ void db_pwm_channel_set(pwm_t pwm, uint8_t channel, uint16_t value) {
 void db_pwm_channels_set(pwm_t pwm, uint16_t *values) {
     assert(sizeof(values) == DB_PWM_MAX_CHANNELS);
 
-    for (uint8_t channel = 0; channel < pwm_vars.num_channels[pwm]; channel++) {
-        pwm_vars.seq[pwm][channel] = values[channel] | 1 << 15;
+    for (uint8_t channel = 0; channel < pwm_vars[pwm].num_channels; channel++) {
+        pwm_vars[pwm].seq[channel] = values[channel] | 1 << 15;
     }
     // Update PWM values
     _pwm_devs[pwm]->TASKS_SEQSTART[0] = PWM_TASKS_SEQSTART_TASKS_SEQSTART_Trigger;
