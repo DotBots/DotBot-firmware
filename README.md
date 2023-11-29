@@ -35,14 +35,6 @@ CMSIS-DSP and nRF packages.
 For details on SEGGER Embedded Studio, read the
 [online documentation](https://studio.segger.com/index.htm?https://studio.segger.com/home.htm).
 
-## Flashing firmwares
-
-All DotBots and DKs are based on Nordic Semiconductors microcontrollers, so
-we recommend that you use Nordic programming tools to flash firmwares:
-
-- [nRF Command Line Tools](https://infocenter.nordicsemi.com/topic/ug_nrf_cltools/UG/cltools/nrf_command_line_tools_lpage.html)
-- [nRF Connect Programmer](https://infocenter.nordicsemi.com/topic/ug_nc_programmer/UG/nrf_connect_programmer/ncp_introduction.html)
-
 [ci-badge]: https://github.com/DotBots/DotBot-firmware/workflows/CI/badge.svg
 [ci-link]: https://github.com/DotBots/DotBot-firmware/actions?query=workflow%3ACI+branch%3Amain
 [doc-badge]: https://readthedocs.org/projects/dotbot-firmware/badge/?version=latest

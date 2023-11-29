@@ -1,41 +1,76 @@
-Getting started
-===============
+# Getting started
 
-The following instructions will guide through running the default remote control example in your DotBot board.
+The following instructions will guide through running the default remote
+control example in your DotBot board. You will flash the `03app_dotbot_gateway`
+application on an nRF DK board (nRF52833dk, nRF52840dk or nRF5340DK) that will
+act as the remote control and you will flash the `03app_dotbot` application on
+the DotBot (v1 or v2).
 
-Materials
----------
+## Materials
 
-* 1x DotBot board
-* 1x nRF52840-DK development board
-* 1x 10pin IDC programming cable
-* 1x micro USB able
+- 1x DotBot board
+- 1x nRF5340-DK development board
+- 1x 10pin IDC programming cable
+- 1x micro USB able
 
-Download the firmware onto the boards
--------------------------------------
+## Flashing Tools
 
-1. Download the latest releases (the .hex files) of the DotBot-firmware and of the Gateway firmware from
-[here](https://github.com/DotBots/DotBot-firmware/releases).
-You should end up with 2 files named *03app_dotbot.hex* and *03app_dotbot_gateway.hex*.
+All DotBots and DKs are based on Nordic Semiconductors microcontrollers, so
+we recommend that you use Nordic programming tools to flash the firmwares:
 
-2. Connect the nRF52840-DK to your computer through the micro USB cable
+- [nRF Command Line Tools][nrf-cli-tools]
+- [nRF Connect Programmer][nrf-connect-programmer]
+
+In this document, we will give instructions about how to flash using `nrfjprog`
+from [nRF Command Line Tools][nrf-cli-tools], so make sure it's installed on your
+computer before continuing.
+
+## Download and flash the DotBot gateway application firmware
+
+1. Download the latest release of the DotBot Gateway firmware (`.hex` file),
+  depending on the type of DK you use:
+  - [nrf52833dk][dotbot-gateway-hex-nrf52833dk]
+  - [nrf52840dk][dotbot-gateway-hex-nrf52840dk]
+  - [nrf5340dk application][dotbot-gateway-hex-nrf5340dk-app] and
+    [nrf5340 network][hex-nrf5340dk-net]
+
+2. Connect the nRF DK board to your computer through the micro USB cable
   ```{image} _static/images/nRF-DK_connected.jpg
   :alt: nRF DK connected to a computer with a micro USB cable
   :class: bg-primary
   :width: 300px
   :align: center
   ```
-  A USB drive called **JLINK** should appear on your computer.
-  ```{image} _static/images/JLINK_folder.png
-  :alt: JLINK drive folder
+
+3. Flash the firmware(s) on the DK. Depending on your type of DK board, do:
+  - for nrf52 based DK, run:
+  ```
+  nrfjprog --family NRF52 --debugreset --sectorerase --program <path to 03app_dotbot_gateway hex file>
+  ```
+  - for nrf53 based DK, flash both the application and network cores with the following 2 commands:
+  ```
+  nrfjprog --family NRF53 --debugreset --sectorerase --program <path to 03app_dotbot_gateway-nrf5340dk-app hex file>
+  nrfjprog --family NRF53 --coprocessor CP_NETWORK --debugreset --sectorerase --program <path to 03app_nrf5340_net hex file>
+  ```
+
+## Download and flash the DotBot application firmware
+
+1. Download the latest release of the DotBot firmware (`.hex` file),
+  depending on the version of DotBot you use:
+  - [DotBot v1][dotbot-hex-dotbot-v1]
+  - [DotBot v2][dotbot-hex-dotbot-v2] and also
+    [nrf5340 network][hex-nrf5340dk-net] for the network core
+
+2. Connect the nRF DK board to your computer through the micro USB cable
+  ```{image} _static/images/nRF-DK_connected.jpg
+  :alt: nRF DK connected to a computer with a micro USB cable
   :class: bg-primary
-  :width: 400px
+  :width: 300px
   :align: center
   ```
 
-3. Drag-&-Drop the Gateway firmware executable *03app_dotbot_gateway.hex* into the JLINK folder to program the development board.
-
-4. Connect the nRF52840-DK to the DotBot through the 10 pin IDC cable. Make sure the DotBot is turned ON and has full batteries installed.
+3. Connect the nRF DK to the DotBot through the 10 pin IDC cable. Make sure the
+  DotBot is turned ON and has full batteries installed
   ```{image} _static/images/dotbot_and_dk_connected.jpg
   :alt: DotBot connected to the nrF-DK through the 10pin IDC cable
   :class: bg-primary
@@ -43,12 +78,21 @@ You should end up with 2 files named *03app_dotbot.hex* and *03app_dotbot_gatewa
   :align: center
   ```
 
-5. Drag-&-Drop the DotBot firmware executable *03app_dotbot.hex* into the JLINK folder to program the DotBot.
+3. Flash the firmware(s) on the DotBot. Depending on your DotBot version, do:
+  - for v1.x (nrf52 based), run:
+  ```
+  nrfjprog --family NRF52 --debugreset --sectorerase --program <path to the hex file>
+  ```
+  - for v2.x (nrf53 based), flash both the application and network cores with the
+  following 2 commands:
+  ```
+  nrfjprog --family NRF53 --debugreset --sectorerase --program <path to dotbot-v2 hex file>
+  nrfjprog --family NRF53 --coprocessor CP_NETWORK --debugreset --sectorerase --program <path to 03app_nrf5340_net hex file>
+  ```
 
-6. Disconnect the DotBot from the nRF53840-DK
+4. Disconnect the DotBot from the nRF DK
 
-Controlling the DotBot
-----------------------
+## Play with the DotBot
 
 ```{image} _static/images/03app_dotbot.gif
 :alt: dotbot app demo
@@ -56,11 +100,26 @@ Controlling the DotBot
 :align: center
 ```
 
-At this point you should be able to control the movement of the DotBot using the buttons on the nRF52840-DK, the controls are as follows:
+At this point you should be able to control the movement of the DotBot using the
+buttons on the nRF DK, the controls are as follows:
 
-* **Button 1**: Left wheel moves forward
-* **Button 2**: Right wheel moves forward
-* **Button 3**: Left wheel moves backward
-* **Button 4**: Right wheel moves backward
+- **Button 1**: Left wheel moves forward
+- **Button 2**: Right wheel moves forward
+- **Button 3**: Left wheel moves backward
+- **Button 4**: Right wheel moves backward
 
-You can combine buttons 1 & 2 to move the DotBot straight forward, buttons 3 & 4 to move the DotBot backward, etc.
+You can combine buttons 1 & 2 to move the DotBot straight forward, buttons 3 &
+4 to move the DotBot backward, etc.
+
+
+[nrf-cli-tools]: https://infocenter.nordicsemi.com/topic/ug_nrf_cltools/UG/cltools/nrf_command_line_tools_lpage.html
+[nrf-connect-programmer]: https://infocenter.nordicsemi.com/topic/ug_nc_programmer/UG/nrf_connect_programmer/ncp_introduction.html
+
+[dotbot-gateway-hex-nrf52833dk]: https://github.com/DotBots/DotBot-firmware/releases/latest/download/03app_dotbot_gateway-nrf52833dk.hex
+[dotbot-gateway-hex-nrf52840dk]: https://github.com/DotBots/DotBot-firmware/releases/latest/download/03app_dotbot_gateway-nrf52840dk.hex
+[dotbot-gateway-hex-nrf5340dk-app]: https://github.com/DotBots/DotBot-firmware/releases/latest/download/03app_dotbot_gateway-nrf5340dk-app.hex
+
+[dotbot-hex-dotbot-v1]: https://github.com/DotBots/DotBot-firmware/releases/latest/download/03app_dotbot-dotbot-v1.hex
+[dotbot-hex-dotbot-v2]: https://github.com/DotBots/DotBot-firmware/releases/latest/download/03app_dotbot-dotbot-v2.hex
+
+[hex-nrf5340dk-net]: https://github.com/DotBots/DotBot-firmware/releases/latest/download/03app_nrf5340_net-nrf5340dk-net.hex
