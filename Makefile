@@ -73,18 +73,18 @@ OTAP_APPS := $(filter-out bootloader,$(OTAP_APPS))
 
 # remove incompatible apps (nrf5340, sailbot gateway) for dotbot (v1, v2) builds
 ifneq (,$(filter dotbot-v1,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 01bsp_qdec 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_nrf5340_% 03app_freebot,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_xgo 03app_nrf5340_% 03app_freebot,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
 endif
 
 ifneq (,$(filter dotbot-v2,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_nrf5340_net 03app_freebot,$(PROJECTS))
+  PROJECTS := $(filter-out 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_xgo 03app_nrf5340_net 03app_freebot,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
 endif
 
 # remove incompatible apps (nrf5340, dotbot, gateway) for sailbot-v1 build
 ifeq (sailbot-v1,$(BUILD_TARGET))
-  PROJECTS := $(filter-out 01bsp_qdec 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_dotbot 03app_nrf5340_% 03app_freebot,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_dotbot 03app_xgo 03app_nrf5340_% 03app_freebot,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_sailbot
 endif
 
