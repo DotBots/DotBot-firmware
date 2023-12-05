@@ -53,6 +53,11 @@ else ifeq (nrf5340dk-net,$(BUILD_TARGET))
     03app_log_dump \
     03app_nrf5340_net \
     #
+else ifeq (xgo,$(BUILD_TARGET))
+  PROJECTS ?= \
+    01bsp_uart \
+    03app_xgo \
+    #
 else
   PROJECTS ?= $(shell find projects/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/projects// | sort)
 endif
