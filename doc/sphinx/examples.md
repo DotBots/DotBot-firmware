@@ -26,6 +26,7 @@ _examples/01bsp_radio_txrx
 _examples/01bsp_rgbled
 _examples/01bsp_rng
 _examples/01bsp_rpm
+_examples/01bsp_saadc
 _examples/01bsp_timer
 _examples/01bsp_timer_hf
 _examples/01bsp_uart
