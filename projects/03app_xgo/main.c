@@ -1,10 +1,12 @@
 /**
- * @file 03app_xgo.c
- * @author Alexandre Abadie <alexandre.abadie@inria.fr>
+ * @file
+ * @defgroup project_xgo    XGO application
+ * @ingroup projects
  * @brief This application is used to control an XGO robot remotely
  *
  * The serial communication protocol is documented at http://wiki.elecfreaks.com/en/pico/cm4-xgo-robot-kit/advanced-development/serial-protocol
  *
+ * @author Alexandre Abadie <alexandre.abadie@inria.fr>
  * @copyright Inria, 2023
  *
  */
