@@ -64,6 +64,12 @@ else ifeq (nrf5340dk-net,$(BUILD_TARGET))
 else ifeq (freebot,$(BUILD_TARGET))
   PROJECTS ?= 03app_freebot
   ARTIFACT_PROJECTS := 03app_dotbot
+else ifeq (xgo,$(BUILD_TARGET))
+  PROJECTS ?= \
+    01bsp_uart \
+    03app_xgo \
+    #
+  ARTIFACT_PROJECTS := 03app_freebot
 else
   PROJECTS ?= $(shell find projects/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/projects// | sort)
 endif
@@ -86,6 +92,10 @@ endif
 ifeq (sailbot-v1,$(BUILD_TARGET))
   PROJECTS := $(filter-out 01bsp_qdec 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_dotbot 03app_xgo 03app_nrf5340_% 03app_freebot,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_sailbot
+endif
+
+ifneq (,$(filter nrf52833dk,$(BUILD_TARGET)))
+  PROJECTS := $(filter-out 01crypto_%,$(PROJECTS))
 endif
 
 # remove incompatible apps (nrf5340) for nrf52833dk/nrf52840dk build
