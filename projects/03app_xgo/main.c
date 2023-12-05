@@ -169,7 +169,7 @@ static void _write(uint8_t address, uint8_t data) {
     frame.address           = address;
     frame.data              = data;
     _compute_crc(&frame);
-    db_uart_write((uint8_t *)&frame, sizeof(xgo_write_frame_t));
+    db_uart_write(0, (uint8_t *)&frame, sizeof(xgo_write_frame_t));
 }
 
 static void _action(xgo_action_id_t action_id) {
@@ -273,7 +273,7 @@ int main(void) {
     // Retrieve the device id once at startup
     _xgo_vars.device_id = db_device_id();
 
-    db_uart_init(&_uart_rx, &_uart_tx, XGO_UART_BAUDRATE, NULL);
+    db_uart_init(0, &_uart_rx, &_uart_tx, XGO_UART_BAUDRATE, NULL);
 
     db_timer_hf_init();
     db_timer_hf_set_periodic_us(0, XGO_TIMEOUT_CHECK_DELAY_US, &_timeout_check);
