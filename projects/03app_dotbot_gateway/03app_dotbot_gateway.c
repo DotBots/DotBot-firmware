@@ -28,8 +28,13 @@
 
 //=========================== defines ==========================================
 
-#define DB_BUFFER_MAX_BYTES (255U)                           ///< Max bytes in UART receive buffer
-#define DB_UART_BAUDRATE    (1000000UL)                      ///< UART baudrate used by the gateway
+#define DB_BUFFER_MAX_BYTES (255U)       ///< Max bytes in UART receive buffer
+#define DB_UART_BAUDRATE    (1000000UL)  ///< UART baudrate used by the gateway
+#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+#define DB_UART_INDEX (1)  ///< Index of UART peripheral to use
+#else
+#define DB_UART_INDEX (0)  ///< Index of UART peripheral to use
+#endif
 #define DB_RADIO_QUEUE_SIZE (8U)                             ///< Size of the radio queue (must by a power of 2)
 #define DB_UART_QUEUE_SIZE  ((DB_BUFFER_MAX_BYTES + 1) * 2)  ///< Size of the UART queue size (must by a power of 2)
 
@@ -69,7 +74,7 @@ static gateway_vars_t _gw_vars;
 static void _uart_callback(uint8_t data) {
     if (!_gw_vars.handshake_done) {
         uint8_t version = DB_FIRMWARE_VERSION;
-        db_uart_write(0, &version, 1);
+        db_uart_write(DB_UART_INDEX, &version, 1);
         if (data == version) {
             _gw_vars.handshake_done = true;
         }
@@ -105,7 +110,7 @@ int main(void) {
     _gw_vars.radio_queue.current = 0;
     _gw_vars.radio_queue.last    = 0;
     _gw_vars.handshake_done      = false;
-    db_uart_init(0, &db_uart_rx, &db_uart_tx, DB_UART_BAUDRATE, &_uart_callback);
+    db_uart_init(DB_UART_INDEX, &db_uart_rx, &db_uart_tx, DB_UART_BAUDRATE, &_uart_callback);
 
     db_radio_rx();
 
@@ -149,7 +154,7 @@ int main(void) {
 
         while (_gw_vars.radio_queue.current != _gw_vars.radio_queue.last) {
             size_t frame_len = db_hdlc_encode(_gw_vars.radio_queue.packets[_gw_vars.radio_queue.current].buffer, _gw_vars.radio_queue.packets[_gw_vars.radio_queue.current].length, _gw_vars.hdlc_tx_buffer);
-            db_uart_write(0, _gw_vars.hdlc_tx_buffer, frame_len);
+            db_uart_write(DB_UART_INDEX, _gw_vars.hdlc_tx_buffer, frame_len);
             _gw_vars.radio_queue.current = (_gw_vars.radio_queue.current + 1) & (DB_RADIO_QUEUE_SIZE - 1);
         }
 
