@@ -1,14 +1,19 @@
 <!DOCTYPE CrossStudio_Project_File>
 <solution Name="projects-nrf5340-app" target="8" version="2">
-  <project Name="03app_nrf5340_app">
+  <project Name="01crypto_cc312">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_clock(bsp)"
-      project_directory="03app_nrf5340_app"
+      arm_linker_variant="SEGGER"
+      project_dependencies="00crypto_cc312(crypto)"
+      project_directory="01crypto_cc312"
       project_type="Executable" />
+    <configuration
+      Name="Debug"
+      c_user_include_directories="/home/gfedrech/Developer/inria/dev/explore/sdk-nrfxlib/crypto/nrf_cc312_mbedcrypto/include;/home/gfedrech/Developer/inria/dev/explore/sdk-nrfxlib/crypto/nrf_cc312_mbedcrypto/include/mbedtls;/home/gfedrech/Developer/inria/dev/explore/sdk-nrfxlib/crypto/nrf_cc312_mbedcrypto/include/mbedtls_extra;/home/gfedrech/Developer/inria/dev/explore/mbedtls/include"
+      linker_additional_files="/home/gfedrech/Developer/inria/dev/explore/sdk-nrfxlib/crypto/nrf_cc312_platform/lib/cortex-m33/hard-float/no-interrupts/libnrf_cc312_platform_0.9.18.a;/home/gfedrech/Developer/inria/dev/explore/sdk-nrfxlib/crypto/nrf_cc312_mbedcrypto/lib/cortex-m33/hard-float/no-interrupts/libnrf_cc312_core_0.9.18.a;/home/gfedrech/Developer/inria/dev/explore/sdk-nrfxlib/crypto/nrf_cc312_mbedcrypto/lib/cortex-m33/hard-float/no-interrupts/libnrf_cc312_legacy_crypto_0.9.18.a;/home/gfedrech/Developer/inria/dev/explore/sdk-nrfxlib/crypto/nrf_cc312_mbedcrypto/lib/cortex-m33/hard-float/no-interrupts/libnrf_cc312_psa_crypto_0.9.18.a" />
     <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -17,14 +22,14 @@
       </file>
     </folder>
     <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
       <file file_name="$(DeviceLinkerScript)">
         <configuration Name="Common" file_type="Linker Script" />
       </file>
       <file file_name="$(DeviceMemoryMap)">
         <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
     <folder Name="Source Files">
@@ -32,20 +37,18 @@
       <file file_name="main.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="$(SeggerThumbStartup)" />
       <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
+      <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
-  <project Name="01crypto_cc312">
+  <project Name="03app_nrf5340_app">
     <configuration
       Name="Common"
-      arm_linker_variant="SEGGER"
-      linker_additional_files="$(SolutionDir)/../crypto/nrf_cc310/lib/libnrf_cc310_0.9.13-hard-float-no-interrupts-$(Target).a"
-      project_dependencies="00crypto_cc312(crypto)"
-      project_directory="01crypto_cc312"
+      project_dependencies="00bsp_clock(bsp)"
+      project_directory="03app_nrf5340_app"
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(DeviceCommonHeaderFile)" />

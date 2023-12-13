@@ -13,6 +13,8 @@
 #include <string.h>
 //#include "ed25519.h"
 
+#include "cc3xx_psa_asymmetric_signature.h"
+
 #include "private_key.h"
 #include "public_key.h"
 #include "expected_signature.h"
@@ -31,6 +33,13 @@
 //=========================== main =============================================
 
 int main(void) {
+
+    // trying to instantiate attributes for cc3xx_sign_message...
+    //psa_key_attributes_t *attributes = psa_key_attributes_init();
+    //cc3xx_sign_message(attributes, NULL, 0, NULL, NULL, 0, NULL, 0, NULL);
+
+    // the real limitation is here: how to overcome "undefined symbol psa_driver_wrapper_hash_compute" and friends
+    cc3xx_sign_message(NULL, NULL, 0, NULL, NULL, 0, NULL, 0, NULL);
 
     puts("SUCCESS!");
 
