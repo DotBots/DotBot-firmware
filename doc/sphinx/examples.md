@@ -44,6 +44,7 @@ Libraries examples
 _examples/01drv_imu
 _examples/01drv_ism330
 _examples/01drv_lis2mdl
+_examples/01drv_lis3mdl
 _examples/01drv_lsm6ds
 _examples/01drv_move
 _examples/01drv_pid
