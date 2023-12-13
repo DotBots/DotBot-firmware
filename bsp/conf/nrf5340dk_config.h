@@ -138,6 +138,16 @@
 /** @} */
 
 /**
+ * @name    LIS2MDL pin definitions
+ * @{
+ */
+#define DB_LIS3MDL_DRDY_PORT DB_DEBUG2_PORT
+#define DB_LIS3MDL_DRDY_PIN  DB_DEBUG2_PIN
+#define DB_LIS3MDL_INT_PORT  DB_DEBUG3_PORT
+#define DB_LIS3MDL_INT_PIN   DB_DEBUG3_PIN
+/** @} */
+
+/**
  * @name    RGB LED pwm pins definitions
  * @{
  */
