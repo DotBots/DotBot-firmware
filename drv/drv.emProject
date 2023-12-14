@@ -49,6 +49,15 @@
     <file file_name="lis2mdl.c" />
     <file file_name="../lis2mdl.h" />
   </project>
+  <project Name="00drv_lis3mdl">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_i2c(bsp);00bsp_gpio(bsp)"
+      project_directory="lis3mdl"
+      project_type="Library" />
+    <file file_name="lis3mdl.c" />
+    <file file_name="../lis3mdl.h" />
+  </project>
   <project Name="00drv_log_flash">
     <configuration
       Name="Common"

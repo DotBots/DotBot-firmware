@@ -25,6 +25,7 @@ ifeq (nrf5340dk-app,$(BUILD_TARGET))
     01bsp_timer_hf \
     01bsp_uart \
     01drv_lis2mdl \
+    01drv_lis3mdl \
     01drv_move \
     01drv_pid \
     03app_dotbot \
@@ -61,7 +62,7 @@ TESTBED_APPS ?= $(shell find testbed/ -maxdepth 1 -mindepth 1 -type d | tr -d "/
 
 # remove incompatible apps (nrf5340, sailbot gateway) for dotbot (v1, v2) builds
 ifneq (,$(filter dotbot-v1,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 01bsp_qdec 01crypto_% 01drv_move 03app_dotbot_gateway 03app_sailbot 03app_nrf5340_%,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 01crypto_% 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_sailbot 03app_nrf5340_%,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
   TESTBED_APPS := $(filter-out bootloader partition0 partition1,$(TESTBED_APPS))
 endif
@@ -74,7 +75,7 @@ endif
 
 # remove incompatible apps (nrf5340, dotbot, gateway) for sailbot-v1 build
 ifeq (sailbot-v1,$(BUILD_TARGET))
-  PROJECTS := $(filter-out 01bsp_qdec 01crypto_% 01drv_move 03app_dotbot_gateway 03app_dotbot 03app_nrf5340_%,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 01crypto_% 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot 03app_nrf5340_%,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_sailbot
   TESTBED_APPS := $(filter-out bootloader partition0 partition1,$(TESTBED_APPS))
 endif
