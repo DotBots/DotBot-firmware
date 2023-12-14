@@ -126,6 +126,14 @@
     <file file_name="nrf/$(RngImplementationFile)" />
     <file file_name="rng.h" />
   </project>
+  <project Name="00bsp_saadc">
+    <configuration
+      Name="Common"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf/saadc.c" />
+    <file file_name="saadc.h" />
+  </project>
   <project Name="00bsp_timer">
     <configuration
       Name="Common"

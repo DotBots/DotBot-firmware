@@ -25,6 +25,7 @@ _api/bsp_radio
 _api/bsp_rgbled
 _api/bsp_rng
 _api/bsp_rpm
+_api/bsp_saadc
 _api/bsp_timer
 _api/bsp_timer_hf
 _api/bsp_uart
