@@ -63,7 +63,8 @@ if not rtd_version or rtd_version.isdigit() or rtd_version == "latest":
     json_url = "_static/switcher.json"
 elif rtd_version == "stable":
     rtd_version = f"{rtd_git_identifier}"
-release = rtd_version
+elif rtd_version_type == "tag":
+    rtd_version = f"{rtd_git_identifier}"
 
 html_theme_options = {
     "external_links": [
