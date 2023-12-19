@@ -2,14 +2,14 @@
 
 The following instructions will guide through running the default remote
 control example in your DotBot board. You will flash the `03app_dotbot_gateway`
-application on an nRF DK board (nRF52833dk, nRF52840dk or nRF5340DK) that will
+application on an nRF DK board (nRF52833-DK, nRF52840-DK or nRF5340-DK) that will
 act as the remote control and you will flash the `03app_dotbot` application on
 the DotBot (v1 or v2).
 
 ## Materials
 
 - 1x DotBot board
-- 1x nRF5340-DK development board
+- 1x nRF52833-DK or nRF52840-DK or nRF5340-DK development board
 - 1x 10pin IDC programming cable
 - 1x micro USB able
 
@@ -29,10 +29,10 @@ computer before continuing.
 
 1. Download the latest release of the DotBot Gateway firmware (`.hex` file),
   depending on the type of DK you use:
-  - [nrf52833dk][dotbot-gateway-hex-nrf52833dk]
-  - [nrf52840dk][dotbot-gateway-hex-nrf52840dk]
-  - [nrf5340dk application][dotbot-gateway-hex-nrf5340dk-app] and
-    [nrf5340 network][hex-nrf5340dk-net]
+  - [nRF52833-DK][dotbot-gateway-hex-nrf52833dk]
+  - [nRF52840-DK][dotbot-gateway-hex-nrf52840dk]
+  - nRF5340-DK: [application core][dotbot-gateway-hex-nrf5340dk-app] and
+    [network core][hex-nrf5340dk-net]
 
 2. Connect the nRF DK board to your computer through the micro USB cable
   ```{image} _static/images/nRF-DK_connected.jpg
@@ -58,8 +58,8 @@ computer before continuing.
 1. Download the latest release of the DotBot firmware (`.hex` file),
   depending on the version of DotBot you use:
   - [DotBot v1][dotbot-hex-dotbot-v1]
-  - [DotBot v2][dotbot-hex-dotbot-v2] and also
-    [nrf5340 network][hex-nrf5340dk-net] for the network core
+  - DotBot v2: [application core][dotbot-hex-dotbot-v2] and also
+    [network core][hex-nrf5340dk-net] for the network core
 
 2. Connect the nRF DK board to your computer through the micro USB cable
   ```{image} _static/images/nRF-DK_connected.jpg
