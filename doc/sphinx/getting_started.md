@@ -53,6 +53,9 @@ computer before continuing.
   nrfjprog --family NRF53 --coprocessor CP_NETWORK --debugreset --sectorerase --program <path to 03app_nrf5340_net hex file>
   ```
 
+4. After flashing the firmware LED1 blinks during one second to indicate that
+  everything is working as expected.
+
 ## Download and flash the DotBot application firmware
 
 1. Download the latest release of the DotBot firmware (`.hex` file),

@@ -64,6 +64,7 @@ typedef struct {
     gateway_radio_packet_queue_t radio_queue;                              ///< Queue used to process received radio packets outside of interrupt
     gateway_uart_queue_t         uart_queue;                               ///< Queue used to process received UART bytes outside of interrupt
     bool                         handshake_done;                           ///< Whether startup handshake is done
+    bool                         led1_blink;                               ///< Whether the status LED should blink
 } gateway_vars_t;
 
 //=========================== variables ========================================
@@ -94,6 +95,20 @@ static void _radio_callback(uint8_t *packet, uint8_t length) {
     _gw_vars.radio_queue.last                                      = (_gw_vars.radio_queue.last + 1) & (DB_RADIO_QUEUE_SIZE - 1);
 }
 
+static void _led1_blink_fast(void) {
+    if (_gw_vars.led1_blink) {
+        db_gpio_toggle(&db_led1);
+    }
+}
+
+static void _led2_shutdown(void) {
+    db_gpio_set(&db_led2);
+}
+
+static void _led3_shutdown(void) {
+    db_gpio_set(&db_led3);
+}
+
 //=========================== private ==========================================
 
 static void _update_move_raw_command(protocol_move_raw_command_t *command) {
@@ -122,9 +137,21 @@ static void _update_move_raw_command(protocol_move_raw_command_t *command) {
  *  @brief The program starts executing here.
  */
 int main(void) {
+    _gw_vars.led1_blink = true;
+    // Initialize user feedback LEDs
+    db_gpio_init(&db_led1, DB_GPIO_OUT);  // Global status
+    db_gpio_set(&db_led1);
+    db_timer_init();
+    db_timer_set_periodic_ms(0, 50, _led1_blink_fast);
+    db_timer_set_periodic_ms(1, 20, _led2_shutdown);
+    db_timer_set_periodic_ms(2, 20, _led3_shutdown);
+    db_gpio_init(&db_led2, DB_GPIO_OUT);  // Packet received from Radio (e.g from a DotBot)
+    db_gpio_set(&db_led2);
+    db_gpio_init(&db_led3, DB_GPIO_OUT);  // Packet received from UART (e.g from the computer)
+    db_gpio_set(&db_led3);
+
     db_board_init();
     db_protocol_init();
-    db_timer_init();
 
     // Configure Radio as transmitter
     db_radio_init(&_radio_callback, DB_RADIO_BLE_1MBit);  // All RX packets received are forwarded in an HDLC frame over UART
@@ -138,10 +165,16 @@ int main(void) {
 
     db_radio_rx();
 
+    // Initialize buttons used to broadcast move raw values to DotBots
     db_gpio_init(&db_btn2, DB_GPIO_IN_PU);
     db_gpio_init(&db_btn3, DB_GPIO_IN_PU);
     db_gpio_init(&db_btn4, DB_GPIO_IN_PU);
     db_gpio_init(&db_btn1, DB_GPIO_IN_PU);
+
+    // Initialization done, wait a bit and shutdown status LED
+    db_timer_delay_s(1);
+    db_gpio_set(&db_led1);
+    _gw_vars.led1_blink = false;
 
     int8_t prev_left  = 0;
     int8_t prev_right = 0;
@@ -163,12 +196,14 @@ int main(void) {
         }
 
         while (_gw_vars.radio_queue.current != _gw_vars.radio_queue.last) {
+            db_gpio_clear(&db_led2);
             size_t frame_len = db_hdlc_encode(_gw_vars.radio_queue.packets[_gw_vars.radio_queue.current].buffer, _gw_vars.radio_queue.packets[_gw_vars.radio_queue.current].length, _gw_vars.hdlc_tx_buffer);
             db_uart_write(DB_UART_INDEX, _gw_vars.hdlc_tx_buffer, frame_len);
             _gw_vars.radio_queue.current = (_gw_vars.radio_queue.current + 1) & (DB_RADIO_QUEUE_SIZE - 1);
         }
 
         while (_gw_vars.uart_queue.current != _gw_vars.uart_queue.last) {
+            db_gpio_clear(&db_led3);
             db_hdlc_state_t hdlc_state = db_hdlc_rx_byte(_gw_vars.uart_queue.buffer[_gw_vars.uart_queue.current]);
             switch ((uint8_t)hdlc_state) {
                 case DB_HDLC_STATE_IDLE:
