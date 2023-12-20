@@ -24,6 +24,7 @@
 #include "hdlc.h"
 #include "protocol.h"
 #include "radio.h"
+#include "timer.h"
 #include "uart.h"
 
 //=========================== defines ==========================================
@@ -93,6 +94,28 @@ static void _radio_callback(uint8_t *packet, uint8_t length) {
     _gw_vars.radio_queue.last                                      = (_gw_vars.radio_queue.last + 1) & (DB_RADIO_QUEUE_SIZE - 1);
 }
 
+//=========================== private ==========================================
+
+static void _update_move_raw_command(protocol_move_raw_command_t *command) {
+    // Read Button 1 (P0.11)
+    if (!db_gpio_read(&db_btn1)) {
+        command->left_y = 100;
+    } else if (!db_gpio_read(&db_btn2)) {
+        command->left_y = -100;
+    } else {
+        command->left_y = 0;
+    }
+
+    // Read Button 2 (P0.12)
+    if (!db_gpio_read(&db_btn3)) {
+        command->right_y = 100;
+    } else if (!db_gpio_read(&db_btn4)) {
+        command->right_y = -100;
+    } else {
+        command->right_y = 0;
+    }
+}
+
 //=========================== main =============================================
 
 /**
@@ -101,6 +124,7 @@ static void _radio_callback(uint8_t *packet, uint8_t length) {
 int main(void) {
     db_board_init();
     db_protocol_init();
+    db_timer_init();
 
     // Configure Radio as transmitter
     db_radio_init(&_radio_callback, DB_RADIO_BLE_1MBit);  // All RX packets received are forwarded in an HDLC frame over UART
@@ -123,24 +147,8 @@ int main(void) {
     int8_t prev_right = 0;
 
     while (1) {
-        protocol_move_raw_command_t command;
-        // Read Button 1 (P0.11)
-        if (!db_gpio_read(&db_btn1)) {
-            command.left_y = 100;
-        } else if (!db_gpio_read(&db_btn2)) {
-            command.left_y = -100;
-        } else {
-            command.left_y = 0;
-        }
-
-        // Read Button 2 (P0.12)
-        if (!db_gpio_read(&db_btn3)) {
-            command.right_y = 100;
-        } else if (!db_gpio_read(&db_btn4)) {
-            command.right_y = -100;
-        } else {
-            command.right_y = 0;
-        }
+        protocol_move_raw_command_t command = { 0 };
+        _update_move_raw_command(&command);
 
         bool send_command = (command.left_y != 0) || (command.right_y != 0) || (command.left_y == 0 && command.left_y != prev_left) || (command.right_y == 0 && command.right_y != prev_right);
         if (send_command) {
@@ -150,6 +158,8 @@ int main(void) {
 
             prev_left  = command.left_y;
             prev_right = command.right_y;
+
+            db_timer_delay_ms(50);
         }
 
         while (_gw_vars.radio_queue.current != _gw_vars.radio_queue.last) {
