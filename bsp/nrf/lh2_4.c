@@ -62,14 +62,18 @@ typedef struct {
 
 //=========================== variables ========================================
 
-static const uint32_t _polynomials[4] = {
+static const uint32_t _polynomials[8] = {
     0x0001D258,
     0x00017E04,
     0x0001FF6B,
     0x00013F67,
+    0x0001B9EE,
+    0x000198D1,
+    0x000178C7,
+    0x00018A55,
 };
 
-static const uint32_t _end_buffers[4][16] = {
+static const uint32_t _end_buffers[8][16] = {
     {
         // p0
         0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
@@ -145,6 +149,82 @@ static const uint32_t _end_buffers[4][16] = {
         0b01110110010101011,  // 13/16 way through
         0b00010000110100010,  // 14/16 way through
         0b00010111110101110,  // 15/16 way through
+    },
+    {
+        // p4
+        0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
+        0b11000011111110101,  // 1/16 way through
+        0b01111110000100101,  // 2/16 way through
+        0b01011100011111100,  // 3/16 way through
+        0b11001000111100000,  // 4/16 way through
+        0b00010001010010110,  // 5/16 way through
+        0b00100010100111011,  // 6/16 way through
+        0b10111101100101000,  // 7/16 way through
+        0b01000101010111010,  // 8/16 way through
+        0b10111101100011011,  // 9/16 way through
+        0b11110100111101000,  // 10/16 way through
+        0b11100010000111100,  // 11/16 way through
+        0b11010010101101010,  // 12/16 way through
+        0b01101100110010010,  // 13/16 way through
+        0b11111000100010000,  // 14/16 way through
+        0b00111011101100011,  // 15/16 way through
+    },
+    {
+        // p5
+        0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
+        0b11001000010011110,  // 1/16 way through
+        0b10011010101100010,  // 2/16 way through
+        0b01100111010001011,  // 3/16 way through
+        0b11011011100110100,  // 4/16 way through
+        0b01001000001001100,  // 5/16 way through
+        0b11000001001111010,  // 6/16 way through
+        0b11001000010010000,  // 7/16 way through
+        0b10001110110110000,  // 8/16 way through
+        0b11111001001100101,  // 9/16 way through
+        0b01100001010010111,  // 10/16 way through
+        0b01000110101100010,  // 11/16 way through
+        0b11010011000101000,  // 12/16 way through
+        0b01011001111000111,  // 13/16 way through
+        0b10011010110011010;,  // 14/16 way through
+        0b00001001000001110,  // 15/16 way through
+    },
+    {
+        // p6
+        0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
+        0b01110110101110110,  // 1/16 way through
+        0b00111111000100011,  // 2/16 way through
+        0b10011010110110011,  // 3/16 way through
+        0b11110001001110000,  // 4/16 way through
+        0b10001101001000111,  // 5/16 way through
+        0b01001000110110000,  // 6/16 way through
+        0b01000011100101101,  // 7/16 way through
+        0b00100110001001001,  // 8/16 way through
+        0b11001011101000100,  // 9/16 way through
+        0b11001011011100111,  // 10/16 way through
+        0b11001101100101000,  // 11/16 way through
+        0b00100011001101100,  // 12/16 way through
+        0b01011101001100000,  // 13/16 way through
+        0b11111001011001111,  // 14/16 way through
+        0b01001101000100110,  // 15/16 way through
+    },
+    {
+        // p7
+        0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
+        0b01000010111001111,  // 1/16 way through
+        0b00011111000011111,  // 2/16 way through
+        0b00100101010100111,  // 3/16 way through
+        0b10001110011000110,  // 4/16 way through
+        0b01000011011111110,  // 5/16 way through
+        0b01001001000001101,  // 6/16 way through
+        0b01110011110100100,  // 7/16 way through
+        0b10010000110101010,  // 8/16 way through
+        0b01010001101010011,  // 9/16 way through
+        0b00011011000110101,  // 10/16 way through
+        0b11001100101110100,  // 11/16 way through
+        0b10011000101101111,  // 12/16 way through
+        0b10100001000111100,  // 13/16 way through
+        0b11110100001010000,  // 14/16 way through
+        0b01010010010011110,  // 15/16 way through
     },
 };
 
