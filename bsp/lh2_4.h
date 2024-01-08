@@ -24,6 +24,7 @@
 //=========================== defines ==========================================
 
 #define LH2_4_LOCATIONS_COUNT 2  ///< Number of computed locations
+#define LH2_4_BASESTATION_COUNT 4  ///< Number of supported concurrent basestations
 
 /// LH2 internal state
 typedef enum {
@@ -32,6 +33,12 @@ typedef enum {
     DB_LH2_4_RAW_DATA_READY,  ///< some lh2 raw data is available
     DB_LH2_4_LOCATION_READY,  ///< some lh2 location is ready to be read
 } db_lh2_4_state_t;
+
+/// LH2 data ready buffer state
+typedef enum {
+    DB_LH2_4_NO_NEW_DATA,            ///< The data occupying this spot of the buffer has already been sent.
+    DB_LH2_4_DATA_READY,             ///< The data occupying this spot of the buffer is new and ready to send.
+} db_lh2_4_data_ready_state_t;
 
 /// LH2 raw data
 typedef struct __attribute__((packed)) {
@@ -48,9 +55,11 @@ typedef struct __attribute__((packed)) {
 
 /// LH2 instance
 typedef struct {
-    db_lh2_4_state_t    state;                           ///< current state of the lh2 engine
-    db_lh2_4_raw_data_t raw_data[LH2_4_LOCATIONS_COUNT];   ///< raw data decoded from the lighthouse
-    db_lh2_4_location_t locations[LH2_4_LOCATIONS_COUNT];  ///< buffer holding the computed locations
+    db_lh2_4_state_t    state;                                          ///< current state of the lh2 engine
+    db_lh2_4_raw_data_t raw_data[2][LH2_4_BASESTATION_COUNT];           ///< raw data decoded from the lighthouse
+    db_lh2_4_location_t locations[2][LH2_4_BASESTATION_COUNT];          ///< buffer holding the computed locations
+    uint32_t            timestamps[2][LH2_4_BASESTATION_COUNT];         ///< timestamp of when the raw data was received
+    db_lh2_4_data_ready_state_t data_ready[2][LH2_4_BASESTATION_COUNT]; ///< Is the data in the buffer ready to send over radio, or has it already been sent ?
 } db_lh2_4_t;
 
 //=========================== public ===========================================
