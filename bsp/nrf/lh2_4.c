@@ -416,6 +416,7 @@ void db_lh2_4_reset(db_lh2_4_t *lh2) {
 }
 
 void db_lh2_4_process_raw_data(db_lh2_4_t *lh2) {
+    // TODO: REMEMBER TO REWRITE THE START AND STEOP FUNCTIONS
     if (_lh2_4_vars.data.count <= 0) {
         return;
     }
@@ -427,19 +428,29 @@ void db_lh2_4_process_raw_data(db_lh2_4_t *lh2) {
      }
 
     // Get value before it's overwritten by the ringbuffer.
-    uint8_t temp_spi_bits[SPI_BUFFER_SIZE];
+    uint8_t temp_spi_bits[SPI_BUFFER_SIZE*2];    // The temp buffer has to be 128 long because _demodulate_light() expects it to be so
+                                                  // Making it smaller causes a hardfault
+                                                  // I don't know why, the SPI buffer is clearly 64bytes long.
+                                                  // should ask fil this
     uint32_t temp_timestamp;
+    uint64_t temp_bit_sweep;
+    uint8_t temp_selected_polynomial;
+    int8_t temp_bit_offset;
 
-    db_lh2_4_stop(lh2); // stop the interruptions while you're reading the data.
+    // stop the interruptions while you're reading the data.
+    db_lh2_4_stop(lh2); 
     bool error = _get_from_spi_ring_buffer(&_lh2_4_vars.data, temp_spi_bits, &temp_timestamp);
-    
-    if (!error) {
-      return;
-    }
     db_lh2_4_start(lh2);
 
+    // perform the demodulation + poly search on the received packets
+    // convert the SPI reading to bits via zero-crossing counter demodulation and differential/biphasic manchester decoding
+    temp_bit_sweep = _demodulate_light(temp_spi_bits);
+    // figure out which polynomial each one of the two samples come from.
+    temp_selected_polynomial = _determine_polynomial(temp_bit_sweep, &temp_bit_offset);
 
-    
+    if (error && temp_selected_polynomial){
+        return;
+    }
     // for (uint8_t location = 0; location < LH2_4_LOCATIONS_COUNT; location++) {
     //     lh2->raw_data[location].bits_sweep = 0;
     //     // perform the demodulation + poly search on the received packets
