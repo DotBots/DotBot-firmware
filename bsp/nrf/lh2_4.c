@@ -49,6 +49,7 @@
 
 typedef struct {
     uint8_t buffer[LH2_4_BUFFER_SIZE][SPI_BUFFER_SIZE]; ///< arrays of bits for local storage, contents of SPI transfer are copied into this
+    uint32_t timestamps[LH2_4_BUFFER_SIZE];              ///< arrays of timestamps of when different SPI transfers happened
     uint8_t writeIndex; // Index for next write
     uint8_t readIndex;  // Index for next read
     uint8_t count;      // Number of arrays in buffer
@@ -340,14 +341,14 @@ void _init_spi_ring_buffer(lh2_4_ring_buffer_t *cb);
  *
  * @param[in]   cb  pointer to ring buffer structure
  */
-void _add_to_spi_ring_buffer(lh2_4_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE]);
+void _add_to_spi_ring_buffer(lh2_4_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE], uint32_t timestamp);
 
 /**
  * @brief retreive the oldest element from the ring buffer for spi captures
  *
  * @param[in]   cb  pointer to ring buffer structure
  */
-bool _get_from_spi_ring_buffer(lh2_4_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE]);
+bool _get_from_spi_ring_buffer(lh2_4_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE], uint32_t *timestamp);
 
 //=========================== public ===========================================
 
@@ -395,7 +396,7 @@ void db_lh2_4_init(db_lh2_4_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) 
 }
 
 void db_lh2_4_start(db_lh2_4_t *lh2) {
-    db_lh2_4_reset(lh2);
+    // db_lh2_4_reset(lh2);
     NRF_PPI->CHENSET = (1 << PPI_SPI_START_CHAN) | (1 << PPI_SPI_STOP_CHAN);
 
     lh2->state = DB_LH2_4_RUNNING;
@@ -421,6 +422,24 @@ void db_lh2_4_process_raw_data(db_lh2_4_t *lh2) {
 
     lh2->raw_data[0][0].bits_sweep = 0;
 
+     if (_lh2_4_vars.lha_packet_counter < 2){
+        return;
+     }
+
+    // Get value before it's overwritten by the ringbuffer.
+    uint8_t temp_spi_bits[SPI_BUFFER_SIZE];
+    uint32_t temp_timestamp;
+
+    db_lh2_4_stop(lh2); // stop the interruptions while you're reading the data.
+    bool error = _get_from_spi_ring_buffer(&_lh2_4_vars.data, temp_spi_bits, &temp_timestamp);
+    
+    if (!error) {
+      return;
+    }
+    db_lh2_4_start(lh2);
+
+
+    
     // for (uint8_t location = 0; location < LH2_4_LOCATIONS_COUNT; location++) {
     //     lh2->raw_data[location].bits_sweep = 0;
     //     // perform the demodulation + poly search on the received packets
@@ -1123,8 +1142,10 @@ void _init_spi_ring_buffer(lh2_4_ring_buffer_t *cb) {
     }
 }
 
-void _add_to_spi_ring_buffer(lh2_4_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE]) {
+void _add_to_spi_ring_buffer(lh2_4_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE], uint32_t timestamp) {
+   
     memcpy(cb->buffer[cb->writeIndex], data, SPI_BUFFER_SIZE);
+    cb->timestamps[cb->writeIndex] = timestamp;
     cb->writeIndex = (cb->writeIndex + 1) % LH2_4_BUFFER_SIZE;
 
     if (cb->count < LH2_4_BUFFER_SIZE) {
@@ -1135,13 +1156,14 @@ void _add_to_spi_ring_buffer(lh2_4_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SI
     }
 }
 
-bool _get_from_spi_ring_buffer(lh2_4_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE]) {
+bool _get_from_spi_ring_buffer(lh2_4_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE], uint32_t *timestamp) {
     if (cb->count <= 0) {
         // Buffer is empty
         return false;
     }
 
     memcpy(data, cb->buffer[cb->readIndex], SPI_BUFFER_SIZE);
+    *timestamp = cb->timestamps[cb->readIndex];
     cb->readIndex = (cb->readIndex + 1) % LH2_4_BUFFER_SIZE;
     cb->count--;
 
@@ -1159,8 +1181,10 @@ void SPIM_IRQ_HANDLER(void) {
         // Clear the Interrupt flag
         NRF_SPIM->EVENTS_END = 0;
 
+        uint32_t timestamp = db_timer_hf_now();
         // Add new reading to the ring buffer
-        _add_to_spi_ring_buffer(&_lh2_4_vars.data, _lh2_4_vars.spi_rx_buffer);
+        _add_to_spi_ring_buffer(&_lh2_4_vars.data, _lh2_4_vars.spi_rx_buffer, timestamp);
+        _lh2_4_vars.lha_packet_counter += 1;
 
         // _lh2_4_vars.transfer_counter++;
         // // load global SPI buffer (_lh2_4_vars.spi_rx_buffer) into four local arrays (_lh2_4_vars.data[0].buffer ... _lh2_4_vars.data[3].buffer)

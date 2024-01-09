@@ -42,7 +42,7 @@ int main(void) {
     while (1) {
         // wait until something happens e.g. an SPI interrupt
         __WFE();
-        //db_lh2_4_process_raw_data(&_lh2);
+        db_lh2_4_process_raw_data(&_lh2);
 
         if (_lh2.state == DB_LH2_4_RAW_DATA_READY) {
             // Stop the LH2 internal engine before doing other computations/sending radio packets, etc
