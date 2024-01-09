@@ -23,8 +23,11 @@
 
 //=========================== defines ==========================================
 
-#define LH2_4_LOCATIONS_COUNT 2  ///< Number of computed locations
+#define LH2_4_LOCATIONS_COUNT 2    ///< Number of computed locations
 #define LH2_4_BASESTATION_COUNT 4  ///< Number of supported concurrent basestations
+
+#define LH2_4_SWEEP_COUNT 2        ///< Number of laser sweeps per basestations rotation
+
 
 /// LH2 internal state
 typedef enum {
@@ -53,13 +56,15 @@ typedef struct __attribute__((packed)) {
     uint32_t lfsr_location;        ///< LFSR location is the position in a given polynomial's LFSR that the decoded data is, initialize to error state
 } db_lh2_4_location_t;
 
-/// LH2 instance
+/// LH2 instance (one row per laser sweep, and one column per basestation.)
 typedef struct {
     db_lh2_4_state_t    state;                                          ///< current state of the lh2 engine
     db_lh2_4_raw_data_t raw_data[2][LH2_4_BASESTATION_COUNT];           ///< raw data decoded from the lighthouse
     db_lh2_4_location_t locations[2][LH2_4_BASESTATION_COUNT];          ///< buffer holding the computed locations
     uint32_t            timestamps[2][LH2_4_BASESTATION_COUNT];         ///< timestamp of when the raw data was received
     db_lh2_4_data_ready_state_t data_ready[2][LH2_4_BASESTATION_COUNT]; ///< Is the data in the buffer ready to send over radio, or has it already been sent ?
+    // TODO: Add a raw packets count here so that you have some way of knowing the state of the ring buffer.
+    uint8_t             *spi_ring_buffer_count_ptr;
 } db_lh2_4_t;
 
 //=========================== public ===========================================

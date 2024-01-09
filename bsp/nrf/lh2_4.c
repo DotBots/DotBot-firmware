@@ -29,7 +29,7 @@
 #define LH2_4_LOCATION_ERROR_INDICATOR           0xFFFFFFFF  ///< indicate the location value is false
 #define LH2_4_POLYNOMIAL_ERROR_INDICATOR         0xFF        ///< indicate the polynomial index is invalid
 #define POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD 4           ///< initial threshold of polynomial error
-#define LH2_4_BUFFER_SIZE                        128         ///< buffer size containing lh2 frames
+#define LH2_4_BUFFER_SIZE                      10          ///< Amount of lh2 frames the buffer can contain
 #define GPIOTE_CH_IN_ENV_HiToLo                1           ///< falling edge gpio channel
 #define GPIOTE_CH_IN_ENV_LoToHi                2           ///< rising edge gpio channel
 #define PPI_SPI_START_CHAN                     2
@@ -48,14 +48,17 @@
 #endif
 
 typedef struct {
-    uint8_t buffer[LH2_4_BUFFER_SIZE];  ///< arrays of bits for local storage, contents of SPI transfer are copied into this
-} lh2_4_buffer_t;
+    uint8_t buffer[LH2_4_BUFFER_SIZE][SPI_BUFFER_SIZE]; ///< arrays of bits for local storage, contents of SPI transfer are copied into this
+    uint8_t writeIndex; // Index for next write
+    uint8_t readIndex;  // Index for next read
+    uint8_t count;      // Number of arrays in buffer
+} lh2_4_ring_buffer_t;
 
 typedef struct {
     uint8_t      transfer_counter;                ///< counter of spi transfer in the current cycle
     uint8_t      spi_rx_buffer[SPI_BUFFER_SIZE];  ///< buffer where data coming from SPI are stored
     bool         buffers_ready;                   ///< specify when data buffers are ready to be process
-    lh2_4_buffer_t data[LH2_4_LOCATIONS_COUNT];       ///< array containing demodulation data of each locations
+    lh2_4_ring_buffer_t data;                          ///< array containing demodulation data of each locations
     uint8_t      lha_packet_counter;              ///< number of packet received from LHA
     uint8_t      lhb_packet_counter;              ///< number of packet received from LHB
 } lh2_4_vars_t;
@@ -185,7 +188,7 @@ static const uint32_t _end_buffers[8][16] = {
         0b01000110101100010,  // 11/16 way through
         0b11010011000101000,  // 12/16 way through
         0b01011001111000111,  // 13/16 way through
-        0b10011010110011010;,  // 14/16 way through
+        0b10011010110011010,  // 14/16 way through
         0b00001001000001110,  // 15/16 way through
     },
     {
@@ -325,6 +328,27 @@ void _ppi_setup(void);
  */
 void _spi_setup(const gpio_t *gpio_d);
 
+/**
+ * @brief Initialize the ring buffer for spi captures
+ *
+ * @param[in]   cb  pointer to ring buffer structure
+ */
+void _init_spi_ring_buffer(lh2_4_ring_buffer_t *cb);
+
+/**
+ * @brief add one element to the ring buffer for spi captures
+ *
+ * @param[in]   cb  pointer to ring buffer structure
+ */
+void _add_to_spi_ring_buffer(lh2_4_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE]);
+
+/**
+ * @brief retreive the oldest element from the ring buffer for spi captures
+ *
+ * @param[in]   cb  pointer to ring buffer structure
+ */
+bool _get_from_spi_ring_buffer(lh2_4_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE]);
+
 //=========================== public ===========================================
 
 void db_lh2_4_init(db_lh2_4_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
@@ -343,17 +367,23 @@ void db_lh2_4_init(db_lh2_4_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) 
     _lh2_4_vars.lha_packet_counter = 0;
     _lh2_4_vars.lhb_packet_counter = 0;
     _lh2_4_vars.buffers_ready      = false;
+    _init_spi_ring_buffer(&_lh2_4_vars.data);
 
     // Setup LH2 data
-    for (uint8_t location = 0; location < LH2_4_LOCATIONS_COUNT; location++) {
-        lh2->raw_data[location].bits_sweep           = 0;
-        lh2->raw_data[location].selected_polynomial  = LH2_4_POLYNOMIAL_ERROR_INDICATOR;
-        lh2->raw_data[location].bit_offset           = 0;
-        lh2->locations[location].selected_polynomial = LH2_4_POLYNOMIAL_ERROR_INDICATOR;
-        lh2->locations[location].lfsr_location       = LH2_4_LOCATION_ERROR_INDICATOR;
-        //_lh2_4_vars.data[location].envelope_duration   = 0xFFFFFFFF;
-        memset(_lh2_4_vars.data[location].buffer, 0, LH2_4_BUFFER_SIZE);
+    lh2->spi_ring_buffer_count_ptr = &_lh2_4_vars.data.count;   // pointer to the size of the spi ring buffer,
+
+    for (uint8_t sweep = 0; sweep < LH2_4_SWEEP_COUNT; sweep++){
+        for (uint8_t basestation = 0; basestation < LH2_4_SWEEP_COUNT; basestation++) {
+            lh2->raw_data[sweep][basestation].bits_sweep           = 0;
+            lh2->raw_data[sweep][basestation].selected_polynomial  = LH2_4_POLYNOMIAL_ERROR_INDICATOR;
+            lh2->raw_data[sweep][basestation].bit_offset           = 0;
+            lh2->locations[sweep][basestation].selected_polynomial = LH2_4_POLYNOMIAL_ERROR_INDICATOR;
+            lh2->locations[sweep][basestation].lfsr_location       = LH2_4_LOCATION_ERROR_INDICATOR;
+            lh2->timestamps[sweep][basestation]                    = 0;
+            lh2->data_ready[sweep][basestation]                    = DB_LH2_4_NO_NEW_DATA;
+        }   
     }
+    memset(_lh2_4_vars.data.buffer[0], 0, LH2_4_BUFFER_SIZE);
 
     // initialize GPIOTEs
     _gpiote_setup(gpio_e);
@@ -385,26 +415,28 @@ void db_lh2_4_reset(db_lh2_4_t *lh2) {
 }
 
 void db_lh2_4_process_raw_data(db_lh2_4_t *lh2) {
-    if (!_lh2_4_vars.buffers_ready) {
+    if (_lh2_4_vars.data.count <= 0) {
         return;
     }
 
-    for (uint8_t location = 0; location < LH2_4_LOCATIONS_COUNT; location++) {
-        lh2->raw_data[location].bits_sweep = 0;
-        // perform the demodulation + poly search on the received packets
-        // convert the SPI reading to bits via zero-crossing counter demodulation and differential/biphasic manchester decoding
-        lh2->raw_data[location].bits_sweep = _demodulate_light(_lh2_4_vars.data[location].buffer);
-        // figure out which polynomial each one of the two samples come from.
-        lh2->raw_data[location].selected_polynomial = _determine_polynomial(lh2->raw_data[location].bits_sweep, &lh2->raw_data[location].bit_offset);
-    }
+    lh2->raw_data[0][0].bits_sweep = 0;
 
-    if ((lh2->raw_data[0].selected_polynomial == LH2_4_POLYNOMIAL_ERROR_INDICATOR) ||
-        (lh2->raw_data[1].selected_polynomial == LH2_4_POLYNOMIAL_ERROR_INDICATOR)) {  // failure to find one of the two polynomials - start from scratch and grab another capture
-        db_lh2_4_reset(lh2);
-        return;
-    }
+    // for (uint8_t location = 0; location < LH2_4_LOCATIONS_COUNT; location++) {
+    //     lh2->raw_data[location].bits_sweep = 0;
+    //     // perform the demodulation + poly search on the received packets
+    //     // convert the SPI reading to bits via zero-crossing counter demodulation and differential/biphasic manchester decoding
+    //     lh2->raw_data[location].bits_sweep = _demodulate_light(_lh2_4_vars.data[location].buffer);
+    //     // figure out which polynomial each one of the two samples come from.
+    //     lh2->raw_data[location].selected_polynomial = _determine_polynomial(lh2->raw_data[location].bits_sweep, &lh2->raw_data[location].bit_offset);
+    // }
 
-    lh2->state = DB_LH2_4_RAW_DATA_READY;
+    // if ((lh2->raw_data[0].selected_polynomial == LH2_4_POLYNOMIAL_ERROR_INDICATOR) ||
+    //     (lh2->raw_data[1].selected_polynomial == LH2_4_POLYNOMIAL_ERROR_INDICATOR)) {  // failure to find one of the two polynomials - start from scratch and grab another capture
+    //     db_lh2_4_reset(lh2);
+    //     return;
+    // }
+
+    // lh2->state = DB_LH2_4_RAW_DATA_READY;
 }
 
 void db_lh2_4_process_location(db_lh2_4_t *lh2) {
@@ -412,33 +444,33 @@ void db_lh2_4_process_location(db_lh2_4_t *lh2) {
         return;
     }
 
-    // compute LFSR locations and detect invalid packets
-    for (uint8_t location = 0; location < LH2_4_LOCATIONS_COUNT; location++) {
-        lh2->locations[location].selected_polynomial = lh2->raw_data[location].selected_polynomial;
-        // find location of the first data set by counting the LFSR backwards
-        lh2->locations[location].lfsr_location = _reverse_count_p(
-                                                     lh2->raw_data[location].selected_polynomial,
-                                                     lh2->raw_data[location].bits_sweep >> (47 - lh2->raw_data[location].bit_offset)) -
-                                                 lh2->raw_data[location].bit_offset;
-    }
+    // // compute LFSR locations and detect invalid packets
+    // for (uint8_t location = 0; location < LH2_4_LOCATIONS_COUNT; location++) {
+    //     lh2->locations[location].selected_polynomial = lh2->raw_data[location].selected_polynomial;
+    //     // find location of the first data set by counting the LFSR backwards
+    //     lh2->locations[location].lfsr_location = _reverse_count_p(
+    //                                                  lh2->raw_data[location].selected_polynomial,
+    //                                                  lh2->raw_data[location].bits_sweep >> (47 - lh2->raw_data[location].bit_offset)) -
+    //                                              lh2->raw_data[location].bit_offset;
+    // }
 
-    uint32_t tmp_locations[LH2_4_LOCATIONS_COUNT] = { 0 };
-    for (uint8_t location = 0; location < LH2_4_LOCATIONS_COUNT; location++) {
-        tmp_locations[location] = lh2->locations[location].lfsr_location;
-    }
+    // uint32_t tmp_locations[LH2_4_LOCATIONS_COUNT] = { 0 };
+    // for (uint8_t location = 0; location < LH2_4_LOCATIONS_COUNT; location++) {
+    //     tmp_locations[location] = lh2->locations[location].lfsr_location;
+    // }
 
-    // results from 2 LH2 were discovered - sort the two pairs
-    if (lh2->locations[0].lfsr_location > lh2->locations[1].lfsr_location) {
-        lh2->locations[0].selected_polynomial = lh2->raw_data[1].selected_polynomial;
-        lh2->locations[0].lfsr_location       = tmp_locations[1];
-        lh2->locations[1].selected_polynomial = lh2->raw_data[0].selected_polynomial;
-        lh2->locations[1].lfsr_location       = tmp_locations[0];
-    }
+    // // results from 2 LH2 were discovered - sort the two pairs
+    // if (lh2->locations[0].lfsr_location > lh2->locations[1].lfsr_location) {
+    //     lh2->locations[0].selected_polynomial = lh2->raw_data[1].selected_polynomial;
+    //     lh2->locations[0].lfsr_location       = tmp_locations[1];
+    //     lh2->locations[1].selected_polynomial = lh2->raw_data[0].selected_polynomial;
+    //     lh2->locations[1].lfsr_location       = tmp_locations[0];
+    // }
 
-    for (uint8_t location = 0; location < LH2_4_LOCATIONS_COUNT; location++) {
-        memset(_lh2_4_vars.data[location].buffer, 0, LH2_4_BUFFER_SIZE);
-    }
-    lh2->state = DB_LH2_4_LOCATION_READY;
+    // for (uint8_t location = 0; location < LH2_4_LOCATIONS_COUNT; location++) {
+    //     memset(_lh2_4_vars.data[location].buffer, 0, LH2_4_BUFFER_SIZE);
+    // }
+    // lh2->state = DB_LH2_4_LOCATION_READY;
 }
 
 //=========================== private ==========================================
@@ -1080,6 +1112,45 @@ void _spi_setup(const gpio_t *gpio_d) {
     NRF_SPIM->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
 }
 
+// Initialize the circular buffer
+void _init_spi_ring_buffer(lh2_4_ring_buffer_t *cb) {
+    cb->writeIndex = 0;
+    cb->readIndex = 0;
+    cb->count = 0;
+
+    for (uint8_t i = 0; i < LH2_4_BUFFER_SIZE; i++){
+        memset(cb->buffer[i], 0, SPI_BUFFER_SIZE);
+    }
+}
+
+void _add_to_spi_ring_buffer(lh2_4_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE]) {
+    memcpy(cb->buffer[cb->writeIndex], data, SPI_BUFFER_SIZE);
+    cb->writeIndex = (cb->writeIndex + 1) % LH2_4_BUFFER_SIZE;
+
+    if (cb->count < LH2_4_BUFFER_SIZE) {
+        cb->count++;
+    } else {
+        // Overwrite oldest data, adjust readIndex
+        cb->readIndex = (cb->readIndex + 1) % LH2_4_BUFFER_SIZE;
+    }
+}
+
+bool _get_from_spi_ring_buffer(lh2_4_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE]) {
+    if (cb->count <= 0) {
+        // Buffer is empty
+        return false;
+    }
+
+    memcpy(data, cb->buffer[cb->readIndex], SPI_BUFFER_SIZE);
+    cb->readIndex = (cb->readIndex + 1) % LH2_4_BUFFER_SIZE;
+    cb->count--;
+
+    return true;
+}
+
+
+
+
 //=========================== interrupts =======================================
 
 void SPIM_IRQ_HANDLER(void) {
@@ -1087,13 +1158,17 @@ void SPIM_IRQ_HANDLER(void) {
     if (NRF_SPIM->EVENTS_END) {
         // Clear the Interrupt flag
         NRF_SPIM->EVENTS_END = 0;
-        _lh2_4_vars.transfer_counter++;
-        // load global SPI buffer (_lh2_4_vars.spi_rx_buffer) into four local arrays (_lh2_4_vars.data[0].buffer ... _lh2_4_vars.data[3].buffer)
-        if (_lh2_4_vars.transfer_counter == 1) {
-            memcpy(_lh2_4_vars.data[0].buffer, _lh2_4_vars.spi_rx_buffer, SPI_BUFFER_SIZE);
-        } else if (_lh2_4_vars.transfer_counter == 2) {
-            memcpy(_lh2_4_vars.data[1].buffer, _lh2_4_vars.spi_rx_buffer, SPI_BUFFER_SIZE);
-            _lh2_4_vars.buffers_ready = true;
-        }
+
+        // Add new reading to the ring buffer
+        _add_to_spi_ring_buffer(&_lh2_4_vars.data, _lh2_4_vars.spi_rx_buffer);
+
+        // _lh2_4_vars.transfer_counter++;
+        // // load global SPI buffer (_lh2_4_vars.spi_rx_buffer) into four local arrays (_lh2_4_vars.data[0].buffer ... _lh2_4_vars.data[3].buffer)
+        // if (_lh2_4_vars.transfer_counter == 1) {
+        //     memcpy(_lh2_4_vars.data[0].buffer, _lh2_4_vars.spi_rx_buffer, SPI_BUFFER_SIZE);
+        // } else if (_lh2_4_vars.transfer_counter == 2) {
+        //     memcpy(_lh2_4_vars.data[1].buffer, _lh2_4_vars.spi_rx_buffer, SPI_BUFFER_SIZE);
+        //     _lh2_4_vars.buffers_ready = true;
+        // }
     }
 }

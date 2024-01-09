@@ -20,7 +20,7 @@
 
 //=========================== defines ==========================================
 
-#define DB2_LH2_4_FULL_COMPUTATION 1
+#define DB2_LH2_4_FULL_COMPUTATION 0
 
 //=========================== variables ========================================
 
@@ -42,18 +42,18 @@ int main(void) {
     while (1) {
         // wait until something happens e.g. an SPI interrupt
         __WFE();
-        db_lh2_4_process_raw_data(&_lh2);
+        //db_lh2_4_process_raw_data(&_lh2);
 
         if (_lh2.state == DB_LH2_4_RAW_DATA_READY) {
             // Stop the LH2 internal engine before doing other computations/sending radio packets, etc
-            db_lh2_4_stop(&_lh2);
+            //db_lh2_4_stop(&_lh2);
 
             if (DB2_LH2_4_FULL_COMPUTATION) {
                 // the location function has to be running all the time
                 db_lh2_4_process_location(&_lh2);
             }
 
-            db_lh2_4_start(&_lh2);
+            //db_lh2_4_start(&_lh2);
         }
     }
 
