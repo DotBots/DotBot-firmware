@@ -914,9 +914,11 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
     // TODO: rename chipsH1 to something relevant... like bits?
     int32_t  bits_N_for_comp                     = 47;
     uint32_t bit_buffer1                         = (uint32_t)(((0xFFFF800000000000) & chipsH1) >> 47);
-    uint64_t bits_from_poly[LH2_4_LOCATIONS_COUNT] = { 0 };
-    uint64_t weights[LH2_4_LOCATIONS_COUNT]        = { 0xFFFFFFFFFFFFFFFF };
+    uint64_t bits_from_poly[LH2_4_BASESTATION_COUNT*2] = { 0 };
+    uint64_t weights[LH2_4_BASESTATION_COUNT*2]        = { 0xFFFFFFFFFFFFFFFF };
     uint8_t  selected_poly                       = LH2_4_POLYNOMIAL_ERROR_INDICATOR;  // initialize to error condition
+    uint8_t  min_weight_idx                      = LH2_4_POLYNOMIAL_ERROR_INDICATOR;
+    uint64_t min_weight                          = LH2_4_POLYNOMIAL_ERROR_INDICATOR;
     uint64_t bits_to_compare                     = 0;
     int32_t  threshold                           = POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
 
@@ -933,24 +935,32 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
     while (1) {
         // TODO: do this math stuff in multiple operations to: (a) make it readable (b) ensure order-of-execution
         bit_buffer1       = (uint32_t)(((0xFFFF800000000000 >> (*start_val)) & chipsH1) >> (64 - 17 - (*start_val)));
-        bits_from_poly[0] = (((_poly_check(_polynomials[0], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
-        bits_from_poly[1] = (((_poly_check(_polynomials[1], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
         bits_to_compare   = (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - 17 - (*start_val) - bits_N_for_comp)));
-        weights[0]        = _hamming_weight(bits_from_poly[0] ^ bits_to_compare);
-        weights[1]        = _hamming_weight(bits_from_poly[1] ^ bits_to_compare);
-        if (bits_N_for_comp < 10) {                          // too few bits to reliably compare, give up
+        // reset the minimum polynomial match found
+        min_weight_idx                      = LH2_4_POLYNOMIAL_ERROR_INDICATOR; 
+        min_weight                          = LH2_4_POLYNOMIAL_ERROR_INDICATOR;
+        // Check against all the known polynomials
+        for (uint8_t i = 0; i<LH2_4_BASESTATION_COUNT*2; i++){
+            bits_from_poly[i] = (((_poly_check(_polynomials[i], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
+            weights[i]        = _hamming_weight(bits_from_poly[i] ^ bits_to_compare);
+
+            // Keep track of the minimum weight value and which polinimial generated it.
+            if (weights[i] < min_weight){
+                min_weight_idx = i;
+                min_weight = weights[i];
+            }
+        }
+         // too few bits to reliably compare, give up
+        if (bits_N_for_comp < 10) {                         
             selected_poly = LH2_4_POLYNOMIAL_ERROR_INDICATOR;  // mark the poly as "wrong"
             break;
-        }  // TODO: implement sorting network for efficiency?
-        if ((weights[0] <= (uint64_t)threshold) | (weights[1] <= (uint64_t)threshold)) {
-            if ((weights[0] < weights[1])) {  // weight0 is the smallest
-                selected_poly = 0;
+        }
+        // If you found a sufficiently good value, then return which polinomial generated it
+        if (min_weight <= (uint64_t)threshold) {
+                selected_poly = min_weight_idx;
                 break;
-            } else if ((weights[1] < weights[0])) {  // weight1 is the smallest
-                selected_poly = 1;
-                break;
-            }
-        } else if (*start_val > 8) {  // match failed, try again removing bits from the end
+        // match failed, try again removing bits from the end
+        } else if (*start_val > 8) {  
             *start_val      = 0;
             bits_N_for_comp = bits_N_for_comp + 1;
             if (threshold > 1) {
