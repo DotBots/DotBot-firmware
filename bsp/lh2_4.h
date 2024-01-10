@@ -39,8 +39,9 @@ typedef enum {
 
 /// LH2 data ready buffer state
 typedef enum {
-    DB_LH2_4_NO_NEW_DATA,            ///< The data occupying this spot of the buffer has already been sent.
-    DB_LH2_4_DATA_READY,             ///< The data occupying this spot of the buffer is new and ready to send.
+    DB_LH2_4_NO_NEW_DATA,                ///< The data occupying this spot of the buffer has already been sent.
+    DB_LH2_4_RAW_DATA_AVAILABLE,             ///< The data occupying this spot of the buffer is new and ready to send.
+    DB_LH2_4_PROCESSED_DATA_AVAILABLE,       ///< The data occupying this spot of the buffer is new and ready to send.
 } db_lh2_4_data_ready_state_t;
 
 /// LH2 raw data

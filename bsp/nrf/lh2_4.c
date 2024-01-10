@@ -421,52 +421,46 @@ void db_lh2_4_process_raw_data(db_lh2_4_t *lh2) {
         return;
     }
 
-    lh2->raw_data[0][0].bits_sweep = 0;
-
-     if (_lh2_4_vars.lha_packet_counter < 2){
-        return;
-     }
-
     // Get value before it's overwritten by the ringbuffer.
     uint8_t temp_spi_bits[SPI_BUFFER_SIZE*2];    // The temp buffer has to be 128 long because _demodulate_light() expects it to be so
                                                   // Making it smaller causes a hardfault
                                                   // I don't know why, the SPI buffer is clearly 64bytes long.
-                                                  // should ask fil this
+                                                  // should ask fil about this
     uint32_t temp_timestamp;
-    uint64_t temp_bit_sweep;
+    uint64_t temp_bits_sweep;
     uint8_t temp_selected_polynomial;
     int8_t temp_bit_offset;
+    int8_t sweep;
 
     // stop the interruptions while you're reading the data.
     db_lh2_4_stop(lh2); 
     bool error = _get_from_spi_ring_buffer(&_lh2_4_vars.data, temp_spi_bits, &temp_timestamp);
     db_lh2_4_start(lh2);
+    if (!error) { 
+        return; 
+    }
 
     // perform the demodulation + poly search on the received packets
     // convert the SPI reading to bits via zero-crossing counter demodulation and differential/biphasic manchester decoding
-    temp_bit_sweep = _demodulate_light(temp_spi_bits);
+    temp_bits_sweep = _demodulate_light(temp_spi_bits);
     // figure out which polynomial each one of the two samples come from.
-    temp_selected_polynomial = _determine_polynomial(temp_bit_sweep, &temp_bit_offset);
+    temp_selected_polynomial = _determine_polynomial(temp_bits_sweep, &temp_bit_offset);
 
-    if (error && temp_selected_polynomial){
-        return;
+    // Figure in which of the two sweep slots we should save the new data.
+    if (lh2->timestamps[0][temp_selected_polynomial >> 1] <= lh2->timestamps[1][temp_selected_polynomial >> 1])  {// Either: They are both equal to zero. The structure is empty
+        sweep = 0;                                                                                      //         The data in the first slot is older.
+    }                                                                                                   // either way, use the first slot    
+    else {  // The data in the second slot is older.
+        sweep = 1;
     }
-    // for (uint8_t location = 0; location < LH2_4_LOCATIONS_COUNT; location++) {
-    //     lh2->raw_data[location].bits_sweep = 0;
-    //     // perform the demodulation + poly search on the received packets
-    //     // convert the SPI reading to bits via zero-crossing counter demodulation and differential/biphasic manchester decoding
-    //     lh2->raw_data[location].bits_sweep = _demodulate_light(_lh2_4_vars.data[location].buffer);
-    //     // figure out which polynomial each one of the two samples come from.
-    //     lh2->raw_data[location].selected_polynomial = _determine_polynomial(lh2->raw_data[location].bits_sweep, &lh2->raw_data[location].bit_offset);
-    // }
 
-    // if ((lh2->raw_data[0].selected_polynomial == LH2_4_POLYNOMIAL_ERROR_INDICATOR) ||
-    //     (lh2->raw_data[1].selected_polynomial == LH2_4_POLYNOMIAL_ERROR_INDICATOR)) {  // failure to find one of the two polynomials - start from scratch and grab another capture
-    //     db_lh2_4_reset(lh2);
-    //     return;
-    // }
+    // Put the newly read polynomials in the data structure (polynomial 0,1 must map to LH0, 2,3 to LH1. This can be accomplish by  integer-dividing the selected poly in 2, a shift >> accomplishes this.)
+    lh2->raw_data[sweep][temp_selected_polynomial >> 1].bit_offset = temp_bit_offset;
+    lh2->raw_data[sweep][temp_selected_polynomial >> 1].selected_polynomial = temp_selected_polynomial;
+    lh2->raw_data[sweep][temp_selected_polynomial >> 1].bits_sweep = temp_bits_sweep;
+    lh2->timestamps[sweep][temp_selected_polynomial >> 1] = temp_timestamp;
+    lh2->data_ready[sweep][temp_selected_polynomial >> 1] = DB_LH2_4_RAW_DATA_AVAILABLE;
 
-    // lh2->state = DB_LH2_4_RAW_DATA_READY;
 }
 
 void db_lh2_4_process_location(db_lh2_4_t *lh2) {
