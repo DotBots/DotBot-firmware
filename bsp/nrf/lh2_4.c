@@ -448,6 +448,11 @@ void db_lh2_4_process_raw_data(db_lh2_4_t *lh2) {
     // figure out which polynomial each one of the two samples come from.
     temp_selected_polynomial = _determine_polynomial(temp_bits_sweep, &temp_bit_offset);
 
+    // If there was an error with the polynomial, leave without updating anything
+    if (temp_selected_polynomial == LH2_4_POLYNOMIAL_ERROR_INDICATOR){
+      return;
+    }
+
     // Figure in which of the two sweep slots we should save the new data.
     if (lh2->timestamps[0][temp_selected_polynomial >> 1] <= lh2->timestamps[1][temp_selected_polynomial >> 1])  {// Either: They are both equal to zero. The structure is empty
         sweep = 0;                                                                                      //         The data in the first slot is older.
@@ -1160,7 +1165,7 @@ void _init_spi_ring_buffer(lh2_4_ring_buffer_t *cb) {
 }
 
 void _add_to_spi_ring_buffer(lh2_4_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE], uint32_t timestamp) {
-   
+
     memcpy(cb->buffer[cb->writeIndex], data, SPI_BUFFER_SIZE);
     cb->timestamps[cb->writeIndex] = timestamp;
     cb->writeIndex = (cb->writeIndex + 1) % LH2_4_BUFFER_SIZE;
