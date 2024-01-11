@@ -34,6 +34,7 @@
 #define GPIOTE_CH_IN_ENV_LoToHi                2           ///< rising edge gpio channel
 #define PPI_SPI_START_CHAN                     2
 #define PPI_SPI_STOP_CHAN                      3
+#define PPI_SPI_GROUP                          0
 
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
 #define NRF_SPIM         NRF_SPIM4_S
@@ -397,13 +398,14 @@ void db_lh2_4_init(db_lh2_4_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) 
 
 void db_lh2_4_start(db_lh2_4_t *lh2) {
     // db_lh2_4_reset(lh2);
-    NRF_PPI->CHENSET = (1 << PPI_SPI_START_CHAN) | (1 << PPI_SPI_STOP_CHAN);
-
+    // NRF_PPI->CHENSET = (1 << PPI_SPI_START_CHAN) | (1 << PPI_SPI_STOP_CHAN);
+    NRF_PPI->TASKS_CHG[0].EN = 1;
     lh2->state = DB_LH2_4_RUNNING;
 }
 
 void db_lh2_4_stop(db_lh2_4_t *lh2) {
-    NRF_PPI->CHENCLR = (1 << PPI_SPI_START_CHAN) | (1 << PPI_SPI_STOP_CHAN);
+    // NRF_PPI->CHENCLR = (1 << PPI_SPI_START_CHAN) | (1 << PPI_SPI_STOP_CHAN);
+    NRF_PPI->TASKS_CHG[0].DIS = 1;
     lh2->state       = DB_LH2_4_IDLE;
 }
 
@@ -1091,16 +1093,26 @@ void _ppi_setup(void) {
     NRF_GPIOTE->PUBLISH_IN[GPIOTE_CH_IN_ENV_LoToHi] = PPI_SPI_STOP_CHAN | (GPIOTE_PUBLISH_IN_EN_Enabled << GPIOTE_PUBLISH_IN_EN_Pos);
     NRF_SPIM->SUBSCRIBE_STOP                        = PPI_SPI_STOP_CHAN | (SPIM_SUBSCRIBE_STOP_EN_Enabled << SPIM_SUBSCRIBE_STOP_EN_Pos);
 #else
-    uint32_t gpiote_input_task_addr = (uint32_t)&NRF_GPIOTE->EVENTS_IN[GPIOTE_CH_IN_ENV_HiToLo];
-    //uint32_t envelope_input_LoToHi  = (uint32_t)&NRF_GPIOTE->EVENTS_IN[GPIOTE_CH_IN_ENV_LoToHi];
-    uint32_t spi_start_task_addr    = (uint32_t)&NRF_SPIM3->TASKS_START;
-    //uint32_t spi_stop_task_addr     = (uint32_t)&NRF_SPIM3->TASKS_STOP;
+   
+    // Add all the ppi setup to group 0 to be able to enable and disable it automatically.
+    NRF_PPI->CHG[PPI_SPI_GROUP] =   ( 1 << PPI_SPI_START_CHAN ) |
+                                    ( 1 << PPI_SPI_STOP_CHAN);
 
-    NRF_PPI->CH[PPI_SPI_START_CHAN].EEP = gpiote_input_task_addr;  // envelope down
+   
+    uint32_t envelope_input_HiToLo = (uint32_t)&NRF_GPIOTE->EVENTS_IN[GPIOTE_CH_IN_ENV_HiToLo];
+    uint32_t spi_start_task_addr    = (uint32_t)&NRF_SPIM->TASKS_START;
+    //uint32_t spi_stop_task_addr     = (uint32_t)&NRF_SPIM->TASKS_STOP;
+    uint32_t spi_end_event_addr     = (uint32_t)&NRF_SPIM->EVENTS_ENDTX;
+    uint32_t ppi_group0_disable_task_addr    = (uint32_t)&NRF_PPI->TASKS_CHG[0].DIS;
+    uint32_t ppi_group0_enable_task_addr     = (uint32_t)&NRF_PPI->TASKS_CHG[0].EN;
+
+
+    NRF_PPI->CH[PPI_SPI_START_CHAN].EEP = envelope_input_HiToLo;  // envelope down
     NRF_PPI->CH[PPI_SPI_START_CHAN].TEP = spi_start_task_addr;     // start spi3 transfer
+    NRF_PPI->FORK[PPI_SPI_START_CHAN].TEP = ppi_group0_disable_task_addr; // Disable the PPI group
 
-    // NRF_PPI->CH[3].EEP = envelope_input_LoToHi;  // envelope up, finished lh2 data
-    // NRF_PPI->CH[3].TEP = spi_stop_task_addr;     // stop spi3 transfer
+    NRF_PPI->CH[PPI_SPI_STOP_CHAN].EEP = spi_end_event_addr;  // SPI finishes
+    NRF_PPI->CH[PPI_SPI_STOP_CHAN].TEP = ppi_group0_enable_task_addr;     // Reenable PPI
 #endif
 }
 
