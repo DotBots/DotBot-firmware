@@ -38,7 +38,6 @@ int main(void) {
     // Initialize the LH2
     db_lh2_4_init(&_lh2, &db_lh2_d, &db_lh2_e);
     db_lh2_4_start(&_lh2);
-    NRF_P0->DIRSET = 1 << 29;
 
     while (1) {
         // wait until something happens e.g. an SPI interrupt

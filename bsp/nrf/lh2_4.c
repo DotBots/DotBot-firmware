@@ -435,9 +435,9 @@ void db_lh2_4_process_raw_data(db_lh2_4_t *lh2) {
     int8_t sweep;
 
     // stop the interruptions while you're reading the data.
-    db_lh2_4_stop(lh2); 
+    // db_lh2_4_stop(lh2); 
     bool error = _get_from_spi_ring_buffer(&_lh2_4_vars.data, temp_spi_bits, &temp_timestamp);
-    db_lh2_4_start(lh2);
+    // db_lh2_4_start(lh2);
     if (!error) { 
         return; 
     }
@@ -1083,6 +1083,7 @@ void _gpiote_setup(const gpio_t *gpio_e) {
                                                   (gpio_e->pin << GPIOTE_CONFIG_PSEL_Pos) |
                                                   (gpio_e->port << GPIOTE_CONFIG_PORT_Pos) |
                                                   (GPIOTE_CONFIG_POLARITY_LoToHi << GPIOTE_CONFIG_POLARITY_Pos);
+
 }
 
 void _ppi_setup(void) {
@@ -1095,24 +1096,20 @@ void _ppi_setup(void) {
 #else
    
     // Add all the ppi setup to group 0 to be able to enable and disable it automatically.
-    NRF_PPI->CHG[PPI_SPI_GROUP] =   ( 1 << PPI_SPI_START_CHAN ) |
-                                    ( 1 << PPI_SPI_STOP_CHAN);
+    NRF_PPI->CHG[PPI_SPI_GROUP] =   ( 1 << PPI_SPI_START_CHAN );
 
    
     uint32_t envelope_input_HiToLo = (uint32_t)&NRF_GPIOTE->EVENTS_IN[GPIOTE_CH_IN_ENV_HiToLo];
     uint32_t spi_start_task_addr    = (uint32_t)&NRF_SPIM->TASKS_START;
     //uint32_t spi_stop_task_addr     = (uint32_t)&NRF_SPIM->TASKS_STOP;
-    uint32_t spi_end_event_addr     = (uint32_t)&NRF_SPIM->EVENTS_ENDTX;
+    // uint32_t spi_end_event_addr     = (uint32_t)&NRF_SPIM->EVENTS_ENDRX;
     uint32_t ppi_group0_disable_task_addr    = (uint32_t)&NRF_PPI->TASKS_CHG[0].DIS;
-    uint32_t ppi_group0_enable_task_addr     = (uint32_t)&NRF_PPI->TASKS_CHG[0].EN;
-
+    // uint32_t ppi_group0_enable_task_addr     = (uint32_t)&NRF_PPI->TASKS_CHG[0].EN;
 
     NRF_PPI->CH[PPI_SPI_START_CHAN].EEP = envelope_input_HiToLo;  // envelope down
     NRF_PPI->CH[PPI_SPI_START_CHAN].TEP = spi_start_task_addr;     // start spi3 transfer
     NRF_PPI->FORK[PPI_SPI_START_CHAN].TEP = ppi_group0_disable_task_addr; // Disable the PPI group
 
-    NRF_PPI->CH[PPI_SPI_STOP_CHAN].EEP = spi_end_event_addr;  // SPI finishes
-    NRF_PPI->CH[PPI_SPI_STOP_CHAN].TEP = ppi_group0_enable_task_addr;     // Reenable PPI
 #endif
 }
 
@@ -1200,19 +1197,10 @@ void SPIM_IRQ_HANDLER(void) {
     if (NRF_SPIM->EVENTS_END) {
         // Clear the Interrupt flag
         NRF_SPIM->EVENTS_END = 0;
-        NRF_P0->OUTSET = 1 << 29;
+        // Reenable the PPI channel
+        NRF_PPI->TASKS_CHG[0].EN = 1;
         uint32_t timestamp = db_timer_hf_now();
         // Add new reading to the ring buffer
         _add_to_spi_ring_buffer(&_lh2_4_vars.data, _lh2_4_vars.spi_rx_buffer, timestamp);
-        _lh2_4_vars.lha_packet_counter += 1;
-        NRF_P0->OUTCLR = 1 << 29;
-        // _lh2_4_vars.transfer_counter++;
-        // // load global SPI buffer (_lh2_4_vars.spi_rx_buffer) into four local arrays (_lh2_4_vars.data[0].buffer ... _lh2_4_vars.data[3].buffer)
-        // if (_lh2_4_vars.transfer_counter == 1) {
-        //     memcpy(_lh2_4_vars.data[0].buffer, _lh2_4_vars.spi_rx_buffer, SPI_BUFFER_SIZE);
-        // } else if (_lh2_4_vars.transfer_counter == 2) {
-        //     memcpy(_lh2_4_vars.data[1].buffer, _lh2_4_vars.spi_rx_buffer, SPI_BUFFER_SIZE);
-        //     _lh2_4_vars.buffers_ready = true;
-        // }
     }
 }
