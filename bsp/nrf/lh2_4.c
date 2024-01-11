@@ -1092,15 +1092,15 @@ void _ppi_setup(void) {
     NRF_SPIM->SUBSCRIBE_STOP                        = PPI_SPI_STOP_CHAN | (SPIM_SUBSCRIBE_STOP_EN_Enabled << SPIM_SUBSCRIBE_STOP_EN_Pos);
 #else
     uint32_t gpiote_input_task_addr = (uint32_t)&NRF_GPIOTE->EVENTS_IN[GPIOTE_CH_IN_ENV_HiToLo];
-    uint32_t envelope_input_LoToHi  = (uint32_t)&NRF_GPIOTE->EVENTS_IN[GPIOTE_CH_IN_ENV_LoToHi];
+    //uint32_t envelope_input_LoToHi  = (uint32_t)&NRF_GPIOTE->EVENTS_IN[GPIOTE_CH_IN_ENV_LoToHi];
     uint32_t spi_start_task_addr    = (uint32_t)&NRF_SPIM3->TASKS_START;
-    uint32_t spi_stop_task_addr     = (uint32_t)&NRF_SPIM3->TASKS_STOP;
+    //uint32_t spi_stop_task_addr     = (uint32_t)&NRF_SPIM3->TASKS_STOP;
 
     NRF_PPI->CH[PPI_SPI_START_CHAN].EEP = gpiote_input_task_addr;  // envelope down
     NRF_PPI->CH[PPI_SPI_START_CHAN].TEP = spi_start_task_addr;     // start spi3 transfer
 
-    NRF_PPI->CH[3].EEP = envelope_input_LoToHi;  // envelope up, finished lh2 data
-    NRF_PPI->CH[3].TEP = spi_stop_task_addr;     // stop spi3 transfer
+    // NRF_PPI->CH[3].EEP = envelope_input_LoToHi;  // envelope up, finished lh2 data
+    // NRF_PPI->CH[3].TEP = spi_stop_task_addr;     // stop spi3 transfer
 #endif
 }
 
@@ -1188,12 +1188,12 @@ void SPIM_IRQ_HANDLER(void) {
     if (NRF_SPIM->EVENTS_END) {
         // Clear the Interrupt flag
         NRF_SPIM->EVENTS_END = 0;
-
+        NRF_P0->OUTSET = 1 << 29;
         uint32_t timestamp = db_timer_hf_now();
         // Add new reading to the ring buffer
         _add_to_spi_ring_buffer(&_lh2_4_vars.data, _lh2_4_vars.spi_rx_buffer, timestamp);
         _lh2_4_vars.lha_packet_counter += 1;
-
+        NRF_P0->OUTCLR = 1 << 29;
         // _lh2_4_vars.transfer_counter++;
         // // load global SPI buffer (_lh2_4_vars.spi_rx_buffer) into four local arrays (_lh2_4_vars.data[0].buffer ... _lh2_4_vars.data[3].buffer)
         // if (_lh2_4_vars.transfer_counter == 1) {
