@@ -455,6 +455,7 @@ void db_lh2_4_process_raw_data(db_lh2_4_t *lh2) {
     }
 
     // Put the newly read polynomials in the data structure (polynomial 0,1 must map to LH0, 2,3 to LH1. This can be accomplish by  integer-dividing the selected poly in 2, a shift >> accomplishes this.)
+    // This structur always holds the two most recent sweeps from any lighthouse
     lh2->raw_data[sweep][temp_selected_polynomial >> 1].bit_offset = temp_bit_offset;
     lh2->raw_data[sweep][temp_selected_polynomial >> 1].selected_polynomial = temp_selected_polynomial;
     lh2->raw_data[sweep][temp_selected_polynomial >> 1].bits_sweep = temp_bits_sweep;
@@ -464,37 +465,29 @@ void db_lh2_4_process_raw_data(db_lh2_4_t *lh2) {
 }
 
 void db_lh2_4_process_location(db_lh2_4_t *lh2) {
-    if (lh2->state != DB_LH2_4_RAW_DATA_READY) {
-        return;
+
+    // compute LFSR locations and detect invalid packets
+    for (uint8_t basestation = 0; basestation < LH2_4_BASESTATION_COUNT; basestation++) {
+        for (uint8_t sweep = 0; sweep < 2; sweep++){
+
+            // Check if this particular position has data point ready for sending
+            if (lh2->data_ready[sweep][basestation] == DB_LH2_4_RAW_DATA_AVAILABLE){
+
+                // Copy the selected polynomial
+                lh2->locations[sweep][basestation].selected_polynomial = lh2->raw_data[sweep][basestation].selected_polynomial;
+                // Copmute and save the lsfr location.
+                lh2->locations[sweep][basestation].lfsr_location = _reverse_count_p(
+                                                     lh2->raw_data[sweep][basestation].selected_polynomial,
+                                                     lh2->raw_data[sweep][basestation].bits_sweep >> (47 - lh2->raw_data[sweep][basestation].bit_offset)) -
+                                                 lh2->raw_data[sweep][basestation].bit_offset;
+                // Mark the data point as processed
+                lh2->data_ready[sweep][basestation] = DB_LH2_4_PROCESSED_DATA_AVAILABLE;
+            }
+
+        }
     }
 
-    // // compute LFSR locations and detect invalid packets
-    // for (uint8_t location = 0; location < LH2_4_LOCATIONS_COUNT; location++) {
-    //     lh2->locations[location].selected_polynomial = lh2->raw_data[location].selected_polynomial;
-    //     // find location of the first data set by counting the LFSR backwards
-    //     lh2->locations[location].lfsr_location = _reverse_count_p(
-    //                                                  lh2->raw_data[location].selected_polynomial,
-    //                                                  lh2->raw_data[location].bits_sweep >> (47 - lh2->raw_data[location].bit_offset)) -
-    //                                              lh2->raw_data[location].bit_offset;
-    // }
 
-    // uint32_t tmp_locations[LH2_4_LOCATIONS_COUNT] = { 0 };
-    // for (uint8_t location = 0; location < LH2_4_LOCATIONS_COUNT; location++) {
-    //     tmp_locations[location] = lh2->locations[location].lfsr_location;
-    // }
-
-    // // results from 2 LH2 were discovered - sort the two pairs
-    // if (lh2->locations[0].lfsr_location > lh2->locations[1].lfsr_location) {
-    //     lh2->locations[0].selected_polynomial = lh2->raw_data[1].selected_polynomial;
-    //     lh2->locations[0].lfsr_location       = tmp_locations[1];
-    //     lh2->locations[1].selected_polynomial = lh2->raw_data[0].selected_polynomial;
-    //     lh2->locations[1].lfsr_location       = tmp_locations[0];
-    // }
-
-    // for (uint8_t location = 0; location < LH2_4_LOCATIONS_COUNT; location++) {
-    //     memset(_lh2_4_vars.data[location].buffer, 0, LH2_4_BUFFER_SIZE);
-    // }
-    // lh2->state = DB_LH2_4_LOCATION_READY;
 }
 
 //=========================== private ==========================================
