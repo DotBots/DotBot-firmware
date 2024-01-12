@@ -932,7 +932,7 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
     uint64_t min_weight                          = LH2_4_POLYNOMIAL_ERROR_INDICATOR;
     uint64_t bits_to_compare                     = 0;
     int32_t  threshold                           = POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
-
+    uint32_t test_iteration = 0;
     // try polynomial vs. first buffer bits
     // this search takes 17-bit sequences and runs them forwards through the polynomial LFSRs.
     // if the remaining detected bits fit well with the chosen 17-bit sequence and a given polynomial, it is treated as "correct"
@@ -942,6 +942,9 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
 
     // run polynomial search on the first capture
     while (1) {
+                if(test_iteration ==9){
+            NRF_P0->OUTSET = 1 << 28;
+        }
 
         // TODO: do this math stuff in multiple operations to: (a) make it readable (b) ensure order-of-execution
         bit_buffer1       = (uint32_t)(((0xFFFF800000000000 >> (*start_val)) & chipsH1) >> (64 - 17 - (*start_val)));
@@ -981,7 +984,7 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
             *start_val      = *start_val + 1;
             bits_N_for_comp = bits_N_for_comp - 1;
         }
-
+test_iteration++;
     }
     return selected_poly;
 }
@@ -1004,6 +1007,7 @@ uint8_t _determine_polynomial_test(uint64_t chipsH1, int8_t *start_val) {
     int32_t  threshold                           = POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
 
     uint32_t test_iteration = 0;
+    
     // try polynomial vs. first buffer bits
     // this search takes 17-bit sequences and runs them forwards through the polynomial LFSRs.
     // if the remaining detected bits fit well with the chosen 17-bit sequence and a given polynomial, it is treated as "correct"
@@ -1017,6 +1021,7 @@ uint8_t _determine_polynomial_test(uint64_t chipsH1, int8_t *start_val) {
         if(test_iteration >=1){
             NRF_P0->OUTSET = 1 << 28;
         }
+
         // TODO: do this math stuff in multiple operations to: (a) make it readable (b) ensure order-of-execution
         bit_buffer1       = (uint32_t)(((0xFFFF800000000000 >> (*start_val)) & chipsH1) >> (64 - 17 - (*start_val)));
         bits_to_compare   = (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - 17 - (*start_val) - bits_N_for_comp)));
@@ -1033,31 +1038,32 @@ uint8_t _determine_polynomial_test(uint64_t chipsH1, int8_t *start_val) {
                 min_weight = weights[i];
             }
         }
-        // too few bits to reliably compare, give up
-        if (bits_N_for_comp < 10) {   
-            NRF_P1->OUTSET = 1 << 7;    
-            selected_poly = LH2_4_POLYNOMIAL_ERROR_INDICATOR;  // mark the poly as "wrong"
-            break;
-        }
+
         // If you found a sufficiently good value, then return which polinomial generated it
         if (min_weight <= (uint64_t)threshold) {
                 selected_poly = min_weight_idx;
                 break;
         // match failed, try again removing bits from the end
         } else if (*start_val > 8) {  
-            *start_val      = 0;
-            bits_N_for_comp = bits_N_for_comp + 1;
-            if (threshold > 1) {
+            *start_val      = 8;
+            bits_N_for_comp = bits_N_for_comp - 9;
+            if (threshold > 2) {
                 threshold = threshold - 1;
-            } else if (threshold == 1) {  // keep threshold at ones, but you're probably screwed with an unlucky bit error
-                threshold = 1;
+            } else if (threshold == 2) {  // keep threshold at ones, but you're probably screwed with an unlucky bit error
+                threshold = 2;
             }
         } else {
             *start_val      = *start_val + 1;
-            bits_N_for_comp = bits_N_for_comp - 1;
+            bits_N_for_comp -= 1;
         }
 
         test_iteration++;
+        // too few bits to reliably compare, give up
+        if (bits_N_for_comp < 19) {   
+            NRF_P1->OUTSET = 1 << 7;    
+            selected_poly = LH2_4_POLYNOMIAL_ERROR_INDICATOR;  // mark the poly as "wrong"
+            break;
+        }
     }
     return selected_poly;
 }
