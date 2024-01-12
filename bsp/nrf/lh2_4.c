@@ -279,6 +279,7 @@ uint64_t _poly_check(uint32_t poly, uint32_t bits, uint8_t numbits);
  * @return polynomial, indicating which polynomial was found, or FF for error (polynomial not found).
  */
 uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val);
+uint8_t _determine_polynomial_test(uint64_t chipsH1, int8_t *start_val);
 
 /**
  * @brief counts the number of 1s in a 64-bit
@@ -431,6 +432,7 @@ void db_lh2_4_process_raw_data(db_lh2_4_t *lh2) {
     uint32_t temp_timestamp;
     uint64_t temp_bits_sweep;
     uint8_t temp_selected_polynomial;
+    uint8_t temp_selected_polynomial_no_test;
     int8_t temp_bit_offset;
     int8_t sweep;
 
@@ -446,7 +448,18 @@ void db_lh2_4_process_raw_data(db_lh2_4_t *lh2) {
     // convert the SPI reading to bits via zero-crossing counter demodulation and differential/biphasic manchester decoding
     temp_bits_sweep = _demodulate_light(temp_spi_bits);
     // figure out which polynomial each one of the two samples come from.
-    temp_selected_polynomial = _determine_polynomial(temp_bits_sweep, &temp_bit_offset);
+    temp_selected_polynomial_no_test = _determine_polynomial(temp_bits_sweep, &temp_bit_offset);
+
+    NRF_P1->OUTCLR = 1 << 7;
+    NRF_P1->OUTCLR = 1 << 11;
+    NRF_P0->OUTCLR = 1 << 28;
+    NRF_P0->OUTSET = 1 << 29;
+    temp_selected_polynomial = _determine_polynomial_test(temp_bits_sweep, &temp_bit_offset);
+    NRF_P0->OUTCLR = 1 << 29;
+
+    if (temp_selected_polynomial != temp_selected_polynomial_no_test){
+        NRF_P1->OUTSET = 1 << 11;
+    }
 
     // If there was an error with the polynomial, leave without updating anything
     if (temp_selected_polynomial == LH2_4_POLYNOMIAL_ERROR_INDICATOR){
@@ -487,6 +500,7 @@ void db_lh2_4_process_location(db_lh2_4_t *lh2) {
                                                      lh2->raw_data[sweep][basestation].selected_polynomial,
                                                      lh2->raw_data[sweep][basestation].bits_sweep >> (47 - lh2->raw_data[sweep][basestation].bit_offset)) -
                                                  lh2->raw_data[sweep][basestation].bit_offset;
+
                 // Mark the data point as processed
                 lh2->data_ready[sweep][basestation] = DB_LH2_4_PROCESSED_DATA_AVAILABLE;
             }
@@ -906,7 +920,10 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
     // check which polynomial the bit sequence is part of
     // TODO: make function a void and modify memory directly
     // TODO: rename chipsH1 to something relevant... like bits?
-    int32_t  bits_N_for_comp                     = 47;
+
+    *start_val = 0;  // TODO: remove this? possible that I modify start value during the demodulation process
+
+    int32_t  bits_N_for_comp                     = 47 - *start_val;
     uint32_t bit_buffer1                         = (uint32_t)(((0xFFFF800000000000) & chipsH1) >> 47);
     uint64_t bits_from_poly[LH2_4_BASESTATION_COUNT*2] = { 0 };
     uint64_t weights[LH2_4_BASESTATION_COUNT*2]        = { 0xFFFFFFFFFFFFFFFF };
@@ -915,8 +932,6 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
     uint64_t min_weight                          = LH2_4_POLYNOMIAL_ERROR_INDICATOR;
     uint64_t bits_to_compare                     = 0;
     int32_t  threshold                           = POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
-
-    *start_val = 0;  // TODO: remove this? possible that I modify start value during the demodulation process
 
     // try polynomial vs. first buffer bits
     // this search takes 17-bit sequences and runs them forwards through the polynomial LFSRs.
@@ -927,6 +942,7 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
 
     // run polynomial search on the first capture
     while (1) {
+
         // TODO: do this math stuff in multiple operations to: (a) make it readable (b) ensure order-of-execution
         bit_buffer1       = (uint32_t)(((0xFFFF800000000000 >> (*start_val)) & chipsH1) >> (64 - 17 - (*start_val)));
         bits_to_compare   = (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - 17 - (*start_val) - bits_N_for_comp)));
@@ -937,15 +953,14 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
         for (uint8_t i = 0; i<LH2_4_BASESTATION_COUNT*2; i++){
             bits_from_poly[i] = (((_poly_check(_polynomials[i], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
             weights[i]        = _hamming_weight(bits_from_poly[i] ^ bits_to_compare);
-
             // Keep track of the minimum weight value and which polinimial generated it.
             if (weights[i] < min_weight){
                 min_weight_idx = i;
                 min_weight = weights[i];
             }
         }
-         // too few bits to reliably compare, give up
-        if (bits_N_for_comp < 10) {                         
+        // too few bits to reliably compare, give up
+        if (bits_N_for_comp < 10) {   
             selected_poly = LH2_4_POLYNOMIAL_ERROR_INDICATOR;  // mark the poly as "wrong"
             break;
         }
@@ -966,6 +981,83 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
             *start_val      = *start_val + 1;
             bits_N_for_comp = bits_N_for_comp - 1;
         }
+
+    }
+    return selected_poly;
+}
+
+uint8_t _determine_polynomial_test(uint64_t chipsH1, int8_t *start_val) {
+    // check which polynomial the bit sequence is part of
+    // TODO: make function a void and modify memory directly
+    // TODO: rename chipsH1 to something relevant... like bits?
+
+    *start_val = 8;  // TODO: remove this? possible that I modify start value during the demodulation process
+
+    int32_t  bits_N_for_comp                     = 47 - *start_val;
+    uint32_t bit_buffer1                         = (uint32_t)(((0xFFFF800000000000) & chipsH1) >> 47);
+    uint64_t bits_from_poly[LH2_4_BASESTATION_COUNT*2] = { 0 };
+    uint64_t weights[LH2_4_BASESTATION_COUNT*2]        = { 0xFFFFFFFFFFFFFFFF };
+    uint8_t  selected_poly                       = LH2_4_POLYNOMIAL_ERROR_INDICATOR;  // initialize to error condition
+    uint8_t  min_weight_idx                      = LH2_4_POLYNOMIAL_ERROR_INDICATOR;
+    uint64_t min_weight                          = LH2_4_POLYNOMIAL_ERROR_INDICATOR;
+    uint64_t bits_to_compare                     = 0;
+    int32_t  threshold                           = POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
+
+    uint32_t test_iteration = 0;
+    // try polynomial vs. first buffer bits
+    // this search takes 17-bit sequences and runs them forwards through the polynomial LFSRs.
+    // if the remaining detected bits fit well with the chosen 17-bit sequence and a given polynomial, it is treated as "correct"
+    // in case of bit errors at the beginning of the capture, the 17-bit sequence is shifted (to a max of 8 bits)
+    // in case of bit errors at the end of the capture, the ending bits are removed (to a max of
+    // removing bits reduces the threshold correspondingly, as incorrect packet detection will cause a significant delay in location estimate
+
+    // run polynomial search on the first capture
+    while (1) {
+
+        if(test_iteration >=1){
+            NRF_P0->OUTSET = 1 << 28;
+        }
+        // TODO: do this math stuff in multiple operations to: (a) make it readable (b) ensure order-of-execution
+        bit_buffer1       = (uint32_t)(((0xFFFF800000000000 >> (*start_val)) & chipsH1) >> (64 - 17 - (*start_val)));
+        bits_to_compare   = (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - 17 - (*start_val) - bits_N_for_comp)));
+        // reset the minimum polynomial match found
+        min_weight_idx                      = LH2_4_POLYNOMIAL_ERROR_INDICATOR; 
+        min_weight                          = LH2_4_POLYNOMIAL_ERROR_INDICATOR;
+        // Check against all the known polynomials
+        for (uint8_t i = 0; i<LH2_4_BASESTATION_COUNT*2; i++){
+            bits_from_poly[i] = (((_poly_check(_polynomials[i], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
+            weights[i]        = _hamming_weight(bits_from_poly[i] ^ bits_to_compare);
+            // Keep track of the minimum weight value and which polinimial generated it.
+            if (weights[i] < min_weight){
+                min_weight_idx = i;
+                min_weight = weights[i];
+            }
+        }
+        // too few bits to reliably compare, give up
+        if (bits_N_for_comp < 10) {   
+            NRF_P1->OUTSET = 1 << 7;    
+            selected_poly = LH2_4_POLYNOMIAL_ERROR_INDICATOR;  // mark the poly as "wrong"
+            break;
+        }
+        // If you found a sufficiently good value, then return which polinomial generated it
+        if (min_weight <= (uint64_t)threshold) {
+                selected_poly = min_weight_idx;
+                break;
+        // match failed, try again removing bits from the end
+        } else if (*start_val > 8) {  
+            *start_val      = 0;
+            bits_N_for_comp = bits_N_for_comp + 1;
+            if (threshold > 1) {
+                threshold = threshold - 1;
+            } else if (threshold == 1) {  // keep threshold at ones, but you're probably screwed with an unlucky bit error
+                threshold = 1;
+            }
+        } else {
+            *start_val      = *start_val + 1;
+            bits_N_for_comp = bits_N_for_comp - 1;
+        }
+
+        test_iteration++;
     }
     return selected_poly;
 }
