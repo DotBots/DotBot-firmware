@@ -1170,21 +1170,27 @@ uint32_t _reverse_count_p_test(uint8_t index, uint32_t bits) {
     uint32_t result      = 0;
     uint32_t b17         = 0;
     uint32_t masked_buff = 0;
+
     while (buffer != _end_buffers[index][0])  // do until buffer reaches one of the saved states
     {
-        NRF_P1->OUTSET = 1 << 07;
+        
         b17         = buffer & 0x00000001;               // save the "newest" bit of the buffer
         buffer      = (buffer & (0x0001FFFE)) >> 1;      // shift the buffer right, backwards in time
         masked_buff = (buffer) & (_polynomials[index]);  // mask the buffer w/ the selected polynomial
+        NRF_P1->OUTSET = 1 << 07;
         for (ii = 0; ii < 17; ii++) {
-            result = result ^ (((masked_buff) >> ii) & (0x00000001));  // cumulative sum of buffer&poly
+           result = result ^ (((masked_buff) >> ii) & (0x00000001));  // cumulative sum of buffer&poly
         }
         result = result ^ b17;
         buffer = buffer | (result << 16);  // update buffer w/ result
-        result = 0;                        // reset result
-        count++;
+        result = 0; // reset result
+        
         NRF_P1->OUTCLR = 1 << 07;
         NRF_P0->OUTSET = 1 << 28;
+        buffer = buffer | (((__builtin_popcount(masked_buff) ^ b17) & 0x00000001) << 16);
+        NRF_P0->OUTCLR = 1 << 28;
+        count++;
+                                
         if ((buffer ^ _end_buffers[index][1]) == 0x00000000) {
             count  = count + 8192 - 1;
             buffer = _end_buffers[index][0];
