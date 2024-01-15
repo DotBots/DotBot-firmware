@@ -299,6 +299,7 @@ uint64_t _hamming_weight(uint64_t bits_in);
  * @return count: location of the sequence
  */
 uint32_t _reverse_count_p(uint8_t index, uint32_t bits);
+uint32_t _reverse_count_p_test(uint8_t index, uint32_t bits);
 
 /**
  * @brief Set a gpio as an INPUT with no pull-up or pull-down
@@ -432,7 +433,7 @@ void db_lh2_4_process_raw_data(db_lh2_4_t *lh2) {
     uint32_t temp_timestamp;
     uint64_t temp_bits_sweep;
     uint8_t temp_selected_polynomial;
-    uint8_t temp_selected_polynomial_no_test;
+    //uint8_t temp_selected_polynomial_no_test;
     int8_t temp_bit_offset;
     int8_t sweep;
 
@@ -448,18 +449,9 @@ void db_lh2_4_process_raw_data(db_lh2_4_t *lh2) {
     // convert the SPI reading to bits via zero-crossing counter demodulation and differential/biphasic manchester decoding
     temp_bits_sweep = _demodulate_light(temp_spi_bits);
     // figure out which polynomial each one of the two samples come from.
-    temp_selected_polynomial_no_test = _determine_polynomial(temp_bits_sweep, &temp_bit_offset);
+    //temp_selected_polynomial_no_test = _determine_polynomial(temp_bits_sweep, &temp_bit_offset);
 
-    NRF_P1->OUTCLR = 1 << 7;
-    NRF_P1->OUTCLR = 1 << 11;
-    NRF_P0->OUTCLR = 1 << 28;
-    NRF_P0->OUTSET = 1 << 29;
     temp_selected_polynomial = _determine_polynomial_test(temp_bits_sweep, &temp_bit_offset);
-    NRF_P0->OUTCLR = 1 << 29;
-
-    if (temp_selected_polynomial != temp_selected_polynomial_no_test){
-        NRF_P1->OUTSET = 1 << 11;
-    }
 
     // If there was an error with the polynomial, leave without updating anything
     if (temp_selected_polynomial == LH2_4_POLYNOMIAL_ERROR_INDICATOR){
@@ -486,6 +478,8 @@ void db_lh2_4_process_raw_data(db_lh2_4_t *lh2) {
 
 void db_lh2_4_process_location(db_lh2_4_t *lh2) {
 
+    uint32_t lfsr_loc_temp, lsfr_loc_temp_test;
+
     // compute LFSR locations and detect invalid packets
     for (uint8_t basestation = 0; basestation < LH2_4_BASESTATION_COUNT; basestation++) {
         for (uint8_t sweep = 0; sweep < 2; sweep++){
@@ -496,19 +490,33 @@ void db_lh2_4_process_location(db_lh2_4_t *lh2) {
                 // Copy the selected polynomial
                 lh2->locations[sweep][basestation].selected_polynomial = lh2->raw_data[sweep][basestation].selected_polynomial;
                 // Copmute and save the lsfr location.
-                lh2->locations[sweep][basestation].lfsr_location = _reverse_count_p(
+                lfsr_loc_temp = _reverse_count_p(
                                                      lh2->raw_data[sweep][basestation].selected_polynomial,
                                                      lh2->raw_data[sweep][basestation].bits_sweep >> (47 - lh2->raw_data[sweep][basestation].bit_offset)) -
-                                                 lh2->raw_data[sweep][basestation].bit_offset;
+                                                lh2->raw_data[sweep][basestation].bit_offset;
+                
+                lh2->locations[sweep][basestation].lfsr_location = lfsr_loc_temp;
+                
+                NRF_P1->OUTCLR = 1 << 11;
+                NRF_P0->OUTSET = 1 << 29;
+                lsfr_loc_temp_test = _reverse_count_p_test(
+                                                     lh2->raw_data[sweep][basestation].selected_polynomial,
+                                                     lh2->raw_data[sweep][basestation].bits_sweep >> (47 - lh2->raw_data[sweep][basestation].bit_offset)) -
+                                                lh2->raw_data[sweep][basestation].bit_offset;
+                NRF_P0->OUTCLR = 1 << 29;
+                lh2->locations[sweep][basestation].lfsr_location = lsfr_loc_temp_test; 
+
+
+                if (lfsr_loc_temp != lsfr_loc_temp_test){
+                    NRF_P1->OUTSET = 1 << 11;
+                }
+
 
                 // Mark the data point as processed
                 lh2->data_ready[sweep][basestation] = DB_LH2_4_PROCESSED_DATA_AVAILABLE;
             }
-
         }
     }
-
-
 }
 
 //=========================== private ==========================================
@@ -1005,8 +1013,6 @@ uint8_t _determine_polynomial_test(uint64_t chipsH1, int8_t *start_val) {
     uint64_t min_weight                          = LH2_4_POLYNOMIAL_ERROR_INDICATOR;
     uint64_t bits_to_compare                     = 0;
     int32_t  threshold                           = POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
-
-    uint32_t test_iteration = 0;
     
     // try polynomial vs. first buffer bits
     // this search takes 17-bit sequences and runs them forwards through the polynomial LFSRs.
@@ -1017,10 +1023,6 @@ uint8_t _determine_polynomial_test(uint64_t chipsH1, int8_t *start_val) {
 
     // run polynomial search on the first capture
     while (1) {
-
-        if(test_iteration >=1){
-            NRF_P0->OUTSET = 1 << 28;
-        }
 
         // TODO: do this math stuff in multiple operations to: (a) make it readable (b) ensure order-of-execution
         bit_buffer1       = (uint32_t)(((0xFFFF800000000000 >> (*start_val)) & chipsH1) >> (64 - 17 - (*start_val)));
@@ -1057,10 +1059,8 @@ uint8_t _determine_polynomial_test(uint64_t chipsH1, int8_t *start_val) {
             bits_N_for_comp -= 1;
         }
 
-        test_iteration++;
         // too few bits to reliably compare, give up
-        if (bits_N_for_comp < 19) {   
-            NRF_P1->OUTSET = 1 << 7;    
+        if (bits_N_for_comp < 19) {     
             selected_poly = LH2_4_POLYNOMIAL_ERROR_INDICATOR;  // mark the poly as "wrong"
             break;
         }
@@ -1159,6 +1159,93 @@ uint32_t _reverse_count_p(uint8_t index, uint32_t bits) {
             count  = count + 122880 - 1;
             buffer = _end_buffers[index][0];
         }
+    }
+    return count;
+}
+
+uint32_t _reverse_count_p_test(uint8_t index, uint32_t bits) {
+    uint32_t count       = 0;
+    uint32_t buffer      = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
+    uint8_t  ii          = 0;                   // loop variable for cumulative sum
+    uint32_t result      = 0;
+    uint32_t b17         = 0;
+    uint32_t masked_buff = 0;
+    while (buffer != _end_buffers[index][0])  // do until buffer reaches one of the saved states
+    {
+        NRF_P1->OUTSET = 1 << 07;
+        b17         = buffer & 0x00000001;               // save the "newest" bit of the buffer
+        buffer      = (buffer & (0x0001FFFE)) >> 1;      // shift the buffer right, backwards in time
+        masked_buff = (buffer) & (_polynomials[index]);  // mask the buffer w/ the selected polynomial
+        for (ii = 0; ii < 17; ii++) {
+            result = result ^ (((masked_buff) >> ii) & (0x00000001));  // cumulative sum of buffer&poly
+        }
+        result = result ^ b17;
+        buffer = buffer | (result << 16);  // update buffer w/ result
+        result = 0;                        // reset result
+        count++;
+        NRF_P1->OUTCLR = 1 << 07;
+        NRF_P0->OUTSET = 1 << 28;
+        if ((buffer ^ _end_buffers[index][1]) == 0x00000000) {
+            count  = count + 8192 - 1;
+            buffer = _end_buffers[index][0];
+        }
+        if ((buffer ^ _end_buffers[index][2]) == 0x00000000) {
+            count  = count + 16384 - 1;
+            buffer = _end_buffers[index][0];
+        }
+        if ((buffer ^ _end_buffers[index][3]) == 0x00000000) {
+            count  = count + 24576 - 1;
+            buffer = _end_buffers[index][0];
+        }
+        if ((buffer ^ _end_buffers[index][4]) == 0x00000000) {
+            count  = count + 32768 - 1;
+            buffer = _end_buffers[index][0];
+        }
+        if ((buffer ^ _end_buffers[index][5]) == 0x00000000) {
+            count  = count + 40960 - 1;
+            buffer = _end_buffers[index][0];
+        }
+        if ((buffer ^ _end_buffers[index][6]) == 0x00000000) {
+            count  = count + 49152 - 1;
+            buffer = _end_buffers[index][0];
+        }
+        if ((buffer ^ _end_buffers[index][7]) == 0x00000000) {
+            count  = count + 57344 - 1;
+            buffer = _end_buffers[index][0];
+        }
+        if ((buffer ^ _end_buffers[index][8]) == 0x00000000) {
+            count  = count + 65536 - 1;
+            buffer = _end_buffers[index][0];
+        }
+        if ((buffer ^ _end_buffers[index][9]) == 0x00000000) {
+            count  = count + 73728 - 1;
+            buffer = _end_buffers[index][0];
+        }
+        if ((buffer ^ _end_buffers[index][10]) == 0x00000000) {
+            count  = count + 81920 - 1;
+            buffer = _end_buffers[index][0];
+        }
+        if ((buffer ^ _end_buffers[index][11]) == 0x00000000) {
+            count  = count + 90112 - 1;
+            buffer = _end_buffers[index][0];
+        }
+        if ((buffer ^ _end_buffers[index][12]) == 0x00000000) {
+            count  = count + 98304 - 1;
+            buffer = _end_buffers[index][0];
+        }
+        if ((buffer ^ _end_buffers[index][13]) == 0x00000000) {
+            count  = count + 106496 - 1;
+            buffer = _end_buffers[index][0];
+        }
+        if ((buffer ^ _end_buffers[index][14]) == 0x00000000) {
+            count  = count + 114688 - 1;
+            buffer = _end_buffers[index][0];
+        }
+        if ((buffer ^ _end_buffers[index][15]) == 0x00000000) {
+            count  = count + 122880 - 1;
+            buffer = _end_buffers[index][0];
+        }
+        NRF_P0->OUTCLR = 1 << 28;
     }
     return count;
 }

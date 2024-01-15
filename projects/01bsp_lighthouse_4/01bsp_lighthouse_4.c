@@ -31,10 +31,10 @@ static db_lh2_4_t _lh2;
 /*
 P0.30 -> TS4231 Data pin
 P1.04 -> SPI SCLK
-P0.29 ->    High -> at the start of _determine_polynomial()
-            Low  - at the end of _determine_polynomial()
-P1.07 -> Goes briefly HIGH if there _determine_polynomial() failed to determine the polynomial
-P0.28 -> Goes high if _determine_polynomial() took more than 1 iteration to find the polynomial
+P0.29 ->    High -> at the start of _reverse_p_count()
+            Low  - at the end of _reverse_p_count()
+P1.07 -> HIGH during the LSFR update in _reverse_p_count()
+P0.28 -> HIGH during the checkpoint check in _reverse_p_count().
 P1.11 -> Goes high if the original function and the function with the changes being tested gives differet results
 
 */
