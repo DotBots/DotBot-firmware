@@ -1166,92 +1166,100 @@ uint32_t _reverse_count_p(uint8_t index, uint32_t bits) {
 uint32_t _reverse_count_p_test(uint8_t index, uint32_t bits) {
     uint32_t count       = 0;
     uint32_t buffer      = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
-    uint8_t  ii          = 0;                   // loop variable for cumulative sum
-    uint32_t result      = 0;
     uint32_t b17         = 0;
     uint32_t masked_buff = 0;
+    //uint32_t result_test = 0;
 
-    while (buffer != _end_buffers[index][0])  // do until buffer reaches one of the saved states
+    NRF_P1->OUTSET = 1 << 07;
+    // Copy const variables (Flash) into local variables (RAM) to speed up execution.
+    uint32_t _end_buffers_local[16];
+    uint32_t polynomials_local = _polynomials[index];
+
+    for (size_t i = 0; i < 16; i++)
     {
+        _end_buffers_local[i] = _end_buffers[index][i];
+    }
+    NRF_P1->OUTCLR = 1 << 07;
+
+
+    while (buffer != _end_buffers_local[0])  // do until buffer reaches one of the saved states
+    {
+        
         
         b17         = buffer & 0x00000001;               // save the "newest" bit of the buffer
         buffer      = (buffer & (0x0001FFFE)) >> 1;      // shift the buffer right, backwards in time
-        masked_buff = (buffer) & (_polynomials[index]);  // mask the buffer w/ the selected polynomial
-        NRF_P1->OUTSET = 1 << 07;
-        for (ii = 0; ii < 17; ii++) {
-           result = result ^ (((masked_buff) >> ii) & (0x00000001));  // cumulative sum of buffer&poly
-        }
-        result = result ^ b17;
-        buffer = buffer | (result << 16);  // update buffer w/ result
-        result = 0; // reset result
-        
-        NRF_P1->OUTCLR = 1 << 07;
-        NRF_P0->OUTSET = 1 << 28;
-        buffer = buffer | (((__builtin_popcount(masked_buff) ^ b17) & 0x00000001) << 16);
-        NRF_P0->OUTCLR = 1 << 28;
+        masked_buff = (buffer) & (polynomials_local);  // mask the buffer w/ the selected polynomial
+        buffer = buffer | (((__builtin_popcount(masked_buff) ^ b17) & 0x00000001) << 16);  // This weird line propagates the LSFR one bit into the past
         count++;
-                                
-        if ((buffer ^ _end_buffers[index][1]) == 0x00000000) {
+
+        
+
+
+
+        NRF_P0->OUTSET = 1 << 28;
+        if (buffer == _end_buffers_local[1]) {
             count  = count + 8192 - 1;
-            buffer = _end_buffers[index][0];
+            buffer = _end_buffers_local[0];
         }
-        if ((buffer ^ _end_buffers[index][2]) == 0x00000000) {
+        if (buffer == _end_buffers_local[2]) {
             count  = count + 16384 - 1;
-            buffer = _end_buffers[index][0];
+            buffer = _end_buffers_local[0];
         }
-        if ((buffer ^ _end_buffers[index][3]) == 0x00000000) {
+        if (buffer == _end_buffers_local[3]) {
             count  = count + 24576 - 1;
-            buffer = _end_buffers[index][0];
+            buffer = _end_buffers_local[0];
         }
-        if ((buffer ^ _end_buffers[index][4]) == 0x00000000) {
+        if (buffer == _end_buffers_local[4]) {
             count  = count + 32768 - 1;
-            buffer = _end_buffers[index][0];
+            buffer = _end_buffers_local[0];
         }
-        if ((buffer ^ _end_buffers[index][5]) == 0x00000000) {
+        if (buffer == _end_buffers_local[5]) {
             count  = count + 40960 - 1;
-            buffer = _end_buffers[index][0];
+            buffer = _end_buffers_local[0];
         }
-        if ((buffer ^ _end_buffers[index][6]) == 0x00000000) {
+        if (buffer == _end_buffers_local[6]) {
             count  = count + 49152 - 1;
-            buffer = _end_buffers[index][0];
+            buffer = _end_buffers_local[0];
         }
-        if ((buffer ^ _end_buffers[index][7]) == 0x00000000) {
+        if (buffer == _end_buffers_local[7]) {
             count  = count + 57344 - 1;
-            buffer = _end_buffers[index][0];
+            buffer = _end_buffers_local[0];
         }
-        if ((buffer ^ _end_buffers[index][8]) == 0x00000000) {
+        if (buffer == _end_buffers_local[8]) {
             count  = count + 65536 - 1;
-            buffer = _end_buffers[index][0];
+            buffer = _end_buffers_local[0];
         }
-        if ((buffer ^ _end_buffers[index][9]) == 0x00000000) {
+        if (buffer == _end_buffers_local[9]) {
             count  = count + 73728 - 1;
-            buffer = _end_buffers[index][0];
+            buffer = _end_buffers_local[0];
         }
-        if ((buffer ^ _end_buffers[index][10]) == 0x00000000) {
+        if (buffer == _end_buffers_local[10]) {
             count  = count + 81920 - 1;
-            buffer = _end_buffers[index][0];
+            buffer = _end_buffers_local[0];
         }
-        if ((buffer ^ _end_buffers[index][11]) == 0x00000000) {
+        if (buffer == _end_buffers_local[11]) {
             count  = count + 90112 - 1;
-            buffer = _end_buffers[index][0];
+            buffer = _end_buffers_local[0];
         }
-        if ((buffer ^ _end_buffers[index][12]) == 0x00000000) {
+        if (buffer == _end_buffers_local[12]) {
             count  = count + 98304 - 1;
-            buffer = _end_buffers[index][0];
+            buffer = _end_buffers_local[0];
         }
-        if ((buffer ^ _end_buffers[index][13]) == 0x00000000) {
+        if (buffer == _end_buffers_local[13]) {
             count  = count + 106496 - 1;
-            buffer = _end_buffers[index][0];
+            buffer = _end_buffers_local[0];
         }
-        if ((buffer ^ _end_buffers[index][14]) == 0x00000000) {
+        if (buffer == _end_buffers_local[14]) {
             count  = count + 114688 - 1;
-            buffer = _end_buffers[index][0];
+            buffer = _end_buffers_local[0];
         }
-        if ((buffer ^ _end_buffers[index][15]) == 0x00000000) {
+        if (buffer == _end_buffers_local[15]) {
             count  = count + 122880 - 1;
-            buffer = _end_buffers[index][0];
+            buffer = _end_buffers_local[0];
         }
         NRF_P0->OUTCLR = 1 << 28;
+
+
     }
     return count;
 }
