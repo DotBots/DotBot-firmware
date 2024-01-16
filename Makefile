@@ -17,7 +17,7 @@ ifeq (nrf5340dk-app,$(BUILD_TARGET))
     01bsp_nvmc \
     01bsp_qdec \
     01bsp_radio_txrx \
-    01bsp_radio_lr_txrx \
+    01bsp_radio_txrx_lr \
     01bsp_rgbled \
     01bsp_rng \
     01bsp_rpm \
@@ -42,7 +42,7 @@ else ifeq (nrf5340dk-net,$(BUILD_TARGET))
     01bsp_motors \
     01bsp_nvmc \
     01bsp_radio_txrx \
-    01bsp_radio_lr_txrx \
+    01bsp_radio_txrx_lr \
     01bsp_rgbled \
     01bsp_rng \
     01bsp_rpm \

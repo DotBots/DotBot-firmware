@@ -234,11 +234,11 @@
       <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
-  <project Name="01bsp_radio_lr_txrx">
+  <project Name="01bsp_radio_txrx_lr">
     <configuration
       Name="Common"
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_radio(bsp);00bsp_gpio(bsp);00bsp_timer_hf(bsp)"
-      project_directory="01bsp_radio_lr_txrx"
+      project_directory="01bsp_radio_txrx_lr"
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(DeviceCommonHeaderFile)" />
@@ -263,7 +263,8 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="01bsp_radio_lr_txrx.c" />
+      <file file_name="../01bsp_radio_txrx/01bsp_radio_txrx.c" />
+      <file file_name="conf.h" />
     </folder>
     <folder Name="System Files">
       <file file_name="$(DeviceCommonVectorsFile)" />
@@ -303,6 +304,7 @@
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01bsp_radio_txrx.c" />
+      <file file_name="conf.h" />
     </folder>
     <folder Name="System Files">
       <file file_name="$(DeviceCommonVectorsFile)" />
