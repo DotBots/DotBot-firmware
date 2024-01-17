@@ -35,6 +35,10 @@
 #define PPI_SPI_START_CHAN                     2
 #define PPI_SPI_STOP_CHAN                      3
 #define PPI_SPI_GROUP                          0
+#define HASH_TABLE_BITS                        11                               ///< How many bits will be used for the hashtable for the _end_buffers
+#define HASH_TABLE_SIZE                        (1 << HASH_TABLE_BITS)           ///< How big will the hashtable for the _end_buffers
+#define HASH_TABLE_MASK                        ((1 << HASH_TABLE_BITS) - 1)      ///< Mask selecting the HAS_TABLE_BITS least significant bits
+#define NUM_LSFR_COUNT_CHECKPOINTS             16                               ///< How many lsfr checkpoints are per polynomial
 
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
 #define NRF_SPIM         NRF_SPIM4_S
@@ -67,7 +71,7 @@ typedef struct {
 
 //=========================== variables ========================================
 
-static const uint32_t _polynomials[8] = {
+static const uint32_t _polynomials[LH2_4_BASESTATION_COUNT*2] = {
     0x0001D258,
     0x00017E04,
     0x0001FF6B,
@@ -78,160 +82,162 @@ static const uint32_t _polynomials[8] = {
     0x00018A55,
 };
 
-static const uint32_t _end_buffers[8][16] = {
+static const uint32_t _end_buffers[LH2_4_BASESTATION_COUNT*2][NUM_LSFR_COUNT_CHECKPOINTS] = {
     {
         // p0
         0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
-        0b10101010110011101,  // 1/16 way through
-        0b10001010101011010,  // 2/16 way through
-        0b11001100100000010,  // 3/16 way through
-        0b01100101100011111,  // 4/16 way through
-        0b10010001101011110,  // 5/16 way through
-        0b10100011001011111,  // 6/16 way through
-        0b11110001010110001,  // 7/16 way through
-        0b10111000110011011,  // 8/16 way through
-        0b10100110100011110,  // 9/16 way through
-        0b11001101100010000,  // 10/16 way through
-        0b01000101110011111,  // 11/16 way through
-        0b11100101011110101,  // 12/16 way through
-        0b01001001110110111,  // 13/16 way through
-        0b11011100110011101,  // 14/16 way through
-        0b10000110101101011,  // 15/16 way through
+        0b10101010110011101,  // 1/16 way
+        0b10001010101011010,  // 2/16 way 
+        0b11001100100000010,  // 3/16 way 
+        0b01100101100011111,  // 4/16 way 
+        0b10010001101011110,  // 5/16 way 
+        0b10100011001011111,  // 6/16 way 
+        0b11110001010110001,  // 7/16 way 
+        0b10111000110011011,  // 8/16 way 
+        0b10100110100011110,  // 9/16 way 
+        0b11001101100010000,  // 10/16 way 
+        0b01000101110011111,  // 11/16 way 
+        0b11100101011110101,  // 12/16 way 
+        0b01001001110110111,  // 13/16 way 
+        0b11011100110011101,  // 14/16 way 
+        0b10000110101101011,  // 15/16 way 
     },
     {
         // p1
         0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
-        0b11010000110111110,  // 1/16 way through
-        0b10110111100111100,  // 2/16 way through
-        0b11000010101101111,  // 3/16 way through
-        0b00101110001101110,  // 4/16 way through
-        0b01000011000110100,  // 5/16 way through
-        0b00010001010011110,  // 6/16 way through
-        0b10100101111010001,  // 7/16 way through
-        0b10011000000100001,  // 8/16 way through
-        0b01110011011010110,  // 9/16 way through
-        0b00100011101000011,  // 10/16 way through
-        0b10111011010000101,  // 11/16 way through
-        0b00110010100110110,  // 12/16 way through
-        0b01000111111100110,  // 13/16 way through
-        0b10001101000111011,  // 14/16 way through
-        0b00111100110011100,  // 15/16 way through
+        0b11010000110111110,  // 1/16 way 
+        0b10110111100111100,  // 2/16 way 
+        0b11000010101101111,  // 3/16 way 
+        0b00101110001101110,  // 4/16 way 
+        0b01000011000110100,  // 5/16 way 
+        0b00010001010011110,  // 6/16 way 
+        0b10100101111010001,  // 7/16 way 
+        0b10011000000100001,  // 8/16 way 
+        0b01110011011010110,  // 9/16 way 
+        0b00100011101000011,  // 10/16 way 
+        0b10111011010000101,  // 11/16 way 
+        0b00110010100110110,  // 12/16 way 
+        0b01000111111100110,  // 13/16 way 
+        0b10001101000111011,  // 14/16 way 
+        0b00111100110011100,  // 15/16 way 
     },
     {
         // p2
         0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
-        0b00011011011000100,  // 1/16 way through
-        0b01011101010010110,  // 2/16 way through
-        0b11001011001101010,  // 3/16 way through
-        0b01110001111011010,  // 4/16 way through
-        0b10110110011111010,  // 5/16 way through
-        0b10110001110000001,  // 6/16 way through
-        0b10001001011101001,  // 7/16 way through
-        0b00000010011101011,  // 8/16 way through
-        0b01100010101111011,  // 9/16 way through
-        0b00111000001101111,  // 10/16 way through
-        0b10101011100111000,  // 11/16 way through
-        0b01111110101111111,  // 12/16 way through
-        0b01000011110101010,  // 13/16 way through
-        0b01001011100000011,  // 14/16 way through
-        0b00010110111101110,  // 15/16 way through
+        0b00011011011000100,  // 1/16 way 
+        0b01011101010010110,  // 2/16 way 
+        0b11001011001101010,  // 3/16 way 
+        0b01110001111011010,  // 4/16 way 
+        0b10110110011111010,  // 5/16 way 
+        0b10110001110000001,  // 6/16 way 
+        0b10001001011101001,  // 7/16 way 
+        0b00000010011101011,  // 8/16 way 
+        0b01100010101111011,  // 9/16 way 
+        0b00111000001101111,  // 10/16 way 
+        0b10101011100111000,  // 11/16 way 
+        0b01111110101111111,  // 12/16 way 
+        0b01000011110101010,  // 13/16 way 
+        0b01001011100000011,  // 14/16 way 
+        0b00010110111101110,  // 15/16 way 
     },
     {
         // p3
         0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
-        0b11011011110010110,  // 1/16 way through
-        0b11000100000001101,  // 2/16 way through
-        0b11100011000010110,  // 3/16 way through
-        0b00011111010001100,  // 4/16 way through
-        0b11000001011110011,  // 5/16 way through
-        0b10011101110001010,  // 6/16 way through
-        0b00001011001111000,  // 7/16 way through
-        0b00111100010000101,  // 8/16 way through
-        0b01001111001010100,  // 9/16 way through
-        0b01011010010110011,  // 10/16 way through
-        0b11111101010001100,  // 11/16 way through
-        0b00110101011011111,  // 12/16 way through
-        0b01110110010101011,  // 13/16 way through
-        0b00010000110100010,  // 14/16 way through
-        0b00010111110101110,  // 15/16 way through
+        0b11011011110010110,  // 1/16 way 
+        0b11000100000001101,  // 2/16 way 
+        0b11100011000010110,  // 3/16 way 
+        0b00011111010001100,  // 4/16 way 
+        0b11000001011110011,  // 5/16 way 
+        0b10011101110001010,  // 6/16 way 
+        0b00001011001111000,  // 7/16 way 
+        0b00111100010000101,  // 8/16 way 
+        0b01001111001010100,  // 9/16 way 
+        0b01011010010110011,  // 10/16 way 
+        0b11111101010001100,  // 11/16 way 
+        0b00110101011011111,  // 12/16 way 
+        0b01110110010101011,  // 13/16 way 
+        0b00010000110100010,  // 14/16 way 
+        0b00010111110101110,  // 15/16 way 
     },
     {
         // p4
         0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
-        0b11000011111110101,  // 1/16 way through
-        0b01111110000100101,  // 2/16 way through
-        0b01011100011111100,  // 3/16 way through
-        0b11001000111100000,  // 4/16 way through
-        0b00010001010010110,  // 5/16 way through
-        0b00100010100111011,  // 6/16 way through
-        0b10111101100101000,  // 7/16 way through
-        0b01000101010111010,  // 8/16 way through
-        0b10111101100011011,  // 9/16 way through
-        0b11110100111101000,  // 10/16 way through
-        0b11100010000111100,  // 11/16 way through
-        0b11010010101101010,  // 12/16 way through
-        0b01101100110010010,  // 13/16 way through
-        0b11111000100010000,  // 14/16 way through
-        0b00111011101100011,  // 15/16 way through
+        0b11000011111110101,  // 1/16 way 
+        0b01111110000100101,  // 2/16 way 
+        0b01011100011111100,  // 3/16 way 
+        0b11001000111100000,  // 4/16 way 
+        0b00010001010010110,  // 5/16 way 
+        0b00100010100111011,  // 6/16 way 
+        0b10111101100101000,  // 7/16 way 
+        0b01000101010111010,  // 8/16 way 
+        0b10111101100011011,  // 9/16 way 
+        0b11110100111101000,  // 10/16 way 
+        0b11100010000111100,  // 11/16 way 
+        0b11010010101101010,  // 12/16 way 
+        0b01101100110010010,  // 13/16 way 
+        0b11111000100010000,  // 14/16 way 
+        0b00111011101100011,  // 15/16 way 
     },
     {
         // p5
         0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
-        0b11001000010011110,  // 1/16 way through
-        0b10011010101100010,  // 2/16 way through
-        0b01100111010001011,  // 3/16 way through
-        0b11011011100110100,  // 4/16 way through
-        0b01001000001001100,  // 5/16 way through
-        0b11000001001111010,  // 6/16 way through
-        0b11001000010010000,  // 7/16 way through
-        0b10001110110110000,  // 8/16 way through
-        0b11111001001100101,  // 9/16 way through
-        0b01100001010010111,  // 10/16 way through
-        0b01000110101100010,  // 11/16 way through
-        0b11010011000101000,  // 12/16 way through
-        0b01011001111000111,  // 13/16 way through
-        0b10011010110011010,  // 14/16 way through
-        0b00001001000001110,  // 15/16 way through
+        0b11001000010011110,  // 1/16 way 
+        0b10011010101100010,  // 2/16 way 
+        0b01100111010001011,  // 3/16 way 
+        0b11011011100110100,  // 4/16 way 
+        0b01001000001001100,  // 5/16 way 
+        0b11000001001111010,  // 6/16 way 
+        0b11001000010010000,  // 7/16 way 
+        0b10001110110110000,  // 8/16 way 
+        0b11111001001100101,  // 9/16 way 
+        0b01100001010010111,  // 10/16 way 
+        0b01000110101100010,  // 11/16 way 
+        0b11010011000101000,  // 12/16 way 
+        0b01011001111000111,  // 13/16 way 
+        0b10011010110011010,  // 14/16 way 
+        0b00001001000001110,  // 15/16 way 
     },
     {
         // p6
         0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
-        0b01110110101110110,  // 1/16 way through
-        0b00111111000100011,  // 2/16 way through
-        0b10011010110110011,  // 3/16 way through
-        0b11110001001110000,  // 4/16 way through
-        0b10001101001000111,  // 5/16 way through
-        0b01001000110110000,  // 6/16 way through
-        0b01000011100101101,  // 7/16 way through
-        0b00100110001001001,  // 8/16 way through
-        0b11001011101000100,  // 9/16 way through
-        0b11001011011100111,  // 10/16 way through
-        0b11001101100101000,  // 11/16 way through
-        0b00100011001101100,  // 12/16 way through
-        0b01011101001100000,  // 13/16 way through
-        0b11111001011001111,  // 14/16 way through
-        0b01001101000100110,  // 15/16 way through
+        0b01110110101110110,  // 1/16 way 
+        0b00111111000100011,  // 2/16 way 
+        0b10011010110110011,  // 3/16 way 
+        0b11110001001110000,  // 4/16 way 
+        0b10001101001000111,  // 5/16 way 
+        0b01001000110110000,  // 6/16 way 
+        0b01000011100101101,  // 7/16 way 
+        0b00100110001001001,  // 8/16 way 
+        0b11001011101000100,  // 9/16 way 
+        0b11001011011100111,  // 10/16 way 
+        0b11001101100101000,  // 11/16 way 
+        0b00100011001101100,  // 12/16 way 
+        0b01011101001100000,  // 13/16 way 
+        0b11111001011001111,  // 14/16 way 
+        0b01001101000100110,  // 15/16 way 
     },
     {
         // p7
         0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
-        0b01000010111001111,  // 1/16 way through
-        0b00011111000011111,  // 2/16 way through
-        0b00100101010100111,  // 3/16 way through
-        0b10001110011000110,  // 4/16 way through
-        0b01000011011111110,  // 5/16 way through
-        0b01001001000001101,  // 6/16 way through
-        0b01110011110100100,  // 7/16 way through
-        0b10010000110101010,  // 8/16 way through
-        0b01010001101010011,  // 9/16 way through
-        0b00011011000110101,  // 10/16 way through
-        0b11001100101110100,  // 11/16 way through
-        0b10011000101101111,  // 12/16 way through
-        0b10100001000111100,  // 13/16 way through
-        0b11110100001010000,  // 14/16 way through
-        0b01010010010011110,  // 15/16 way through
+        0b01000010111001111,  // 1/16 way 
+        0b00011111000011111,  // 2/16 way 
+        0b00100101010100111,  // 3/16 way 
+        0b10001110011000110,  // 4/16 way 
+        0b01000011011111110,  // 5/16 way 
+        0b01001001000001101,  // 6/16 way 
+        0b01110011110100100,  // 7/16 way 
+        0b10010000110101010,  // 8/16 way 
+        0b01010001101010011,  // 9/16 way 
+        0b00011011000110101,  // 10/16 way 
+        0b11001100101110100,  // 11/16 way 
+        0b10011000101101111,  // 12/16 way 
+        0b10100001000111100,  // 13/16 way 
+        0b11110100001010000,  // 14/16 way 
+        0b01010010010011110,  // 15/16 way 
     },
 };
+
+static uint8_t _end_buffers_hashtable[HASH_TABLE_SIZE] = {0};
 
 ///! NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module
 static const gpio_t _lh2_4_spi_fake_sck_gpio = {
@@ -353,6 +359,13 @@ void _add_to_spi_ring_buffer(lh2_4_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SI
  */
 bool _get_from_spi_ring_buffer(lh2_4_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE], uint32_t *timestamp);
 
+/**
+ * @brief retreive the oldest element from the ring buffer for spi captures
+ *
+ * @param[in]   cb  pointer to ring buffer structure
+ */
+void _fill_hash_table(uint8_t * hash_table);
+
 //=========================== public ===========================================
 
 void db_lh2_4_init(db_lh2_4_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
@@ -388,6 +401,10 @@ void db_lh2_4_init(db_lh2_4_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) 
         }   
     }
     memset(_lh2_4_vars.data.buffer[0], 0, LH2_4_BUFFER_SIZE);
+
+
+    //Initialize the hash table for the lsfr checkpoints
+    _fill_hash_table(_end_buffers_hashtable);
 
     // initialize GPIOTEs
     _gpiote_setup(gpio_e);
@@ -1168,98 +1185,40 @@ uint32_t _reverse_count_p_test(uint8_t index, uint32_t bits) {
     uint32_t buffer      = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
     uint32_t b17         = 0;
     uint32_t masked_buff = 0;
+    uint8_t  hash_index = 0;
     //uint32_t result_test = 0;
 
-    NRF_P1->OUTSET = 1 << 07;
+    
     // Copy const variables (Flash) into local variables (RAM) to speed up execution.
-    uint32_t _end_buffers_local[16];
+    uint32_t _end_buffers_local[NUM_LSFR_COUNT_CHECKPOINTS];
     uint32_t polynomials_local = _polynomials[index];
 
-    for (size_t i = 0; i < 16; i++)
+    for (size_t i = 0; i < NUM_LSFR_COUNT_CHECKPOINTS; i++)
     {
         _end_buffers_local[i] = _end_buffers[index][i];
     }
-    NRF_P1->OUTCLR = 1 << 07;
+    
 
 
     while (buffer != _end_buffers_local[0])  // do until buffer reaches one of the saved states
     {
-        
-        
+
+        NRF_P1->OUTSET = 1 << 07;
         b17         = buffer & 0x00000001;               // save the "newest" bit of the buffer
         buffer      = (buffer & (0x0001FFFE)) >> 1;      // shift the buffer right, backwards in time
         masked_buff = (buffer) & (polynomials_local);  // mask the buffer w/ the selected polynomial
         buffer = buffer | (((__builtin_popcount(masked_buff) ^ b17) & 0x00000001) << 16);  // This weird line propagates the LSFR one bit into the past
-        count++;
-
-        
-
-
+        count++;        
+        NRF_P1->OUTCLR = 1 << 07;
 
         NRF_P0->OUTSET = 1 << 28;
-        if (buffer == _end_buffers_local[1]) {
-            count  = count + 8192 - 1;
+        hash_index = _end_buffers_hashtable[buffer & HASH_TABLE_MASK];
+        if (buffer == _end_buffers_local[hash_index]){
+            count = count + 8192*hash_index - 1;
             buffer = _end_buffers_local[0];
         }
-        if (buffer == _end_buffers_local[2]) {
-            count  = count + 16384 - 1;
-            buffer = _end_buffers_local[0];
-        }
-        if (buffer == _end_buffers_local[3]) {
-            count  = count + 24576 - 1;
-            buffer = _end_buffers_local[0];
-        }
-        if (buffer == _end_buffers_local[4]) {
-            count  = count + 32768 - 1;
-            buffer = _end_buffers_local[0];
-        }
-        if (buffer == _end_buffers_local[5]) {
-            count  = count + 40960 - 1;
-            buffer = _end_buffers_local[0];
-        }
-        if (buffer == _end_buffers_local[6]) {
-            count  = count + 49152 - 1;
-            buffer = _end_buffers_local[0];
-        }
-        if (buffer == _end_buffers_local[7]) {
-            count  = count + 57344 - 1;
-            buffer = _end_buffers_local[0];
-        }
-        if (buffer == _end_buffers_local[8]) {
-            count  = count + 65536 - 1;
-            buffer = _end_buffers_local[0];
-        }
-        if (buffer == _end_buffers_local[9]) {
-            count  = count + 73728 - 1;
-            buffer = _end_buffers_local[0];
-        }
-        if (buffer == _end_buffers_local[10]) {
-            count  = count + 81920 - 1;
-            buffer = _end_buffers_local[0];
-        }
-        if (buffer == _end_buffers_local[11]) {
-            count  = count + 90112 - 1;
-            buffer = _end_buffers_local[0];
-        }
-        if (buffer == _end_buffers_local[12]) {
-            count  = count + 98304 - 1;
-            buffer = _end_buffers_local[0];
-        }
-        if (buffer == _end_buffers_local[13]) {
-            count  = count + 106496 - 1;
-            buffer = _end_buffers_local[0];
-        }
-        if (buffer == _end_buffers_local[14]) {
-            count  = count + 114688 - 1;
-            buffer = _end_buffers_local[0];
-        }
-        if (buffer == _end_buffers_local[15]) {
-            count  = count + 122880 - 1;
-            buffer = _end_buffers_local[0];
-        }
+        
         NRF_P0->OUTCLR = 1 << 28;
-
-
     }
     return count;
 }
@@ -1391,7 +1350,19 @@ bool _get_from_spi_ring_buffer(lh2_4_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_
     return true;
 }
 
+void _fill_hash_table(uint8_t * hash_table){
 
+    // Iterate over all the checkpoints and save the HASH_TABLE_BITS 11 bits as a a index for the hashtable
+    for (size_t poly = 0; poly < LH2_4_BASESTATION_COUNT*2; poly++)
+    {
+        for (size_t checkpoint =  1; checkpoint < NUM_LSFR_COUNT_CHECKPOINTS; checkpoint++)
+        {
+            hash_table[_end_buffers[poly][checkpoint] & HASH_TABLE_MASK] = checkpoint;
+        }
+        
+    }
+    
+}
 
 
 //=========================== interrupts =======================================
