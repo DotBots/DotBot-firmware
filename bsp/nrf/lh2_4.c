@@ -1116,6 +1116,7 @@ uint32_t _reverse_count_p(uint8_t index, uint32_t bits) {
         buffer = buffer | (result << 16);  // update buffer w/ result
         result = 0;                        // reset result
         count++;
+        
         if ((buffer ^ _end_buffers[index][1]) == 0x00000000) {
             count  = count + 8192 - 1;
             buffer = _end_buffers[index][0];
@@ -1176,51 +1177,68 @@ uint32_t _reverse_count_p(uint8_t index, uint32_t bits) {
             count  = count + 122880 - 1;
             buffer = _end_buffers[index][0];
         }
+        
     }
     return count;
 }
 
 uint32_t _reverse_count_p_test(uint8_t index, uint32_t bits) {
-    uint32_t count       = 0;
-    uint32_t buffer      = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
+    uint32_t count_down       = 0;
+    uint32_t count_up       = 0;
+    uint32_t buffer_down      = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
+    uint32_t buffer_up      = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
     uint32_t b17         = 0;
+    uint32_t b1         = 0;
     uint32_t masked_buff = 0;
-    uint8_t  hash_index = 0;
-    //uint32_t result_test = 0;
-
+    uint8_t  hash_index_down = 0;
+    uint8_t  hash_index_up = 0;
     
     // Copy const variables (Flash) into local variables (RAM) to speed up execution.
     uint32_t _end_buffers_local[NUM_LSFR_COUNT_CHECKPOINTS];
     uint32_t polynomials_local = _polynomials[index];
-
     for (size_t i = 0; i < NUM_LSFR_COUNT_CHECKPOINTS; i++)
     {
         _end_buffers_local[i] = _end_buffers[index][i];
     }
     
 
-
-    while (buffer != _end_buffers_local[0])  // do until buffer reaches one of the saved states
+    while (buffer_up != _end_buffers_local[0])  // do until buffer reaches one of the saved states
     {
-
         NRF_P1->OUTSET = 1 << 07;
-        b17         = buffer & 0x00000001;               // save the "newest" bit of the buffer
-        buffer      = (buffer & (0x0001FFFE)) >> 1;      // shift the buffer right, backwards in time
-        masked_buff = (buffer) & (polynomials_local);  // mask the buffer w/ the selected polynomial
-        buffer = buffer | (((__builtin_popcount(masked_buff) ^ b17) & 0x00000001) << 16);  // This weird line propagates the LSFR one bit into the past
-        count++;        
+        // LSFR backward update
+        b17         = buffer_down & 0x00000001;               // save the "newest" bit of the buffer
+        buffer_down      = (buffer_down & (0x0001FFFE)) >> 1;      // shift the buffer right, backwards in time
+        masked_buff = (buffer_down) & (polynomials_local);  // mask the buffer w/ the selected polynomial
+        buffer_down = buffer_down | (((__builtin_popcount(masked_buff) ^ b17) & 0x00000001) << 16);  // This weird line propagates the LSFR one bit into the past
+        count_down++;        
+
+        // LSFR forward update
+        b1 =  __builtin_popcount(buffer_up & polynomials_local) & 0x01;  // mask the buffer w/ the selected polynomial
+        buffer_up = ((buffer_up << 1) | b1)  & (0x0001FFFF);
+        count_up++;          
         NRF_P1->OUTCLR = 1 << 07;
 
         NRF_P0->OUTSET = 1 << 28;
-        hash_index = _end_buffers_hashtable[buffer & HASH_TABLE_MASK];
-        if (buffer == _end_buffers_local[hash_index]){
-            count = count + 8192*hash_index - 1;
-            buffer = _end_buffers_local[0];
+        // Check point check backward
+        hash_index_down = _end_buffers_hashtable[buffer_down & HASH_TABLE_MASK];
+        if (buffer_down == _end_buffers_local[hash_index_down]){
+            count_down = count_down + 8192*hash_index_down - 1;
+            buffer_down = _end_buffers_local[0];
+            return count_down;
+        }
+
+        // Check point check upward
+        hash_index_up = _end_buffers_hashtable[buffer_up & HASH_TABLE_MASK];
+        if (buffer_up == _end_buffers_local[hash_index_up]){
+            count_up = 8192*hash_index_up - count_up - 1;
+            buffer_up = _end_buffers_local[0];
+            return count_up;
         }
         
         NRF_P0->OUTCLR = 1 << 28;
+
     }
-    return count;
+    return count_up;
 }
 
 void _lh2_4_pin_set_input(const gpio_t *gpio) {
