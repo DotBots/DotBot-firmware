@@ -943,12 +943,14 @@ void db_lh2_4_process_raw_data(db_lh2_4_t *lh2) {
 
     // perform the demodulation + poly search on the received packets
     // convert the SPI reading to bits via zero-crossing counter demodulation and differential/biphasic manchester decoding
+    NRF_P1->OUTSET = 1 << 07;
     temp_bits_sweep = _demodulate_light(temp_spi_bits);
+    NRF_P1->OUTCLR = 1 << 07;
     // figure out which polynomial each one of the two samples come from.
     //temp_selected_polynomial_no_test = _determine_polynomial(temp_bits_sweep, &temp_bit_offset);
-
+    NRF_P0->OUTSET = 1 << 28;
     temp_selected_polynomial = _determine_polynomial_test(temp_bits_sweep, &temp_bit_offset);
-
+    NRF_P0->OUTCLR = 1 << 28;
     // If there was an error with the polynomial, leave without updating anything
     if (temp_selected_polynomial == LH2_4_POLYNOMIAL_ERROR_INDICATOR){
       return;
@@ -1690,7 +1692,7 @@ uint32_t _reverse_count_p_test(uint8_t index, uint32_t bits) {
         //
         // CHECKPOINT CHECKING
         //
-        NRF_P0->OUTSET = 1 << 28;
+        
         // Check end_buffer backward count
         // Lower hash option in the hash table
         hash_index_down = _end_buffers_hashtable[(buffer_down >> 2) & HASH_TABLE_MASK] & CHECKPOINT_TABLE_MASK_LOW;
@@ -1723,36 +1725,34 @@ uint32_t _reverse_count_p_test(uint8_t index, uint32_t bits) {
             return count_up;
         }
 
-        // // Check the dynamical checkpoints, backward
-        // if (buffer_down == _lfsr_checkpoint_bits[index][0]){
-        //     count_down = count_down + _lfsr_checkpoint_count[index][0];
-        //     _update_lfsr_checkpoints(index, bits, count_down);
-        //     return count_down;
-        // }
-        // if (buffer_down == _lfsr_checkpoint_bits[index][1]){
-        //     count_down = count_down + _lfsr_checkpoint_count[index][1];
-        //     _update_lfsr_checkpoints(index, bits, count_down);
-        //     return count_down;
-        // }
+        // Check the dynamical checkpoints, backward
+        if (buffer_down == _lfsr_checkpoint_bits[index][0]){
+            count_down = count_down + _lfsr_checkpoint_count[index][0];
+            _update_lfsr_checkpoints(index, bits, count_down);
+            return count_down;
+        }
+        if (buffer_down == _lfsr_checkpoint_bits[index][1]){
+            count_down = count_down + _lfsr_checkpoint_count[index][1];
+            _update_lfsr_checkpoints(index, bits, count_down);
+            return count_down;
+        }
 
-        // // Check the dynamical checkpoints, forward
-        // if (buffer_up == _lfsr_checkpoint_bits[index][0]){
-        //     count_up = _lfsr_checkpoint_count[index][0] - count_up;
-        //     _update_lfsr_checkpoints(index, bits, count_up);
-        //     return count_up;
-        // }
-        // if (buffer_up == _lfsr_checkpoint_bits[index][1]){
-        //     count_up = _lfsr_checkpoint_count[index][1] - count_up;
-        //     _update_lfsr_checkpoints(index, bits, count_up);
-        //     return count_up;
-        // }
-        NRF_P0->OUTCLR = 1 << 28;
+        // Check the dynamical checkpoints, forward
+        if (buffer_up == _lfsr_checkpoint_bits[index][0]){
+            count_up = _lfsr_checkpoint_count[index][0] - count_up;
+            _update_lfsr_checkpoints(index, bits, count_up);
+            return count_up;
+        }
+        if (buffer_up == _lfsr_checkpoint_bits[index][1]){
+            count_up = _lfsr_checkpoint_count[index][1] - count_up;
+            _update_lfsr_checkpoints(index, bits, count_up);
+            return count_up;
+        }
 
 
         //
         // LSFR UPDATE
         //
-        NRF_P1->OUTSET = 1 << 07;
         // LSFR backward update
         b17         = buffer_down & 0x00000001;               // save the "newest" bit of the buffer
         buffer_down      = (buffer_down & (0x0001FFFE)) >> 1;      // shift the buffer right, backwards in time
@@ -1764,7 +1764,6 @@ uint32_t _reverse_count_p_test(uint8_t index, uint32_t bits) {
         b1 =  __builtin_popcount(buffer_up & polynomials_local) & 0x01;  // mask the buffer w/ the selected polynomial
         buffer_up = ((buffer_up << 1) | b1)  & (0x0001FFFF);
         count_up++;          
-        NRF_P1->OUTCLR = 1 << 07;
 
     }
     return count_up;
