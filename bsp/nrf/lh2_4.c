@@ -1399,9 +1399,7 @@ uint64_t _demodulate_light(uint8_t *sample_buffer) {  // bad input variable name
 uint64_t _poly_check(uint32_t poly, uint32_t bits, uint8_t numbits) {
     uint64_t bits_out      = 0;
     uint8_t  shift_counter = 1;
-    uint8_t  result        = 0;
-    uint8_t  ii            = 0;
-    uint32_t masked_buff   = 0;
+    uint8_t  b1        = 0;
     uint32_t buffer        = bits;   // mask to prevent bit overflow
     poly &= 0x00001FFFF;             // mask to prevent silliness
     bits_out |= buffer;              // initialize 17 LSBs of result
@@ -1409,14 +1407,11 @@ uint64_t _poly_check(uint32_t poly, uint32_t bits, uint8_t numbits) {
 
     while (shift_counter <= numbits) {
         bits_out    = bits_out << 1;        // shift left (forward in time) by 1
-        masked_buff = ((buffer) & (poly));  // mask the buffer with the selected polynomial
-        for (ii = 0; ii < 17; ii++) {
-            result = result ^ ((((masked_buff)) >> ii) & (0x00000001));  // cumulative sum of buffer&poly
-        }
-        buffer = (buffer & 0x0000FFFF) << 1;
-        buffer |= ((result) & (0x01));
-        bits_out |= ((result) & (0x01));  // put result of the XOR operation into the new bit
-        result = 0;
+
+        b1 =  __builtin_popcount(buffer & poly) & 0x01;  // mask the buffer w/ the selected polynomial
+        buffer = ((buffer << 1) | b1)  & (0x0001FFFF);
+
+        bits_out |= ((b1) & (0x01));  // put result of the XOR operation into the new bit
         shift_counter++;
     }
     return bits_out;
@@ -1531,7 +1526,8 @@ uint8_t _determine_polynomial_test(uint64_t chipsH1, int8_t *start_val) {
         // Check against all the known polynomials
         for (uint8_t i = 0; i<LH2_4_BASESTATION_COUNT*2; i++){
             bits_from_poly[i] = (((_poly_check(_polynomials[i], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
-            weights[i]        = _hamming_weight(bits_from_poly[i] ^ bits_to_compare);
+            // weights[i]        = _hamming_weight(bits_from_poly[i] ^ bits_to_compare);
+            weights[i]        = __builtin_popcount(bits_from_poly[i] ^ bits_to_compare);
             // Keep track of the minimum weight value and which polinimial generated it.
             if (weights[i] < min_weight){
                 min_weight_idx = i;
