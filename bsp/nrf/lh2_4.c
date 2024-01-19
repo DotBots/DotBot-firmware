@@ -39,6 +39,10 @@
 #define HASH_TABLE_SIZE                        (1 << HASH_TABLE_BITS)           ///< How big will the hashtable for the _end_buffers
 #define HASH_TABLE_MASK                        ((1 << HASH_TABLE_BITS) - 1)      ///< Mask selecting the HAS_TABLE_BITS least significant bits
 #define NUM_LSFR_COUNT_CHECKPOINTS             16                               ///< How many lsfr checkpoints are per polynomial
+#define CHECKPOINT_TABLE_BITS                  5                                 ///< How many bits will be used for the checkpoint table for the lfsr search
+#define CHECKPOINT_TABLE_SIZE                  (1 << CHECKPOINT_TABLE_BITS)         ///< How big will the checkpoint table for the lfsr search
+#define CHECKPOINT_TABLE_MASK                  ((1 << CHECKPOINT_TABLE_BITS) - 1)      ///< Mask selecting the CHECKPOINT_TABLE_BITS least significant bits
+
 
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
 #define NRF_SPIM         NRF_SPIM4_S
@@ -239,6 +243,10 @@ static const uint32_t _end_buffers[LH2_4_BASESTATION_COUNT*2][NUM_LSFR_COUNT_CHE
 
 static uint8_t _end_buffers_hashtable[HASH_TABLE_SIZE] = {0};
 
+// Dynamic checkpoint
+static uint32_t _lfsr_checkpoint_hashtable[LH2_4_BASESTATION_COUNT * 2][CHECKPOINT_TABLE_SIZE] = {0};
+static uint32_t _lfsr_checkpoint_count[LH2_4_BASESTATION_COUNT * 2][CHECKPOINT_TABLE_SIZE] = {0};
+
 ///! NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module
 static const gpio_t _lh2_4_spi_fake_sck_gpio = {
     .port = 1,
@@ -365,6 +373,14 @@ bool _get_from_spi_ring_buffer(lh2_4_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_
  * @param[in]   cb  pointer to ring buffer structure
  */
 void _fill_hash_table(uint8_t * hash_table);
+
+/**
+ * @brief Accesses the global tables _lfsr_checkpoint_hashtable & _lfsr_checkpoint_count
+ *        and updates them with the last found polynomial count
+ *
+ * @param[in]   cb  pointer to ring buffer structure
+ */
+void _update_lfsr_checkpoints(uint8_t polynomial, uint32_t bits, uint32_t count);
 
 //=========================== public ===========================================
 
@@ -1183,15 +1199,20 @@ uint32_t _reverse_count_p(uint8_t index, uint32_t bits) {
 }
 
 uint32_t _reverse_count_p_test(uint8_t index, uint32_t bits) {
+    
+    bits = bits & 0x0001FFFFF;   // initialize buffer to initial bits, masked
+    uint32_t buffer_down      = bits;  
+    uint32_t buffer_up        = bits;
+
     uint32_t count_down       = 0;
     uint32_t count_up       = 0;
-    uint32_t buffer_down      = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
-    uint32_t buffer_up      = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
     uint32_t b17         = 0;
     uint32_t b1         = 0;
     uint32_t masked_buff = 0;
     uint8_t  hash_index_down = 0;
     uint8_t  hash_index_up = 0;
+    uint32_t checkpoint_down;
+    uint32_t checkpoint_up;
     
     // Copy const variables (Flash) into local variables (RAM) to speed up execution.
     uint32_t _end_buffers_local[NUM_LSFR_COUNT_CHECKPOINTS];
@@ -1219,22 +1240,41 @@ uint32_t _reverse_count_p_test(uint8_t index, uint32_t bits) {
         NRF_P1->OUTCLR = 1 << 07;
 
         NRF_P0->OUTSET = 1 << 28;
-        // Check point check backward
+        // Check end_buffer backward count
         hash_index_down = _end_buffers_hashtable[buffer_down & HASH_TABLE_MASK];
         if (buffer_down == _end_buffers_local[hash_index_down]){
             count_down = count_down + 8192*hash_index_down - 1;
             buffer_down = _end_buffers_local[0];
+            _update_lfsr_checkpoints(index, bits, count_down);
             return count_down;
         }
 
-        // Check point check upward
+        // Check end_buffer forward count
         hash_index_up = _end_buffers_hashtable[buffer_up & HASH_TABLE_MASK];
         if (buffer_up == _end_buffers_local[hash_index_up]){
             count_up = 8192*hash_index_up - count_up - 1;
             buffer_up = _end_buffers_local[0];
+            _update_lfsr_checkpoints(index, bits, count_up);
             return count_up;
         }
-        
+
+        // Check the dynamical checkpoints, backward
+        checkpoint_down = _lfsr_checkpoint_hashtable[index][buffer_down & CHECKPOINT_TABLE_MASK];
+        if (buffer_down == checkpoint_down){
+            count_down = count_down + _lfsr_checkpoint_count[index][buffer_down & CHECKPOINT_TABLE_MASK];
+            buffer_down = _end_buffers_local[0];
+            _update_lfsr_checkpoints(index, bits, count_down);
+            return count_down;
+        }
+
+        // Check the dynamical checkpoints, backward
+        checkpoint_up = _lfsr_checkpoint_hashtable[index][buffer_up & CHECKPOINT_TABLE_MASK];
+        if (buffer_up == checkpoint_up){
+            count_up = _lfsr_checkpoint_count[index][buffer_up & CHECKPOINT_TABLE_MASK] - count_up;
+            buffer_up = _end_buffers_local[0];
+            _update_lfsr_checkpoints(index, bits, count_up);
+            return count_up;
+        }
         NRF_P0->OUTCLR = 1 << 28;
 
     }
@@ -1382,6 +1422,14 @@ void _fill_hash_table(uint8_t * hash_table){
     
 }
 
+void _update_lfsr_checkpoints(uint8_t polynomial, uint32_t bits, uint32_t count){
+
+    // Update the hashtable with the new values
+    _lfsr_checkpoint_hashtable[polynomial][bits & CHECKPOINT_TABLE_MASK] = bits;
+
+    // Update count table
+    _lfsr_checkpoint_count[polynomial][bits & CHECKPOINT_TABLE_MASK] = count;
+}
 
 //=========================== interrupts =======================================
 
