@@ -739,21 +739,25 @@ void _init_spi_ring_buffer(lh2_ring_buffer_t *cb);
 /**
  * @brief add one element to the ring buffer for spi captures
  *
- * @param[in]   cb  pointer to ring buffer structure
+ * @param[in]   cb          pointer to ring buffer structure
+ * @param[in]   data        pointer to the data array to save in the ring buffer
+ * @param[in]   timestamp   timestamp of when the LH2 measurement was taken. (taken with timer_hf_now())
  */
 void _add_to_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE], uint32_t timestamp);
 
 /**
  * @brief retreive the oldest element from the ring buffer for spi captures
  *
- * @param[in]   cb  pointer to ring buffer structure
+ * @param[in]    cb          pointer to ring buffer structure
+ * @param[out]   data        pointer to the array where the ring buffer data will be saved
+ * @param[out]   timestamp   timestamp of when the LH2 measurement was taken. (taken with timer_hf_now())
  */
 bool _get_from_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE], uint32_t *timestamp);
 
 /**
- * @brief retreive the oldest element from the ring buffer for spi captures
+ * @brief generates a hashtable from the LSFR checpoints and stores it in an array.
  *
- * @param[in]   cb  pointer to ring buffer structure
+ * @param[in]   hash_table  pointer to the array where the hashtable will be stored
  */
 void _fill_hash_table(uint16_t *hash_table);
 
@@ -761,7 +765,9 @@ void _fill_hash_table(uint16_t *hash_table);
  * @brief Accesses the global tables _lfsr_checkpoint_hashtable & _lfsr_checkpoint_count
  *        and updates them with the last found polynomial count
  *
- * @param[in]   cb  pointer to ring buffer structure
+ * @param[in] polynomial: index of polynomial
+ * @param[in] bits: 17-bit sequence
+ * @param[in] count: position of the received laser sweep in the LSFR sequence
  */
 void _update_lfsr_checkpoints(uint8_t polynomial, uint32_t bits, uint32_t count);
 
