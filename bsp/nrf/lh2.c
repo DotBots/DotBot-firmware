@@ -814,11 +814,11 @@ void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
 
 }
 
-void db_lh2_start(db_lh2_t *lh2) {
+void db_lh2_start(void) {
     NRF_PPI->TASKS_CHG[0].EN = 1;
 }
 
-void db_lh2_stop(db_lh2_t *lh2) {
+void db_lh2_stop(void) {
     NRF_PPI->TASKS_CHG[0].DIS = 1;
 
 }
@@ -864,7 +864,7 @@ void db_lh2_process_raw_data(db_lh2_t *lh2) {
     temp_bits_sweep = _demodulate_light(temp_spi_bits);
     // figure out which polynomial each one of the two samples come from.
     //temp_selected_polynomial_no_test = _determine_polynomial(temp_bits_sweep, &temp_bit_offset);
-    temp_selected_polynomial = _determine_polynomial_test(temp_bits_sweep, &temp_bit_offset);
+    temp_selected_polynomial = _determine_polynomial(temp_bits_sweep, &temp_bit_offset);
     // If there was an error with the polynomial, leave without updating anything
     if (temp_selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR){
       return;

@@ -37,7 +37,7 @@ int main(void) {
 
     // Initialize the LH2
     db_lh2_init(&_lh2, &db_lh2_d, &db_lh2_e);
-    db_lh2_start(&_lh2);
+    db_lh2_start();
 
     while (1) {
         // wait until something happens e.g. an SPI interrupt

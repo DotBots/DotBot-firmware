@@ -200,7 +200,7 @@ int main(void) {
     db_timer_set_periodic_ms(1, DB_ADVERTIZEMENT_DELAY_MS, &_advertise);
     db_timer_set_periodic_ms(2, DB_LH2_UPDATE_DELAY_MS, &_update_lh2);
     db_lh2_init(&_dotbot_vars.lh2, &db_lh2_d, &db_lh2_e);
-    db_lh2_start(&_dotbot_vars.lh2);
+    db_lh2_start();
 
     while (1) {
         __WFE();
@@ -211,7 +211,7 @@ int main(void) {
             // CHeck if data is ready to send
             if (_dotbot_vars.lh2.data_ready[0][0] == DB_LH2_RAW_DATA_AVAILABLE && _dotbot_vars.lh2.data_ready[0][1] == DB_LH2_RAW_DATA_AVAILABLE) {
                 _dotbot_vars.lh2_update_counter = 0;
-                db_lh2_stop(&_dotbot_vars.lh2);
+                db_lh2_stop();
                 // Prepare the radio buffer
                 db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_DOTBOT_DATA);
                 memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t), &_dotbot_vars.direction, sizeof(int16_t));
@@ -227,7 +227,7 @@ int main(void) {
                     // the location function has to be running all the time
                     db_lh2_process_location(&_dotbot_vars.lh2);
                 }
-                db_lh2_start(&_dotbot_vars.lh2);
+                db_lh2_start();
             } else {
                 _dotbot_vars.lh2_update_counter = (_dotbot_vars.lh2_update_counter + 1) & DB_LH2_COUNTER_MASK;
                 need_advertize                  = (_dotbot_vars.lh2_update_counter == DB_LH2_COUNTER_MASK);
