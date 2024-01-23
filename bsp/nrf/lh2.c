@@ -26,24 +26,23 @@
 #define SPI_FAKE_SCK_PIN                       6           ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
 #define SPI_FAKE_SCK_PORT                      1           ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
 #define FUZZY_CHIP                             0xFF        ///< not sure what this is about
-#define LH2_LOCATION_ERROR_INDICATOR         0xFFFFFFFF  ///< indicate the location value is false
-#define LH2_POLYNOMIAL_ERROR_INDICATOR       0xFF        ///< indicate the polynomial index is invalid
+#define LH2_LOCATION_ERROR_INDICATOR           0xFFFFFFFF  ///< indicate the location value is false
+#define LH2_POLYNOMIAL_ERROR_INDICATOR         0xFF        ///< indicate the polynomial index is invalid
 #define POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD 4           ///< initial threshold of polynomial error
-#define LH2_BUFFER_SIZE                      10          ///< Amount of lh2 frames the buffer can contain
+#define LH2_BUFFER_SIZE                        10          ///< Amount of lh2 frames the buffer can contain
 #define GPIOTE_CH_IN_ENV_HiToLo                1           ///< falling edge gpio channel
 #define GPIOTE_CH_IN_ENV_LoToHi                2           ///< rising edge gpio channel
 #define PPI_SPI_START_CHAN                     2
 #define PPI_SPI_STOP_CHAN                      3
 #define PPI_SPI_GROUP                          0
-#define HASH_TABLE_BITS                        11                               ///< How many bits will be used for the hashtable for the _end_buffers
-#define HASH_TABLE_SIZE                        (1 << HASH_TABLE_BITS)           ///< How big will the hashtable for the _end_buffers
-#define HASH_TABLE_MASK                        ((1 << HASH_TABLE_BITS) - 1)      ///< Mask selecting the HAS_TABLE_BITS least significant bits
-#define NUM_LSFR_COUNT_CHECKPOINTS             64                               ///< How many lsfr checkpoints are per polynomial
-#define DISTANCE_BETWEEN_LSFR_CHECKPOINTS      2048                              ///< How many lsfr checkpoints are per polynomial
-#define CHECKPOINT_TABLE_BITS                  6                                 ///< How many bits will be used for the checkpoint table for the lfsr search
-#define CHECKPOINT_TABLE_MASK_LOW              ((1 << CHECKPOINT_TABLE_BITS) - 1)        ///< How big will the checkpoint table for the lfsr search
-#define CHECKPOINT_TABLE_MASK_HIGH             (((1 << CHECKPOINT_TABLE_BITS) - 1) << CHECKPOINT_TABLE_BITS)      ///< Mask selecting the CHECKPOINT_TABLE_BITS least significant bits
-
+#define HASH_TABLE_BITS                        11                                                             ///< How many bits will be used for the hashtable for the _end_buffers
+#define HASH_TABLE_SIZE                        (1 << HASH_TABLE_BITS)                                         ///< How big will the hashtable for the _end_buffers
+#define HASH_TABLE_MASK                        ((1 << HASH_TABLE_BITS) - 1)                                   ///< Mask selecting the HAS_TABLE_BITS least significant bits
+#define NUM_LSFR_COUNT_CHECKPOINTS             64                                                             ///< How many lsfr checkpoints are per polynomial
+#define DISTANCE_BETWEEN_LSFR_CHECKPOINTS      2048                                                           ///< How many lsfr checkpoints are per polynomial
+#define CHECKPOINT_TABLE_BITS                  6                                                              ///< How many bits will be used for the checkpoint table for the lfsr search
+#define CHECKPOINT_TABLE_MASK_LOW              ((1 << CHECKPOINT_TABLE_BITS) - 1)                             ///< How big will the checkpoint table for the lfsr search
+#define CHECKPOINT_TABLE_MASK_HIGH             (((1 << CHECKPOINT_TABLE_BITS) - 1) << CHECKPOINT_TABLE_BITS)  ///< Mask selecting the CHECKPOINT_TABLE_BITS least significant bits
 
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
 #define NRF_SPIM         NRF_SPIM4_S
@@ -58,25 +57,25 @@
 #endif
 
 typedef struct {
-    uint8_t buffer[LH2_BUFFER_SIZE][SPI_BUFFER_SIZE]; ///< arrays of bits for local storage, contents of SPI transfer are copied into this
-    uint32_t timestamps[LH2_BUFFER_SIZE];              ///< arrays of timestamps of when different SPI transfers happened
-    uint8_t writeIndex; // Index for next write
-    uint8_t readIndex;  // Index for next read
-    uint8_t count;      // Number of arrays in buffer
+    uint8_t  buffer[LH2_BUFFER_SIZE][SPI_BUFFER_SIZE];  ///< arrays of bits for local storage, contents of SPI transfer are copied into this
+    uint32_t timestamps[LH2_BUFFER_SIZE];               ///< arrays of timestamps of when different SPI transfers happened
+    uint8_t  writeIndex;                                // Index for next write
+    uint8_t  readIndex;                                 // Index for next read
+    uint8_t  count;                                     // Number of arrays in buffer
 } lh2_ring_buffer_t;
 
 typedef struct {
-    uint8_t      transfer_counter;                ///< counter of spi transfer in the current cycle
-    uint8_t      spi_rx_buffer[SPI_BUFFER_SIZE];  ///< buffer where data coming from SPI are stored
-    bool         buffers_ready;                   ///< specify when data buffers are ready to be process
-    lh2_ring_buffer_t data;                          ///< array containing demodulation data of each locations
-    uint8_t      lha_packet_counter;              ///< number of packet received from LHA
-    uint8_t      lhb_packet_counter;              ///< number of packet received from LHB
+    uint8_t           transfer_counter;                ///< counter of spi transfer in the current cycle
+    uint8_t           spi_rx_buffer[SPI_BUFFER_SIZE];  ///< buffer where data coming from SPI are stored
+    bool              buffers_ready;                   ///< specify when data buffers are ready to be process
+    lh2_ring_buffer_t data;                            ///< array containing demodulation data of each locations
+    uint8_t           lha_packet_counter;              ///< number of packet received from LHA
+    uint8_t           lhb_packet_counter;              ///< number of packet received from LHB
 } lh2_vars_t;
 
 //=========================== variables ========================================
 
-static const uint32_t _polynomials[LH2_BASESTATION_COUNT*2] = {
+static const uint32_t _polynomials[LH2_BASESTATION_COUNT * 2] = {
     0x0001D258,
     0x00017E04,
     0x0001FF6B,
@@ -87,7 +86,7 @@ static const uint32_t _polynomials[LH2_BASESTATION_COUNT*2] = {
     0x00018A55,
 };
 
-static const uint32_t _end_buffers[LH2_BASESTATION_COUNT*2][NUM_LSFR_COUNT_CHECKPOINTS] = {
+static const uint32_t _end_buffers[LH2_BASESTATION_COUNT * 2][NUM_LSFR_COUNT_CHECKPOINTS] = {
     {
         // p0
         0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
@@ -154,9 +153,9 @@ static const uint32_t _end_buffers[LH2_BASESTATION_COUNT*2][NUM_LSFR_COUNT_CHECK
         0b00101100111011001,
         0b10010101110100110,
         0b00001110011011111,
-        },
-        {
-            // p1
+    },
+    {
+        // p1
         0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
         0b00000001111100000,
         0b11111111000111010,
@@ -626,12 +625,12 @@ static const uint32_t _end_buffers[LH2_BASESTATION_COUNT*2][NUM_LSFR_COUNT_CHECK
     },
 };
 
-static uint16_t _end_buffers_hashtable[HASH_TABLE_SIZE] = {0};
+static uint16_t _end_buffers_hashtable[HASH_TABLE_SIZE] = { 0 };
 
 // Dynamic checkpoint
-static uint32_t _lfsr_checkpoint_bits[LH2_BASESTATION_COUNT * 2][2] = {0};
-static uint32_t _lfsr_checkpoint_count[LH2_BASESTATION_COUNT * 2][2] = {0};
-static uint32_t _lsfr_checkpoint_average = 0;
+static uint32_t _lfsr_checkpoint_bits[LH2_BASESTATION_COUNT * 2][2]  = { 0 };
+static uint32_t _lfsr_checkpoint_count[LH2_BASESTATION_COUNT * 2][2] = { 0 };
+static uint32_t _lsfr_checkpoint_average                             = 0;
 
 ///! NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module
 static const gpio_t _lh2_spi_fake_sck_gpio = {
@@ -756,7 +755,7 @@ bool _get_from_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SI
  *
  * @param[in]   cb  pointer to ring buffer structure
  */
-void _fill_hash_table(uint16_t * hash_table);
+void _fill_hash_table(uint16_t *hash_table);
 
 /**
  * @brief Accesses the global tables _lfsr_checkpoint_hashtable & _lfsr_checkpoint_count
@@ -787,9 +786,9 @@ void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
     _init_spi_ring_buffer(&_lh2_vars.data);
 
     // Setup LH2 data
-    lh2->spi_ring_buffer_count_ptr = &_lh2_vars.data.count;   // pointer to the size of the spi ring buffer,
+    lh2->spi_ring_buffer_count_ptr = &_lh2_vars.data.count;  // pointer to the size of the spi ring buffer,
 
-    for (uint8_t sweep = 0; sweep < LH2_SWEEP_COUNT; sweep++){
+    for (uint8_t sweep = 0; sweep < LH2_SWEEP_COUNT; sweep++) {
         for (uint8_t basestation = 0; basestation < LH2_SWEEP_COUNT; basestation++) {
             lh2->raw_data[sweep][basestation].bits_sweep           = 0;
             lh2->raw_data[sweep][basestation].selected_polynomial  = LH2_POLYNOMIAL_ERROR_INDICATOR;
@@ -798,12 +797,11 @@ void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
             lh2->locations[sweep][basestation].lfsr_location       = LH2_LOCATION_ERROR_INDICATOR;
             lh2->timestamps[sweep][basestation]                    = 0;
             lh2->data_ready[sweep][basestation]                    = DB_LH2_NO_NEW_DATA;
-        }   
+        }
     }
     memset(_lh2_vars.data.buffer[0], 0, LH2_BUFFER_SIZE);
 
-
-    //Initialize the hash table for the lsfr checkpoints
+    // Initialize the hash table for the lsfr checkpoints
     _fill_hash_table(_end_buffers_hashtable);
 
     // initialize GPIOTEs
@@ -811,7 +809,6 @@ void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
 
     // initialize PPI
     _ppi_setup();
-
 }
 
 void db_lh2_start(void) {
@@ -820,13 +817,12 @@ void db_lh2_start(void) {
 
 void db_lh2_stop(void) {
     NRF_PPI->TASKS_CHG[0].DIS = 1;
-
 }
 
 void db_lh2_reset(db_lh2_t *lh2) {
     // compute LFSR locations and detect invalid packets
     for (uint8_t basestation = 0; basestation < LH2_BASESTATION_COUNT; basestation++) {
-        for (uint8_t sweep = 0; sweep < 2; sweep++){
+        for (uint8_t sweep = 0; sweep < 2; sweep++) {
 
             // Remove the flags indicating available data
             lh2->data_ready[sweep][basestation] = DB_LH2_NO_NEW_DATA;
@@ -843,49 +839,48 @@ void db_lh2_process_raw_data(db_lh2_t *lh2) {
     }
 
     // Get value before it's overwritten by the ringbuffer.
-    uint8_t temp_spi_bits[SPI_BUFFER_SIZE*2];    // The temp buffer has to be 128 long because _demodulate_light() expects it to be so
-                                                  // Making it smaller causes a hardfault
-                                                  // I don't know why, the SPI buffer is clearly 64bytes long.
-                                                  // should ask fil about this
+    uint8_t temp_spi_bits[SPI_BUFFER_SIZE * 2];  // The temp buffer has to be 128 long because _demodulate_light() expects it to be so
+                                                 // Making it smaller causes a hardfault
+                                                 // I don't know why, the SPI buffer is clearly 64bytes long.
+                                                 // should ask fil about this
     uint32_t temp_timestamp;
     uint64_t temp_bits_sweep;
-    uint8_t temp_selected_polynomial;
-    int8_t temp_bit_offset;
-    int8_t sweep;
+    uint8_t  temp_selected_polynomial;
+    int8_t   temp_bit_offset;
+    int8_t   sweep;
 
     // stop the interruptions while you're reading the data.
     bool error = _get_from_spi_ring_buffer(&_lh2_vars.data, temp_spi_bits, &temp_timestamp);
-    if (!error) { 
-        return; 
+    if (!error) {
+        return;
     }
 
     // perform the demodulation + poly search on the received packets
     // convert the SPI reading to bits via zero-crossing counter demodulation and differential/biphasic manchester decoding
     temp_bits_sweep = _demodulate_light(temp_spi_bits);
     // figure out which polynomial each one of the two samples come from.
-    //temp_selected_polynomial_no_test = _determine_polynomial(temp_bits_sweep, &temp_bit_offset);
+    // temp_selected_polynomial_no_test = _determine_polynomial(temp_bits_sweep, &temp_bit_offset);
     temp_selected_polynomial = _determine_polynomial(temp_bits_sweep, &temp_bit_offset);
     // If there was an error with the polynomial, leave without updating anything
-    if (temp_selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR){
-      return;
+    if (temp_selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) {
+        return;
     }
 
     // Figure in which of the two sweep slots we should save the new data.
-    if (lh2->timestamps[0][temp_selected_polynomial >> 1] <= lh2->timestamps[1][temp_selected_polynomial >> 1])  {  // Either: They are both equal to zero. The structure is empty
-        sweep = 0;                                                                                                  //         The data in the first slot is older.
-    }                                                                                                               //         either way, use the first slot    
-    else {  // The data in the second slot is older.
+    if (lh2->timestamps[0][temp_selected_polynomial >> 1] <= lh2->timestamps[1][temp_selected_polynomial >> 1]) {  // Either: They are both equal to zero. The structure is empty
+        sweep = 0;                                                                                                 //         The data in the first slot is older.
+    }                                                                                                              //         either way, use the first slot
+    else {                                                                                                         // The data in the second slot is older.
         sweep = 1;
     }
 
     // Put the newly read polynomials in the data structure (polynomial 0,1 must map to LH0, 2,3 to LH1. This can be accomplish by  integer-dividing the selected poly in 2, a shift >> accomplishes this.)
     // This structur always holds the two most recent sweeps from any lighthouse
-    lh2->raw_data[sweep][temp_selected_polynomial >> 1].bit_offset = temp_bit_offset;
+    lh2->raw_data[sweep][temp_selected_polynomial >> 1].bit_offset          = temp_bit_offset;
     lh2->raw_data[sweep][temp_selected_polynomial >> 1].selected_polynomial = temp_selected_polynomial;
-    lh2->raw_data[sweep][temp_selected_polynomial >> 1].bits_sweep = temp_bits_sweep;
-    lh2->timestamps[sweep][temp_selected_polynomial >> 1] = temp_timestamp;
-    lh2->data_ready[sweep][temp_selected_polynomial >> 1] = DB_LH2_RAW_DATA_AVAILABLE;
-
+    lh2->raw_data[sweep][temp_selected_polynomial >> 1].bits_sweep          = temp_bits_sweep;
+    lh2->timestamps[sweep][temp_selected_polynomial >> 1]                   = temp_timestamp;
+    lh2->data_ready[sweep][temp_selected_polynomial >> 1]                   = DB_LH2_RAW_DATA_AVAILABLE;
 }
 
 void db_lh2_process_location(db_lh2_t *lh2) {
@@ -894,20 +889,20 @@ void db_lh2_process_location(db_lh2_t *lh2) {
 
     // compute LFSR locations and detect invalid packets
     for (uint8_t basestation = 0; basestation < LH2_BASESTATION_COUNT; basestation++) {
-        for (uint8_t sweep = 0; sweep < 2; sweep++){
+        for (uint8_t sweep = 0; sweep < 2; sweep++) {
 
             // Check if this particular position has data point ready for sending
-            if (lh2->data_ready[sweep][basestation] == DB_LH2_RAW_DATA_AVAILABLE){
+            if (lh2->data_ready[sweep][basestation] == DB_LH2_RAW_DATA_AVAILABLE) {
 
                 // Copy the selected polynomial
                 lh2->locations[sweep][basestation].selected_polynomial = lh2->raw_data[sweep][basestation].selected_polynomial;
-                // Copmute and save the lsfr location.                
+                // Copmute and save the lsfr location.
                 lfsr_loc_temp = _reverse_count_p(
-                                                lh2->raw_data[sweep][basestation].selected_polynomial,
-                                                lh2->raw_data[sweep][basestation].bits_sweep >> (47 - lh2->raw_data[sweep][basestation].bit_offset)
-                                                ) - lh2->raw_data[sweep][basestation].bit_offset;
+                                    lh2->raw_data[sweep][basestation].selected_polynomial,
+                                    lh2->raw_data[sweep][basestation].bits_sweep >> (47 - lh2->raw_data[sweep][basestation].bit_offset)) -
+                                lh2->raw_data[sweep][basestation].bit_offset;
 
-                lh2->locations[sweep][basestation].lfsr_location = lfsr_loc_temp; 
+                lh2->locations[sweep][basestation].lfsr_location = lfsr_loc_temp;
 
                 // Mark the data point as processed
                 lh2->data_ready[sweep][basestation] = DB_LH2_PROCESSED_DATA_AVAILABLE;
@@ -1298,17 +1293,17 @@ uint64_t _demodulate_light(uint8_t *sample_buffer) {  // bad input variable name
 uint64_t _poly_check(uint32_t poly, uint32_t bits, uint8_t numbits) {
     uint64_t bits_out      = 0;
     uint8_t  shift_counter = 1;
-    uint8_t  b1        = 0;
+    uint8_t  b1            = 0;
     uint32_t buffer        = bits;   // mask to prevent bit overflow
     poly &= 0x00001FFFF;             // mask to prevent silliness
     bits_out |= buffer;              // initialize 17 LSBs of result
     bits_out &= 0x00000000FFFFFFFF;  // mask because I didn't want to re-cast the buffer
 
     while (shift_counter <= numbits) {
-        bits_out    = bits_out << 1;        // shift left (forward in time) by 1
+        bits_out = bits_out << 1;  // shift left (forward in time) by 1
 
-        b1 =  __builtin_popcount(buffer & poly) & 0x01;  // mask the buffer w/ the selected polynomial
-        buffer = ((buffer << 1) | b1)  & (0x0001FFFF);
+        b1     = __builtin_popcount(buffer & poly) & 0x01;  // mask the buffer w/ the selected polynomial
+        buffer = ((buffer << 1) | b1) & (0x0001FFFF);
 
         bits_out |= ((b1) & (0x01));  // put result of the XOR operation into the new bit
         shift_counter++;
@@ -1323,16 +1318,16 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
 
     *start_val = 8;  // TODO: remove this? possible that I modify start value during the demodulation process
 
-    int32_t  bits_N_for_comp                     = 47 - *start_val;
-    uint32_t bit_buffer1                         = (uint32_t)(((0xFFFF800000000000) & chipsH1) >> 47);
-    uint64_t bits_from_poly[LH2_BASESTATION_COUNT*2] = { 0 };
-    uint64_t weights[LH2_BASESTATION_COUNT*2]        = { 0xFFFFFFFFFFFFFFFF };
-    uint8_t  selected_poly                       = LH2_POLYNOMIAL_ERROR_INDICATOR;  // initialize to error condition
-    uint8_t  min_weight_idx                      = LH2_POLYNOMIAL_ERROR_INDICATOR;
-    uint64_t min_weight                          = LH2_POLYNOMIAL_ERROR_INDICATOR;
-    uint64_t bits_to_compare                     = 0;
-    int32_t  threshold                           = POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
-    
+    int32_t  bits_N_for_comp                           = 47 - *start_val;
+    uint32_t bit_buffer1                               = (uint32_t)(((0xFFFF800000000000) & chipsH1) >> 47);
+    uint64_t bits_from_poly[LH2_BASESTATION_COUNT * 2] = { 0 };
+    uint64_t weights[LH2_BASESTATION_COUNT * 2]        = { 0xFFFFFFFFFFFFFFFF };
+    uint8_t  selected_poly                             = LH2_POLYNOMIAL_ERROR_INDICATOR;  // initialize to error condition
+    uint8_t  min_weight_idx                            = LH2_POLYNOMIAL_ERROR_INDICATOR;
+    uint64_t min_weight                                = LH2_POLYNOMIAL_ERROR_INDICATOR;
+    uint64_t bits_to_compare                           = 0;
+    int32_t  threshold                                 = POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
+
     // try polynomial vs. first buffer bits
     // this search takes 17-bit sequences and runs them forwards through the polynomial LFSRs.
     // if the remaining detected bits fit well with the chosen 17-bit sequence and a given polynomial, it is treated as "correct"
@@ -1344,29 +1339,29 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
     while (1) {
 
         // TODO: do this math stuff in multiple operations to: (a) make it readable (b) ensure order-of-execution
-        bit_buffer1       = (uint32_t)(((0xFFFF800000000000 >> (*start_val)) & chipsH1) >> (64 - 17 - (*start_val)));
-        bits_to_compare   = (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - 17 - (*start_val) - bits_N_for_comp)));
+        bit_buffer1     = (uint32_t)(((0xFFFF800000000000 >> (*start_val)) & chipsH1) >> (64 - 17 - (*start_val)));
+        bits_to_compare = (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - 17 - (*start_val) - bits_N_for_comp)));
         // reset the minimum polynomial match found
-        min_weight_idx                      = LH2_POLYNOMIAL_ERROR_INDICATOR; 
-        min_weight                          = LH2_POLYNOMIAL_ERROR_INDICATOR;
+        min_weight_idx = LH2_POLYNOMIAL_ERROR_INDICATOR;
+        min_weight     = LH2_POLYNOMIAL_ERROR_INDICATOR;
         // Check against all the known polynomials
-        for (uint8_t i = 0; i<LH2_BASESTATION_COUNT*2; i++){
+        for (uint8_t i = 0; i < LH2_BASESTATION_COUNT * 2; i++) {
             bits_from_poly[i] = (((_poly_check(_polynomials[i], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
             // weights[i]        = _hamming_weight(bits_from_poly[i] ^ bits_to_compare);
-            weights[i]        = __builtin_popcount(bits_from_poly[i] ^ bits_to_compare);
+            weights[i] = __builtin_popcount(bits_from_poly[i] ^ bits_to_compare);
             // Keep track of the minimum weight value and which polinimial generated it.
-            if (weights[i] < min_weight){
+            if (weights[i] < min_weight) {
                 min_weight_idx = i;
-                min_weight = weights[i];
+                min_weight     = weights[i];
             }
         }
 
         // If you found a sufficiently good value, then return which polinomial generated it
         if (min_weight <= (uint64_t)threshold) {
-                selected_poly = min_weight_idx;
-                break;
-        // match failed, try again removing bits from the end
-        } else if (*start_val > 8) {  
+            selected_poly = min_weight_idx;
+            break;
+            // match failed, try again removing bits from the end
+        } else if (*start_val > 8) {
             *start_val      = 8;
             bits_N_for_comp = bits_N_for_comp - 9;
             if (threshold > 2) {
@@ -1375,12 +1370,12 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
                 threshold = 2;
             }
         } else {
-            *start_val      = *start_val + 1;
+            *start_val = *start_val + 1;
             bits_N_for_comp -= 1;
         }
 
         // too few bits to reliably compare, give up
-        if (bits_N_for_comp < 19) {     
+        if (bits_N_for_comp < 19) {
             selected_poly = LH2_POLYNOMIAL_ERROR_INDICATOR;  // mark the poly as "wrong"
             break;
         }
@@ -1401,46 +1396,45 @@ uint64_t _hamming_weight(uint64_t bits_in) {  // TODO: bad name for function? or
 }
 
 uint32_t _reverse_count_p(uint8_t index, uint32_t bits) {
-    
-    bits = bits & 0x0001FFFF;   // initialize buffer to initial bits, masked
-    uint32_t buffer_down      = bits;  
-    uint32_t buffer_up        = bits;
 
-    uint32_t count_down       = 0;
-    uint32_t count_up       = 0;
-    uint32_t b17         = 0;
-    uint32_t b1         = 0;
-    uint32_t masked_buff = 0;
+    bits                 = bits & 0x0001FFFF;  // initialize buffer to initial bits, masked
+    uint32_t buffer_down = bits;
+    uint32_t buffer_up   = bits;
+
+    uint32_t count_down      = 0;
+    uint32_t count_up        = 0;
+    uint32_t b17             = 0;
+    uint32_t b1              = 0;
+    uint32_t masked_buff     = 0;
     uint8_t  hash_index_down = 0;
-    uint8_t  hash_index_up = 0;
-    
+    uint8_t  hash_index_up   = 0;
+
     // Copy const variables (Flash) into local variables (RAM) to speed up execution.
     uint32_t _end_buffers_local[NUM_LSFR_COUNT_CHECKPOINTS];
     uint32_t polynomials_local = _polynomials[index];
-    for (size_t i = 0; i < NUM_LSFR_COUNT_CHECKPOINTS; i++)
-    {
+    for (size_t i = 0; i < NUM_LSFR_COUNT_CHECKPOINTS; i++) {
         _end_buffers_local[i] = _end_buffers[index][i];
     }
-    
+
     while (buffer_up != _end_buffers_local[0])  // do until buffer reaches one of the saved states
     {
 
         //
         // CHECKPOINT CHECKING
         //
-        
+
         // Check end_buffer backward count
         // Lower hash option in the hash table
         hash_index_down = _end_buffers_hashtable[(buffer_down >> 2) & HASH_TABLE_MASK] & CHECKPOINT_TABLE_MASK_LOW;
-        if (buffer_down == _end_buffers_local[hash_index_down]){
-            count_down = count_down + 2048*hash_index_down - 1;
+        if (buffer_down == _end_buffers_local[hash_index_down]) {
+            count_down = count_down + 2048 * hash_index_down - 1;
             _update_lfsr_checkpoints(index, bits, count_down);
             return count_down;
         }
         // Upper hash option in the hash table
         hash_index_down = (_end_buffers_hashtable[(buffer_down >> 2) & HASH_TABLE_MASK] & CHECKPOINT_TABLE_MASK_HIGH) >> CHECKPOINT_TABLE_BITS;
-        if (buffer_down == _end_buffers_local[hash_index_down]){
-            count_down = count_down + 2048*hash_index_down - 1;
+        if (buffer_down == _end_buffers_local[hash_index_down]) {
+            count_down = count_down + 2048 * hash_index_down - 1;
             _update_lfsr_checkpoints(index, bits, count_down);
             return count_down;
         }
@@ -1448,59 +1442,57 @@ uint32_t _reverse_count_p(uint8_t index, uint32_t bits) {
         // Check end_buffer forward count
         // Lower hash option in the hash table
         hash_index_up = _end_buffers_hashtable[(buffer_up >> 2) & HASH_TABLE_MASK] & CHECKPOINT_TABLE_MASK_LOW;
-        if (buffer_up == _end_buffers_local[hash_index_up]){
-            count_up = 2048*hash_index_up - count_up - 1;
+        if (buffer_up == _end_buffers_local[hash_index_up]) {
+            count_up = 2048 * hash_index_up - count_up - 1;
             _update_lfsr_checkpoints(index, bits, count_up);
             return count_up;
         }
         // Upper hash option in the hash table
         hash_index_up = (_end_buffers_hashtable[(buffer_up >> 2) & HASH_TABLE_MASK] & CHECKPOINT_TABLE_MASK_HIGH) >> CHECKPOINT_TABLE_BITS;
-        if (buffer_up == _end_buffers_local[hash_index_up]){
-            count_up = 2048*hash_index_up - count_up - 1;
+        if (buffer_up == _end_buffers_local[hash_index_up]) {
+            count_up = 2048 * hash_index_up - count_up - 1;
             _update_lfsr_checkpoints(index, bits, count_up);
             return count_up;
         }
 
         // Check the dynamical checkpoints, backward
-        if (buffer_down == _lfsr_checkpoint_bits[index][0]){
+        if (buffer_down == _lfsr_checkpoint_bits[index][0]) {
             count_down = count_down + _lfsr_checkpoint_count[index][0];
             _update_lfsr_checkpoints(index, bits, count_down);
             return count_down;
         }
-        if (buffer_down == _lfsr_checkpoint_bits[index][1]){
+        if (buffer_down == _lfsr_checkpoint_bits[index][1]) {
             count_down = count_down + _lfsr_checkpoint_count[index][1];
             _update_lfsr_checkpoints(index, bits, count_down);
             return count_down;
         }
 
         // Check the dynamical checkpoints, forward
-        if (buffer_up == _lfsr_checkpoint_bits[index][0]){
+        if (buffer_up == _lfsr_checkpoint_bits[index][0]) {
             count_up = _lfsr_checkpoint_count[index][0] - count_up;
             _update_lfsr_checkpoints(index, bits, count_up);
             return count_up;
         }
-        if (buffer_up == _lfsr_checkpoint_bits[index][1]){
+        if (buffer_up == _lfsr_checkpoint_bits[index][1]) {
             count_up = _lfsr_checkpoint_count[index][1] - count_up;
             _update_lfsr_checkpoints(index, bits, count_up);
             return count_up;
         }
 
-
         //
         // LSFR UPDATE
         //
         // LSFR backward update
-        b17         = buffer_down & 0x00000001;               // save the "newest" bit of the buffer
-        buffer_down      = (buffer_down & (0x0001FFFE)) >> 1;      // shift the buffer right, backwards in time
-        masked_buff = (buffer_down) & (polynomials_local);  // mask the buffer w/ the selected polynomial
+        b17         = buffer_down & 0x00000001;                                                      // save the "newest" bit of the buffer
+        buffer_down = (buffer_down & (0x0001FFFE)) >> 1;                                             // shift the buffer right, backwards in time
+        masked_buff = (buffer_down) & (polynomials_local);                                           // mask the buffer w/ the selected polynomial
         buffer_down = buffer_down | (((__builtin_popcount(masked_buff) ^ b17) & 0x00000001) << 16);  // This weird line propagates the LSFR one bit into the past
-        count_down++;        
+        count_down++;
 
         // LSFR forward update
-        b1 =  __builtin_popcount(buffer_up & polynomials_local) & 0x01;  // mask the buffer w/ the selected polynomial
-        buffer_up = ((buffer_up << 1) | b1)  & (0x0001FFFF);
-        count_up++;          
-
+        b1        = __builtin_popcount(buffer_up & polynomials_local) & 0x01;  // mask the buffer w/ the selected polynomial
+        buffer_up = ((buffer_up << 1) | b1) & (0x0001FFFF);
+        count_up++;
     }
     return count_up;
 }
@@ -1528,7 +1520,6 @@ void _gpiote_setup(const gpio_t *gpio_e) {
                                                   (gpio_e->pin << GPIOTE_CONFIG_PSEL_Pos) |
                                                   (gpio_e->port << GPIOTE_CONFIG_PORT_Pos) |
                                                   (GPIOTE_CONFIG_POLARITY_LoToHi << GPIOTE_CONFIG_POLARITY_Pos);
-
 }
 
 void _ppi_setup(void) {
@@ -1539,21 +1530,20 @@ void _ppi_setup(void) {
     NRF_GPIOTE->PUBLISH_IN[GPIOTE_CH_IN_ENV_LoToHi] = PPI_SPI_STOP_CHAN | (GPIOTE_PUBLISH_IN_EN_Enabled << GPIOTE_PUBLISH_IN_EN_Pos);
     NRF_SPIM->SUBSCRIBE_STOP                        = PPI_SPI_STOP_CHAN | (SPIM_SUBSCRIBE_STOP_EN_Enabled << SPIM_SUBSCRIBE_STOP_EN_Pos);
 #else
-   
-    // Add all the ppi setup to group 0 to be able to enable and disable it automatically.
-    NRF_PPI->CHG[PPI_SPI_GROUP] =   ( 1 << PPI_SPI_START_CHAN );
 
-   
+    // Add all the ppi setup to group 0 to be able to enable and disable it automatically.
+    NRF_PPI->CHG[PPI_SPI_GROUP] = (1 << PPI_SPI_START_CHAN);
+
     uint32_t envelope_input_HiToLo = (uint32_t)&NRF_GPIOTE->EVENTS_IN[GPIOTE_CH_IN_ENV_HiToLo];
-    uint32_t spi_start_task_addr    = (uint32_t)&NRF_SPIM->TASKS_START;
-    //uint32_t spi_stop_task_addr     = (uint32_t)&NRF_SPIM->TASKS_STOP;
-    // uint32_t spi_end_event_addr     = (uint32_t)&NRF_SPIM->EVENTS_ENDRX;
-    uint32_t ppi_group0_disable_task_addr    = (uint32_t)&NRF_PPI->TASKS_CHG[0].DIS;
+    uint32_t spi_start_task_addr   = (uint32_t)&NRF_SPIM->TASKS_START;
+    // uint32_t spi_stop_task_addr     = (uint32_t)&NRF_SPIM->TASKS_STOP;
+    //  uint32_t spi_end_event_addr     = (uint32_t)&NRF_SPIM->EVENTS_ENDRX;
+    uint32_t ppi_group0_disable_task_addr = (uint32_t)&NRF_PPI->TASKS_CHG[0].DIS;
     // uint32_t ppi_group0_enable_task_addr     = (uint32_t)&NRF_PPI->TASKS_CHG[0].EN;
 
-    NRF_PPI->CH[PPI_SPI_START_CHAN].EEP = envelope_input_HiToLo;  // envelope down
-    NRF_PPI->CH[PPI_SPI_START_CHAN].TEP = spi_start_task_addr;     // start spi3 transfer
-    NRF_PPI->FORK[PPI_SPI_START_CHAN].TEP = ppi_group0_disable_task_addr; // Disable the PPI group
+    NRF_PPI->CH[PPI_SPI_START_CHAN].EEP   = envelope_input_HiToLo;         // envelope down
+    NRF_PPI->CH[PPI_SPI_START_CHAN].TEP   = spi_start_task_addr;           // start spi3 transfer
+    NRF_PPI->FORK[PPI_SPI_START_CHAN].TEP = ppi_group0_disable_task_addr;  // Disable the PPI group
 
 #endif
 }
@@ -1596,10 +1586,10 @@ void _spi_setup(const gpio_t *gpio_d) {
 // Initialize the circular buffer
 void _init_spi_ring_buffer(lh2_ring_buffer_t *cb) {
     cb->writeIndex = 0;
-    cb->readIndex = 0;
-    cb->count = 0;
+    cb->readIndex  = 0;
+    cb->count      = 0;
 
-    for (uint8_t i = 0; i < LH2_BUFFER_SIZE; i++){
+    for (uint8_t i = 0; i < LH2_BUFFER_SIZE; i++) {
         memset(cb->buffer[i], 0, SPI_BUFFER_SIZE);
     }
 }
@@ -1608,7 +1598,7 @@ void _add_to_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE
 
     memcpy(cb->buffer[cb->writeIndex], data, SPI_BUFFER_SIZE);
     cb->timestamps[cb->writeIndex] = timestamp;
-    cb->writeIndex = (cb->writeIndex + 1) % LH2_BUFFER_SIZE;
+    cb->writeIndex                 = (cb->writeIndex + 1) % LH2_BUFFER_SIZE;
 
     if (cb->count < LH2_BUFFER_SIZE) {
         cb->count++;
@@ -1625,45 +1615,39 @@ bool _get_from_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SI
     }
 
     memcpy(data, cb->buffer[cb->readIndex], SPI_BUFFER_SIZE);
-    *timestamp = cb->timestamps[cb->readIndex];
+    *timestamp    = cb->timestamps[cb->readIndex];
     cb->readIndex = (cb->readIndex + 1) % LH2_BUFFER_SIZE;
     cb->count--;
 
     return true;
 }
 
-void _fill_hash_table(uint16_t * hash_table){
+void _fill_hash_table(uint16_t *hash_table) {
 
     // Iterate over all the checkpoints and save the HASH_TABLE_BITS 11 bits as a a index for the hashtable
-    for (size_t poly = 0; poly < LH2_BASESTATION_COUNT*2; poly++)
-    {
-        for (size_t checkpoint =  1; checkpoint < NUM_LSFR_COUNT_CHECKPOINTS; checkpoint++)
-        {
-            if (hash_table[(_end_buffers[poly][checkpoint] >> 2) & HASH_TABLE_MASK] == 0) { // We shift by 2 to the right because we precomputed that that hash has the least amount of collisions in the hash table
+    for (size_t poly = 0; poly < LH2_BASESTATION_COUNT * 2; poly++) {
+        for (size_t checkpoint = 1; checkpoint < NUM_LSFR_COUNT_CHECKPOINTS; checkpoint++) {
+            if (hash_table[(_end_buffers[poly][checkpoint] >> 2) & HASH_TABLE_MASK] == 0) {  // We shift by 2 to the right because we precomputed that that hash has the least amount of collisions in the hash table
 
-                hash_table[(_end_buffers[poly][checkpoint] >> 2) & HASH_TABLE_MASK] = checkpoint & CHECKPOINT_TABLE_MASK_LOW;   // that element of the hash table is empty, copy the checkpoint into the lower 6 bits
-            }
-            else{
-                hash_table[(_end_buffers[poly][checkpoint] >> 2) & HASH_TABLE_MASK] |= (checkpoint << CHECKPOINT_TABLE_BITS) & CHECKPOINT_TABLE_MASK_HIGH; // If the element is already occupied, use the upper 6 bits
+                hash_table[(_end_buffers[poly][checkpoint] >> 2) & HASH_TABLE_MASK] = checkpoint & CHECKPOINT_TABLE_MASK_LOW;  // that element of the hash table is empty, copy the checkpoint into the lower 6 bits
+            } else {
+                hash_table[(_end_buffers[poly][checkpoint] >> 2) & HASH_TABLE_MASK] |= (checkpoint << CHECKPOINT_TABLE_BITS) & CHECKPOINT_TABLE_MASK_HIGH;  // If the element is already occupied, use the upper 6 bits
             }
         }
-        
     }
-    
 }
 
-void _update_lfsr_checkpoints(uint8_t polynomial, uint32_t bits, uint32_t count){
+void _update_lfsr_checkpoints(uint8_t polynomial, uint32_t bits, uint32_t count) {
 
     // Update the current running weighted sum
-    _lsfr_checkpoint_average = (((_lsfr_checkpoint_average*3)>>2) + (count>>2));
+    _lsfr_checkpoint_average = (((_lsfr_checkpoint_average * 3) >> 2) + (count >> 2));
 
     // Is the new count higher or lower than the current running average.
     uint8_t index = count <= _lsfr_checkpoint_average ? 0 : 1;
 
     // Save the new count in the correct place in the checkpoint array
-    _lfsr_checkpoint_bits[polynomial][index] = bits;
+    _lfsr_checkpoint_bits[polynomial][index]  = bits;
     _lfsr_checkpoint_count[polynomial][index] = count;
-
 }
 
 //=========================== interrupts =======================================
@@ -1675,7 +1659,7 @@ void SPIM_IRQ_HANDLER(void) {
         NRF_SPIM->EVENTS_END = 0;
         // Reenable the PPI channel
         NRF_PPI->TASKS_CHG[0].EN = 1;
-        uint32_t timestamp = db_timer_hf_now();
+        uint32_t timestamp       = db_timer_hf_now();
         // Add new reading to the ring buffer
         _add_to_spi_ring_buffer(&_lh2_vars.data, _lh2_vars.spi_rx_buffer, timestamp);
     }
