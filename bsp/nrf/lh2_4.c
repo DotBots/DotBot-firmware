@@ -39,6 +39,7 @@
 #define HASH_TABLE_SIZE                        (1 << HASH_TABLE_BITS)           ///< How big will the hashtable for the _end_buffers
 #define HASH_TABLE_MASK                        ((1 << HASH_TABLE_BITS) - 1)      ///< Mask selecting the HAS_TABLE_BITS least significant bits
 #define NUM_LSFR_COUNT_CHECKPOINTS             64                               ///< How many lsfr checkpoints are per polynomial
+#define DISTANCE_BETWEEN_LSFR_CHECKPOINTS      2048                              ///< How many lsfr checkpoints are per polynomial
 #define CHECKPOINT_TABLE_BITS                  6                                 ///< How many bits will be used for the checkpoint table for the lfsr search
 #define CHECKPOINT_TABLE_MASK_LOW              ((1 << CHECKPOINT_TABLE_BITS) - 1)        ///< How big will the checkpoint table for the lfsr search
 #define CHECKPOINT_TABLE_MASK_HIGH             (((1 << CHECKPOINT_TABLE_BITS) - 1) << CHECKPOINT_TABLE_BITS)      ///< Mask selecting the CHECKPOINT_TABLE_BITS least significant bits
@@ -84,85 +85,6 @@ static const uint32_t _polynomials[LH2_4_BASESTATION_COUNT*2] = {
     0x000198D1,
     0x000178C7,
     0x00018A55,
-};
-
-static const uint32_t _end_buffers_old[4][16] = {
-    {
-        // p0
-        0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
-        0b10101010110011101,  // 1/16 way through
-        0b10001010101011010,  // 2/16 way through
-        0b11001100100000010,  // 3/16 way through
-        0b01100101100011111,  // 4/16 way through
-        0b10010001101011110,  // 5/16 way through
-        0b10100011001011111,  // 6/16 way through
-        0b11110001010110001,  // 7/16 way through
-        0b10111000110011011,  // 8/16 way through
-        0b10100110100011110,  // 9/16 way through
-        0b11001101100010000,  // 10/16 way through
-        0b01000101110011111,  // 11/16 way through
-        0b11100101011110101,  // 12/16 way through
-        0b01001001110110111,  // 13/16 way through
-        0b11011100110011101,  // 14/16 way through
-        0b10000110101101011,  // 15/16 way through
-    },
-    {
-        // p1
-        0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
-        0b11010000110111110,  // 1/16 way through
-        0b10110111100111100,  // 2/16 way through
-        0b11000010101101111,  // 3/16 way through
-        0b00101110001101110,  // 4/16 way through
-        0b01000011000110100,  // 5/16 way through
-        0b00010001010011110,  // 6/16 way through
-        0b10100101111010001,  // 7/16 way through
-        0b10011000000100001,  // 8/16 way through
-        0b01110011011010110,  // 9/16 way through
-        0b00100011101000011,  // 10/16 way through
-        0b10111011010000101,  // 11/16 way through
-        0b00110010100110110,  // 12/16 way through
-        0b01000111111100110,  // 13/16 way through
-        0b10001101000111011,  // 14/16 way through
-        0b00111100110011100,  // 15/16 way through
-    },
-    {
-        // p2
-        0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
-        0b00011011011000100,  // 1/16 way through
-        0b01011101010010110,  // 2/16 way through
-        0b11001011001101010,  // 3/16 way through
-        0b01110001111011010,  // 4/16 way through
-        0b10110110011111010,  // 5/16 way through
-        0b10110001110000001,  // 6/16 way through
-        0b10001001011101001,  // 7/16 way through
-        0b00000010011101011,  // 8/16 way through
-        0b01100010101111011,  // 9/16 way through
-        0b00111000001101111,  // 10/16 way through
-        0b10101011100111000,  // 11/16 way through
-        0b01111110101111111,  // 12/16 way through
-        0b01000011110101010,  // 13/16 way through
-        0b01001011100000011,  // 14/16 way through
-        0b00010110111101110,  // 15/16 way through
-    },
-    {
-        // p3
-        0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
-        0b11011011110010110,  // 1/16 way through
-        0b11000100000001101,  // 2/16 way through
-        0b11100011000010110,  // 3/16 way through
-        0b00011111010001100,  // 4/16 way through
-        0b11000001011110011,  // 5/16 way through
-        0b10011101110001010,  // 6/16 way through
-        0b00001011001111000,  // 7/16 way through
-        0b00111100010000101,  // 8/16 way through
-        0b01001111001010100,  // 9/16 way through
-        0b01011010010110011,  // 10/16 way through
-        0b11111101010001100,  // 11/16 way through
-        0b00110101011011111,  // 12/16 way through
-        0b01110110010101011,  // 13/16 way through
-        0b00010000110100010,  // 14/16 way through
-        0b00010111110101110,  // 15/16 way through
-    },
 };
 
 static const uint32_t _end_buffers[LH2_4_BASESTATION_COUNT*2][NUM_LSFR_COUNT_CHECKPOINTS] = {
@@ -710,6 +632,7 @@ static uint16_t _end_buffers_hashtable[HASH_TABLE_SIZE] = {0};
 static uint32_t _lfsr_checkpoint_bits[LH2_4_BASESTATION_COUNT * 2][2] = {0};
 static uint32_t _lfsr_checkpoint_count[LH2_4_BASESTATION_COUNT * 2][2] = {0};
 static uint32_t _lsfr_checkpoint_average = 0;
+
 ///! NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module
 static const gpio_t _lh2_4_spi_fake_sck_gpio = {
     .port = 1,
@@ -756,7 +679,6 @@ uint64_t _poly_check(uint32_t poly, uint32_t bits, uint8_t numbits);
  * @return polynomial, indicating which polynomial was found, or FF for error (polynomial not found).
  */
 uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val);
-uint8_t _determine_polynomial_test(uint64_t chipsH1, int8_t *start_val);
 
 /**
  * @brief counts the number of 1s in a 64-bit
@@ -776,7 +698,6 @@ uint64_t _hamming_weight(uint64_t bits_in);
  * @return count: location of the sequence
  */
 uint32_t _reverse_count_p(uint8_t index, uint32_t bits);
-uint32_t _reverse_count_p_test(uint8_t index, uint32_t bits);
 
 /**
  * @brief Set a gpio as an INPUT with no pull-up or pull-down
@@ -895,24 +816,25 @@ void db_lh2_4_init(db_lh2_4_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) 
 }
 
 void db_lh2_4_start(db_lh2_4_t *lh2) {
-    // db_lh2_4_reset(lh2);
-    // NRF_PPI->CHENSET = (1 << PPI_SPI_START_CHAN) | (1 << PPI_SPI_STOP_CHAN);
     NRF_PPI->TASKS_CHG[0].EN = 1;
-    lh2->state = DB_LH2_4_RUNNING;
 }
 
 void db_lh2_4_stop(db_lh2_4_t *lh2) {
-    // NRF_PPI->CHENCLR = (1 << PPI_SPI_START_CHAN) | (1 << PPI_SPI_STOP_CHAN);
     NRF_PPI->TASKS_CHG[0].DIS = 1;
-    lh2->state       = DB_LH2_4_IDLE;
+
 }
 
 void db_lh2_4_reset(db_lh2_4_t *lh2) {
-    _lh2_4_vars.transfer_counter   = 0;
-    _lh2_4_vars.lha_packet_counter = 0;
-    _lh2_4_vars.lhb_packet_counter = 0;
-    _lh2_4_vars.buffers_ready      = false;
-    lh2->state                   = DB_LH2_4_RUNNING;
+    // compute LFSR locations and detect invalid packets
+    for (uint8_t basestation = 0; basestation < LH2_4_BASESTATION_COUNT; basestation++) {
+        for (uint8_t sweep = 0; sweep < 2; sweep++){
+
+            // Remove the flags indicating available data
+            lh2->data_ready[sweep][basestation] = DB_LH2_4_NO_NEW_DATA;
+            lh2->timestamps[sweep][basestation] = 0;
+            // We won't actually clear the data, it's not worth the computational effort.
+        }
+    }
 }
 
 void db_lh2_4_process_raw_data(db_lh2_4_t *lh2) {
@@ -929,37 +851,30 @@ void db_lh2_4_process_raw_data(db_lh2_4_t *lh2) {
     uint32_t temp_timestamp;
     uint64_t temp_bits_sweep;
     uint8_t temp_selected_polynomial;
-    //uint8_t temp_selected_polynomial_no_test;
     int8_t temp_bit_offset;
     int8_t sweep;
 
     // stop the interruptions while you're reading the data.
-    // db_lh2_4_stop(lh2); 
     bool error = _get_from_spi_ring_buffer(&_lh2_4_vars.data, temp_spi_bits, &temp_timestamp);
-    // db_lh2_4_start(lh2);
     if (!error) { 
         return; 
     }
 
     // perform the demodulation + poly search on the received packets
     // convert the SPI reading to bits via zero-crossing counter demodulation and differential/biphasic manchester decoding
-    NRF_P1->OUTSET = 1 << 07;
     temp_bits_sweep = _demodulate_light(temp_spi_bits);
-    NRF_P1->OUTCLR = 1 << 07;
     // figure out which polynomial each one of the two samples come from.
     //temp_selected_polynomial_no_test = _determine_polynomial(temp_bits_sweep, &temp_bit_offset);
-    NRF_P0->OUTSET = 1 << 28;
     temp_selected_polynomial = _determine_polynomial_test(temp_bits_sweep, &temp_bit_offset);
-    NRF_P0->OUTCLR = 1 << 28;
     // If there was an error with the polynomial, leave without updating anything
     if (temp_selected_polynomial == LH2_4_POLYNOMIAL_ERROR_INDICATOR){
       return;
     }
 
     // Figure in which of the two sweep slots we should save the new data.
-    if (lh2->timestamps[0][temp_selected_polynomial >> 1] <= lh2->timestamps[1][temp_selected_polynomial >> 1])  {// Either: They are both equal to zero. The structure is empty
-        sweep = 0;                                                                                      //         The data in the first slot is older.
-    }                                                                                                   // either way, use the first slot    
+    if (lh2->timestamps[0][temp_selected_polynomial >> 1] <= lh2->timestamps[1][temp_selected_polynomial >> 1])  {  // Either: They are both equal to zero. The structure is empty
+        sweep = 0;                                                                                                  //         The data in the first slot is older.
+    }                                                                                                               //         either way, use the first slot    
     else {  // The data in the second slot is older.
         sweep = 1;
     }
@@ -976,7 +891,7 @@ void db_lh2_4_process_raw_data(db_lh2_4_t *lh2) {
 
 void db_lh2_4_process_location(db_lh2_4_t *lh2) {
 
-    uint32_t lfsr_loc_temp, lsfr_loc_temp_test;
+    uint32_t lfsr_loc_temp;
 
     // compute LFSR locations and detect invalid packets
     for (uint8_t basestation = 0; basestation < LH2_4_BASESTATION_COUNT; basestation++) {
@@ -987,28 +902,13 @@ void db_lh2_4_process_location(db_lh2_4_t *lh2) {
 
                 // Copy the selected polynomial
                 lh2->locations[sweep][basestation].selected_polynomial = lh2->raw_data[sweep][basestation].selected_polynomial;
-                // Copmute and save the lsfr location.
+                // Copmute and save the lsfr location.                
                 lfsr_loc_temp = _reverse_count_p(
-                                                     lh2->raw_data[sweep][basestation].selected_polynomial,
-                                                     lh2->raw_data[sweep][basestation].bits_sweep >> (47 - lh2->raw_data[sweep][basestation].bit_offset)) -
-                                                lh2->raw_data[sweep][basestation].bit_offset;
-                
-                lh2->locations[sweep][basestation].lfsr_location = lfsr_loc_temp;
-                
-                NRF_P1->OUTCLR = 1 << 11;
-                NRF_P0->OUTSET = 1 << 29;
-                lsfr_loc_temp_test = _reverse_count_p_test(
-                                                     lh2->raw_data[sweep][basestation].selected_polynomial,
-                                                     lh2->raw_data[sweep][basestation].bits_sweep >> (47 - lh2->raw_data[sweep][basestation].bit_offset)) -
-                                                lh2->raw_data[sweep][basestation].bit_offset;
-                NRF_P0->OUTCLR = 1 << 29;
-                lh2->locations[sweep][basestation].lfsr_location = lsfr_loc_temp_test; 
+                                                lh2->raw_data[sweep][basestation].selected_polynomial,
+                                                lh2->raw_data[sweep][basestation].bits_sweep >> (47 - lh2->raw_data[sweep][basestation].bit_offset)
+                                                ) - lh2->raw_data[sweep][basestation].bit_offset;
 
-
-                if (lfsr_loc_temp != lsfr_loc_temp_test){
-                    NRF_P1->OUTSET = 1 << 11;
-                }
-
+                lh2->locations[sweep][basestation].lfsr_location = lfsr_loc_temp; 
 
                 // Mark the data point as processed
                 lh2->data_ready[sweep][basestation] = DB_LH2_4_PROCESSED_DATA_AVAILABLE;
@@ -1422,79 +1322,6 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
     // TODO: make function a void and modify memory directly
     // TODO: rename chipsH1 to something relevant... like bits?
 
-    *start_val = 0;  // TODO: remove this? possible that I modify start value during the demodulation process
-
-    int32_t  bits_N_for_comp                     = 47 - *start_val;
-    uint32_t bit_buffer1                         = (uint32_t)(((0xFFFF800000000000) & chipsH1) >> 47);
-    uint64_t bits_from_poly[LH2_4_BASESTATION_COUNT*2] = { 0 };
-    uint64_t weights[LH2_4_BASESTATION_COUNT*2]        = { 0xFFFFFFFFFFFFFFFF };
-    uint8_t  selected_poly                       = LH2_4_POLYNOMIAL_ERROR_INDICATOR;  // initialize to error condition
-    uint8_t  min_weight_idx                      = LH2_4_POLYNOMIAL_ERROR_INDICATOR;
-    uint64_t min_weight                          = LH2_4_POLYNOMIAL_ERROR_INDICATOR;
-    uint64_t bits_to_compare                     = 0;
-    int32_t  threshold                           = POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
-    uint32_t test_iteration = 0;
-    // try polynomial vs. first buffer bits
-    // this search takes 17-bit sequences and runs them forwards through the polynomial LFSRs.
-    // if the remaining detected bits fit well with the chosen 17-bit sequence and a given polynomial, it is treated as "correct"
-    // in case of bit errors at the beginning of the capture, the 17-bit sequence is shifted (to a max of 8 bits)
-    // in case of bit errors at the end of the capture, the ending bits are removed (to a max of
-    // removing bits reduces the threshold correspondingly, as incorrect packet detection will cause a significant delay in location estimate
-
-    // run polynomial search on the first capture
-    while (1) {
-                if(test_iteration ==9){
-            NRF_P0->OUTSET = 1 << 28;
-        }
-
-        // TODO: do this math stuff in multiple operations to: (a) make it readable (b) ensure order-of-execution
-        bit_buffer1       = (uint32_t)(((0xFFFF800000000000 >> (*start_val)) & chipsH1) >> (64 - 17 - (*start_val)));
-        bits_to_compare   = (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - 17 - (*start_val) - bits_N_for_comp)));
-        // reset the minimum polynomial match found
-        min_weight_idx                      = LH2_4_POLYNOMIAL_ERROR_INDICATOR; 
-        min_weight                          = LH2_4_POLYNOMIAL_ERROR_INDICATOR;
-        // Check against all the known polynomials
-        for (uint8_t i = 0; i<LH2_4_BASESTATION_COUNT*2; i++){
-            bits_from_poly[i] = (((_poly_check(_polynomials[i], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
-            weights[i]        = _hamming_weight(bits_from_poly[i] ^ bits_to_compare);
-            // Keep track of the minimum weight value and which polinimial generated it.
-            if (weights[i] < min_weight){
-                min_weight_idx = i;
-                min_weight = weights[i];
-            }
-        }
-        // too few bits to reliably compare, give up
-        if (bits_N_for_comp < 10) {   
-            selected_poly = LH2_4_POLYNOMIAL_ERROR_INDICATOR;  // mark the poly as "wrong"
-            break;
-        }
-        // If you found a sufficiently good value, then return which polinomial generated it
-        if (min_weight <= (uint64_t)threshold) {
-                selected_poly = min_weight_idx;
-                break;
-        // match failed, try again removing bits from the end
-        } else if (*start_val > 8) {  
-            *start_val      = 0;
-            bits_N_for_comp = bits_N_for_comp + 1;
-            if (threshold > 1) {
-                threshold = threshold - 1;
-            } else if (threshold == 1) {  // keep threshold at ones, but you're probably screwed with an unlucky bit error
-                threshold = 1;
-            }
-        } else {
-            *start_val      = *start_val + 1;
-            bits_N_for_comp = bits_N_for_comp - 1;
-        }
-test_iteration++;
-    }
-    return selected_poly;
-}
-
-uint8_t _determine_polynomial_test(uint64_t chipsH1, int8_t *start_val) {
-    // check which polynomial the bit sequence is part of
-    // TODO: make function a void and modify memory directly
-    // TODO: rename chipsH1 to something relevant... like bits?
-
     *start_val = 8;  // TODO: remove this? possible that I modify start value during the demodulation process
 
     int32_t  bits_N_for_comp                     = 47 - *start_val;
@@ -1575,91 +1402,6 @@ uint64_t _hamming_weight(uint64_t bits_in) {  // TODO: bad name for function? or
 }
 
 uint32_t _reverse_count_p(uint8_t index, uint32_t bits) {
-    uint32_t count       = 0;
-    uint32_t buffer      = bits & 0x0001FFFFF;  // initialize buffer to initial bits, masked
-    uint8_t  ii          = 0;                   // loop variable for cumulative sum
-    uint32_t result      = 0;
-    uint32_t b17         = 0;
-    uint32_t masked_buff = 0;
-    while (buffer != _end_buffers_old[index][0])  // do until buffer reaches one of the saved states
-    {
-        b17         = buffer & 0x00000001;               // save the "newest" bit of the buffer
-        buffer      = (buffer & (0x0001FFFE)) >> 1;      // shift the buffer right, backwards in time
-        masked_buff = (buffer) & (_polynomials[index]);  // mask the buffer w/ the selected polynomial
-        for (ii = 0; ii < 17; ii++) {
-            result = result ^ (((masked_buff) >> ii) & (0x00000001));  // cumulative sum of buffer&poly
-        }
-        result = result ^ b17;
-        buffer = buffer | (result << 16);  // update buffer w/ result
-        result = 0;                        // reset result
-        count++;
-        
-        if ((buffer ^ _end_buffers_old[index][1]) == 0x00000000) {
-            count  = count + 8192 - 1;
-            buffer = _end_buffers_old[index][0];
-        }
-        if ((buffer ^ _end_buffers_old[index][2]) == 0x00000000) {
-            count  = count + 16384 - 1;
-            buffer = _end_buffers_old[index][0];
-        }
-        if ((buffer ^ _end_buffers_old[index][3]) == 0x00000000) {
-            count  = count + 24576 - 1;
-            buffer = _end_buffers_old[index][0];
-        }
-        if ((buffer ^ _end_buffers_old[index][4]) == 0x00000000) {
-            count  = count + 32768 - 1;
-            buffer = _end_buffers_old[index][0];
-        }
-        if ((buffer ^ _end_buffers_old[index][5]) == 0x00000000) {
-            count  = count + 40960 - 1;
-            buffer = _end_buffers_old[index][0];
-        }
-        if ((buffer ^ _end_buffers_old[index][6]) == 0x00000000) {
-            count  = count + 49152 - 1;
-            buffer = _end_buffers_old[index][0];
-        }
-        if ((buffer ^ _end_buffers_old[index][7]) == 0x00000000) {
-            count  = count + 57344 - 1;
-            buffer = _end_buffers_old[index][0];
-        }
-        if ((buffer ^ _end_buffers_old[index][8]) == 0x00000000) {
-            count  = count + 65536 - 1;
-            buffer = _end_buffers_old[index][0];
-        }
-        if ((buffer ^ _end_buffers_old[index][9]) == 0x00000000) {
-            count  = count + 73728 - 1;
-            buffer = _end_buffers_old[index][0];
-        }
-        if ((buffer ^ _end_buffers_old[index][10]) == 0x00000000) {
-            count  = count + 81920 - 1;
-            buffer = _end_buffers_old[index][0];
-        }
-        if ((buffer ^ _end_buffers_old[index][11]) == 0x00000000) {
-            count  = count + 90112 - 1;
-            buffer = _end_buffers_old[index][0];
-        }
-        if ((buffer ^ _end_buffers_old[index][12]) == 0x00000000) {
-            count  = count + 98304 - 1;
-            buffer = _end_buffers_old[index][0];
-        }
-        if ((buffer ^ _end_buffers_old[index][13]) == 0x00000000) {
-            count  = count + 106496 - 1;
-            buffer = _end_buffers_old[index][0];
-        }
-        if ((buffer ^ _end_buffers_old[index][14]) == 0x00000000) {
-            count  = count + 114688 - 1;
-            buffer = _end_buffers_old[index][0];
-        }
-        if ((buffer ^ _end_buffers_old[index][15]) == 0x00000000) {
-            count  = count + 122880 - 1;
-            buffer = _end_buffers_old[index][0];
-        }
-        
-    }
-    return count;
-}
-
-uint32_t _reverse_count_p_test(uint8_t index, uint32_t bits) {
     
     bits = bits & 0x0001FFFF;   // initialize buffer to initial bits, masked
     uint32_t buffer_down      = bits;  
@@ -1681,7 +1423,6 @@ uint32_t _reverse_count_p_test(uint8_t index, uint32_t bits) {
         _end_buffers_local[i] = _end_buffers[index][i];
     }
     
-
     while (buffer_up != _end_buffers_local[0])  // do until buffer reaches one of the saved states
     {
 
