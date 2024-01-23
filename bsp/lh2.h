@@ -84,14 +84,12 @@ void db_lh2_process_location(db_lh2_t *lh2);
 /**
  * @brief Start the LH2 frame acquisition
  *
- * @param[in]   lh2 pointer to the lh2 instance
  */
 void db_lh2_start(void);
 
 /**
  * @brief Stop the LH2 frame acquisition
  *
- * @param[in]   lh2 pointer to the lh2 instance
  */
 void db_lh2_stop(void);
 
