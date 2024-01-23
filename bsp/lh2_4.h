@@ -23,19 +23,9 @@
 
 //=========================== defines ==========================================
 
-#define LH2_4_LOCATIONS_COUNT 2    ///< Number of computed locations
 #define LH2_4_BASESTATION_COUNT 4  ///< Number of supported concurrent basestations
-
 #define LH2_4_SWEEP_COUNT 2        ///< Number of laser sweeps per basestations rotation
 
-
-/// LH2 internal state
-typedef enum {
-    DB_LH2_4_IDLE,            ///< the lh2 engine is idle
-    DB_LH2_4_RUNNING,         ///< the lh2 engine is running
-    DB_LH2_4_RAW_DATA_READY,  ///< some lh2 raw data is available
-    DB_LH2_4_LOCATION_READY,  ///< some lh2 location is ready to be read
-} db_lh2_4_state_t;
 
 /// LH2 data ready buffer state
 typedef enum {
@@ -59,7 +49,6 @@ typedef struct __attribute__((packed)) {
 
 /// LH2 instance (one row per laser sweep, and one column per basestation.)
 typedef struct {
-    db_lh2_4_state_t    state;                                          ///< current state of the lh2 engine
     db_lh2_4_raw_data_t raw_data[2][LH2_4_BASESTATION_COUNT];           ///< raw data decoded from the lighthouse
     db_lh2_4_location_t locations[2][LH2_4_BASESTATION_COUNT];          ///< buffer holding the computed locations
     uint32_t            timestamps[2][LH2_4_BASESTATION_COUNT];         ///< timestamp of when the raw data was received

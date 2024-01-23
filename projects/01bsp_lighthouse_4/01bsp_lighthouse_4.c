@@ -28,6 +28,7 @@ static db_lh2_4_t _lh2;
 
 //=========================== main =============================================
 
+
 /**
  *  @brief The program starts executing here.
  */
@@ -44,15 +45,11 @@ int main(void) {
         __WFE();
         db_lh2_4_process_raw_data(&_lh2);
 
-
         if (DB2_LH2_4_FULL_COMPUTATION) {
             // the location function has to be running all the time
             db_lh2_4_process_location(&_lh2);
             __NOP();
-            }
-
-            //db_lh2_4_start(&_lh2);
-  
+            }  
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
