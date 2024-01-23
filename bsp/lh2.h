@@ -11,7 +11,7 @@
  * @author Filip Maksimovic <filip.maksimovic@inria.fr>
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- * @copyright Inria, 2022
+ * @copyright Inria, 20232
  * @}
  */
 
@@ -23,15 +23,16 @@
 
 //=========================== defines ==========================================
 
-#define LH2_LOCATIONS_COUNT 2  ///< Number of computed locations
+#define LH2_BASESTATION_COUNT 4  ///< Number of supported concurrent basestations
+#define LH2_SWEEP_COUNT 2        ///< Number of laser sweeps per basestations rotation
 
-/// LH2 internal state
+
+/// LH2 data ready buffer state
 typedef enum {
-    DB_LH2_IDLE,            ///< the lh2 engine is idle
-    DB_LH2_RUNNING,         ///< the lh2 engine is running
-    DB_LH2_RAW_DATA_READY,  ///< some lh2 raw data is available
-    DB_LH2_LOCATION_READY,  ///< some lh2 location is ready to be read
-} db_lh2_state_t;
+    DB_LH2_NO_NEW_DATA,                ///< The data occupying this spot of the buffer has already been sent.
+    DB_LH2_RAW_DATA_AVAILABLE,             ///< The data occupying this spot of the buffer is new and ready to send.
+    DB_LH2_PROCESSED_DATA_AVAILABLE,       ///< The data occupying this spot of the buffer is new and ready to send.
+} db_lh2_data_ready_state_t;
 
 /// LH2 raw data
 typedef struct __attribute__((packed)) {
@@ -46,11 +47,14 @@ typedef struct __attribute__((packed)) {
     uint32_t lfsr_location;        ///< LFSR location is the position in a given polynomial's LFSR that the decoded data is, initialize to error state
 } db_lh2_location_t;
 
-/// LH2 instance
+/// LH2 instance (one row per laser sweep, and one column per basestation.)
 typedef struct {
-    db_lh2_state_t    state;                           ///< current state of the lh2 engine
-    db_lh2_raw_data_t raw_data[LH2_LOCATIONS_COUNT];   ///< raw data decoded from the lighthouse
-    db_lh2_location_t locations[LH2_LOCATIONS_COUNT];  ///< buffer holding the computed locations
+    db_lh2_raw_data_t raw_data[2][LH2_BASESTATION_COUNT];           ///< raw data decoded from the lighthouse
+    db_lh2_location_t locations[2][LH2_BASESTATION_COUNT];          ///< buffer holding the computed locations
+    uint32_t            timestamps[2][LH2_BASESTATION_COUNT];         ///< timestamp of when the raw data was received
+    db_lh2_data_ready_state_t data_ready[2][LH2_BASESTATION_COUNT]; ///< Is the data in the buffer ready to send over radio, or has it already been sent ?
+    // TODO: Add a raw packets count here so that you have some way of knowing the state of the ring buffer.
+    uint8_t             *spi_ring_buffer_count_ptr;
 } db_lh2_t;
 
 //=========================== public ===========================================

@@ -209,7 +209,7 @@ int main(void) {
         if (_dotbot_vars.update_lh2) {
             db_lh2_process_raw_data(&_dotbot_vars.lh2);
             // CHeck if data is ready to send
-            if (_dotbot_vars.lh2.data_ready[0][0] == DB_LH2_4_RAW_DATA_AVAILABLE && _dotbot_vars.lh2.data_ready[0][1] == DB_LH2_4_RAW_DATA_AVAILABLE) {
+            if (_dotbot_vars.lh2.data_ready[0][0] == DB_LH2_RAW_DATA_AVAILABLE && _dotbot_vars.lh2.data_ready[0][1] == DB_LH2_RAW_DATA_AVAILABLE) {
                 _dotbot_vars.lh2_update_counter = 0;
                 db_lh2_stop(&_dotbot_vars.lh2);
                 // Prepare the radio buffer
@@ -217,10 +217,10 @@ int main(void) {
                 memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t), &_dotbot_vars.direction, sizeof(int16_t));
                 memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(int16_t), &_dotbot_vars.lh2.raw_data[0][0], sizeof(db_lh2_raw_data_t));
                 memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(int16_t) + sizeof(db_lh2_raw_data_t), &_dotbot_vars.lh2.raw_data[1][0], sizeof(db_lh2_raw_data_t));
-                size_t length = sizeof(protocol_header_t) + sizeof(int16_t) + sizeof(db_lh2_raw_data_t) * LH2_4_SWEEP_COUNT;
+                size_t length = sizeof(protocol_header_t) + sizeof(int16_t) + sizeof(db_lh2_raw_data_t) * LH2_SWEEP_COUNT;
                 // Mark the data as already sent
-                _dotbot_vars.lh2.data_ready[0][0] = DB_LH2_4_NO_NEW_DATA;
-                _dotbot_vars.lh2.data_ready[1][0] = DB_LH2_4_NO_NEW_DATA;
+                _dotbot_vars.lh2.data_ready[0][0] = DB_LH2_NO_NEW_DATA;
+                _dotbot_vars.lh2.data_ready[1][0] = DB_LH2_NO_NEW_DATA;
                 db_radio_disable();
                 db_radio_tx(_dotbot_vars.radio_buffer, length);
                 if (DB_LH2_FULL_COMPUTATION) {

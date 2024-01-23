@@ -44,17 +44,11 @@ int main(void) {
         __WFE();
         db_lh2_process_raw_data(&_lh2);
 
-        if (_lh2.state == DB_LH2_RAW_DATA_READY) {
-            // Stop the LH2 internal engine before doing other computations/sending radio packets, etc
-            db_lh2_stop(&_lh2);
-
-            if (DB2_LH2_FULL_COMPUTATION) {
-                // the location function has to be running all the time
-                db_lh2_process_location(&_lh2);
-            }
-
-            db_lh2_start(&_lh2);
-        }
+        if (DB2_LH2_FULL_COMPUTATION) {
+            // the location function has to be running all the time
+            db_lh2_process_location(&_lh2);
+            __NOP();
+            }  
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.

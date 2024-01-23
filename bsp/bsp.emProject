@@ -31,16 +31,6 @@
     <file file_name="nrf/$(Lh2ImplementationFile)" />
     <file file_name="lh2.h" />
   </project>
-  <project Name="00bsp_dotbot_lh2_4">
-    <configuration
-      Name="Common"
-      project_dependencies="00bsp_timer_hf"
-      project_directory="."
-      project_type="Library" />
-    <file file_name="nrf/lh2_4.c" />  
-    <!-- Remember to change this back to nrf/$(Lh2ImplementationFile) -->
-    <file file_name="lh2_4.h" />
-  </project>
   <project Name="00bsp_dotbot_motors">
     <configuration
       Name="Common"
