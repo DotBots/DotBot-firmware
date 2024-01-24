@@ -900,6 +900,13 @@ void db_lh2_process_location(db_lh2_t *lh2) {
             // Check if this particular position has data point ready for sending
             if (lh2->data_ready[sweep][basestation] == DB_LH2_RAW_DATA_AVAILABLE) {
 
+                // Sanity check, make sure you don't start the LFSR search with a bit-sequence full of zeros.
+                if ((lh2->raw_data[sweep][basestation].bits_sweep >> (47 - lh2->raw_data[sweep][basestation].bit_offset)) == 0x000000) {
+                    // Mark the data as wrong and keep going
+                    lh2->data_ready[sweep][basestation] = DB_LH2_NO_NEW_DATA;
+                    continue;
+                }
+
                 // Copy the selected polynomial
                 lh2->locations[sweep][basestation].selected_polynomial = lh2->raw_data[sweep][basestation].selected_polynomial;
                 // Copmute and save the lsfr location.
