@@ -818,7 +818,7 @@ void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
 }
 
 void db_lh2_start(void) {
-    
+
     NRF_PPI->TASKS_CHG[PPI_SPI_GROUP].EN = 1;
 }
 
@@ -1544,12 +1544,12 @@ void _ppi_setup(void) {
     NRF_PPI->CHG[PPI_SPI_GROUP] = (1 << PPI_SPI_START_CHAN);
 
     // Publish and Event when the Envelope line goes from HIGH to LOW.
-    NRF_GPIOTE->PUBLISH_IN[GPIOTE_CH_IN_ENV_HiToLo] =   (GPIOTE_PUBLISH_IN_EN_Enabled << GPIOTE_PUBLISH_IN_EN_Pos) |
-                                                        (PPI_SPI_START_CHAN << GPIOTE_PUBLISH_IN_CHIDX_Pos);
+    NRF_GPIOTE->PUBLISH_IN[GPIOTE_CH_IN_ENV_HiToLo] = (GPIOTE_PUBLISH_IN_EN_Enabled << GPIOTE_PUBLISH_IN_EN_Pos) |
+                                                      (PPI_SPI_START_CHAN << GPIOTE_PUBLISH_IN_CHIDX_Pos);
 
     // Subscription to trigger the SPI transfer and disable the PPI system
-    NRF_SPIM->SUBSCRIBE_START =     (SPIM_SUBSCRIBE_START_EN_Enabled << SPIM_SUBSCRIBE_START_EN_Pos) |
-                                    (PPI_SPI_START_CHAN << SPIM_SUBSCRIBE_START_CHIDX_Pos);
+    NRF_SPIM->SUBSCRIBE_START = (SPIM_SUBSCRIBE_START_EN_Enabled << SPIM_SUBSCRIBE_START_EN_Pos) |
+                                (PPI_SPI_START_CHAN << SPIM_SUBSCRIBE_START_CHIDX_Pos);
 
     NRF_PPI->SUBSCRIBE_CHG[PPI_SPI_GROUP].DIS = (DPPIC_SUBSCRIBE_CHG_DIS_EN_Enabled << DPPIC_SUBSCRIBE_CHG_DIS_EN_Pos) |
                                                 (PPI_SPI_START_CHAN << DPPIC_SUBSCRIBE_CHG_DIS_CHIDX_Pos);
@@ -1559,8 +1559,8 @@ void _ppi_setup(void) {
     // Add all the ppi setup to group 0 to be able to enable and disable it automatically.
     NRF_PPI->CHG[PPI_SPI_GROUP] = (1 << PPI_SPI_START_CHAN);
 
-    uint32_t envelope_input_HiToLo = (uint32_t)&NRF_GPIOTE->EVENTS_IN[GPIOTE_CH_IN_ENV_HiToLo];
-    uint32_t spi_start_task_addr   = (uint32_t)&NRF_SPIM->TASKS_START;
+    uint32_t envelope_input_HiToLo        = (uint32_t)&NRF_GPIOTE->EVENTS_IN[GPIOTE_CH_IN_ENV_HiToLo];
+    uint32_t spi_start_task_addr          = (uint32_t)&NRF_SPIM->TASKS_START;
     uint32_t ppi_group0_disable_task_addr = (uint32_t)&NRF_PPI->TASKS_CHG[0].DIS;
 
     NRF_PPI->CH[PPI_SPI_START_CHAN].EEP   = envelope_input_HiToLo;         // envelope down
