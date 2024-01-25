@@ -818,11 +818,13 @@ void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
 }
 
 void db_lh2_start(void) {
-    NRF_PPI->TASKS_CHG[0].EN = 1;
+    
+    NRF_PPI->TASKS_CHG[PPI_SPI_GROUP].EN = 1;
 }
 
 void db_lh2_stop(void) {
-    NRF_PPI->TASKS_CHG[0].DIS = 1;
+
+    NRF_PPI->TASKS_CHG[PPI_SPI_GROUP].DIS = 1;
 }
 
 void db_lh2_reset(db_lh2_t *lh2) {
@@ -1537,11 +1539,21 @@ void _gpiote_setup(const gpio_t *gpio_e) {
 
 void _ppi_setup(void) {
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
-    NRF_GPIOTE->PUBLISH_IN[GPIOTE_CH_IN_ENV_HiToLo] = PPI_SPI_START_CHAN | (GPIOTE_PUBLISH_IN_EN_Enabled << GPIOTE_PUBLISH_IN_EN_Pos);
-    NRF_SPIM->SUBSCRIBE_START                       = PPI_SPI_START_CHAN | (SPIM_SUBSCRIBE_START_EN_Enabled << SPIM_SUBSCRIBE_START_EN_Pos);
 
-    NRF_GPIOTE->PUBLISH_IN[GPIOTE_CH_IN_ENV_LoToHi] = PPI_SPI_STOP_CHAN | (GPIOTE_PUBLISH_IN_EN_Enabled << GPIOTE_PUBLISH_IN_EN_Pos);
-    NRF_SPIM->SUBSCRIBE_STOP                        = PPI_SPI_STOP_CHAN | (SPIM_SUBSCRIBE_STOP_EN_Enabled << SPIM_SUBSCRIBE_STOP_EN_Pos);
+    // Add the selected DPPI Channel to a Group to be able to disable it with a Task.
+    NRF_PPI->CHG[PPI_SPI_GROUP] = (1 << PPI_SPI_START_CHAN);
+
+    // Publish and Event when the Envelope line goes from HIGH to LOW.
+    NRF_GPIOTE->PUBLISH_IN[GPIOTE_CH_IN_ENV_HiToLo] =   (GPIOTE_PUBLISH_IN_EN_Enabled << GPIOTE_PUBLISH_IN_EN_Pos) |
+                                                        (PPI_SPI_START_CHAN << GPIOTE_PUBLISH_IN_CHIDX_Pos);
+
+    // Subscription to trigger the SPI transfer and disable the PPI system
+    NRF_SPIM->SUBSCRIBE_START =     (SPIM_SUBSCRIBE_START_EN_Enabled << SPIM_SUBSCRIBE_START_EN_Pos) |
+                                    (PPI_SPI_START_CHAN << SPIM_SUBSCRIBE_START_CHIDX_Pos);
+
+    NRF_PPI->SUBSCRIBE_CHG[PPI_SPI_GROUP].DIS = (DPPIC_SUBSCRIBE_CHG_DIS_EN_Enabled << DPPIC_SUBSCRIBE_CHG_DIS_EN_Pos) |
+                                                (PPI_SPI_START_CHAN << DPPIC_SUBSCRIBE_CHG_DIS_CHIDX_Pos);
+
 #else
 
     // Add all the ppi setup to group 0 to be able to enable and disable it automatically.
@@ -1549,10 +1561,7 @@ void _ppi_setup(void) {
 
     uint32_t envelope_input_HiToLo = (uint32_t)&NRF_GPIOTE->EVENTS_IN[GPIOTE_CH_IN_ENV_HiToLo];
     uint32_t spi_start_task_addr   = (uint32_t)&NRF_SPIM->TASKS_START;
-    // uint32_t spi_stop_task_addr     = (uint32_t)&NRF_SPIM->TASKS_STOP;
-    //  uint32_t spi_end_event_addr     = (uint32_t)&NRF_SPIM->EVENTS_ENDRX;
     uint32_t ppi_group0_disable_task_addr = (uint32_t)&NRF_PPI->TASKS_CHG[0].DIS;
-    // uint32_t ppi_group0_enable_task_addr     = (uint32_t)&NRF_PPI->TASKS_CHG[0].EN;
 
     NRF_PPI->CH[PPI_SPI_START_CHAN].EEP   = envelope_input_HiToLo;         // envelope down
     NRF_PPI->CH[PPI_SPI_START_CHAN].TEP   = spi_start_task_addr;           // start spi3 transfer
@@ -1596,7 +1605,6 @@ void _spi_setup(const gpio_t *gpio_d) {
     NRF_SPIM->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
 }
 
-// Initialize the circular buffer
 void _init_spi_ring_buffer(lh2_ring_buffer_t *cb) {
     cb->writeIndex = 0;
     cb->readIndex  = 0;
@@ -1671,8 +1679,9 @@ void SPIM_IRQ_HANDLER(void) {
         // Clear the Interrupt flag
         NRF_SPIM->EVENTS_END = 0;
         // Reenable the PPI channel
-        NRF_PPI->TASKS_CHG[0].EN = 1;
-        uint32_t timestamp       = db_timer_hf_now();
+        db_lh2_start();
+        // Read the current time.
+        uint32_t timestamp = db_timer_hf_now();
         // Add new reading to the ring buffer
         _add_to_spi_ring_buffer(&_lh2_vars.data, _lh2_vars.spi_rx_buffer, timestamp);
     }
