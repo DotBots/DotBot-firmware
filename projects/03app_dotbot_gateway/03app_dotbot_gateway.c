@@ -27,6 +27,8 @@
 #include "timer.h"
 #include "uart.h"
 
+#include "conf.h"
+
 //=========================== defines ==========================================
 
 #define DB_BUFFER_MAX_BYTES (255U)       ///< Max bytes in UART receive buffer
@@ -154,8 +156,8 @@ int main(void) {
     db_protocol_init();
 
     // Configure Radio as transmitter
-    db_radio_init(&_radio_callback, DB_RADIO_BLE_1MBit);  // All RX packets received are forwarded in an HDLC frame over UART
-    db_radio_set_frequency(8);                            // Set the radio frequency to 2408 MHz.
+    db_radio_init(&_radio_callback, DOTBOT_GW_RADIO_MODE);  // All RX packets received are forwarded in an HDLC frame over UART
+    db_radio_set_frequency(8);                              // Set the radio frequency to 2408 MHz.
     // Initialize the gateway context
     _gw_vars.buttons             = 0x0000;
     _gw_vars.radio_queue.current = 0;

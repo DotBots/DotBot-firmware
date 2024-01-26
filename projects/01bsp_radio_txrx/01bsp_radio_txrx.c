@@ -17,11 +17,12 @@
 #include "radio.h"
 #include "timer_hf.h"
 
+#include "conf.h"
+
 //=========================== defines ===========================================
 
-#define DELAY_MS   (100)                 // Wait 100ms between each send
-#define RADIO_FREQ (8)                   // Set the frequency to 2408 MHz
-#define RADIO_MODE (DB_RADIO_BLE_1MBit)  // Use BLE 1Mbit/s
+#define DELAY_MS   (100)  // Wait 100ms between each send
+#define RADIO_FREQ (8)    // Set the frequency to 2408 MHz
 
 //=========================== variables =========================================
 
@@ -70,7 +71,7 @@ int main(void) {
 
     //=========================== Configure Radio ===============================
 
-    db_radio_init(&radio_callback, RADIO_MODE);
+    db_radio_init(&radio_callback, DOTBOT_GW_RADIO_MODE);
     db_radio_set_frequency(RADIO_FREQ);
     db_radio_rx();
 

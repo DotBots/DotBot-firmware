@@ -7,8 +7,8 @@
       project_directory="03app_dotbot_gateway"
       project_type="Executable" />
     <folder Name="Device Files">
-      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
       <file file_name="$(DeviceSystemFile)">
         <configuration
           Name="Common"
@@ -17,26 +17,67 @@
       </file>
     </folder>
     <folder Name="Script Files">
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
       <file file_name="$(DeviceLinkerScript)">
         <configuration Name="Common" file_type="Linker Script" />
       </file>
       <file file_name="$(DeviceMemoryMap)">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
+      </file>
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="03app_dotbot_gateway.c" />
+      <file file_name="conf.h" />
     </folder>
     <folder Name="System Files">
-      <file file_name="$(SeggerThumbStartup)" />
       <file file_name="$(DeviceCommonVectorsFile)" />
       <file file_name="$(DeviceVectorsFile)">
         <configuration Name="Common" file_type="Assembly" />
       </file>
+      <file file_name="$(SeggerThumbStartup)" />
+    </folder>
+  </project>
+<project Name="03app_dotbot_gateway_lr">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_radio(bsp);00bsp_dotbot_board(bsp);00bsp_uart(bsp);00bsp_timer(bsp);00bsp_uart(bsp);00drv_dotbot_hdlc(drv);00drv_dotbot_protocol(drv);00bsp_gpio(bsp)"
+      project_directory="03app_dotbot_gateway_lr"
+      project_type="Executable" />
+    <folder Name="Device Files">
+      <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceSystemFile)">
+        <configuration
+          Name="Common"
+          default_code_section=".init"
+          default_const_section=".init_rodata" />
+      </file>
+    </folder>
+    <folder Name="Script Files">
+      <file file_name="$(DeviceLinkerScript)">
+        <configuration Name="Common" file_type="Linker Script" />
+      </file>
+      <file file_name="$(DeviceMemoryMap)">
+        <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
+      </file>
+    </folder>
+    <folder Name="Source Files">
+      <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
+      <file file_name="../03app_dotbot_gateway/03app_dotbot_gateway.c" />
+      <file file_name="conf.h" />
+    </folder>
+    <folder Name="System Files">
+      <file file_name="$(DeviceCommonVectorsFile)" />
+      <file file_name="$(DeviceVectorsFile)">
+        <configuration Name="Common" file_type="Assembly" />
+      </file>
+      <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
 </solution>

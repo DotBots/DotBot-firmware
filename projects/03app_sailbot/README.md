@@ -11,5 +11,5 @@ This app contains the main firmware of the SailBot platform based on Kyosho's Fo
 ## Instructions
 
 1. Load this app on the SailBot board.
-1. Program an nRF52840-DK with [gateway firmware](https://github.com/DotBots/DotBot-firmware/tree/main/projects/03app_dotbot_gateway).
+1. Program an nRF52840-DK with [logn range gateway firmware](https://github.com/DotBots/DotBot-firmware/tree/main/projects/03app_dotbot_gateway).
 1. Start [DotBot controller](https://github.com/DotBots/PyDotBot)on your computer.
