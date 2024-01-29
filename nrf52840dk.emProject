@@ -63,5 +63,6 @@
   <import file_name="projects/projects-gateway.emProject" />
   <import file_name="projects/projects-log-dump.emProject" />
   <import file_name="projects/projects-sailbot.emProject" />
+  <import file_name="projects/projects-radio.emProject" />
   <import file_name="testbed/testbed.emProject" />
 </solution>
