@@ -52,6 +52,13 @@ void db_protocol_cmd_move_raw_to_buffer(uint8_t *buffer, uint64_t dst,
     memcpy(cmd_ptr, command, sizeof(protocol_move_raw_command_t));
 }
 
+void db_uint8_t_to_buffer(uint8_t *buffer, uint64_t dst,
+                                        application_type_t application, uint8_t *mychar) {
+    db_protocol_header_to_buffer(buffer, dst, application, DB_PROTOCOL_CMD_MOVE_RAW);
+    uint8_t *cmd_ptr = buffer + sizeof(protocol_header_t);
+    memcpy(cmd_ptr, mychar, sizeof(int8_t));
+}
+
 void db_protocol_cmd_rgbled_to_buffer(uint8_t *buffer, uint64_t dst,
                                       application_type_t application, protocol_rgbled_command_t *command) {
     db_protocol_header_to_buffer(buffer, dst, application, DB_PROTOCOL_CMD_RGB_LED);

@@ -129,6 +129,16 @@ void db_protocol_header_to_buffer(uint8_t *buffer, uint64_t dst, application_typ
 void db_protocol_cmd_move_raw_to_buffer(uint8_t *buffer, uint64_t dst, application_type_t application, protocol_move_raw_command_t *command);
 
 /**
+ * @brief   Write a char in a buffer
+ *
+ * @param[out]  buffer      Bytes array to write to
+ * @param[in]   dst         Destination address written in the header
+ * @param[in]   application Application type that relates to this command
+ * @param[in]   mychar      Pointer to send a char
+ */
+void db_uint8_t_to_buffer(uint8_t *buffer, uint64_t dst, application_type_t application, uint8_t *mychar);
+
+/**
  * @brief   Write an rgbled command in a buffer
  *
  * @param[out]  buffer      Bytes array to write to
