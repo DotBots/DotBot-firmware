@@ -50,6 +50,14 @@ typedef void (*radio_cb_t)(uint8_t *packet, uint8_t length);  ///< Function poin
 void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode);
 
 /**
+ * @brief Initializes the RADIO CRC_Callback function.
+ *
+ * @param[in] callback pointer to a function that will be called each time a packet is received and CRC is NOK.
+ *
+ */
+void db_radio_init_CRC_Callback(radio_cb_t callback_CRC);
+
+/**
  * @brief Set the tx-rx frequency of the radio, by the following formula
  *
  * Radio frequency 2400 + freq (MHz) [0, 100]
