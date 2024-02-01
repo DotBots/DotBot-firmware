@@ -29,10 +29,9 @@ int main(void) {
     float angle_degrees;
 
     while (1) {
-        as5048b_i2c_read_angle_degree(&angle_degrees);
-
+        angle_degrees = as5048b_i2c_read_angle_degree();
         printf("Angle degrees: %.1f\n", angle_degrees);
-        db_timer_hf_delay_ms(200);
+        db_timer_hf_delay_ms(50);
     }
     // One last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
     __NOP();

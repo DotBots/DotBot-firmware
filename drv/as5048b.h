@@ -25,23 +25,23 @@ void as5048b_init(void);
 /**
  * @brief Reads 14-bit raw absolute angle data on AS5048B over I2C
  *
- * @param[out] angle_uint_out 14-bit raw angle (0x0 to 0x3FFF)
+ * @return 14-bit raw angle (0x0 to 0x3FFF)
  */
-void as5048b_i2c_read_raw_angle(uint16_t *angle_uint_out);
+uint16_t as5048b_i2c_read_raw_angle(void);
 
 /**
  * @brief Reads angle as a float in radians
  *
- * @param[out] angle_rad_out Float angle [0, 2*M_PI)
+ * @return Float angle [0, 2*M_PI)
  */
-void as5048b_i2c_read_angle_radian(float *angle_rad_out);
+float as5048b_i2c_read_angle_radian(void);
 
 /**
  * @brief Reads angle as a float in degrees
  *
- * @param[out] angle_deg_out Float angle [0, 360.)
+ * @return angle_deg_out Float angle [0, 360.)
  */
-void as5048b_i2c_read_angle_degree(float *angle_deg_out);
+float as5048b_i2c_read_angle_degree(void);
 
 /**
  * @brief Convert the raw angle to interval [0, max_angle)
