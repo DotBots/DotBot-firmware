@@ -12,14 +12,12 @@
 #include <stdlib.h>
 
 // Include BSP packages
+#include "board_config.h"
 #include "gpio.h"
 #include "i2c.h"
 #include "as5048b.h"
 
 //=========================== defines ==========================================
-// Define scl and sda gpio pins
-static const gpio_t scl = { .port = 0, .pin = 10 };
-static const gpio_t sda = { .port = 0, .pin = 9 };
 
 // Hardware settings of pins A1 and A2 define the last two bits of the slave address
 // Set A1 and A2 to GND to get default address 0x40
@@ -41,7 +39,7 @@ static const gpio_t sda = { .port = 0, .pin = 9 };
 // Initialise I2C communication with rotary encoder
 void as5048b_init(void) {
     // AS5048B doesn't have a WHO_AM_I register
-    db_i2c_init(&scl, &sda);
+    db_i2c_init(&db_scl, &db_sda);
 }
 
 // Reads two 8-bit registers where the 14-bit raw absolute angle is stored

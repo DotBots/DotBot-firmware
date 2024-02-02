@@ -17,9 +17,7 @@
 #include "as5048b.h"
 
 //=========================== main =========================================
-/**
- *  @brief The program starts executing here.
- */
+
 int main(void) {
     // Init the encoder I2C communication
     as5048b_init();
@@ -33,6 +31,4 @@ int main(void) {
         printf("Angle degrees: %.1f\n", angle_degrees);
         db_timer_hf_delay_ms(50);
     }
-    // One last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
-    __NOP();
 }
