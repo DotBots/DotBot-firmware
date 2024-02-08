@@ -32,6 +32,7 @@
 #include "gpio.h"
 #include "assert.h"
 #include "math.h"
+#include "as5048b.h"
 
 //=========================== defines =========================================
 
@@ -99,13 +100,10 @@ static float  calculate_error(float heading, float bearing);
 static int8_t map_error_to_rudder_angle(float error);
 static void   _timeout_check(void);
 static void   _advertise(void);
-static void   _send_gps_data(const nmea_gprmc_t *data, uint16_t heading);
+static void   _send_gps_data(const nmea_gprmc_t *data, uint16_t heading, uint16_t wind_angle);
 
 //=========================== main =========================================
 
-/**
- *  @brief The program starts executing here.
- */
 int main(void) {
     // Turn ON the LED1
     NRF_P0->DIRSET = 1 << _led1_pin.pin;  // set pin as output
@@ -135,6 +133,10 @@ int main(void) {
     // init the timers
     db_timer_init();
 
+    // Init the wind direction sensor
+    as5048b_init();
+    uint16_t wind_raw_angle;
+
     // Configure GPS without callback
     gps_init(NULL);
 
@@ -161,7 +163,9 @@ int main(void) {
             _sailbot_vars.advertise = false;
         }
         if (_sailbot_vars.send_log_data) {
-            _send_gps_data(_sailbot_vars.last_gps_data, _sailbot_vars.last_heading);
+            // For now I will read the encoder here, but the measurements must be added as a variable to _sailbot_vars
+            wind_raw_angle = as5048b_i2c_read_raw_angle();
+            _send_gps_data(_sailbot_vars.last_gps_data, _sailbot_vars.last_heading, wind_raw_angle);
             _sailbot_vars.send_log_data = false;
         }
         __WFE();
@@ -309,7 +313,7 @@ void control_loop_callback(void) {
     }
 }
 
-static void _send_gps_data(const nmea_gprmc_t *data, uint16_t heading) {
+static void _send_gps_data(const nmea_gprmc_t *data, uint16_t heading, uint16_t wind_angle) {
     int32_t latitude  = (int32_t)(data->latitude * 1e6);
     int32_t longitude = (int32_t)(data->longitude * 1e6);
 
@@ -318,8 +322,10 @@ static void _send_gps_data(const nmea_gprmc_t *data, uint16_t heading) {
     memcpy(_sailbot_vars.radio_buffer + sizeof(protocol_header_t), &heading, sizeof(uint16_t));
     memcpy(_sailbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(uint16_t), &latitude, sizeof(int32_t));
     memcpy(_sailbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(uint16_t) + sizeof(int32_t), &longitude, sizeof(int32_t));
+    // Add wind sensor measurements
+    memcpy(_sailbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(uint16_t) + 2*sizeof(int32_t), &wind_angle, sizeof(uint16_t));
 
-    size_t length = sizeof(protocol_header_t) + sizeof(uint16_t) + 2 * sizeof(int32_t);
+    size_t length = sizeof(protocol_header_t) + sizeof(uint16_t) + 2 * sizeof(int32_t) + sizeof(uint16_t);
     db_radio_disable();
     db_radio_tx(_sailbot_vars.radio_buffer, length);
 }
