@@ -37,7 +37,7 @@ static const gpio_t scl_encoder = { .port = 0, .pin = 10 };
 // Initialise I2C communication with rotary encoder
 void as5048b_init(void) {
     // AS5048B doesn't have a WHO_AM_I register
-    db_i2c_init(&sda_encoder, &scl_encoder);
+    db_i2c_init(&scl_encoder, &sda_encoder);
 }
 
 // Reads two 8-bit registers where the 14-bit raw absolute angle is stored
