@@ -150,7 +150,8 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
     NRF_RADIO->RXADDRESSES = (RADIO_RXADDRESSES_ADDR0_Enabled << RADIO_RXADDRESSES_ADDR0_Pos);
 
     // Inter frame spacing in us
-    NRF_RADIO->TIFS = RADIO_TIFS;
+    // TODO: Re add if it turns out it's necessary
+    // NRF_RADIO->TIFS = RADIO_TIFS;
 
     // Enable Fast TX Ramp Up
     NRF_RADIO->MODECNF0 = (RADIO_MODECNF0_RU_Fast << RADIO_MODECNF0_RU_Pos) |
