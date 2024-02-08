@@ -2,7 +2,14 @@
  * @file
  * @ingroup samples_bsp
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
- * @brief This is a short example of how to interface with the onboard Radio in the DotBot board.
+ * @brief This examples sends radio packets of increasing size (1 byte to 256 bytes) each 20ms. 
+ *        Pin P0.28 goes High when the transmission starts, and goes LOW when the transmision ends.
+ *        The on-air time of the packets can be measured with a logic analyzer on P0.25.
+ *        (it requires modifications to the radio.c to be able to toggle the pin P0.25)
+ * 
+ * Changes:
+ * radio.c:203 add -> NRF_P0->OUTSET = 1 << 25;
+ * radio.c:261 add -> NRF_P0->OUTCLR = 1 << 25;
  *
  * @copyright Inria, 2022
  *
@@ -19,13 +26,13 @@
 
 //=========================== defines ===========================================
 
-#define DELAY_MS   (100)                 // Wait 100ms between each send
-#define RADIO_FREQ (8)                   // Set the frequency to 2408 MHz
+#define DELAY_MS   (10)                 // Wait 100ms between each send
+#define RADIO_FREQ (12)                   // Set the frequency to 2412 MHz
 #define RADIO_MODE (DB_RADIO_BLE_1MBit)  // Use BLE 1Mbit/s
 
 //=========================== variables =========================================
 
-static const uint8_t packet_tx[] = {
+static const uint8_t packet_tx[] = {                 // 256 bytes
     0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
     0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
     0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
@@ -41,15 +48,32 @@ static const uint8_t packet_tx[] = {
     0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
     0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
     0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
-    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x00   // ABCDEFG
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x00,   // ABCDEFG
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x41,  // ABCDEFGH
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x00   // ABCDEFGH
 };
 
-static const gpio_t _dbg_pin = { .port = DB_LED1_PORT, .pin = DB_LED1_PIN };
+static const gpio_t _led_pin = { .port = DB_LED1_PORT, .pin = DB_LED1_PIN };
+static const gpio_t _benchmark_pin = { .port = 0, .pin = 25 };
 
 //=========================== functions =========================================
 
 static void radio_callback(uint8_t *packet, uint8_t length) {
-    db_gpio_toggle(&_dbg_pin);
+    db_gpio_toggle(&_led_pin);
     printf("packet received (%dB): %s, RSSI: %i\n", length, (char *)packet, db_radio_rssi());
 }
 
@@ -65,7 +89,8 @@ int main(void) {
 
     //=========================== Initialize GPIO and timer =====================
 
-    db_gpio_init(&_dbg_pin, DB_GPIO_OUT);
+    db_gpio_init(&_led_pin, DB_GPIO_OUT);
+    db_gpio_init(&_benchmark_pin, DB_GPIO_OUT);
     db_timer_hf_init();
 
     //=========================== Configure Radio ===============================
@@ -74,9 +99,12 @@ int main(void) {
     db_radio_set_frequency(RADIO_FREQ);
     db_radio_rx();
 
-    while (1) {
+    // Send packets of increasing lenght
+    for (size_t i = 0; i < 256; i++)
+    {
+        /* code */    
         db_radio_disable();
-        db_radio_tx((uint8_t *)packet_tx, sizeof(packet_tx) / sizeof(packet_tx[0]));
+        db_radio_tx((uint8_t *)packet_tx, i);
         db_timer_hf_delay_ms(DELAY_MS);
     }
 }
