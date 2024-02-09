@@ -22,7 +22,7 @@
 #include "timer.h"
 
 uint8_t write_crc[3] = "CRC";
-uint8_t uart_end = '\x00';
+uint8_t uart_end     = '\x00';
 
 #define DB_BUFFER_MAX_BYTES (255U)       ///< Max bytes in UART receive buffer
 #define DB_UART_BAUDRATE    (1000000UL)  ///< UART baudrate used by the gateway
@@ -44,8 +44,8 @@ static void _radio_callback_crc(uint8_t *packet, uint8_t length) {
 static void _radio_callback(uint8_t *packet, uint8_t length) {
     uint8_t RSSI = db_radio_rssi();
     memcpy(packet + length, &RSSI, 1);
-    memcpy(packet + length +1, &uart_end, 1);
-    db_uart_write(DB_UART_INDEX, packet, length +1 );
+    memcpy(packet + length + 1, &uart_end, 1);
+    db_uart_write(DB_UART_INDEX, packet, length + 1);
 }
 
 static void _uart_callback(uint8_t data) {
