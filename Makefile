@@ -99,11 +99,11 @@ endif
 # remove incompatible apps (nrf5340) for nrf52833dk/nrf52840dk build
 ifneq (,$(filter nrf52833dk nrf52840dk,$(BUILD_TARGET)))
   PROJECTS := $(filter-out 01bsp_qdec 01drv_move 03app_nrf5340_%,$(PROJECTS))
-  ARTIFACT_PROJECTS := 03app_dotbot_gateway 03app_dotbot_gateway_lr
+  ARTIFACT_PROJECTS := 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_radio_test
 endif
 
 ifneq (,$(filter nrf5340dk-app,$(BUILD_TARGET)))
-  ARTIFACT_PROJECTS := 03app_dotbot_gateway 03app_dotbot_gateway_lr
+  ARTIFACT_PROJECTS := 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_radio_test
 endif
 
 ifneq (,$(filter nrf5340dk-net,$(BUILD_TARGET)))
