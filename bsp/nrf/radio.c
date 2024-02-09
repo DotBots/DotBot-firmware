@@ -49,9 +49,10 @@ typedef struct __attribute__((packed)) {
 } ble_radio_pdu_t;
 
 typedef struct {
-    ble_radio_pdu_t pdu;       ///< Variable that stores the radio PDU (protocol data unit) that arrives and the radio packets that are about to be sent.
-    radio_cb_t      callback;  ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
-    uint8_t         state;     ///< Internal state of the radio
+    ble_radio_pdu_t pdu;           ///< Variable that stores the radio PDU (protocol data unit) that arrives and the radio packets that are about to be sent.
+    radio_cb_t      callback;      ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
+    radio_cb_t      callback_crc;  ///< Function pointer, stores the callback to use in the RADIO_Irq handler if CRC NOK.
+    uint8_t         state;         ///< Internal state of the radio
 } radio_vars_t;
 
 //=========================== variables ========================================
@@ -174,6 +175,10 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
     NVIC_EnableIRQ(RADIO_IRQn);
 }
 
+void db_radio_set_crc_callback(radio_cb_t callback) {
+    radio_vars.callback_crc = callback;
+}
+
 void db_radio_set_frequency(uint8_t freq) {
 
     NRF_RADIO->FREQUENCY = freq << RADIO_FREQUENCY_FREQUENCY_Pos;
@@ -181,6 +186,10 @@ void db_radio_set_frequency(uint8_t freq) {
 
 void db_radio_set_channel(uint8_t channel) {
     NRF_RADIO->FREQUENCY = (_chan_to_freq[channel] << RADIO_FREQUENCY_FREQUENCY_Pos);
+}
+
+void db_radio_set_power(uint16_t power) {
+    NRF_RADIO->TXPOWER = (power << RADIO_TXPOWER_TXPOWER_Pos);
 }
 
 void db_radio_set_network_address(uint32_t addr) {
@@ -211,6 +220,16 @@ void db_radio_rx(void) {
         NRF_RADIO->TASKS_RXEN = RADIO_TASKS_RXEN_TASKS_RXEN_Trigger;
     }
     radio_vars.state = RADIO_STATE_RX;
+}
+
+void db_radio_txidle_state(void) {
+    if (radio_vars.state == RADIO_STATE_IDLE) {
+        _radio_enable();
+        NRF_RADIO->TASKS_TXEN = RADIO_TASKS_TXEN_TASKS_TXEN_Trigger << RADIO_TASKS_TXEN_TASKS_TXEN_Pos;
+    }
+
+    radio_vars.state = RADIO_STATE_TX;
+    while (radio_vars.state != RADIO_STATE_TX) {}
 }
 
 void db_radio_disable(void) {
@@ -257,6 +276,9 @@ void RADIO_IRQHandler(void) {
         if (radio_vars.state == (RADIO_STATE_BUSY | RADIO_STATE_RX)) {
             if (NRF_RADIO->CRCSTATUS != RADIO_CRCSTATUS_CRCSTATUS_CRCOk) {
                 puts("Invalid CRC");
+                if (radio_vars.callback_crc) {
+                    radio_vars.callback_crc(radio_vars.pdu.payload, radio_vars.pdu.length);
+                }
             } else if (radio_vars.callback) {
                 radio_vars.callback(radio_vars.pdu.payload, radio_vars.pdu.length);
             }
