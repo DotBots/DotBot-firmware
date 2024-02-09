@@ -76,11 +76,11 @@ void db_radio_set_frequency(uint8_t freq);
 void db_radio_set_channel(uint8_t channel);
 
 /**
- * @brief Set the power of the radio 
+ * @brief Set the power of the radio
  *
- * By default 0 dBm 
+ * By default 0 dBm
  *
- * @param[in] power of the radio 
+ * @param[in] power of the radio
  */
 void db_radio_set_power(uint16_t power);
 
