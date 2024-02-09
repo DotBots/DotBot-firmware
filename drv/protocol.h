@@ -38,6 +38,9 @@ typedef enum {
     DB_PROTOCOL_SAILBOT_DATA       = 10,  ///< SailBot specific data (for now GPS and direction)
     DB_PROTOCOL_CMD_XGO_ACTION     = 11,  ///< XGO action command
     DB_PROTOCOL_LH2_PROCESSED_DATA = 12,  ///< Lighthouse 2 data processed at the DotBot
+    DB_PROTOCOL_TDMA_KEEP_ALIVE   = 11,  ///< Sent by the DotBot periodically to keep the connection alive, if there is nothing else to send.
+    DB_PROTOCOL_TDMA_UPDATE_TABLE = 12,  ///< Receive new timings for the TDMA table
+    DB_PROTOCOL_TDMA_SYNC_FRAME   = 13,  ///< Sent by the gateway at the begining of a TDMA frame, if there is nothing else to send.
 } command_type_t;
 
 /// Application type
@@ -112,6 +115,16 @@ typedef struct __attribute__((packed)) {
     uint32_t lfsr_location;        ///< LFSR location is the position in a given polynomial's LFSR that the decoded data is, initialize to error state
     uint32_t timestamp_us;         ///< How many microseconds passed since the sample was taken
 } protocol_lh2_processed_packet_t;
+
+///< DotBot protocol TDMA table update [all units are in microseconds]
+typedef struct __attribute__((packed)) {
+    uint32_t frame_period;       ///< duration of a full TDMA frame
+    uint32_t rx_start;           ///< start to listen for packets
+    uint16_t rx_duration;        ///< duration of the RX period
+    uint32_t tx_start;           ///< start of slot for transmission
+    uint16_t tx_duration;        ///< duration of the TX period
+    uint32_t next_period_start;  ///< time until the start of the next TDMA frame
+} protocol_tdma_table_t;
 
 //=========================== public ===========================================
 

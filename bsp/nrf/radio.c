@@ -23,7 +23,7 @@
 #define NRF_RADIO NRF_RADIO_NS
 #endif
 
-#define PAYLOAD_MAX_LENGTH UINT8_MAX
+
 #if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
 #define RADIO_INTERRUPT_PRIORITY 2
 #else

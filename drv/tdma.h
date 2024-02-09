@@ -33,14 +33,35 @@
 // #define ISM330_REG_OUTZ_H_A 0x2D  ///< Accelerometer OUTZ High
 /** @} */
 
+
+///< TDMA internal registrarion state
+typedef enum {
+    DB_TDMA_UNREGISTERED,       ///< the DotBot is not registered with the gateway
+    DB_TDMA_REGISTERED,         ///< the DotBot registered with the gateway
+} db_tdma_registration_state_t;
+
+///< TDMA internal TX state
+typedef enum {
+    DB_TDMA_TX_WAIT,       ///< the DotBot can't transmit right now
+    DB_TDMA_TX_ON,         ///< the DotBot has permission to transmit
+} db_tdma_tx_state_t;
+
+///< TDMA internal RX state
+typedef enum {
+    DB_TDMA_RX_WAIT,       ///< the DotBot receiver is OFF
+    DB_TDMA_RX_ON,         ///< the DotBot is receiving radio packets
+} db_tdma_rx_state_t;
+
+
+
 //=========================== variables ========================================
 
 /// Data type to store the TDMA table
-typedef struct {
-    uint16_t frame;        ///< Duration of the entire TDMA frame [microseconds]
-    uint16_t rx_start;     ///< Time between the start of the frame and when the gateway starts transmitting
+typedef struct __attribute__((packed)){
+    uint32_t frame;        ///< Duration of the entire TDMA frame [microseconds]
+    uint32_t rx_start;     ///< Time between the start of the frame and when the gateway starts transmitting
     uint16_t rx_duration;  ///< Duration the gateway will transmit messages
-    uint16_t tx_start;     ///< Time between the start of the frame and the start of the DotBot's alloted frame
+    uint32_t tx_start;     ///< Time between the start of the frame and the start of the DotBot's alloted frame
     uint16_t tx_duration;  ///< Duration of the DotBot's alloted frame.
 } tdma_table_t;
 
