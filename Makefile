@@ -34,6 +34,7 @@ ifeq (nrf5340dk-app,$(BUILD_TARGET))
     03app_dotbot_gateway_lr \
     03app_log_dump \
     03app_nrf5340_app \
+	03app_radio_test\
     03app_sailbot \
     #
 else ifeq (nrf5340dk-net,$(BUILD_TARGET))
