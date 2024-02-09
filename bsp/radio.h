@@ -50,6 +50,14 @@ typedef void (*radio_cb_t)(uint8_t *packet, uint8_t length);  ///< Function poin
 void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode);
 
 /**
+ * @brief Set the RADIO CRC_Callback function.
+ *
+ * @param[in] callback pointer to a function that will be called each time a packet is received and CRC is NOK.
+ *
+ */
+void db_radio_set_crc_callback(radio_cb_t callback);
+
+/**
  * @brief Set the tx-rx frequency of the radio, by the following formula
  *
  * Radio frequency 2400 + freq (MHz) [0, 100]
@@ -66,6 +74,15 @@ void db_radio_set_frequency(uint8_t freq);
  * @param[in] channel BLE channel used by the radio [0-39]
  */
 void db_radio_set_channel(uint8_t channel);
+
+/**
+ * @brief Set the power of the radio 
+ *
+ * By default 0 dBm 
+ *
+ * @param[in] power of the radio 
+ */
+void db_radio_set_power(uint16_t power);
 
 /**
  * @brief Set the network address used to send/receive radio packets
@@ -97,6 +114,15 @@ void db_radio_tx(const uint8_t *packet, uint8_t length);
  *
  */
 void db_radio_rx(void);
+
+/**
+ * @brief Block Radio into TXidle state
+ *
+ * NOTE: Must configure the radio and the frequency before calling this function.
+ * (with the functions db_radio_init db_radio_set_frequency).
+ *
+ */
+void db_radio_txidle_state(void);
 
 /**
  * @brief Reads the RSSI of a received packet
