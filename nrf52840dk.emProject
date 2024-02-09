@@ -63,5 +63,10 @@
   <import file_name="projects/projects-gateway.emProject" />
   <import file_name="projects/projects-log-dump.emProject" />
   <import file_name="projects/projects-sailbot.emProject" />
+<<<<<<< HEAD
   <import file_name="otap/otap.emProject" />
+=======
+  <import file_name="projects/projects-radio-test.emProject" />
+  <import file_name="testbed/testbed.emProject" />
+>>>>>>> f81dab7 (nrf58420dk: update for project radio_test)
 </solution>
