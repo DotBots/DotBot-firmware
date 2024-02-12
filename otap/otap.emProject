@@ -1,5 +1,5 @@
 <!DOCTYPE CrossStudio_Project_File>
-<solution Name="Testbed" target="8" version="2">
+<solution Name="OTAP" target="8" version="2">
   <project Name="partition0">
     <configuration
       Name="Common"

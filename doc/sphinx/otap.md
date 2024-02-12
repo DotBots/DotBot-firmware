@@ -1,4 +1,4 @@
-```{include} ../../testbed/README.md
+```{include} ../../otap/README.md
 :relative-images:
 :relative-docs: ../
 ```
