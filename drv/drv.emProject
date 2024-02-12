@@ -88,7 +88,7 @@
   <project Name="00drv_ota">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_partition(bsp);00bsp_nvmc(bsp)"
+      project_dependencies="00bsp_partition(bsp);00bsp_nvmc(bsp);00crypto_ed25519(crypto);00crypto_sha256(crypto)"
       project_directory="ota"
       project_type="Library" />
     <file file_name="ota.c" />

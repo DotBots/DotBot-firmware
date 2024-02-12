@@ -18,7 +18,9 @@
 
 //=========================== defines ==========================================
 
-#define DB_OTA_CHUNK_SIZE (128U)  ///< Size of a firmware chunk
+#define DB_OTA_CHUNK_SIZE       (128U)  ///< Size of a firmware chunk
+#define DB_OTA_SHA256_LENGTH    (32U)
+#define DB_OTA_SIGNATURE_LENGTH (64U)
 
 typedef void (*db_ota_reply_t)(const uint8_t *, size_t);  ///< Transport agnostic function used to reply to the flasher script
 
@@ -33,6 +35,15 @@ typedef struct {
     db_ota_reply_t reply;  ///< Pointer to the function used to reply to the flasher script
     db_ota_mode_t  mode;   ///< Firmware update mode
 } db_ota_conf_t;
+
+///< Firmware update start notification packet
+typedef struct __attribute__((packed, aligned(4))) {
+    uint32_t chunk_count;  ///< Number of chunks
+#if defined(OTA_USE_CRYPTO)
+    uint8_t hash[DB_OTA_SHA256_LENGTH];          ///< SHA256 hash of the firmware
+    uint8_t signature[DB_OTA_SIGNATURE_LENGTH];  ///< Signature of the firmware hash
+#endif
+} db_ota_start_notification_t;
 
 ///< Firmware update packet
 typedef struct __attribute__((packed, aligned(4))) {
@@ -51,6 +62,8 @@ typedef enum {
 
 ///< Message type
 typedef enum {
+    DB_OTA_MESSAGE_TYPE_START,
+    DB_OTA_MESSAGE_TYPE_START_ACK,
     DB_OTA_MESSAGE_TYPE_FW,
     DB_OTA_MESSAGE_TYPE_FW_ACK,
     DB_OTA_MESSAGE_TYPE_INFO,
