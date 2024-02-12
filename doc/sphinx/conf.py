@@ -154,7 +154,15 @@ API_INCLUDE_TEMPLATE = """{title}
 .. doxygenfile:: {header}
 
 """
-EXCLUDE_MODULES = ["board_config"]
+EXCLUDE_MODULES = [
+    "board_config",
+    "soft_ed25519",
+    "soft_edsign",
+    "soft_f25519",
+    "soft_fprime",
+    "soft_sha256",
+    "soft_sha512",
+]
 
 
 def generate_api_files(app):

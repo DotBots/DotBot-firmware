@@ -21,6 +21,8 @@
 
 //=========================== defines ==========================================
 
+#if defined(USE_CRYPTOCELL)
+
 #if defined(NRF5340_XXAA_APPLICATION)
 #define NRF_CRYPTOCELL NRF_CRYPTOCELL_S
 #endif
@@ -42,5 +44,7 @@ static inline void crypto_enable_cryptocell(void) {
 static inline void crypto_disable_cryptocell(void) {
     NRF_CRYPTOCELL->ENABLE = CRYPTOCELL_ENABLE_ENABLE_Disabled << CRYPTOCELL_ENABLE_ENABLE_Pos;
 }
+
+#endif
 
 #endif  // __CRYPTO_UTILS_H
