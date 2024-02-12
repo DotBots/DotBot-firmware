@@ -103,12 +103,12 @@ void db_tdma_tx(const uint8_t *packet, uint8_t length);
  * @brief Ignore TDMA table and send all pending packets inmediatly
  *
  */
-void db_tdma_flush();
+void db_tdma_flush(void);
 
 /**
  * @brief Earese all pending packets in the TDMA queue
  *
  */
-void db_tdma_empty();
+void db_tdma_empty(void);
 
 #endif

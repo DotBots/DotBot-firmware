@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "tdma.h"
+#include "tdma_client.h"
 #include "clock.h"
 #include "radio.h"
 #include "timer_hf.h"
@@ -81,9 +81,6 @@ static void tdma_callback(uint8_t *packet, uint8_t length);
 void timer_tx_interrupt(void);
 void timer_rx_interrupt(void);
 
-///< TX behaviour when DotBot is unregistered.
-void ftm_tx_1(void);
-
 /**
  * @brief Initialize the ring buffer for spi captures
  *
@@ -114,7 +111,7 @@ bool _get_from_tdma_ring_buffer(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX
  *
  * @param[out]   packet_sent   true is a packet was sent, false if no packet was sent.
  */
-bool _send_queued_messages(void);
+bool _send_queued_messages(uint16_t max_tx_duration_us);
 
 /**
  * @brief sends a keep_alive packet to the gateway
@@ -138,6 +135,9 @@ uint32_t _get_random_delay_us(void);
 //=========================== public ===========================================
 
 void db_tdma_init(tdma_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq, uint8_t buffer_size) {
+
+    // Initialize the ring buffer of outbound messages
+    _init_tdma_ring_buffer(&_tdma_vars.tx_ring_buffer);
 
     // Initialize Radio
     db_radio_init(&tdma_callback, radio_mode);  // set the radio callback to our tdma catch function
@@ -182,6 +182,18 @@ void db_tdma_update_table(tdma_table_t *table) {
     _tdma_vars.tdma_table.tx_duration = table->tx_duration;
 }
 
+void db_tdma_flush(void) {
+    // Use the normal function to send queue messages, but with a really long time
+    // So that there is enough time to send everything.
+    _send_queued_messages(50000);
+}
+
+void db_tdma_empty(void) {
+
+    // Reinitialize the ring buffer to erase it
+    _init_tdma_ring_buffer(&_tdma_vars.tx_ring_buffer);
+}
+
 //=========================== private ==========================================
 
 void _init_tdma_ring_buffer(tdma_ring_buffer_t *rb) {
@@ -218,11 +230,10 @@ bool _get_from_tdma_ring_buffer(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX
     return true;
 }
 
-bool _send_queued_messages(void) {
+bool _send_queued_messages(uint16_t max_tx_duration_us) {
 
     // initialize variables
     uint32_t start_tx_slot   = db_timer_hf_now();
-    uint8_t  pending_packets = _tdma_vars.tx_ring_buffer.count;
     uint8_t  length          = 0;
     uint8_t  packet[PAYLOAD_MAX_LENGTH];
     bool     packet_sent_flag = false;  ///< flag to keep track if a packet get sent during this function call
@@ -241,7 +252,7 @@ bool _send_queued_messages(void) {
             // Compute if there is still time to send the packet [in microseconds]
             uint16_t tx_time = RADIO_TX_RAMP_UP_TIME + length * _tdma_vars.byte_onair_time;
             // If there is time to send the packet, send it
-            if (db_timer_hf_now() + tx_time - start_tx_slot < _tdma_vars.tdma_table.tx_duration) {
+            if (db_timer_hf_now() + tx_time - start_tx_slot < max_tx_duration_us) {
 
                 db_radio_tx(packet, length);
             } else {  // otherwise, put the packet back in the queue and leave
@@ -382,7 +393,7 @@ void timer_tx_interrupt(void) {
         db_timer_hf_set_oneshot_us(TDMA_HF_TIMER_CC_TX, _tdma_vars.tdma_table.frame, &timer_tx_interrupt);
 
         // send messages if available
-        packet_sent = _send_queued_messages();
+        packet_sent = _send_queued_messages(_tdma_vars.tdma_table.tx_duration);
 
         // if no packet has been sent for a while, send a keep_alive ping to maintain the connection.
         if (!packet_sent) {
