@@ -13,6 +13,16 @@
       project_type="Library" />
     <file file_name="ed25519.c" />
     <file file_name="ed25519.h" />
+    <file file_name="soft_ed25519.c" />
+    <file file_name="soft_ed25519.h" />
+    <file file_name="soft_edsign.c" />
+    <file file_name="soft_edsign.h" />
+    <file file_name="soft_f25519.c" />
+    <file file_name="soft_f25519.h" />
+    <file file_name="soft_fprime.c" />
+    <file file_name="soft_fprime.h" />
+    <file file_name="soft_sha512.c" />
+    <file file_name="soft_sha512.h" />
   </project>
   <project Name="00crypto_sha256">
     <configuration
@@ -22,5 +32,7 @@
       project_type="Library" />
     <file file_name="sha256.c" />
     <file file_name="sha256.h" />
+    <file file_name="soft_sha256.c" />
+    <file file_name="soft_sha256.h" />
   </project>
 </solution>
