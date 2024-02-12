@@ -99,10 +99,13 @@ static void _write_partitions_table(const db_partitions_table_t *table) {
 
 //=========================== callbacks ========================================
 
+#ifdef DB_LED4_PIN
 static void _blink_led4(void) {
     db_gpio_toggle(&db_led4);
 }
+#endif
 
+#ifdef DB_BTN4_PIN
 static void _uart_callback(uint8_t byte) {
     _bootloader_vars.uart_byte          = byte;
     _bootloader_vars.uart_byte_received = true;
@@ -119,6 +122,7 @@ static const db_ota_conf_t _bootloader_ota_config = {
     .mode  = DB_OTA_MODE_BOOTLOADER,
     .reply = _bootloader_reply,
 };
+#endif
 
 //================================= main =======================================
 
@@ -133,7 +137,9 @@ int main(void) {
 
     uint32_t active_image = (_bootloader_vars.table.active_image < DB_PARTITIONS_MAX_COUNT) ? _bootloader_vars.table.active_image : 0;
 
+#ifdef DB_BTN4_PIN
     db_gpio_init(&db_btn4, DB_GPIO_IN_PU);
+
     uint8_t keep_active = !db_gpio_read(&db_btn4);
 
     if (keep_active) {
@@ -145,6 +151,9 @@ int main(void) {
         db_uart_init(0, &db_uart_rx, &db_uart_tx, DB_UART_BAUDRATE, &_uart_callback);
         db_ota_init(&_bootloader_ota_config);
     }
+#else
+    uint8_t keep_active = 0;
+#endif
 
     while (keep_active) {
         if (_bootloader_vars.uart_byte_received) {
@@ -167,15 +176,18 @@ int main(void) {
             }
         }
 
+#ifdef DB_BTN1_PIN
         if (!db_gpio_read(&db_btn1)) {
             _bootloader_vars.table.active_image = 0;
             _write_partitions_table(&_bootloader_vars.table);
         }
-
+#endif
+#ifdef DB_BTN2_PIN
         if (!db_gpio_read(&db_btn2)) {
             _bootloader_vars.table.active_image = 1;
             _write_partitions_table(&_bootloader_vars.table);
         }
+#endif
     }
 
     _jump_to_image((uint32_t *)_bootloader_vars.table.partitions[active_image].address);
