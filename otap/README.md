@@ -1,7 +1,7 @@
-# OTAP support
+# OTAP
 
-This directory contains 3 applications that be used for the DotBot over-the-air
-programming support:
+This directory contains 3 applications that be used for over-the-air
+programming (OTAP) of DotBots:
 - **otap/bootloader** contains a flexible bootloader application that
   can be used to boot an image written at a given address on the flash memory.
   The bootloader application must be compiled in **Release** mode to make it as
