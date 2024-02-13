@@ -1,0 +1,44 @@
+<!DOCTYPE CrossStudio_Project_File>
+<solution Name="Bootloader" target="8" version="2">
+  <project Name="bootloader">
+    <configuration
+      LIBRARY_IO_TYPE="None"
+      Name="Common"
+      linker_memory_map_file="$(ProjectDir)/$(Target)_MemoryMap.xml"
+      linker_output_format="hex"
+      project_dependencies="00bsp_gpio(bsp);00bsp_uart(bsp);00bsp_timer_hf(bsp);00bsp_partition(bsp);00bsp_nvmc(bsp);00drv_dotbot_hdlc(drv);00drv_ota(drv)"
+      project_directory="bootloader"
+      project_type="Executable" />
+    <folder Name="CMSIS Files">
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceSystemFile)">
+        <configuration
+          Name="Common"
+          default_code_section=".init"
+          default_const_section=".init_rodata" />
+      </file>
+    </folder>
+    <folder Name="Script Files">
+      <file file_name="$(DeviceLinkerScript)">
+        <configuration Name="Common" file_type="Linker Script" />
+      </file>
+      <file file_name="$(ProjectDir)/$(Target)_MemoryMap.xml">
+        <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
+      </file>
+    </folder>
+    <folder Name="Source Files">
+      <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
+      <file file_name="main.c" />
+    </folder>
+    <folder Name="System Files">
+      <file file_name="$(DeviceCommonVectorsFile)" />
+      <file file_name="$(DeviceVectorsFile)">
+        <configuration Name="Common" file_type="Assembly" />
+      </file>
+      <file file_name="$(SeggerThumbStartup)" />
+    </folder>
+  </project>
+</solution>

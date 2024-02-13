@@ -1,5 +1,5 @@
 <!DOCTYPE CrossStudio_Project_File>
-<solution Name="dotbot-firmware-dotbot-v2" target="8" version="2">
+<solution Name="nrf5340dk-app-bootloader" target="8" version="2">
   <configuration
     LIBRARY_IO_TYPE="RTT"
     Name="Common"
@@ -23,7 +23,7 @@
     build_output_file_name="$(OutDir)/$(ProjectName)-$(BuildTarget)$(EXE)"
     build_treat_warnings_as_errors="Yes"
     c_additional_options="-Wno-strict-prototypes"
-    c_preprocessor_definitions="ARM_MATH_ARMV8MML;NRF5340_XXAA;NRF_APPLICATION;__NRF_FAMILY;CONFIG_NFCT_PINS_AS_GPIOS;FLASH_PLACEMENT=1;BOARD_DOTBOT_V2;OTA_USE_CRYPTO"
+    c_preprocessor_definitions="__NO_SYSTEM_INIT;__NO_FPU_ENABLE;ARM_MATH_ARMV8MML;NRF5340_XXAA;NRF_APPLICATION;__NRF_FAMILY;CONFIG_NFCT_PINS_AS_GPIOS;FLASH_PLACEMENT=1;BOARD_NRF5340DK"
     c_user_include_directories="$(SolutionDir)/../bsp;$(SolutionDir)/../crypto;$(SolutionDir)/../drv;$(PackagesDir)/nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
     debug_register_definition_file="$(PackagesDir)/nRF/XML/nrf5340_application_Registers.xml"
     debug_stack_pointer_start="__stack_end__"
@@ -38,7 +38,7 @@
     linker_printf_fmt_level="int"
     linker_printf_fp_enabled="Float"
     linker_printf_width_precision_supported="Yes"
-    macros="BuildTarget=dotbot-v2;Lh2ImplementationFile=lh2.c;PwmImplementationFile=pwm.c;RadioImplementationFile=radio_nrf5340_app.c;RngImplementationFile=rng_nrf5340_app.c;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf5340_application.h;DeviceCommonHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceSystemFile=$(PackagesDir)/nRF/Device/Source/system_nrf5340_application.c;DeviceVectorsFile=$(PackagesDir)/nRF/Source/nrf5340_application_Vectors.s;DeviceCommonVectorsFile=$(PackagesDir)/nRF/Source/nRF_Startup.s;SeggerThumbStartup=$(ProjectDir)/../../../nRF/SEGGER_THUMB_Startup.s;DeviceLinkerScript=$(ProjectDir)/../../../nRF/nrf5340/nRF_Flash_Variant2.icf;DeviceMemoryMap=$(PackagesDir)/nRF/XML/nRF5340_xxAA_Application_MemoryMap.xml;DeviceFamily=nRF;Target=nRF5340_xxAA_Application"
+    macros="BuildTarget=nrf5340dk-app;Lh2ImplementationFile=lh2.c;PwmImplementationFile=pwm.c;RadioImplementationFile=radio_nrf5340_app.c;RngImplementationFile=rng_nrf5340_app.c;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf5340_application.h;DeviceCommonHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceSystemFile=$(PackagesDir)/nRF/Device/Source/system_nrf5340_application.c;DeviceVectorsFile=$(PackagesDir)/nRF/Source/nrf5340_application_Vectors.s;DeviceCommonVectorsFile=$(PackagesDir)/nRF/Source/nRF_Startup.s;SeggerThumbStartup=$(ProjectDir)/../../../nRF/SEGGER_THUMB_Startup.s;DeviceLinkerScript=$(ProjectDir)/../../../nRF/nrf5340/nRF_Flash_Variant2.icf;DeviceMemoryMap=$(PackagesDir)/nRF/XML/nRF5340_xxAA_Application_MemoryMap.xml;DeviceFamily=nRF;Target=nRF5340_xxAA_Application"
     project_type="Executable"
     target_reset_script="Reset();"
     target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
@@ -54,13 +54,8 @@
     gcc_debugging_level="Level 2"
     gcc_omit_frame_pointer="Yes"
     gcc_optimization_level="Level 2 balanced" />
-  <import file_name="bsp/bsp.emProject" />
-  <import file_name="crypto/crypto.emProject" />
-  <import file_name="drv/drv.emProject" />
-  <import file_name="projects/projects-bsp-drv.emProject" />
-  <import file_name="projects/projects-crypto.emProject" />
-  <import file_name="projects/projects-dotbot.emProject" />
-  <import file_name="projects/projects-log-dump.emProject" />
-  <import file_name="projects/projects-nrf5340-app.emProject" />
-  <import file_name="otap/otap.emProject" />
+  <import file_name="../bsp/bsp.emProject" />
+  <import file_name="../crypto/crypto.emProject" />
+  <import file_name="../drv/drv.emProject" />
+  <import file_name="bootloader.emProject" />
 </solution>

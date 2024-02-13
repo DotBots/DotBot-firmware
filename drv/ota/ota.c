@@ -17,6 +17,12 @@
 #include "ota.h"
 #include "partition.h"
 
+#if defined(OTA_USE_CRYPTO)
+#include "ed25519.h"
+#include "sha256.h"
+#include "public_key.h"
+#endif
+
 //=========================== defines ==========================================
 
 typedef struct {
@@ -27,6 +33,7 @@ typedef struct {
     uint32_t              target_partition;
     uint32_t              addr;
     uint32_t              last_index_acked;
+    uint8_t               hash[DB_OTA_SHA256_LENGTH];
 } db_ota_vars_t;
 
 //=========================== variables ========================================
@@ -62,7 +69,15 @@ void db_ota_start(void) {
 
 void db_ota_finish(void) {
     // Switch active image in partition table before resetting the device
-    // TODO: do more verifications (CRC, etc) before rebooting
+#if defined(OTA_USE_CRYPTO)
+    uint8_t hash_result[DB_OTA_SHA256_LENGTH] = { 0 };
+    crypto_sha256(hash_result);
+
+    if (memcmp(hash_result, _ota_vars.hash, DB_OTA_SHA256_LENGTH) != 0) {
+        return;
+    }
+#endif
+
     if (_ota_vars.table.active_image != _ota_vars.target_partition) {
         _ota_vars.table.active_image = _ota_vars.target_partition;
         db_write_partitions_table(&_ota_vars.table);
@@ -92,18 +107,36 @@ void db_ota_handle_message(const uint8_t *message) {
             memcpy(&_ota_vars.reply_buffer[1], &message_info, sizeof(db_ota_message_info_t));
             _ota_vars.config->reply(_ota_vars.reply_buffer, sizeof(db_ota_message_type_t) + sizeof(db_ota_message_info_t));
         } break;
+        case DB_OTA_MESSAGE_TYPE_START:
+        {
+            const db_ota_start_notification_t *ota_start = (const db_ota_start_notification_t *)&message[1];
+#if defined(OTA_USE_CRYPTO)
+            const uint8_t *hash = ota_start->hash;
+            if (!crypto_ed25519_verify(ota_start->signature, DB_OTA_SIGNATURE_LENGTH, (const uint8_t *)ota_start, sizeof(db_ota_start_notification_t) - DB_OTA_SIGNATURE_LENGTH, public_key)) {
+                break;
+            }
+            memcpy(_ota_vars.hash, hash, DB_OTA_SHA256_LENGTH);
+            crypto_sha256_init();
+#else
+            (void)ota_start;
+#endif
+            db_ota_start();
+            // Acknowledge the update start
+            _ota_vars.reply_buffer[0] = DB_OTA_MESSAGE_TYPE_START_ACK;
+            _ota_vars.config->reply(_ota_vars.reply_buffer, sizeof(db_ota_message_type_t));
+        } break;
         case DB_OTA_MESSAGE_TYPE_FW:
         {
             const db_ota_pkt_t *ota_pkt     = (const db_ota_pkt_t *)&message[1];
             const uint32_t      chunk_index = ota_pkt->index;
             const uint32_t      chunk_count = ota_pkt->chunk_count;
-            if (chunk_index == 0) {
-                db_ota_start();
-            }
 
             if (_ota_vars.last_index_acked != chunk_index) {
                 // Skip writing the chunk if already acked
                 db_ota_write_chunk(ota_pkt);
+#if defined(OTA_USE_CRYPTO)
+                crypto_sha256_update((const uint8_t *)ota_pkt->fw_chunk, DB_OTA_CHUNK_SIZE);
+#endif
             }
 
             // Acknowledge the received chunk
