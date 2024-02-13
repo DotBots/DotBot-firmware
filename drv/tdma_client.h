@@ -21,37 +21,17 @@
 
 //=========================== defines ==========================================
 
-/**
- * @brief   Accelerometer Registers
- * @{
- */
-// #define ISM330_REG_OUTX_L_A 0x28  ///< Accelerometer OUTX Low
-// #define ISM330_REG_OUTX_H_A 0x29  ///< Accelerometer OUTX High
-// #define ISM330_REG_OUTY_L_A 0x2A  ///< Accelerometer OUTY Low
-// #define ISM330_REG_OUTY_H_A 0x2B  ///< Accelerometer OUTY High
-// #define ISM330_REG_OUTZ_L_A 0x2C  ///< Accelerometer OUTZ Low
-// #define ISM330_REG_OUTZ_H_A 0x2D  ///< Accelerometer OUTZ High
-/** @} */
-
-
 ///< TDMA internal registrarion state
 typedef enum {
     DB_TDMA_UNREGISTERED,       ///< the DotBot is not registered with the gateway
     DB_TDMA_REGISTERED,         ///< the DotBot registered with the gateway
 } db_tdma_registration_state_t;
 
-///< TDMA internal TX state
-typedef enum {
-    DB_TDMA_TX_WAIT,       ///< the DotBot can't transmit right now
-    DB_TDMA_TX_ON,         ///< the DotBot has permission to transmit
-} db_tdma_tx_state_t;
-
 ///< TDMA internal RX state
 typedef enum {
     DB_TDMA_RX_WAIT,       ///< the DotBot receiver is OFF
     DB_TDMA_RX_ON,         ///< the DotBot is receiving radio packets
 } db_tdma_rx_state_t;
-
 
 
 //=========================== variables ========================================
@@ -63,9 +43,9 @@ typedef struct __attribute__((packed)){
     uint16_t rx_duration;  ///< Duration the gateway will transmit messages
     uint32_t tx_start;     ///< Time between the start of the frame and the start of the DotBot's alloted frame
     uint16_t tx_duration;  ///< Duration of the DotBot's alloted frame.
-} tdma_table_t;
+} tdma_client_table_t;
 
-typedef void (*tdma_cb_t)(uint8_t *packet, uint8_t length);  ///< Function pointer to the callback function called on packet receive
+typedef void (*tdma_client_cb_t)(uint8_t *packet, uint8_t length);  ///< Function pointer to the callback function called on packet receive
 
 //=========================== prototypes ==========================================
 
@@ -81,14 +61,14 @@ typedef void (*tdma_cb_t)(uint8_t *packet, uint8_t length);  ///< Function point
  * @param[in] buffer_size   Number of messages that can be queued for sending via radio.
  *
  */
-void db_tdma_init(tdma_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq, uint8_t buffer_size);
+void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq, uint8_t buffer_size);
 
 /**
  * @brief Updates the RX and TX timings for the TDMA table
  *
  * @param[in] table       New table of TDMA timings
  */
-void db_tdma_update_table(tdma_table_t *table);
+void db_tdma_client_update_table(tdma_client_table_t *table);
 
 /**
  * @brief Queues a single packet to send through the Radio
@@ -97,18 +77,18 @@ void db_tdma_update_table(tdma_table_t *table);
  * @param[in] length Number of bytes to send (max size = 32)
  *
  */
-void db_tdma_tx(const uint8_t *packet, uint8_t length);
+void db_tdma_client_tx(const uint8_t *packet, uint8_t length);
 
 /**
  * @brief Ignore TDMA table and send all pending packets inmediatly
  *
  */
-void db_tdma_flush(void);
+void db_tdma_client_flush(void);
 
 /**
  * @brief Earese all pending packets in the TDMA queue
  *
  */
-void db_tdma_empty(void);
+void db_tdma_client_empty(void);
 
 #endif
