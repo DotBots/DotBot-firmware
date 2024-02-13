@@ -137,14 +137,17 @@ class DotBotFlasher:
                 self.device_info_received = True
 
     def fetch_device_info(self):
-        while self.device_info_received is False:
-            buffer = bytearray()
-            buffer += int(MessageType.OTA_MESSAGE_TYPE_INFO.value).to_bytes(
-                length=1, byteorder="little"
-            )
-            self.serial.write(hdlc_encode(buffer))
-            print("Fetching device info...")
-            time.sleep(0.2)
+        # while self.device_info_received is False:
+        buffer = bytearray()
+        buffer += int(MessageType.OTA_MESSAGE_TYPE_INFO.value).to_bytes(
+            length=1, byteorder="little"
+        )
+        print("Fetching device info...")
+        self.serial.write(hdlc_encode(buffer))
+        timeout = 0  # ms
+        while self.device_info_received is False and timeout < 100:
+            timeout += 1
+            time.sleep(0.01)
 
     def send_start_update(self, secure):
         if secure is True:
@@ -157,7 +160,7 @@ class DotBotFlasher:
             private_key_bytes = open(PRIVATE_KEY_PATH, "rb").read()
             private_key = Ed25519PrivateKey.from_private_bytes(private_key_bytes)
         attempts = 0
-        while self.start_ack_received is False and attempts < 3:
+        while attempts < 3:
             buffer = bytearray()
             buffer += int(MessageType.OTA_MESSAGE_TYPE_START.value).to_bytes(
                 length=1, byteorder="little"
@@ -169,11 +172,15 @@ class DotBotFlasher:
                 buffer += fw_hash
                 signature = private_key.sign(bytes(buffer[1:]))
                 buffer += signature
+            print("Sending start update notification...")
             self.serial.write(hdlc_encode(buffer))
             attempts += 1
-            print("Sending start update notification...")
-            delay = 3 if secure and self.device_info.cpu != "nrf52840" else 0.2
-            time.sleep(delay)
+            timeout = 0  # ms
+            while self.start_ack_received is False and timeout < 1000:
+                timeout += 1
+                time.sleep(0.01)
+            if self.start_ack_received is True:
+                break
         return attempts < 3
 
     def flash(self):

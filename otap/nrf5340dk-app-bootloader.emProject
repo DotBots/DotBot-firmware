@@ -1,5 +1,5 @@
 <!DOCTYPE CrossStudio_Project_File>
-<solution Name="nrf5340dk-bootloader" target="8" version="2">
+<solution Name="nrf5340dk-app-bootloader" target="8" version="2">
   <configuration
     LIBRARY_IO_TYPE="RTT"
     Name="Common"
