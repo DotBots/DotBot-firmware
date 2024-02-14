@@ -164,7 +164,7 @@ int main(void) {
         }
         if (_sailbot_vars.send_log_data) {
             // For now I will read the encoder here, but the measurements must be added as a variable to _sailbot_vars
-            wind_raw_angle = as5048b_i2c_read_raw_angle();
+            wind_raw_angle = (uint16_t)as5048b_i2c_read_angle_degree();
             _send_gps_data(_sailbot_vars.last_gps_data, _sailbot_vars.last_heading, wind_raw_angle);
             _sailbot_vars.send_log_data = false;
         }
