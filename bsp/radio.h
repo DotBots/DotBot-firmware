@@ -82,7 +82,7 @@ void db_radio_set_channel(uint8_t channel);
  *
  * @param[in] power of the radio
  */
-void db_radio_set_power(uint16_t power);
+void db_radio_set_power(uint8_t power);
 
 /**
  * @brief Set the network address used to send/receive radio packets
@@ -122,7 +122,7 @@ void db_radio_rx(void);
  * (with the functions db_radio_init db_radio_set_frequency).
  *
  */
-void db_radio_txidle_state(void);
+void db_radio_tx_start(void);
 
 /**
  * @brief Reads the RSSI of a received packet
