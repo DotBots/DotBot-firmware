@@ -1,6 +1,6 @@
 /**
  * @file
- * @defgroup project_Radio    Radio application
+ * @defgroup project_Radio    Radio RX test application
  * @ingroup projects
  * @brief This is the radio rx code for radio test
 
@@ -14,10 +14,7 @@
 #include <string.h>
 // Include BSP headers
 #include "uart.h"
-#include "board.h"
 #include "board_config.h"
-#include "gpio.h"
-#include "protocol.h"
 #include "radio.h"
 #include "timer.h"
 
@@ -58,7 +55,6 @@ int main(void) {
     db_timer_init();
     db_timer_set_periodic_ms(0, 100, _led1_blink_fast);
 
-    db_protocol_init();
     db_radio_init(&_radio_callback, DB_RADIO_BLE_1MBit);
     db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
     db_radio_set_crc_callback(&_radio_callback_crc);
@@ -69,4 +65,3 @@ int main(void) {
     while (1) {
     }
 }
-/*************************** End of file ****************************/

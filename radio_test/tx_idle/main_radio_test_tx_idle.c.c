@@ -1,6 +1,6 @@
 /**
  * @file
- * @defgroup project_Radio    Radio application
+ * @defgroup project_Radio    Radio TX idle test application
  * @ingroup projects
  * @brief This is the radio tx enable code for radio test
 
@@ -13,11 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 // Include BSP headers
-#include "uart.h"
-#include "board.h"
 #include "board_config.h"
-#include "gpio.h"
-#include "protocol.h"
 #include "radio.h"
 #include "timer.h"
 
@@ -35,11 +31,10 @@ int main(void) {
     db_timer_init();
     db_timer_set_periodic_ms(0, 2000, _led1_blink_slow);
 
-    db_protocol_init();
     db_radio_init(&_radio_callback, DB_RADIO_BLE_1MBit);
     db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
     db_radio_set_power(RADIO_TXPOWER_TXPOWER_0dBm);
-    db_radio_txidle_state();  // Start receiving packets.
+    db_radio_tx_start();  // Start receiving packets.
 
     while (1) {
     }
