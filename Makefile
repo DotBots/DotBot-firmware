@@ -100,6 +100,7 @@ ifneq (,$(filter nrf5340dk-net,$(BUILD_TARGET)))
 endif
 
 SRCS ?= $(shell find bsp/ -name "*.[c|h]") $(shell find crypto/ -name "*.[c|h]") $(shell find drv/ -name "*.[c|h]") $(shell find projects/ -name "*.[c|h]") $(shell find otap/ -name "*.[c|h]")
+SRCS ?= $(shell find bsp/ -name "*.[c|h]") $(shell find crypto/ -name "*.[c|h]") $(shell find drv/ -name "*.[c|h]") $(shell find projects/ -name "*.[c|h]") $(shell find radio_test/ -name "*.[c|h]")
 CLANG_FORMAT ?= clang-format
 CLANG_FORMAT_TYPE ?= file
 
