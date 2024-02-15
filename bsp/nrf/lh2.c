@@ -858,8 +858,8 @@ void db_lh2_process_raw_data(db_lh2_t *lh2) {
     int8_t   sweep;
 
     // stop the interruptions while you're reading the data.
-    bool error = _get_from_spi_ring_buffer(&_lh2_vars.data, temp_spi_bits, &temp_timestamp);
-    if (!error) {
+    uint32_t temp_timestamp = 0;  // just a guess about the default value it should have
+    if (!_get_from_spi_ring_buffer(&_lh2_vars.data, temp_spi_bits, &temp_timestamp)) {
         return;
     }
 
