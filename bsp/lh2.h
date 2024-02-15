@@ -11,7 +11,7 @@
  * @author Filip Maksimovic <filip.maksimovic@inria.fr>
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- * @copyright Inria, 20232
+ * @copyright Inria, 2022-present
  * @}
  */
 
