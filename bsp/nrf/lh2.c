@@ -75,7 +75,7 @@ typedef struct {
 
 //=========================== variables ========================================
 
-static const uint32_t _polynomials[LH2_BASESTATION_COUNT * 2] = {
+static const uint32_t _polynomials[LH2_POLYNOMIAL_COUNT] = {
     0x0001D258,
     0x00017E04,
     0x0001FF6B,
@@ -86,7 +86,7 @@ static const uint32_t _polynomials[LH2_BASESTATION_COUNT * 2] = {
     0x00018A55,
 };
 
-static const uint32_t _end_buffers[LH2_BASESTATION_COUNT * 2][NUM_LSFR_COUNT_CHECKPOINTS] = {
+static const uint32_t _end_buffers[LH2_POLYNOMIAL_COUNT][NUM_LSFR_COUNT_CHECKPOINTS] = {
     {
         // p0
         0x00000000000000001,  // [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] starting seed, little endian
@@ -628,9 +628,9 @@ static const uint32_t _end_buffers[LH2_BASESTATION_COUNT * 2][NUM_LSFR_COUNT_CHE
 static uint16_t _end_buffers_hashtable[HASH_TABLE_SIZE] = { 0 };
 
 // Dynamic checkpoint
-static uint32_t _lfsr_checkpoint_bits[LH2_BASESTATION_COUNT * 2][2]  = { 0 };
-static uint32_t _lfsr_checkpoint_count[LH2_BASESTATION_COUNT * 2][2] = { 0 };
-static uint32_t _lsfr_checkpoint_average                             = 0;
+static uint32_t _lfsr_checkpoint_bits[LH2_POLYNOMIAL_COUNT][LH2_SWEEP_COUNT]  = { 0 };  ///<
+static uint32_t _lfsr_checkpoint_count[LH2_POLYNOMIAL_COUNT][LH2_SWEEP_COUNT] = { 0 };
+static uint32_t _lsfr_checkpoint_average                                      = 0;
 
 ///! NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module
 static const gpio_t _lh2_spi_fake_sck_gpio = {
@@ -1322,15 +1322,15 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
 
     *start_val = 8;  // TODO: remove this? possible that I modify start value during the demodulation process
 
-    int32_t  bits_N_for_comp                           = 47 - *start_val;
-    uint32_t bit_buffer1                               = (uint32_t)(((0xFFFF800000000000) & chipsH1) >> 47);
-    uint64_t bits_from_poly[LH2_BASESTATION_COUNT * 2] = { 0 };
-    uint64_t weights[LH2_BASESTATION_COUNT * 2]        = { 0xFFFFFFFFFFFFFFFF };
-    uint8_t  selected_poly                             = LH2_POLYNOMIAL_ERROR_INDICATOR;  // initialize to error condition
-    uint8_t  min_weight_idx                            = LH2_POLYNOMIAL_ERROR_INDICATOR;
-    uint64_t min_weight                                = LH2_POLYNOMIAL_ERROR_INDICATOR;
-    uint64_t bits_to_compare                           = 0;
-    int32_t  threshold                                 = POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
+    int32_t  bits_N_for_comp                      = 47 - *start_val;
+    uint32_t bit_buffer1                          = (uint32_t)(((0xFFFF800000000000) & chipsH1) >> 47);
+    uint64_t bits_from_poly[LH2_POLYNOMIAL_COUNT] = { 0 };
+    uint64_t weights[LH2_POLYNOMIAL_COUNT]        = { 0xFFFFFFFFFFFFFFFF };
+    uint8_t  selected_poly                        = LH2_POLYNOMIAL_ERROR_INDICATOR;  // initialize to error condition
+    uint8_t  min_weight_idx                       = LH2_POLYNOMIAL_ERROR_INDICATOR;
+    uint64_t min_weight                           = LH2_POLYNOMIAL_ERROR_INDICATOR;
+    uint64_t bits_to_compare                      = 0;
+    int32_t  threshold                            = POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
 
     // try polynomial vs. first buffer bits
     // this search takes 17-bit sequences and runs them forwards through the polynomial LFSRs.
@@ -1349,7 +1349,7 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
         min_weight_idx = LH2_POLYNOMIAL_ERROR_INDICATOR;
         min_weight     = LH2_POLYNOMIAL_ERROR_INDICATOR;
         // Check against all the known polynomials
-        for (uint8_t i = 0; i < LH2_BASESTATION_COUNT * 2; i++) {
+        for (uint8_t i = 0; i < LH2_POLYNOMIAL_COUNT; i++) {
             bits_from_poly[i] = (((_poly_check(_polynomials[i], bit_buffer1, bits_N_for_comp)) << (64 - 17 - (*start_val) - bits_N_for_comp)) | (chipsH1 & (0xFFFFFFFFFFFFFFFF << (64 - (*start_val)))));
             // weights[i]        = _hamming_weight(bits_from_poly[i] ^ bits_to_compare);
             weights[i] = __builtin_popcount(bits_from_poly[i] ^ bits_to_compare);
@@ -1625,7 +1625,7 @@ bool _get_from_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t *data, uint32_t *t
 void _fill_hash_table(uint16_t *hash_table) {
 
     // Iterate over all the checkpoints and save the HASH_TABLE_BITS 11 bits as a a index for the hashtable
-    for (size_t poly = 0; poly < LH2_BASESTATION_COUNT * 2; poly++) {
+    for (size_t poly = 0; poly < LH2_POLYNOMIAL_COUNT; poly++) {
         for (size_t checkpoint = 1; checkpoint < NUM_LSFR_COUNT_CHECKPOINTS; checkpoint++) {
             if (hash_table[(_end_buffers[poly][checkpoint] >> 2) & HASH_TABLE_MASK] == 0) {  // We shift by 2 to the right because we precomputed that that hash has the least amount of collisions in the hash table
 
@@ -1639,7 +1639,7 @@ void _fill_hash_table(uint16_t *hash_table) {
 
 void _update_lfsr_checkpoints(uint8_t polynomial, uint32_t bits, uint32_t count) {
 
-    // Update the current running weighted sum
+    // Update the current running weighted sum. 75% of old value +25% of new value
     _lsfr_checkpoint_average = (((_lsfr_checkpoint_average * 3) >> 2) + (count >> 2));
 
     // Is the new count higher or lower than the current running average.
