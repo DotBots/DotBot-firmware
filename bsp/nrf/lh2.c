@@ -851,13 +851,13 @@ void db_lh2_process_raw_data(db_lh2_t *lh2) {
                                                  // Making it smaller causes a hardfault
                                                  // I don't know why, the SPI buffer is clearly 64bytes long.
                                                  // should ask fil about this
-    uint32_t temp_timestamp  = 0;  // just a guess about the default value it should have;
     uint64_t temp_bits_sweep;
     uint8_t  temp_selected_polynomial;
     int8_t   temp_bit_offset;
     int8_t   sweep;
 
     // stop the interruptions while you're reading the data.
+    uint32_t temp_timestamp  = 0;  // just a guess about the default value it should have;
     if (!_get_from_spi_ring_buffer(&_lh2_vars.data, temp_spi_bits, &temp_timestamp)) {
         return;
     }
