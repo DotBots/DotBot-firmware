@@ -14,6 +14,7 @@
 #include <stdlib.h>
 // Include BSP headers
 #include "board_config.h"
+#include "gpio.h"
 #include "radio.h"
 #include "timer.h"
 

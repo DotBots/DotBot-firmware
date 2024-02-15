@@ -14,6 +14,7 @@
 #include <string.h>
 // Include BSP headers
 #include "uart.h"
+#include "gpio.h"
 #include "board_config.h"
 #include "radio.h"
 #include "timer.h"
