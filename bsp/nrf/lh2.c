@@ -1625,7 +1625,7 @@ void _add_to_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE
 }
 
 bool _get_from_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE], uint32_t *timestamp) {
-    if (cb->count <= 0) {
+    if (cb->count == 0) {
         // Buffer is empty
         return false;
     }
