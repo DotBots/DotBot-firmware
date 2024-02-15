@@ -841,43 +841,41 @@ void db_lh2_reset(db_lh2_t *lh2) {
 }
 
 void db_lh2_process_raw_data(db_lh2_t *lh2) {
-    // TODO: REMEMBER TO REWRITE THE START AND STEOP FUNCTIONS
     if (_lh2_vars.data.count <= 0) {
         return;
     }
 
     // Get value before it's overwritten by the ringbuffer.
-    uint8_t temp_spi_bits[SPI_BUFFER_SIZE * 2];  // The temp buffer has to be 128 long because _demodulate_light() expects it to be so
+    uint8_t temp_spi_bits[SPI_BUFFER_SIZE * 2] = {0};  // The temp buffer has to be 128 long because _demodulate_light() expects it to be so
                                                  // Making it smaller causes a hardfault
                                                  // I don't know why, the SPI buffer is clearly 64bytes long.
                                                  // should ask fil about this
-    uint64_t temp_bits_sweep;
-    uint8_t  temp_selected_polynomial;
-    int8_t   temp_bit_offset;
-    int8_t   sweep;
 
     // stop the interruptions while you're reading the data.
-    uint32_t temp_timestamp  = 0;  // just a guess about the default value it should have;
+    uint32_t temp_timestamp  = 0;  // default timestamp
     if (!_get_from_spi_ring_buffer(&_lh2_vars.data, temp_spi_bits, &temp_timestamp)) {
         return;
     }
-
     // perform the demodulation + poly search on the received packets
     // convert the SPI reading to bits via zero-crossing counter demodulation and differential/biphasic manchester decoding
-    temp_bits_sweep = _demodulate_light(temp_spi_bits);
+    uint64_t temp_bits_sweep = _demodulate_light(temp_spi_bits);
+
     // figure out which polynomial each one of the two samples come from.
-    // temp_selected_polynomial_no_test = _determine_polynomial(temp_bits_sweep, &temp_bit_offset);
-    temp_selected_polynomial = _determine_polynomial(temp_bits_sweep, &temp_bit_offset);
+    int8_t   temp_bit_offset = 0; // default offset
+    uint8_t temp_selected_polynomial = _determine_polynomial(temp_bits_sweep, &temp_bit_offset);
+
     // If there was an error with the polynomial, leave without updating anything
     if (temp_selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) {
         return;
     }
 
     // Figure in which of the two sweep slots we should save the new data.
+    int8_t sweep = 1;  // We consider the data in the second slot to be older by default.
     if (lh2->timestamps[0][temp_selected_polynomial >> 1] <= lh2->timestamps[1][temp_selected_polynomial >> 1]) {  // Either: They are both equal to zero. The structure is empty
         sweep = 0;                                                                                                 //         The data in the first slot is older.
     }                                                                                                              //         either way, use the first slot
-    else {                                                                                                         // The data in the second slot is older.
+    else {                                                                                                         
+        // The data in the second slot is older.
         sweep = 1;
     }
 
@@ -891,8 +889,6 @@ void db_lh2_process_raw_data(db_lh2_t *lh2) {
 }
 
 void db_lh2_process_location(db_lh2_t *lh2) {
-
-    uint32_t lfsr_loc_temp;
 
     // compute LFSR locations and detect invalid packets
     for (uint8_t basestation = 0; basestation < LH2_BASESTATION_COUNT; basestation++) {
@@ -911,7 +907,7 @@ void db_lh2_process_location(db_lh2_t *lh2) {
                 // Copy the selected polynomial
                 lh2->locations[sweep][basestation].selected_polynomial = lh2->raw_data[sweep][basestation].selected_polynomial;
                 // Copmute and save the lsfr location.
-                lfsr_loc_temp = _reverse_count_p(
+                uint32_t lfsr_loc_temp = _reverse_count_p(
                                     lh2->raw_data[sweep][basestation].selected_polynomial,
                                     lh2->raw_data[sweep][basestation].bits_sweep >> (47 - lh2->raw_data[sweep][basestation].bit_offset)) -
                                 lh2->raw_data[sweep][basestation].bit_offset;
@@ -1424,7 +1420,7 @@ uint32_t _reverse_count_p(uint8_t index, uint32_t bits) {
     uint8_t  hash_index_up   = 0;
 
     // Copy const variables (Flash) into local variables (RAM) to speed up execution.
-    uint32_t _end_buffers_local[NUM_LSFR_COUNT_CHECKPOINTS];
+    uint32_t _end_buffers_local[NUM_LSFR_COUNT_CHECKPOINTS] = {0};
     uint32_t polynomials_local = _polynomials[index];
     for (size_t i = 0; i < NUM_LSFR_COUNT_CHECKPOINTS; i++) {
         _end_buffers_local[i] = _end_buffers[index][i];
