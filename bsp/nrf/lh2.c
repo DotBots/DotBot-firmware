@@ -730,13 +730,6 @@ void _ppi_setup(void);
 void _spi_setup(const gpio_t *gpio_d);
 
 /**
- * @brief Initialize the ring buffer for spi captures
- *
- * @param[in]   cb  pointer to ring buffer structure
- */
-void _init_spi_ring_buffer(lh2_ring_buffer_t *cb);
-
-/**
  * @brief add one element to the ring buffer for spi captures
  *
  * @param[in]   cb          pointer to ring buffer structure
@@ -789,7 +782,8 @@ void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
     _lh2_vars.lha_packet_counter = 0;
     _lh2_vars.lhb_packet_counter = 0;
     _lh2_vars.buffers_ready      = false;
-    _init_spi_ring_buffer(&_lh2_vars.data);
+    // initialize the spi ring buffer
+    memset(&_lh2_vars.data, 0, sizeof(lh2_ring_buffer_t));
 
     // Setup LH2 data
     lh2->spi_ring_buffer_count_ptr = &_lh2_vars.data.count;  // pointer to the size of the spi ring buffer,
@@ -1598,16 +1592,6 @@ void _spi_setup(const gpio_t *gpio_d) {
 
     // Enable the SPIM peripheral
     NRF_SPIM->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
-}
-
-void _init_spi_ring_buffer(lh2_ring_buffer_t *cb) {
-    cb->writeIndex = 0;
-    cb->readIndex  = 0;
-    cb->count      = 0;
-
-    for (uint8_t i = 0; i < LH2_BUFFER_SIZE; i++) {
-        memset(cb->buffer[i], 0, SPI_BUFFER_SIZE);
-    }
 }
 
 void _add_to_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t *data, uint32_t timestamp) {
