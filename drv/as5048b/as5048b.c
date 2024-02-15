@@ -2,7 +2,7 @@
  * @file
  * @ingroup     drv_as5048b
  * @author      Diego Badillo-San-Juan <diego.badillo-san-juan@inria.fr>
- * @brief       Module for reading the AS5048B rotary encoder.
+ * @brief       Module for reading the AS5048B rotary encoder
  *
  * @copyright   Inria, 2024
  *
@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 // Include BSP packages
 #include "board_config.h"
@@ -28,11 +29,6 @@
 // 14 bits in total, 6-13(MSB) and 0-5(LSB) respectively
 #define AS5048B_ANGLE_8MSB (0xFE)
 #define AS5048B_ANGLE_6LSB (0xFF)
-
-// Define Pi
-#ifndef M_PI
-#define M_PI (3.14159265358979323846)
-#endif
 
 //============================== public ========================================
 

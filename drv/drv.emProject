@@ -8,7 +8,7 @@
   <project Name="00drv_as5048b">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_i2c(bsp);00bsp_gpio(bsp)"
+      project_dependencies="00bsp_i2c(bsp)"
       project_directory="as5048b"
       project_type="Library" />
     <file file_name="as5048b.c" />

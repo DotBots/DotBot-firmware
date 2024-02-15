@@ -24,10 +24,8 @@ int main(void) {
     // Init high frequency clock
     db_timer_hf_init();
 
-    float angle_degrees;
-
     while (1) {
-        angle_degrees = as5048b_i2c_read_angle_degree();
+        float angle_degrees = as5048b_i2c_read_angle_degree();
         printf("Angle degrees: %.1f\n", angle_degrees);
         db_timer_hf_delay_ms(50);
     }
