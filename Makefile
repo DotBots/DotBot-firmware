@@ -66,6 +66,8 @@ endif
 OTAP_APPS ?= $(shell find otap/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/otap// | sort)
 OTAP_APPS := $(filter-out bootloader,$(OTAP_APPS))
 
+RADIO_TEST_APPS ?= $(shell find radio_test/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/radio_test// | sort)
+
 # remove incompatible apps (nrf5340, sailbot gateway) for dotbot (v1, v2) builds
 ifneq (,$(filter dotbot-v1,$(BUILD_TARGET)))
   PROJECTS := $(filter-out 01bsp_qdec 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_nrf5340_%,$(PROJECTS))
@@ -108,7 +110,7 @@ ARTIFACTS = $(ARTIFACT_ELF) $(ARTIFACT_HEX)
 
 .PHONY: $(PROJECTS) $(ARTIFACT_PROJECTS) artifacts docker docker-release format check-format
 
-all: $(PROJECTS) $(OTAP_APPS) $(BOOTLOADER)
+all: $(PROJECTS) $(OTAP_APPS) $(RADIO_TEST_APPS) $(BOOTLOADER)
 
 $(PROJECTS):
 	@echo "\e[1mBuilding project $@\e[0m"
@@ -119,6 +121,12 @@ $(OTAP_APPS):
 	@echo "\e[1mBuilding otap application $@\e[0m"
 	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -project $@ -config $(BUILD_CONFIG) $(PACKAGES_DIR_OPT) -rebuild -verbose
 	@echo "\e[1mDone\e[0m\n"
+
+$(RADIO_TEST_APPS):
+	@echo "\e[1mBuilding radio_test application $@\e[0m"
+	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -project $@ -config $(BUILD_CONFIG) $(PACKAGES_DIR_OPT) -rebuild -verbose
+	@echo "\e[1mDone\e[0m\n"
+
 
 $(BOOTLOADER):
 	@echo "\e[1mBuilding bootloader application $@\e[0m"

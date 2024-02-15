@@ -1,6 +1,6 @@
-## GOAL: Check the radio communication between two nRF52840DK
+# GOAL: Check the radio communication between two nRF52840DK
 
-### Segger:
+## Segger:
   * **UnZIP** then open `DotBot-firmware` file and open project called `nRF52840dk` with Segger
   * Tx: **build** then **load** `projects_radio_test -> project Tx` on the first nRF
   * Rx: **build** then **load** `projects_radio_test -> project Rx` on the second nRF
@@ -8,7 +8,7 @@
 
   ![Démo](../doc/sphinx/_static/images/radio_test_setup.jpg)
     
- ### Python /Conda:
+ ## Python /Conda:
   * **download** and **install** Anaconda 
   * **download** in the python file in **dist/scripts/radio_test**
   * With Conda: `conda install anaconda::pyserial` (go next if already done)
@@ -20,7 +20,4 @@
 
   ![Python](../doc/sphinx/_static/images/python_radio_test_demo.JPG)
   
-### difficulty encountered
 
-* not sure how **to handle two serial** (two nRF) at the same time =>no concurrence between pyserial =>need to know how to create different threads
-* not sure how **to count the number of transmit and receive**
