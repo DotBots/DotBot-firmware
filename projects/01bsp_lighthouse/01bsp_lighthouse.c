@@ -47,7 +47,6 @@ int main(void) {
         if (DB2_LH2_FULL_COMPUTATION) {
             // the location function has to be running all the time
             db_lh2_process_location(&_lh2);
-            __NOP();
         }
     }
 
