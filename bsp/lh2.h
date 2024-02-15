@@ -46,7 +46,7 @@ typedef struct __attribute__((packed)) {
     uint32_t lfsr_location;        ///< LFSR location is the position in a given polynomial's LFSR that the decoded data is, initialize to error state
 } db_lh2_location_t;
 
-/// LH2 instance (one row per laser sweep, and one column per basestation.)
+/// LH2 instance (one row per laser sweep, and one column per basestation)
 typedef struct {
     db_lh2_raw_data_t         raw_data[2][LH2_BASESTATION_COUNT];    ///< raw data decoded from the lighthouse
     db_lh2_location_t         locations[2][LH2_BASESTATION_COUNT];   ///< buffer holding the computed locations
