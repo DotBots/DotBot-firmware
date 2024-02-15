@@ -99,8 +99,7 @@ ifneq (,$(filter nrf5340dk-net,$(BUILD_TARGET)))
   ARTIFACT_PROJECTS := 03app_nrf5340_net
 endif
 
-SRCS ?= $(shell find bsp/ -name "*.[c|h]") $(shell find crypto/ -name "*.[c|h]") $(shell find drv/ -name "*.[c|h]") $(shell find projects/ -name "*.[c|h]") $(shell find otap/ -name "*.[c|h]")
-SRCS ?= $(shell find bsp/ -name "*.[c|h]") $(shell find crypto/ -name "*.[c|h]") $(shell find drv/ -name "*.[c|h]") $(shell find projects/ -name "*.[c|h]") $(shell find radio_test/ -name "*.[c|h]")
+SRCS ?= $(shell find bsp/ -name "*.[c|h]") $(shell find crypto/ -name "*.[c|h]") $(shell find drv/ -name "*.[c|h]") $(shell find projects/ -name "*.[c|h]") $(shell find otap/ -name "*.[c|h]") $(shell find radio_test/ -name "*.[c|h]")
 CLANG_FORMAT ?= clang-format
 CLANG_FORMAT_TYPE ?= file
 
@@ -111,7 +110,7 @@ ARTIFACTS = $(ARTIFACT_ELF) $(ARTIFACT_HEX)
 
 .PHONY: $(PROJECTS) $(ARTIFACT_PROJECTS) artifacts docker docker-release format check-format
 
-all: $(PROJECTS) $(OTAP_APPS) $(RADIO_TEST_APPS) $(BOOTLOADER)
+all: $(PROJECTS) $(OTAP_APPS) $(BOOTLOADER) $(RADIO_TEST_APPS)
 
 $(PROJECTS):
 	@echo "\e[1mBuilding project $@\e[0m"
@@ -127,7 +126,6 @@ $(RADIO_TEST_APPS):
 	@echo "\e[1mBuilding radio_test application $@\e[0m"
 	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -project $@ -config $(BUILD_CONFIG) $(PACKAGES_DIR_OPT) -rebuild -verbose
 	@echo "\e[1mDone\e[0m\n"
-
 
 $(BOOTLOADER):
 	@echo "\e[1mBuilding bootloader application $@\e[0m"
