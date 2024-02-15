@@ -743,7 +743,7 @@ void _init_spi_ring_buffer(lh2_ring_buffer_t *cb);
  * @param[in]   data        pointer to the data array to save in the ring buffer
  * @param[in]   timestamp   timestamp of when the LH2 measurement was taken. (taken with timer_hf_now())
  */
-void _add_to_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE], uint32_t timestamp);
+void _add_to_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t *data, uint32_t timestamp);
 
 /**
  * @brief retreive the oldest element from the ring buffer for spi captures
@@ -752,7 +752,7 @@ void _add_to_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE
  * @param[out]   data        pointer to the array where the ring buffer data will be saved
  * @param[out]   timestamp   timestamp of when the LH2 measurement was taken. (taken with timer_hf_now())
  */
-bool _get_from_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE], uint32_t *timestamp);
+bool _get_from_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t *data, uint32_t *timestamp);
 
 /**
  * @brief generates a hashtable from the LSFR checpoints and stores it in an array.
@@ -1610,7 +1610,7 @@ void _init_spi_ring_buffer(lh2_ring_buffer_t *cb) {
     }
 }
 
-void _add_to_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE], uint32_t timestamp) {
+void _add_to_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t *data, uint32_t timestamp) {
 
     memcpy(cb->buffer[cb->writeIndex], data, SPI_BUFFER_SIZE);
     cb->timestamps[cb->writeIndex] = timestamp;
@@ -1624,7 +1624,7 @@ void _add_to_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE
     }
 }
 
-bool _get_from_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t data[SPI_BUFFER_SIZE], uint32_t *timestamp) {
+bool _get_from_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t *data, uint32_t *timestamp) {
     if (cb->count == 0) {
         // Buffer is empty
         return false;
