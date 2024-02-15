@@ -1,15 +1,15 @@
-#ifndef __TDMA_H
-#define __TDMA_H
+#ifndef __TDMA_SERVER_H
+#define __TDMA_SERVER_H
 
 /**
- * @defgroup    drv_tdma      TDMA radio driver
+ * @defgroup    drv_tdma      TDMA server radio driver
  * @ingroup     drv
- * @brief       Driver for Time-Division-Multiple-Access fot the DotBot radio
+ * @brief       Driver for Time-Division-Multiple-Access fot the Gateway radio
  *
  * @{
  * @file
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
- * @copyright Inria, 2024
+ * @copyright Inria, 2024-now
  * @}
  */
 
@@ -21,51 +21,50 @@
 
 //=========================== defines ==========================================
 
-/**
- * @brief   Accelerometer Registers
- * @{
- */
-// #define ISM330_REG_OUTX_L_A 0x28  ///< Accelerometer OUTX Low
-// #define ISM330_REG_OUTX_H_A 0x29  ///< Accelerometer OUTX High
-// #define ISM330_REG_OUTY_L_A 0x2A  ///< Accelerometer OUTY Low
-// #define ISM330_REG_OUTY_H_A 0x2B  ///< Accelerometer OUTY High
-// #define ISM330_REG_OUTZ_L_A 0x2C  ///< Accelerometer OUTZ Low
-// #define ISM330_REG_OUTZ_H_A 0x2D  ///< Accelerometer OUTZ High
-/** @} */
-
+#define TDMA_SERVER_MAX_CLIENTS          100    ///< Max number of clients that can register with this server
+#define TDMA_SERVER_TIME_SLOT_DURATION   2500   ///< default timeslot for a tdma slot in microseconds
+#define TDMA_SERVER_MAX_GATEWAY_TX_DELAY 20000  ///< Max amount of microseconds that can elapse between gateway transmissions
+#define TDMA_SERVER_MAX_TABLE_SLOTS \
+    TDMA_SERVER_MAX_CLIENTS +       \
+        TDMA_SERVER_MAX_CLIENTS / (TDMA_SERVER_MAX_GATEWAY_TX_DELAY / TDMA_SERVER_TIME_SLOT_DURATION - 1) + 1  ///< Total amount of slots available in the tdma table, adds extra slots to MAX_CLIENTS
+                                                                                                               //   to accomodate the gateway slots
 
 ///< TDMA internal registrarion state
 typedef enum {
-    DB_TDMA_UNREGISTERED,       ///< the DotBot is not registered with the gateway
-    DB_TDMA_REGISTERED,         ///< the DotBot registered with the gateway
+    DB_TDMA_UNREGISTERED,  ///< the DotBot is not registered with the gateway
+    DB_TDMA_REGISTERED,    ///< the DotBot registered with the gateway
 } db_tdma_registration_state_t;
 
 ///< TDMA internal TX state
 typedef enum {
-    DB_TDMA_TX_WAIT,       ///< the DotBot can't transmit right now
-    DB_TDMA_TX_ON,         ///< the DotBot has permission to transmit
+    DB_TDMA_TX_WAIT,  ///< the DotBot can't transmit right now
+    DB_TDMA_TX_ON,    ///< the DotBot has permission to transmit
 } db_tdma_tx_state_t;
 
 ///< TDMA internal RX state
 typedef enum {
-    DB_TDMA_RX_WAIT,       ///< the DotBot receiver is OFF
-    DB_TDMA_RX_ON,         ///< the DotBot is receiving radio packets
+    DB_TDMA_RX_WAIT,  ///< the DotBot receiver is OFF
+    DB_TDMA_RX_ON,    ///< the DotBot is receiving radio packets
 } db_tdma_rx_state_t;
-
-
 
 //=========================== variables ========================================
 
 /// Data type to store the TDMA table
-typedef struct __attribute__((packed)){
-    uint32_t frame;        ///< Duration of the entire TDMA frame [microseconds]
+typedef struct __attribute__((packed)) {
+    uint32_t           frame;                               ///< Duration of the entire TDMA frame [microseconds]
+    tdma_table_entry_t tdma_table[TDMA_SERVER_MAX_CLIENTS]  ///< array of
+} tdma_table_t;
+
+/// Data type to store the info about a single TDMA Client
+typedef struct __attribute__((packed)) {
+    uint64_t client;       ///< ID of the client registered to in this time slot
     uint32_t rx_start;     ///< Time between the start of the frame and when the gateway starts transmitting
     uint16_t rx_duration;  ///< Duration the gateway will transmit messages
     uint32_t tx_start;     ///< Time between the start of the frame and the start of the DotBot's alloted frame
     uint16_t tx_duration;  ///< Duration of the DotBot's alloted frame.
-} tdma_table_t;
+} tdma_table_entry_t;
 
-typedef void (*tdma_client_cb_t)(uint8_t *packet, uint8_t length);  ///< Function pointer to the callback function called on packet receive
+typedef void (*tdma_server_cb_t)(uint8_t *packet, uint8_t length);  ///< Function pointer to the callback function called on packet receive
 
 //=========================== prototypes ==========================================
 
@@ -81,14 +80,14 @@ typedef void (*tdma_client_cb_t)(uint8_t *packet, uint8_t length);  ///< Functio
  * @param[in] buffer_size   Number of messages that can be queued for sending via radio.
  *
  */
-void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq, uint8_t buffer_size);
+void db_tdma_server_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq, uint8_t buffer_size);
 
 /**
- * @brief Updates the RX and TX timings for the TDMA table
+ * @brief Returns the contents of the TDMA table
  *
- * @param[in] table       New table of TDMA timings
+ * @param[out] table       New table of TDMA timings
  */
-void db_tdma_client_update_table(tdma_table_t *table);
+void db_tdma_server_read_tdma_table(tdma_table_t *table);
 
 /**
  * @brief Queues a single packet to send through the Radio

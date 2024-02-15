@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "tdma_client.h"
+#include "tdma_server.h"
 #include "clock.h"
 #include "radio.h"
 #include "timer_hf.h"
