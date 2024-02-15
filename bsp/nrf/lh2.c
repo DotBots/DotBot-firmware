@@ -1538,7 +1538,7 @@ void _ppi_setup(void) {
     // Add the selected DPPI Channel to a Group to be able to disable it with a Task.
     NRF_PPI->CHG[PPI_SPI_GROUP] = (1 << PPI_SPI_START_CHAN);
 
-    // Publish and Event when the Envelope line goes from HIGH to LOW.
+    // Publish an Event when the Envelope line goes from HIGH to LOW.
     NRF_GPIOTE->PUBLISH_IN[GPIOTE_CH_IN_ENV_HiToLo] = (GPIOTE_PUBLISH_IN_EN_Enabled << GPIOTE_PUBLISH_IN_EN_Pos) |
                                                       (PPI_SPI_START_CHAN << GPIOTE_PUBLISH_IN_CHIDX_Pos);
 
