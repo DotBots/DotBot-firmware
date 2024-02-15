@@ -10,7 +10,7 @@
     
  ### Python /Conda:
   * **download** and **install** Anaconda 
-  * **download** the python file that you can find on this repositorie (on folder `nRF Radio`)
+  * **download** in the python file in **dist/scripts/radio_test**
   * With Conda: `conda install anaconda::pyserial` (go next if already done)
   * With **cd** command go to directory where you have downloaded /move the python file (use TAB to help fill the mane of directory and **dir** (on windows) / **ls** (linux) to know the list files on the directory)
   * With the peripheral manage **find** the COM of your nRF with the RX code
@@ -18,7 +18,7 @@
   * **Launch** the script: _python test_radio.py_
   * The script will end when you disconnect the nRF with the Rx code and give you the result of the radio communication( CRC, Error, number of packets)
 
-  *add photo with the python code running
+  *![Python](doc/sphinx/_static/images/python_radio_test_demo.png)
   
 ### difficulty encountered
 

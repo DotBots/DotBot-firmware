@@ -15,7 +15,4 @@ _projects/03app_sailbot
 _projects/03app_log_dump
 _projects/03app_nrf5340_app
 _projects/03app_nrf5340_net
-_radio_test/tx
-_radio_test/tx_idle
-_radio_test/rx
 ```
