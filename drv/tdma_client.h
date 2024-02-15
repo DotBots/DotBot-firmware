@@ -1,15 +1,15 @@
-#ifndef __TDMA_H
-#define __TDMA_H
+#ifndef __TDMA_CLIENT_H
+#define __TDMA_CLIENT_H
 
 /**
- * @defgroup    drv_tdma      TDMA radio driver
+ * @defgroup    drv_tdma      TDMA client radio driver
  * @ingroup     drv
  * @brief       Driver for Time-Division-Multiple-Access fot the DotBot radio
  *
  * @{
  * @file
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
- * @copyright Inria, 2024
+ * @copyright Inria, 2024-now
  * @}
  */
 
