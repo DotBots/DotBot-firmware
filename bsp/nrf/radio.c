@@ -110,7 +110,7 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
 #endif
 
     if (mode == DB_RADIO_BLE_1MBit || mode == DB_RADIO_BLE_2MBit) {
-        NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_0dBm << RADIO_TXPOWER_TXPOWER_Pos);  // 0dBm == 1mW Power output
+        db_radio_set_power(RADIO_TXPOWER_TXPOWER_0dBm);  // 0dBm == 1mW Power output
         NRF_RADIO->PCNF0   = (0 << RADIO_PCNF0_S1LEN_Pos) |                              // S1 field length in bits
                            (1 << RADIO_PCNF0_S0LEN_Pos) |                                // S0 field length in bytes
                            (8 << RADIO_PCNF0_LFLEN_Pos) |                                // LENGTH field length in bits
@@ -123,9 +123,9 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
                            (RADIO_PCNF1_WHITEEN_Enabled << RADIO_PCNF1_WHITEEN_Pos);  // Enable data whitening feature.
     } else {                                                                          // Long ranges modes (125KBit/500KBit)
 #if defined(NRF5340_XXAA)
-        NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_0dBm << RADIO_TXPOWER_TXPOWER_Pos);  // 0dBm Power output
+        db_radio_set_power(RADIO_TXPOWER_TXPOWER_0dBm);  // 0dBm Power output
 #else
-        NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_Pos8dBm << RADIO_TXPOWER_TXPOWER_Pos);  // 8dBm Power output
+        db_radio_set_power(RADIO_TXPOWER_TXPOWER_0dBm);  // 8dBm Power output
 #endif
 
         // Coded PHY (Long Range)
@@ -188,7 +188,7 @@ void db_radio_set_channel(uint8_t channel) {
     NRF_RADIO->FREQUENCY = (_chan_to_freq[channel] << RADIO_FREQUENCY_FREQUENCY_Pos);
 }
 
-void db_radio_set_power(uint16_t power) {
+void db_radio_set_power(uint8_t power) {
     NRF_RADIO->TXPOWER = (power << RADIO_TXPOWER_TXPOWER_Pos);
 }
 
@@ -203,12 +203,7 @@ void db_radio_tx(const uint8_t *tx_buffer, uint8_t length) {
     NRF_RADIO->SHORTS   = RADIO_SHORTS_COMMON | (RADIO_SHORTS_DISABLED_RXEN_Enabled << RADIO_SHORTS_DISABLED_RXEN_Pos);
     NRF_RADIO->INTENSET = RADIO_INTERRUPTS;
 
-    if (radio_vars.state == RADIO_STATE_IDLE) {
-        _radio_enable();
-        NRF_RADIO->TASKS_TXEN = RADIO_TASKS_TXEN_TASKS_TXEN_Trigger << RADIO_TASKS_TXEN_TASKS_TXEN_Pos;
-    }
-    radio_vars.state = RADIO_STATE_TX;
-    while (radio_vars.state != RADIO_STATE_TX) {}
+    db_radio_tx_start();
 }
 
 void db_radio_rx(void) {
@@ -222,7 +217,7 @@ void db_radio_rx(void) {
     radio_vars.state = RADIO_STATE_RX;
 }
 
-void db_radio_txidle_state(void) {
+void db_radio_tx_start(void) {
     if (radio_vars.state == RADIO_STATE_IDLE) {
         _radio_enable();
         NRF_RADIO->TASKS_TXEN = RADIO_TASKS_TXEN_TASKS_TXEN_Trigger << RADIO_TASKS_TXEN_TASKS_TXEN_Pos;
