@@ -86,7 +86,7 @@ void db_tdma_client_tx(const uint8_t *packet, uint8_t length);
 void db_tdma_client_flush(void);
 
 /**
- * @brief Earese all pending packets in the TDMA queue
+ * @brief Erase all pending packets in the TDMA queue
  *
  */
 void db_tdma_client_empty(void);

@@ -50,13 +50,13 @@ typedef struct {
 } tdma_client_ring_buffer_t;
 
 typedef struct {
-    tdma_client_cb_t                    callback;                              ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
-    tdma_client_table_t                 tdma_client_table;                            ///< Timing table
+    tdma_client_cb_t             callback;                              ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
+    tdma_client_table_t          tdma_client_table;                     ///< Timing table
     db_tdma_registration_state_t registration_flag;                     ///< flag marking if the DotBot is registered with the Gateway or not.
     db_tdma_rx_state_t           rx_flag;                               ///< flag marking if the DotBot's is receving or not.
     uint32_t                     last_tx_packet_timestamp;              ///< Timestamp of when the last packet was sent
     uint64_t                     device_id;                             ///< Device ID of the DotBot
-    tdma_client_ring_buffer_t           tx_ring_buffer;                        ///< ring buffer to queue the outgoing packets
+    tdma_client_ring_buffer_t    tx_ring_buffer;                        ///< ring buffer to queue the outgoing packets
     uint8_t                      byte_onair_time;                       ///< How many microseconds it takes to send a byte of data
     uint8_t                      radio_buffer[RADIO_MESSAGE_MAX_SIZE];  ///< Internal buffer that contains the command to send (from buttons)
 } tdma_client_vars_t;
@@ -141,8 +141,8 @@ void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mo
 
     // Initialize Radio
     db_radio_init(&tdma_client_callback, radio_mode);  // set the radio callback to our tdma catch function
-    db_radio_set_frequency(radio_freq);         // Pass through the rest of the arguments
-    db_radio_rx();                              // start receving packets
+    db_radio_set_frequency(radio_freq);                // Pass through the rest of the arguments
+    db_radio_rx();                                     // start receving packets
 
     // Start the random number generator
     db_rng_init();
@@ -168,7 +168,7 @@ void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mo
     _tdma_client_vars.rx_flag           = DB_TDMA_RX_ON;
 
     // Configure the Timers
-    _tdma_client_vars.last_tx_packet_timestamp = db_timer_hf_now();                                         // start the counter saving when was the last packet sent.
+    _tdma_client_vars.last_tx_packet_timestamp = db_timer_hf_now();                                  // start the counter saving when was the last packet sent.
     db_timer_hf_set_oneshot_us(TDMA_HF_TIMER_CC_TX, TDMA_DEFAULT_TX_START, &timer_tx_interrupt);     // start advertising behaviour
     db_timer_hf_set_oneshot_us(TDMA_HF_TIMER_CC_RX, TDMA_DEFAULT_RX_DURATION, &timer_rx_interrupt);  // check RX timer once per frame.
 }
@@ -180,6 +180,12 @@ void db_tdma_client_update_table(tdma_client_table_t *table) {
     _tdma_client_vars.tdma_client_table.rx_duration = table->rx_duration;
     _tdma_client_vars.tdma_client_table.tx_start    = table->tx_start;
     _tdma_client_vars.tdma_client_table.tx_duration = table->tx_duration;
+}
+
+void db_tdma_client_tx(const uint8_t *packet, uint8_t length) {
+
+    // Add packet to the output buffer
+    _add_to_tdma_client_ring_buffer(&_tdma_client_vars.tx_ring_buffer, packet, length);
 }
 
 void db_tdma_client_flush(void) {
@@ -233,8 +239,8 @@ bool _get_from_tdma_client_ring_buffer(tdma_client_ring_buffer_t *rb, uint8_t da
 bool _send_queued_messages(uint16_t max_tx_duration_us) {
 
     // initialize variables
-    uint32_t start_tx_slot   = db_timer_hf_now();
-    uint8_t  length          = 0;
+    uint32_t start_tx_slot = db_timer_hf_now();
+    uint8_t  length        = 0;
     uint8_t  packet[PAYLOAD_MAX_LENGTH];
     bool     packet_sent_flag = false;  ///< flag to keep track if a packet get sent during this function call
 
@@ -329,9 +335,9 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
         case DB_PROTOCOL_TDMA_UPDATE_TABLE:
         {
             // Get the payload
-            uint8_t            *cmd_ptr           = ptk_ptr + sizeof(protocol_header_t);
-            const uint32_t      next_period_start = ((const protocol_tdma_table_t *)cmd_ptr)->next_period_start;
-            const tdma_client_table_t *tdma_client_table        = (const tdma_client_table_t *)cmd_ptr;
+            uint8_t                   *cmd_ptr           = ptk_ptr + sizeof(protocol_header_t);
+            const uint32_t             next_period_start = ((const protocol_tdma_table_t *)cmd_ptr)->next_period_start;
+            const tdma_client_table_t *tdma_client_table = (const tdma_client_table_t *)cmd_ptr;
 
             // Update the TDMA table
             db_tdma_client_update_table(tdma_client_table);
