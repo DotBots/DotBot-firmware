@@ -110,11 +110,11 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
 #endif
 
     if (mode == DB_RADIO_BLE_1MBit || mode == DB_RADIO_BLE_2MBit) {
-        db_radio_set_power(RADIO_TXPOWER_TXPOWER_0dBm);  // 0dBm == 1mW Power output
-        NRF_RADIO->PCNF0   = (0 << RADIO_PCNF0_S1LEN_Pos) |                              // S1 field length in bits
-                           (1 << RADIO_PCNF0_S0LEN_Pos) |                                // S0 field length in bytes
-                           (8 << RADIO_PCNF0_LFLEN_Pos) |                                // LENGTH field length in bits
-                           (RADIO_PCNF0_PLEN_8bit << RADIO_PCNF0_PLEN_Pos);              // PREAMBLE length is 1 byte in BLE 1Mbit/s and 2Mbit/s
+        db_radio_set_power(RADIO_TXPOWER_TXPOWER_0dBm);                      // 0dBm == 1mW Power output
+        NRF_RADIO->PCNF0 = (0 << RADIO_PCNF0_S1LEN_Pos) |                    // S1 field length in bits
+                           (1 << RADIO_PCNF0_S0LEN_Pos) |                    // S0 field length in bytes
+                           (8 << RADIO_PCNF0_LFLEN_Pos) |                    // LENGTH field length in bits
+                           (RADIO_PCNF0_PLEN_8bit << RADIO_PCNF0_PLEN_Pos);  // PREAMBLE length is 1 byte in BLE 1Mbit/s and 2Mbit/s
 
         NRF_RADIO->PCNF1 = (4UL << RADIO_PCNF1_BALEN_Pos) |  // The base address is 4 Bytes long
                            (PAYLOAD_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos) |
