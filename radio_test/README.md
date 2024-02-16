@@ -18,6 +18,5 @@
   * **Launch** the script: _python test_radio.py_
   * The script will end when you disconnect the nRF with the Rx code and give you the result of the radio communication( CRC, Error, number of packets)
 
-  ![Python](../doc/sphinx/_static/images/python_radio_test_demo.JPG)
+  ![Python](../doc/sphinx/_static/images/radio_test_demo_python.jpg)
   
-
