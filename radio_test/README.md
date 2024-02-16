@@ -9,7 +9,6 @@
   ![Démo](../doc/sphinx/_static/images/radio_test_setup.jpg)
     
  ## Python:
-  * **download** in the python file in **dist/scripts/radio_test**
   * **install** serial package `pip install pyserial`
   * **find** the port of your nRF where the RX code is loaded
   * With a text file editor **change** the serialport_rx with the right one
