@@ -19,8 +19,8 @@
 #include "radio.h"
 #include "timer.h"
 
-uint8_t write_crc[3] = "CRC";
-uint8_t uart_end     = '\x00';
+static const uint8_t write_crc[3] = "CRC";
+static const uint8_t uart_end     = 0x00;
 
 #define DB_BUFFER_MAX_BYTES (255U)       ///< Max bytes in UART receive buffer
 #define DB_UART_BAUDRATE    (1000000UL)  ///< UART baudrate used by the gateway

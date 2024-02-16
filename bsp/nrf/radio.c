@@ -125,7 +125,7 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
 #if defined(NRF5340_XXAA)
         db_radio_set_power(RADIO_TXPOWER_TXPOWER_0dBm);  // 0dBm Power output
 #else
-        db_radio_set_power(RADIO_TXPOWER_TXPOWER_0dBm);  // 8dBm Power output
+        db_radio_set_power(RADIO_TXPOWER_TXPOWER_Pos8dBm);  // 8dBm Power output
 #endif
 
         // Coded PHY (Long Range)
