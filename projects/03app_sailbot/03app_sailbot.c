@@ -17,6 +17,8 @@
 #include <nrf.h>
 #include <stdbool.h>
 #include <string.h>
+#include <math.h>
+#include <assert.h>
 
 // Include BSP packages
 #include "device.h"
@@ -30,8 +32,6 @@
 #include "timer.h"
 #include "timer_hf.h"
 #include "gpio.h"
-#include "assert.h"
-#include "math.h"
 #include "as5048b.h"
 
 //=========================== defines =========================================
