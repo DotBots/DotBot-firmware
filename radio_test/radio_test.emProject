@@ -3,10 +3,6 @@
   <project Name="Rx">
     <configuration
       Name="Common"
-	  c_preprocessor_definitions="DOTBOT_PARTITION=0;DOTBOT_BUILD_TIME=&quot;$(Date) - $(Time)&quot;"
-      linker_additional_files="$(SolutionDir)/../crypto/nrf_cc310/lib/libnrf_cc310_0.9.13-hard-float-no-interrupts-$(Target).a"
-      linker_memory_map_file="$(ProjectDir)/$(Target)_MemoryMap.xml"
-      linker_output_format="bin"
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00bsp_radio(bsp);00bsp_uart(bsp)"
       project_directory="rx"
       project_type="Executable" />
