@@ -78,7 +78,6 @@ void db_radio_set_channel(uint8_t channel);
 /**
  * @brief Set the power of the radio
  *
- * By default 0 dBm
  *
  * @param[in] power of the radio
  */
@@ -116,7 +115,7 @@ void db_radio_tx(const uint8_t *packet, uint8_t length);
 void db_radio_rx(void);
 
 /**
- * @brief Block Radio into TXidle state
+ * @brief Block Radio into TX idle state
  *
  * NOTE: Must configure the radio and the frequency before calling this function.
  * (with the functions db_radio_init db_radio_set_frequency).

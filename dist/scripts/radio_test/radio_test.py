@@ -1,4 +1,4 @@
-#test_radio.py
+#radio_test.py
 
 import serial
 import time
@@ -65,12 +65,12 @@ for i in range(len(packets)-1) :
         crc+= 1  
         
 
-print("the first and last packets missing will not be know") 
-result = 'Total Packets Receive :' + str(len(packets))
-print(result) 
-result = 'Missing Packets :' + str(miss)
-print(result) 
-result = 'CRC Packets :' + str(crc)
-print(result) 
-result = 'RSSI dBm :' + str( np.int8((sum(RSSI))/len(RSSI)))
-print(result) 
+print(
+ f"Total Packets Receive : {str(len(packets))}\nMissing Packets : {str(miss)}\nCRC Packets : {str(crc)} " 
+ )
+if len(RSSI) > 0 :
+    mean : str( np.int8((sum(RSSI))/len(RSSI)))
+    print(
+        f"RSSI : {mean} dBm"
+    )
+    
