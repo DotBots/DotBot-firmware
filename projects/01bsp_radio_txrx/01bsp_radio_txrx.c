@@ -71,7 +71,7 @@ int main(void) {
 
     //=========================== Configure Radio ===============================
 
-    db_radio_init(&radio_callback, DOTBOT_GW_RADIO_MODE);
+    db_radio_init(&_radio_callback, DOTBOT_GW_RADIO_MODE);
     db_radio_set_frequency(RADIO_FREQ);
     db_radio_rx();
 
