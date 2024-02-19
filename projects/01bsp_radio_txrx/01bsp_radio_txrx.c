@@ -49,9 +49,9 @@ static const gpio_t _dbg_pin = { .port = DB_LED1_PORT, .pin = DB_LED1_PIN };
 
 //=========================== functions =========================================
 
-static void radio_callback(uint8_t *packet, uint8_t length) {
+static void _radio_callback(uint8_t *packet, uint8_t length, bool crc) {
     db_gpio_toggle(&_dbg_pin);
-    printf("packet received (%dB): %s, RSSI: %i\n", length, (char *)packet, db_radio_rssi());
+    printf("packet received (%dB): %s, RSSI: %i, CRC: %d\n", length, (char *)packet, crc, db_radio_rssi());
 }
 
 //=========================== main ==============================================
