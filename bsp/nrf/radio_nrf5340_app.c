@@ -85,6 +85,11 @@ void db_radio_set_channel(uint8_t channel) {
     db_ipc_network_call(DB_IPC_RADIO_CHAN_REQ);
 }
 
+void db_radio_set_power(uint8_t power){///////////////////////////////
+    ipc_shared_data.radio.power = power;
+    db_ipc_network_call(DB_IPC_RADIO_POWER_REQ);   
+}
+
 void db_radio_set_network_address(uint32_t addr) {
     ipc_shared_data.radio.addr = addr;
     db_ipc_network_call(DB_IPC_RADIO_ADDR_REQ);
@@ -98,6 +103,10 @@ void db_radio_tx(const uint8_t *tx_buffer, uint8_t length) {
 
 void db_radio_rx(void) {
     db_ipc_network_call(DB_IPC_RADIO_RX_REQ);
+}
+
+void db_radio_tx_start(void){///////////////////////////////////////
+    db_ipc_network_call(DB_IPC_RADIO_TX_IDLE_REQ);  
 }
 
 int8_t db_radio_rssi(void) {

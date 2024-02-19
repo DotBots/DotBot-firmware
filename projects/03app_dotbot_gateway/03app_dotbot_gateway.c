@@ -88,13 +88,17 @@ static void _uart_callback(uint8_t data) {
     _gw_vars.uart_queue.last                             = (_gw_vars.uart_queue.last + 1) & (DB_UART_QUEUE_SIZE - 1);
 }
 
-static void _radio_callback(uint8_t *packet, uint8_t length) {
-    if (!_gw_vars.handshake_done) {
+static void _radio_callback(uint8_t *packet, uint8_t length, bool crc) {
+    if (!crc) {
         return;
+    } else {
+        if (!_gw_vars.handshake_done) {
+            return;
+        }
+        memcpy(_gw_vars.radio_queue.packets[_gw_vars.radio_queue.last].buffer, packet, length);
+        _gw_vars.radio_queue.packets[_gw_vars.radio_queue.last].length = length;
+        _gw_vars.radio_queue.last                                      = (_gw_vars.radio_queue.last + 1) & (DB_RADIO_QUEUE_SIZE - 1);
     }
-    memcpy(_gw_vars.radio_queue.packets[_gw_vars.radio_queue.last].buffer, packet, length);
-    _gw_vars.radio_queue.packets[_gw_vars.radio_queue.last].length = length;
-    _gw_vars.radio_queue.last                                      = (_gw_vars.radio_queue.last + 1) & (DB_RADIO_QUEUE_SIZE - 1);
 }
 
 static void _led1_blink_fast(void) {

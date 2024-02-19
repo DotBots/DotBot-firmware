@@ -51,7 +51,6 @@ typedef struct __attribute__((packed)) {
 typedef struct {
     ble_radio_pdu_t pdu;           ///< Variable that stores the radio PDU (protocol data unit) that arrives and the radio packets that are about to be sent.
     radio_cb_t      callback;      ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
-    radio_cb_t      callback_crc;  ///< Function pointer, stores the callback to use in the RADIO_Irq handler if CRC NOK.
     uint8_t         state;         ///< Internal state of the radio
 } radio_vars_t;
 
@@ -175,10 +174,6 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
     NVIC_EnableIRQ(RADIO_IRQn);
 }
 
-void db_radio_set_crc_callback(radio_cb_t callback) {
-    radio_vars.callback_crc = callback;
-}
-
 void db_radio_set_frequency(uint8_t freq) {
 
     NRF_RADIO->FREQUENCY = freq << RADIO_FREQUENCY_FREQUENCY_Pos;
@@ -271,11 +266,8 @@ void RADIO_IRQHandler(void) {
         if (radio_vars.state == (RADIO_STATE_BUSY | RADIO_STATE_RX)) {
             if (NRF_RADIO->CRCSTATUS != RADIO_CRCSTATUS_CRCSTATUS_CRCOk) {
                 puts("Invalid CRC");
-                if (radio_vars.callback_crc) {
-                    radio_vars.callback_crc(radio_vars.pdu.payload, radio_vars.pdu.length);
-                }
             } else if (radio_vars.callback) {
-                radio_vars.callback(radio_vars.pdu.payload, radio_vars.pdu.length);
+                radio_vars.callback(radio_vars.pdu.payload, radio_vars.pdu.length, NRF_RADIO->CRCSTATUS);
             }
             radio_vars.state = RADIO_STATE_RX;
         } else {  // TX
