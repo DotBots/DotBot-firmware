@@ -49,9 +49,9 @@ typedef struct __attribute__((packed)) {
 } ble_radio_pdu_t;
 
 typedef struct {
-    ble_radio_pdu_t pdu;           ///< Variable that stores the radio PDU (protocol data unit) that arrives and the radio packets that are about to be sent.
-    radio_cb_t      callback;      ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
-    uint8_t         state;         ///< Internal state of the radio
+    ble_radio_pdu_t pdu;       ///< Variable that stores the radio PDU (protocol data unit) that arrives and the radio packets that are about to be sent.
+    radio_cb_t      callback;  ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
+    uint8_t         state;     ///< Internal state of the radio
 } radio_vars_t;
 
 //=========================== variables ========================================
@@ -264,9 +264,7 @@ void RADIO_IRQHandler(void) {
         NRF_RADIO->EVENTS_DISABLED = 0;
 
         if (radio_vars.state == (RADIO_STATE_BUSY | RADIO_STATE_RX)) {
-            if (NRF_RADIO->CRCSTATUS != RADIO_CRCSTATUS_CRCSTATUS_CRCOk) {
-                puts("Invalid CRC");
-            } else if (radio_vars.callback) {
+            if (radio_vars.callback) {
                 radio_vars.callback(radio_vars.pdu.payload, radio_vars.pdu.length, NRF_RADIO->CRCSTATUS);
             }
             radio_vars.state = RADIO_STATE_RX;
