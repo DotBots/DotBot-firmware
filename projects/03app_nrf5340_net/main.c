@@ -28,7 +28,7 @@ static ipc_req_t _req_received  = DB_IPC_REQ_NONE;
 void radio_callback(uint8_t *packet, uint8_t length, bool crc) {
     mutex_lock();
     ipc_shared_data.radio.rx_pdu.length = length;
-    ipc_shared_data.radio.crc = crc;
+    ipc_shared_data.radio.crc           = crc;
     memcpy((void *)ipc_shared_data.radio.rx_pdu.buffer, packet, length);
     mutex_unlock();
     _data_received = true;
@@ -70,7 +70,8 @@ int main(void) {
                     db_radio_set_channel(ipc_shared_data.radio.channel);
                     break;
                 case DB_IPC_RADIO_POWER_REQ:
-                    db_radio_set_power(ipc_shared_data.radio.power);                    break;    
+                    db_radio_set_power(ipc_shared_data.radio.power);
+                    break;
                 case DB_IPC_RADIO_ADDR_REQ:
                     db_radio_set_network_address(ipc_shared_data.radio.addr);
                     break;
