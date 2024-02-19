@@ -17,6 +17,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <nrf.h>
 
 //=========================== defines ==========================================
@@ -33,7 +34,7 @@ typedef enum {
     DB_RADIO_BLE_LR500Kbit,
 } db_radio_ble_mode_t;
 
-typedef void (*radio_cb_t)(uint8_t *packet, uint8_t length);  ///< Function pointer to the callback function called on packet receive
+typedef void (*radio_cb_t)(uint8_t *packet, uint8_t length, bool crc);  ///< Function pointer to the callback function called on packet receive
 
 //=========================== public ===========================================
 

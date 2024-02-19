@@ -11,7 +11,7 @@
 
 #include <nrf.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdbool.h>
 // Include BSP headers
 #include "board_config.h"
 #include "gpio.h"
@@ -22,8 +22,8 @@ static void _led1_blink_slow(void) {
     db_gpio_toggle(&db_led1);
 }
 
-static void _radio_callback(uint8_t *packet, uint8_t length,bool crc) {
-    printf("packet received (%dB): %s, RSSI: %i, CRC: %d\n", length, (char *)packet, db_radio_rssi());
+static void _radio_callback(uint8_t *packet, uint8_t length, bool crc) {
+    printf("packet received (%dB): %s, RSSI: %i, CRC: %d\n", length, (char *)packet, crc, db_radio_rssi());
 }
 
 int main(void) {

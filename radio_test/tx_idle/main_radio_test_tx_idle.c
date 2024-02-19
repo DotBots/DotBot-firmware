@@ -11,7 +11,7 @@
 
 #include <nrf.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdbool.h>
 // Include BSP headers
 #include "board_config.h"
 #include "gpio.h"
