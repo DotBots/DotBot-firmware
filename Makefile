@@ -72,17 +72,20 @@ RADIO_TEST_APPS ?= $(shell find radio_test/ -maxdepth 1 -mindepth 1 -type d | tr
 ifneq (,$(filter dotbot-v1,$(BUILD_TARGET)))
   PROJECTS := $(filter-out 01bsp_qdec 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_nrf5340_%,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
+  RADIO_TEST_APPS :=
 endif
 
 ifneq (,$(filter dotbot-v2,$(BUILD_TARGET)))
   PROJECTS := $(filter-out 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_nrf5340_net,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
+  RADIO_TEST_APPS :=
 endif
 
 # remove incompatible apps (nrf5340, dotbot, gateway) for sailbot-v1 build
 ifeq (sailbot-v1,$(BUILD_TARGET))
   PROJECTS := $(filter-out 01bsp_qdec 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_dotbot 03app_nrf5340_%,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_sailbot
+  RADIO_TEST_APPS :=
 endif
 
 # remove incompatible apps (nrf5340) for nrf52833dk/nrf52840dk build
