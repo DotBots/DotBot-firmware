@@ -10,7 +10,7 @@
  */
 
 #include <nrf.h>
-#include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 // Include BSP headers
 #include "uart.h"
@@ -34,7 +34,7 @@ static void _led1_blink_fast(void) {
     db_gpio_toggle(&db_led1);
 }
 
-static void _radio_callback(uint8_t *packet, uint8_t length, bool crc ) {
+static void _radio_callback(uint8_t *packet, uint8_t length, bool crc) {
     if (!crc) {
         memcpy(packet + length, &write_crc, 3);
         db_uart_write(DB_UART_INDEX, packet, length + 3);
@@ -58,7 +58,7 @@ int main(void) {
 
     db_radio_init(&_radio_callback, DB_RADIO_BLE_1MBit);
     db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
-    db_radio_rx();  // Start receiving packets.
+    db_radio_rx();              // Start receiving packets.
 
     db_uart_init(DB_UART_INDEX, &db_uart_rx, &db_uart_tx, DB_UART_BAUDRATE, &_uart_callback);
 

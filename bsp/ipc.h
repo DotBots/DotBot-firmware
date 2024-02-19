@@ -28,19 +28,19 @@
 #define IPC_IRQ_PRIORITY (1)
 
 typedef enum {
-    DB_IPC_REQ_NONE,                ///< Sorry, but nothing
-    DB_IPC_RADIO_INIT_REQ,          ///< Request for radio initialization
-    DB_IPC_RADIO_FREQ_REQ,          ///< Request for radio set frequency
-    DB_IPC_RADIO_CHAN_REQ,          ///< Request for radio set channel
-    DB_IPC_RADIO_POWER_REQ,         ///< Request for radio set power
-    DB_IPC_RADIO_ADDR_REQ,          ///< Request for radio set network address
-    DB_IPC_RADIO_RX_REQ,            ///< Request for radio rx
-    DB_IPC_RADIO_DIS_REQ,           ///< Request for radio disable
-    DB_IPC_RADIO_TX_REQ,            ///< Request for radio tx
-    DB_IPC_RADIO_TX_IDLE_REQ,       ///< Request for radio tx idle
-    DB_IPC_RADIO_RSSI_REQ,          ///< Request for RSSI
-    DB_IPC_RNG_INIT_REQ,            ///< Request for rng init
-    DB_IPC_RNG_READ_REQ,            ///< Request for rng read
+    DB_IPC_REQ_NONE,           ///< Sorry, but nothing
+    DB_IPC_RADIO_INIT_REQ,     ///< Request for radio initialization
+    DB_IPC_RADIO_FREQ_REQ,     ///< Request for radio set frequency
+    DB_IPC_RADIO_CHAN_REQ,     ///< Request for radio set channel
+    DB_IPC_RADIO_POWER_REQ,    ///< Request for radio set power
+    DB_IPC_RADIO_ADDR_REQ,     ///< Request for radio set network address
+    DB_IPC_RADIO_RX_REQ,       ///< Request for radio rx
+    DB_IPC_RADIO_DIS_REQ,      ///< Request for radio disable
+    DB_IPC_RADIO_TX_REQ,       ///< Request for radio tx
+    DB_IPC_RADIO_TX_IDLE_REQ,  ///< Request for radio tx idle
+    DB_IPC_RADIO_RSSI_REQ,     ///< Request for RSSI
+    DB_IPC_RNG_INIT_REQ,       ///< Request for rng init
+    DB_IPC_RNG_READ_REQ,       ///< Request for rng read
 } ipc_req_t;
 
 typedef enum {
