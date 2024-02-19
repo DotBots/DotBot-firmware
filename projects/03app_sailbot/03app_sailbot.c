@@ -182,7 +182,7 @@ int main(void) {
  * @param[in] length Number of bytes to send (max size = 32)
  *
  */
-void radio_callback(uint8_t *packet, uint8_t length) {
+void radio_callback(uint8_t *packet, uint8_t length, bool crc) {
     if (!crc) {
         return;
     } else {
