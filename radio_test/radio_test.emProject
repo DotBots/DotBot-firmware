@@ -1,6 +1,6 @@
 <!DOCTYPE CrossStudio_Project_File>
 <solution Name="Radio test" target="8" version="2">
-  <project Name="Rx">
+  <project Name="rx">
     <configuration
       Name="Common"
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00bsp_radio(bsp);00bsp_uart(bsp)"
@@ -39,7 +39,7 @@
       <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
-  <project Name="Tx">
+  <project Name="tx">
     <configuration
       Name="Common"
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00bsp_radio(bsp)"
@@ -78,7 +78,7 @@
       <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
-  <project Name="Tx idle">
+  <project Name="tx_idle">
     <configuration
       Name="Common"
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00bsp_radio(bsp)"

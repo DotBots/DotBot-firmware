@@ -64,4 +64,5 @@
   <import file_name="projects/projects-log-dump.emProject" />
   <import file_name="projects/projects-sailbot.emProject" />
   <import file_name="otap/otap.emProject" />
+  <import file_name="radio_test/radio_test.emProject" />
 </solution>
