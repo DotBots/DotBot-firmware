@@ -62,7 +62,7 @@ typedef struct __attribute__((packed)) {
     ipc_radio_pdu_t     tx_pdu;     ///< PDU to send
     ipc_radio_pdu_t     rx_pdu;     ///< Received pdu
     int8_t              rssi;       ///< RSSI value
-    bool                crc         ///< CRC value
+    bool                crc;        ///< CRC value
 } ipc_radio_data_t;
 
 typedef struct {

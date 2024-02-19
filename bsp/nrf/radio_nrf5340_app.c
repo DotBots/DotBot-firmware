@@ -85,7 +85,7 @@ void db_radio_set_channel(uint8_t channel) {
     db_ipc_network_call(DB_IPC_RADIO_CHAN_REQ);
 }
 
-void db_radio_set_power(uint8_t power) {  ///////////////////////////////
+void db_radio_set_power(uint8_t power) {
     ipc_shared_data.radio.power = power;
     db_ipc_network_call(DB_IPC_RADIO_POWER_REQ);
 }
@@ -105,7 +105,7 @@ void db_radio_rx(void) {
     db_ipc_network_call(DB_IPC_RADIO_RX_REQ);
 }
 
-void db_radio_tx_start(void) {  ///////////////////////////////////////
+void db_radio_tx_start(void) {
     db_ipc_network_call(DB_IPC_RADIO_TX_IDLE_REQ);
 }
 
@@ -125,7 +125,7 @@ void IPC_IRQHandler(void) {
         NRF_IPC_S->EVENTS_RECEIVE[DB_IPC_CHAN_RADIO_RX] = 0;
         if (_radio_callback) {
             mutex_lock();
-            _radio_callback((uint8_t *)ipc_shared_data.radio.rx_pdu.buffer, ipc_shared_data.radio.rx_pdu.length);
+            _radio_callback((uint8_t *)ipc_shared_data.radio.rx_pdu.buffer, ipc_shared_data.radio.rx_pdu.length, ipc_shared_data.radio.crc);
             mutex_unlock();
         }
     }
