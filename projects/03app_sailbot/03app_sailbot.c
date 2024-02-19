@@ -91,7 +91,7 @@ static sailbot_vars_t _sailbot_vars = { 0 };
 
 //=========================== prototypes =========================================
 
-void          radio_callback(uint8_t *packet, uint8_t length);
+void          radio_callback(uint8_t *packet, uint8_t length, bool crc);
 void          control_loop_callback(void);
 static void   convert_geographical_to_cartesian(cartesian_coordinate_t *out, const protocol_gps_coordinate_t *in);
 static float  _distance(const cartesian_coordinate_t *pos1, const cartesian_coordinate_t *pos2);
