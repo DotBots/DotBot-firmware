@@ -69,8 +69,7 @@ void db_radio_set_frequency(uint8_t freq);
 void db_radio_set_channel(uint8_t channel);
 
 /**
- * @brief Set the power of the radio
- *
+ * @brief Set the TX power of the radio
  *
  * @param[in] power of the radio
  */
@@ -109,10 +108,6 @@ void db_radio_rx(void);
 
 /**
  * @brief Block Radio into TX idle state
- *
- * NOTE: Must configure the radio and the frequency before calling this function.
- * (with the functions db_radio_init db_radio_set_frequency).
- *
  */
 void db_radio_tx_start(void);
 

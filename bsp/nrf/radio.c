@@ -110,7 +110,7 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
 #endif
 
     if (mode == DB_RADIO_BLE_1MBit || mode == DB_RADIO_BLE_2MBit) {
-        db_radio_set_power(RADIO_TXPOWER_TXPOWER_0dBm);                      // 0dBm == 1mW Power output
+        db_radio_set_tx_power(RADIO_TXPOWER_TXPOWER_0dBm);                      // 0dBm == 1mW Power output
         NRF_RADIO->PCNF0 = (0 << RADIO_PCNF0_S1LEN_Pos) |                    // S1 field length in bits
                            (1 << RADIO_PCNF0_S0LEN_Pos) |                    // S0 field length in bytes
                            (8 << RADIO_PCNF0_LFLEN_Pos) |                    // LENGTH field length in bits
@@ -123,9 +123,9 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
                            (RADIO_PCNF1_WHITEEN_Enabled << RADIO_PCNF1_WHITEEN_Pos);  // Enable data whitening feature.
     } else {                                                                          // Long ranges modes (125KBit/500KBit)
 #if defined(NRF5340_XXAA)
-        db_radio_set_power(RADIO_TXPOWER_TXPOWER_0dBm);  // 0dBm Power output
+        db_radio_set_tx_power(RADIO_TXPOWER_TXPOWER_0dBm);  // 0dBm Power output
 #else
-        db_radio_set_power(RADIO_TXPOWER_TXPOWER_Pos8dBm);  // 8dBm Power output
+        db_radio_set_tx_power(RADIO_TXPOWER_TXPOWER_Pos8dBm);  // 8dBm Power output
 #endif
 
         // Coded PHY (Long Range)
