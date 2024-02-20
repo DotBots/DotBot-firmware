@@ -70,7 +70,7 @@ int main(void) {
                     db_radio_set_channel(ipc_shared_data.radio.channel);
                     break;
                 case DB_IPC_RADIO_POWER_REQ:
-                    db_radio_set_power(ipc_shared_data.radio.power);
+                    db_radio_set_tx_power(ipc_shared_data.radio.power);
                     break;
                 case DB_IPC_RADIO_ADDR_REQ:
                     db_radio_set_network_address(ipc_shared_data.radio.addr);
