@@ -74,7 +74,7 @@ void db_radio_set_channel(uint8_t channel);
  *
  * @param[in] power of the radio
  */
-void db_radio_set_power(uint8_t power);
+void db_radio_set_tx_power(uint8_t power);
 
 /**
  * @brief Set the network address used to send/receive radio packets

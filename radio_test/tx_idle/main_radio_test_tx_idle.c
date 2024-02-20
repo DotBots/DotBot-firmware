@@ -38,7 +38,7 @@ int main(void) {
 
     db_radio_init(&_radio_callback, DB_RADIO_BLE_1MBit);
     db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
-    db_radio_set_power();
+    db_radio_set_tx_power(RADIO_TXPOWER_TXPOWER_0dBm);
     db_radio_tx_start();  // Start receiving packets.
 
     while (1) {}

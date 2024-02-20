@@ -184,7 +184,7 @@ void db_radio_set_channel(uint8_t channel) {
     NRF_RADIO->FREQUENCY = (_chan_to_freq[channel] << RADIO_FREQUENCY_FREQUENCY_Pos);
 }
 
-void db_radio_set_power(uint8_t power) {
+void db_radio_set_tx_power(uint8_t power) {
     NRF_RADIO->TXPOWER = (power << RADIO_TXPOWER_TXPOWER_Pos);
 }
 
