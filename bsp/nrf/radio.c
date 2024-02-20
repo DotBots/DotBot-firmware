@@ -110,7 +110,7 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
 #endif
 
     if (mode == DB_RADIO_BLE_1MBit || mode == DB_RADIO_BLE_2MBit) {
-        db_radio_set_tx_power(RADIO_TXPOWER_TXPOWER_0dBm);                      // 0dBm == 1mW Power output
+        db_radio_set_tx_power(RADIO_TXPOWER_TXPOWER_0dBm);                   // 0dBm == 1mW Power output
         NRF_RADIO->PCNF0 = (0 << RADIO_PCNF0_S1LEN_Pos) |                    // S1 field length in bits
                            (1 << RADIO_PCNF0_S0LEN_Pos) |                    // S0 field length in bytes
                            (8 << RADIO_PCNF0_LFLEN_Pos) |                    // LENGTH field length in bits
