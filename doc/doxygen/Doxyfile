@@ -126,8 +126,8 @@ INPUT                  = \
                         ../../bsp \
                         ../../crypto \
                         ../../drv \
+                        ../../otap \
                         ../../projects \
-                        ../../testbed \
                         #
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = \

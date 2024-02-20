@@ -41,14 +41,18 @@ static void _radio_callback(uint8_t *pkt, uint8_t len) {
     _app_vars.packet_received = true;
 }
 
+#if defined(DB_LED1_PIN) && defined(DB_BTN1_PIN)
 static void _btn_toggle_callback(void *ctx) {
     (void)ctx;
     db_gpio_toggle(&db_led1);
 }
+#endif
 
+#ifdef DB_LED2_PIN
 static void _toggle_led(void) {
     db_gpio_toggle(&db_led2);
 }
+#endif
 
 //=========================== private ==========================================
 
@@ -73,14 +77,24 @@ int main(void) {
     db_radio_set_frequency(8);
     db_radio_rx();
 
+#ifdef DB_LED1_PIN
     db_gpio_init(&db_led1, DB_GPIO_OUT);
     db_gpio_set(&db_led1);
+#endif
+
+#ifdef DB_LED2_PIN
     db_gpio_init(&db_led2, DB_GPIO_OUT);
     db_gpio_set(&db_led2);
-    db_gpio_init_irq(&db_btn1, DB_GPIO_IN_PU, DB_GPIO_IRQ_EDGE_RISING, _btn_toggle_callback, NULL);
+#endif
 
+#if defined(DB_LED1_PIN) && defined(DB_BTN1_PIN)
+    db_gpio_init_irq(&db_btn1, DB_GPIO_IN_PU, DB_GPIO_IRQ_EDGE_RISING, _btn_toggle_callback, NULL);
+#endif
+
+#ifdef DB_LED2_PIN
     db_timer_init();
     db_timer_set_periodic_ms(0, 500, &_toggle_led);
+#endif
 
     while (1) {
         __WFE();

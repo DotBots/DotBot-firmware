@@ -53,7 +53,7 @@ void db_nvmc_write(const uint32_t *addr, const void *data, size_t len) {
     // Length must be a multiple of 4 bytes
     assert(len % 4 == 0);
     // writes must be 4 bytes aligned
-    assert(!((uint32_t)addr % 4) && !((uint32_t)data % 4));
+    assert(((uint32_t)addr % 4) && ((uint32_t)data % 4));
 
     uint32_t       *dest_addr = (uint32_t *)addr;
     const uint32_t *data_addr = data;

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import logging
 import time
 
@@ -8,10 +9,13 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 import click
-from tqdm import tqdm
-
 import serial
 import structlog
+
+from tqdm import tqdm
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
 from dotbot.hdlc import hdlc_encode, HDLCHandler, HDLCState
 from dotbot.protocol import PROTOCOL_VERSION
 from dotbot.serial_interface import SerialInterface, SerialInterfaceException
@@ -25,14 +29,16 @@ PAGE_SIZE_MAP = {
     "nrf52840": 4096,
     "nrf5340-app": 4096,
 }
-
+PRIVATE_KEY_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "private_key")
 
 class MessageType(Enum):
     """Types of bootloader message."""
 
-    OTA_MESSAGE_TYPE_FW = 0
-    OTA_MESSAGE_TYPE_FW_ACK = 1
-    OTA_MESSAGE_TYPE_INFO = 2
+    OTA_MESSAGE_TYPE_START = 0
+    OTA_MESSAGE_TYPE_START_ACK = 1
+    OTA_MESSAGE_TYPE_FW = 2
+    OTA_MESSAGE_TYPE_FW_ACK = 3
+    OTA_MESSAGE_TYPE_INFO = 4
 
 
 class CpuType(Enum):
@@ -109,6 +115,7 @@ class DotBotFlasher:
         self.hdlc_handler = HDLCHandler()
         self.device_info = None
         self.device_info_received = False
+        self.start_ack_received = False
         pad_length = CHUNK_SIZE - (len(image) % CHUNK_SIZE)
         self.image = image + bytearray(b"\xff") * (pad_length + 1)
         self.last_acked_chunk = -1
@@ -121,21 +128,60 @@ class DotBotFlasher:
             payload = self.hdlc_handler.payload
             if not payload:
                 return
-            if payload[0] == MessageType.OTA_MESSAGE_TYPE_FW_ACK.value:
+            if payload[0] == MessageType.OTA_MESSAGE_TYPE_START_ACK.value:
+                self.start_ack_received = True
+            elif payload[0] == MessageType.OTA_MESSAGE_TYPE_FW_ACK.value:
                 self.last_acked_chunk = int.from_bytes(payload[1:5], byteorder="little")
             elif payload[0] == MessageType.OTA_MESSAGE_TYPE_INFO.value:
                 self.device_info = DeviceInfo.from_bytes(payload[1:])
                 self.device_info_received = True
 
     def fetch_device_info(self):
-        while self.device_info_received is False:
+        # while self.device_info_received is False:
+        buffer = bytearray()
+        buffer += int(MessageType.OTA_MESSAGE_TYPE_INFO.value).to_bytes(
+            length=1, byteorder="little"
+        )
+        print("Fetching device info...")
+        self.serial.write(hdlc_encode(buffer))
+        timeout = 0  # ms
+        while self.device_info_received is False and timeout < 100:
+            timeout += 1
+            time.sleep(0.01)
+
+    def send_start_update(self, secure):
+        if secure is True:
+            digest = hashes.Hash(hashes.SHA256())
+            pos = 0
+            while pos + CHUNK_SIZE <= len(self.image) + 1:
+                digest.update(self.image[pos : pos + CHUNK_SIZE])
+                pos += CHUNK_SIZE
+            fw_hash = digest.finalize()
+            private_key_bytes = open(PRIVATE_KEY_PATH, "rb").read()
+            private_key = Ed25519PrivateKey.from_private_bytes(private_key_bytes)
+        attempts = 0
+        while attempts < 3:
             buffer = bytearray()
-            buffer += int(MessageType.OTA_MESSAGE_TYPE_INFO.value).to_bytes(
+            buffer += int(MessageType.OTA_MESSAGE_TYPE_START.value).to_bytes(
                 length=1, byteorder="little"
             )
+            buffer += int((len(self.image) - 1) / CHUNK_SIZE).to_bytes(
+                length=4, byteorder="little"
+            )
+            if secure is True:
+                buffer += fw_hash
+                signature = private_key.sign(bytes(buffer[1:]))
+                buffer += signature
+            print("Sending start update notification...")
             self.serial.write(hdlc_encode(buffer))
-            time.sleep(0.2)
-            print("Fetching device info...")
+            attempts += 1
+            timeout = 0  # ms
+            while self.start_ack_received is False and timeout < 1000:
+                timeout += 1
+                time.sleep(0.01)
+            if self.start_ack_received is True:
+                break
+        return attempts < 3
 
     def flash(self):
         page_size = PAGE_SIZE_MAP[self.device_info.cpu]
@@ -173,13 +219,19 @@ class DotBotFlasher:
     help="Serial port to use to send the firmware.",
 )
 @click.option(
+    "-s",
+    "--secure",
+    is_flag=True,
+    help="Use cryptographic security (hash and signature).",
+)
+@click.option(
     "-y",
     "--yes",
     is_flag=True,
     help="Continue flashing without prompt.",
 )
 @click.argument("image", type=click.File(mode="rb", lazy=True))
-def main(port, yes, image):
+def main(port, secure, yes, image):
     # Disable logging configure in PyDotBot
     structlog.configure(
         wrapper_class=structlog.make_filtering_bound_logger(logging.CRITICAL),
@@ -216,6 +268,10 @@ def main(port, yes, image):
         return
     if yes is False:
         click.confirm("Do you want to continue?", default=True, abort=True)
+    ret = flasher.send_start_update(secure)
+    if ret is False:
+        print("Error: No start acknowledment received. Aborting.")
+        return
     flasher.flash()
     print("Done")
 

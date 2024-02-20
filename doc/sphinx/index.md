@@ -4,7 +4,7 @@
 getting_started
 applications
 examples
-testbed
+otap
 api
 ```
 

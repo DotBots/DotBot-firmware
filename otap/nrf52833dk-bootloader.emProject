@@ -26,7 +26,7 @@
     build_output_file_name="$(OutDir)/$(ProjectName)-$(BuildTarget)$(EXE)"
     build_treat_warnings_as_errors="Yes"
     c_additional_options="-Wno-missing-field-initializers"
-    c_preprocessor_definitions="ARM_MATH_CM4;NRF52833_XXAA;__nRF_FAMILY;CONFIG_NFCT_PINS_AS_GPIOS;FLASH_PLACEMENT=1;BOARD_NRF52833DK;OTA_USE_CRYPTO"
+    c_preprocessor_definitions="ARM_MATH_CM4;NRF52833_XXAA;__nRF_FAMILY;CONFIG_NFCT_PINS_AS_GPIOS;FLASH_PLACEMENT=1;BOARD_NRF52833DK"
     c_user_include_directories="$(SolutionDir)/../bsp;$(SolutionDir)/../crypto;$(SolutionDir)/../drv;$(PackagesDir)/nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
     debug_register_definition_file="$(PackagesDir)/nRF/XML/nrf52833_Registers.xml"
     debug_stack_pointer_start="__stack_end__"
@@ -54,14 +54,8 @@
     gcc_debugging_level="Level 2"
     gcc_omit_frame_pointer="Yes"
     gcc_optimization_level="Level 2 balanced" />
-  <import file_name="bsp/bsp.emProject" />
-  <import file_name="crypto/crypto.emProject" />
-  <import file_name="drv/drv.emProject" />
-  <import file_name="projects/projects-bsp-drv.emProject" />
-  <import file_name="projects/projects-dotbot.emProject" />
-  <import file_name="projects/projects-crypto.emProject" />
-  <import file_name="projects/projects-gateway.emProject" />
-  <import file_name="projects/projects-log-dump.emProject" />
-  <import file_name="projects/projects-sailbot.emProject" />
-  <import file_name="otap/otap.emProject" />
+  <import file_name="../bsp/bsp.emProject" />
+  <import file_name="../crypto/crypto.emProject" />
+  <import file_name="../drv/drv.emProject" />
+  <import file_name="bootloader.emProject" />
 </solution>
