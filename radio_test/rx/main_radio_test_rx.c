@@ -38,12 +38,11 @@ static void _radio_callback(uint8_t *packet, uint8_t length, bool crc) {
     if (!crc) {
         memcpy(packet + length, &write_crc, 3);
         db_uart_write(DB_UART_INDEX, packet, length + 3);
-    } else {
-        uint8_t RSSI = db_radio_rssi();
-        memcpy(packet + length, &RSSI, 1);
-        memcpy(packet + length + 1, &uart_end, 1);
-        db_uart_write(DB_UART_INDEX, packet, length + 1);
     }
+    uint8_t RSSI     = db_radio_rssi();
+    packet[length++] = RSSI;
+    packet[length++] = uart_end;
+    db_uart_write(DB_UART_INDEX, packet, length);
 }
 
 static void _uart_callback(uint8_t data) {
@@ -62,6 +61,5 @@ int main(void) {
 
     db_uart_init(DB_UART_INDEX, &db_uart_rx, &db_uart_tx, DB_UART_BAUDRATE, &_uart_callback);
 
-    while (1) {
-    }
+    while (1) {}
 }

@@ -37,6 +37,5 @@ int main(void) {
     db_radio_set_power(RADIO_TXPOWER_TXPOWER_0dBm);
     db_radio_tx_start();  // Start receiving packets.
 
-    while (1) {
-    }
+    while (1) {}
 }

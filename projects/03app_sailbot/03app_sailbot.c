@@ -185,62 +185,61 @@ int main(void) {
 void radio_callback(uint8_t *packet, uint8_t length, bool crc) {
     if (!crc) {
         return;
-    } else {
-        (void)length;
-        uint8_t           *ptk_ptr = packet;
-        protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
+    }
+    (void)length;
+    uint8_t           *ptk_ptr = packet;
+    protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
 
-        // timestamp the arrival of the packet
-        _sailbot_vars.ts_last_packet_received = db_timer_ticks();
+    // timestamp the arrival of the packet
+    _sailbot_vars.ts_last_packet_received = db_timer_ticks();
 
-        // Check destination address matches
-        if (header->dst != DB_BROADCAST_ADDRESS && header->dst != db_device_id()) {
-            return;
-        }
+    // Check destination address matches
+    if (header->dst != DB_BROADCAST_ADDRESS && header->dst != db_device_id()) {
+        return;
+    }
 
-        // Check version is compatible
-        if (header->version != DB_FIRMWARE_VERSION) {
-            return;
-        }
+    // Check version is compatible
+    if (header->version != DB_FIRMWARE_VERSION) {
+        return;
+    }
 
-        // Check application is compatible
-        if (header->application != SailBot) {
-            return;
-        }
+    // Check application is compatible
+    if (header->application != SailBot) {
+        return;
+    }
 
-        // Process the command received
-        uint8_t *cmd_ptr = ptk_ptr + sizeof(protocol_header_t);
-        switch (header->type) {
-            case DB_PROTOCOL_CMD_MOVE_RAW:
-            {
-                protocol_move_raw_command_t *command = (protocol_move_raw_command_t *)cmd_ptr;
+    // Process the command received
+    uint8_t *cmd_ptr = ptk_ptr + sizeof(protocol_header_t);
+    switch (header->type) {
+        case DB_PROTOCOL_CMD_MOVE_RAW:
+        {
+            protocol_move_raw_command_t *command = (protocol_move_raw_command_t *)cmd_ptr;
 
-                _sailbot_vars.radio_override = true;
+            _sailbot_vars.radio_override = true;
 
-                if (command->right_y > 0 && ((int16_t)_sailbot_vars.sail_trim + SAIL_TRIM_ANGLE_UNIT_STEP < 127)) {
-                    _sailbot_vars.sail_trim += SAIL_TRIM_ANGLE_UNIT_STEP;
-                } else if (command->right_y < 0 && ((int16_t)_sailbot_vars.sail_trim - SAIL_TRIM_ANGLE_UNIT_STEP > 0)) {
-                    _sailbot_vars.sail_trim -= SAIL_TRIM_ANGLE_UNIT_STEP;
-                }
-                // set the servos
-                servos_set(command->left_x, _sailbot_vars.sail_trim);
-            } break;
-            case DB_PROTOCOL_GPS_WAYPOINTS:
-            {
-                servos_set(0, _sailbot_vars.sail_trim);
-                _sailbot_vars.radio_override       = false;
-                _sailbot_vars.autonomous_operation = false;
-                _sailbot_vars.waypoints.length     = (uint8_t)*cmd_ptr++;
-                _sailbot_vars.waypoints_threshold  = (uint32_t)((uint8_t)*cmd_ptr++);
-                memcpy(&_sailbot_vars.waypoints.coordinates, cmd_ptr, _sailbot_vars.waypoints.length * sizeof(protocol_gps_coordinate_t));
-                _sailbot_vars.next_waypoint_idx = 0;
-                if (_sailbot_vars.waypoints.length > 0) {
-                    _sailbot_vars.autonomous_operation = true;
-                }
-            } break;
-            default:
-                break;
-        }
+            if (command->right_y > 0 && ((int16_t)_sailbot_vars.sail_trim + SAIL_TRIM_ANGLE_UNIT_STEP < 127)) {
+                _sailbot_vars.sail_trim += SAIL_TRIM_ANGLE_UNIT_STEP;
+            } else if (command->right_y < 0 && ((int16_t)_sailbot_vars.sail_trim - SAIL_TRIM_ANGLE_UNIT_STEP > 0)) {
+                _sailbot_vars.sail_trim -= SAIL_TRIM_ANGLE_UNIT_STEP;
+            }
+            // set the servos
+            servos_set(command->left_x, _sailbot_vars.sail_trim);
+        } break;
+        case DB_PROTOCOL_GPS_WAYPOINTS:
+        {
+            servos_set(0, _sailbot_vars.sail_trim);
+            _sailbot_vars.radio_override       = false;
+            _sailbot_vars.autonomous_operation = false;
+            _sailbot_vars.waypoints.length     = (uint8_t)*cmd_ptr++;
+            _sailbot_vars.waypoints_threshold  = (uint32_t)((uint8_t)*cmd_ptr++);
+            memcpy(&_sailbot_vars.waypoints.coordinates, cmd_ptr, _sailbot_vars.waypoints.length * sizeof(protocol_gps_coordinate_t));
+            _sailbot_vars.next_waypoint_idx = 0;
+            if (_sailbot_vars.waypoints.length > 0) {
+                _sailbot_vars.autonomous_operation = true;
+            }
+        } break;
+        default:
+            break;
     }
 }
 

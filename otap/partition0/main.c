@@ -39,10 +39,9 @@ static application_vars_t _app_vars = { 0 };
 static void _radio_callback(uint8_t *pkt, uint8_t len, bool crc) {
     if (!crc) {
         return;
-    } else {
-        memcpy(&_app_vars.message_buffer, pkt, len);
-        _app_vars.packet_received = true;
     }
+    memcpy(&_app_vars.message_buffer, pkt, len);
+    _app_vars.packet_received = true;
 }
 
 static void _toggle_led(void) {

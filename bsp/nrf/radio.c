@@ -266,7 +266,7 @@ void RADIO_IRQHandler(void) {
 
         if (radio_vars.state == (RADIO_STATE_BUSY | RADIO_STATE_RX)) {
             if (radio_vars.callback) {
-                radio_vars.callback(radio_vars.pdu.payload, radio_vars.pdu.length, NRF_RADIO->CRCSTATUS);
+                radio_vars.callback(radio_vars.pdu.payload, radio_vars.pdu.length, NRF_RADIO->CRCSTATUS == RADIO_CRCSTATUS_CRCSTATUS_CRCOk);
             }
             radio_vars.state = RADIO_STATE_RX;
         } else {  // TX
