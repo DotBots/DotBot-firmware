@@ -180,6 +180,7 @@ int main(void) {
  *
  * @param[in] packet pointer to the array of data to send over the radio (max size = 32)
  * @param[in] length Number of bytes to send (max size = 32)
+ * @param[in] crc    Whether the CRC check passed
  *
  */
 void radio_callback(uint8_t *packet, uint8_t length, bool crc) {
