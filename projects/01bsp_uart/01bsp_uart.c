@@ -35,7 +35,7 @@ static void uart_callback(uint8_t byte) {
     _uart_vars.buffer[_uart_vars.pos] = byte;
     _uart_vars.pos++;
     if (byte == '\n' || _uart_vars.pos == DB_UART_MAX_BYTES - 1) {
-        db_uart_write(0, _uart_vars.buffer, _uart_vars.pos - 1);
+        db_uart_write(0, _uart_vars.buffer, _uart_vars.pos);
         _uart_vars.pos = 0;
     }
 }

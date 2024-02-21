@@ -178,7 +178,7 @@ void db_uart_write(uart_t uart, uint8_t *buffer, size_t length) {
         _devs[uart].p->EVENTS_ENDTX = 0;
         _devs[uart].p->TXD.PTR      = (uint32_t)&buffer[pos];
         if ((pos + DB_UARTE_CHUNK_SIZE) > length) {
-            _devs[uart].p->TXD.MAXCNT = length - pos + 1;
+            _devs[uart].p->TXD.MAXCNT = length - pos;
         } else {
             _devs[uart].p->TXD.MAXCNT = DB_UARTE_CHUNK_SIZE;
         }
