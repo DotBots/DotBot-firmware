@@ -781,7 +781,7 @@ void _update_lfsr_checkpoints(uint8_t polynomial, uint32_t bits, uint32_t count)
  *
  * @param[in] lh2 pointer to the lh2 instance
  * @param[in] polynomial: index of found polynomia
- * @param[in] bits: timestamp of the SPI capture
+ * @param[in] timestamp: timestamp of the SPI capture
  */
 uint8_t _select_sweep(db_lh2_t *lh2, uint8_t polynomial, uint32_t timestamp);
 
