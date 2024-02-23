@@ -68,7 +68,23 @@ void db_spim_begin(const gpio_t *cs, db_spim_mode_t mode, uint32_t freq);
 void db_spim_end(const gpio_t *cs);
 
 /**
- * @brief Read bytes from one register
+ * @brief Send bytes over SPI
+ *
+ * @param[in]   bytes   Pointer to the input bytes
+ * @param[in]   len     Length of the bytes to send
+ */
+void db_spim_send(const void *bytes, size_t len);
+
+/**
+ * @brief Receive bytes over SPI
+ *
+ * @param[in]   bytes   Pointer to the output bytes
+ * @param[in]   len     Length of the bytes to receive
+ */
+void db_spim_receive(const void *bytes, size_t len);
+
+/**
+ * @brief Transfer bytes over SPI
  *
  * @param[out]  out     Pointer to the output byte array
  * @param[in]   in      Pointer to the in byte array

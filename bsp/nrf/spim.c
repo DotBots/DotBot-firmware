@@ -37,8 +37,8 @@
 #define DB_SPIM_BUFFER_SIZE (256U)  ///< TX max buffer size
 
 typedef struct {
-    uint8_t out_buffer[DB_SPIM_BUFFER_SIZE];  ///< internal buffer used to send bytes on SPI bus
-    bool    running;                          ///< whether bytes are being sent/received
+    uint8_t tx_buffer[DB_SPIM_BUFFER_SIZE];  ///< internal buffer used to send bytes on SPI bus
+    bool    running;                         ///< whether bytes are being sent/received
 } spim_vars_t;
 
 //=========================== variables ========================================
@@ -81,19 +81,9 @@ void db_spim_end(const gpio_t *cs) {
     DB_SPIM->ENABLE = SPIM_ENABLE_ENABLE_Disabled << SPIM_ENABLE_ENABLE_Pos;
 }
 
-void db_spim_transfer(const void *out, void *in, size_t len) {
-    _spim_vars.running = true;
-    DB_SPIM->INTENSET  = SPIM_INTENSET_END_Enabled << SPIM_INTENSET_END_Pos;
-    if (out) {
-        assert(len <= DB_SPIM_BUFFER_SIZE);
-        memcpy(_spim_vars.out_buffer, out, len);
-    }
-    DB_SPIM->TXD.PTR = (uint32_t)_spim_vars.out_buffer;
-    DB_SPIM->RXD.PTR = (uint32_t)in;
-
-    DB_SPIM->TXD.MAXCNT = (out) ? len : 0;
-    DB_SPIM->RXD.MAXCNT = (in) ? len : 0;
-
+static void _start_transfer(void) {
+    _spim_vars.running   = true;
+    DB_SPIM->INTENSET    = SPIM_INTENSET_END_Enabled << SPIM_INTENSET_END_Pos;
     DB_SPIM->EVENTS_END  = 0;
     DB_SPIM->TASKS_START = 1;
 
@@ -101,6 +91,21 @@ void db_spim_transfer(const void *out, void *in, size_t len) {
         __WFE();
     }
     DB_SPIM->INTENCLR = SPIM_INTENCLR_END_Enabled << SPIM_INTENCLR_END_Pos;
+}
+
+void db_spim_send(const void *bytes, size_t len) {
+    assert(len <= DB_SPIM_BUFFER_SIZE);
+    memcpy(_spim_vars.tx_buffer, bytes, len);
+    DB_SPIM->TXD.PTR    = (uint32_t)_spim_vars.tx_buffer;
+    DB_SPIM->TXD.MAXCNT = len;
+    _start_transfer();
+}
+
+void db_spim_receive(const void *bytes, size_t len) {
+    _spim_vars.running  = true;
+    DB_SPIM->RXD.PTR    = (uint32_t)bytes;
+    DB_SPIM->RXD.MAXCNT = len;
+    _start_transfer();
 }
 
 //=========================== interrupt ========================================

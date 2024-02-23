@@ -41,15 +41,15 @@ const db_spim_conf_t _spim_conf = {
 
 static void _read_reg(uint8_t reg, uint8_t *value) {
     db_spim_begin(&_cs_pin, DB_SPIM_MODE_0, SPIM_FREQUENCY);
-    db_spim_transfer(&reg, NULL, 1);
-    db_spim_transfer(NULL, value, 1);
+    db_spim_send(&reg, 1);
+    db_spim_receive(value, 1);
     db_spim_end(&_cs_pin);
 }
 
 static void _write_reg(uint8_t reg, uint8_t value) {
     db_spim_begin(&_cs_pin, DB_SPIM_MODE_0, SPIM_FREQUENCY);
-    db_spim_transfer(&reg, NULL, 1);
-    db_spim_transfer(&value, NULL, 1);
+    db_spim_send(&reg, 1);
+    db_spim_receive(&value, 1);
     db_spim_end(&_cs_pin);
 }
 
