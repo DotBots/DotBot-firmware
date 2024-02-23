@@ -35,7 +35,7 @@
 #define DB_ADVERTIZEMENT_DELAY_MS (500U)   ///< 500ms delay between each advertizement packet sending
 #define DB_TIMEOUT_CHECK_DELAY_MS (200U)   ///< 200ms delay between each timeout delay check
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
-#define DB_LH2_FULL_COMPUTATION   (false)  ///< Wether the full LH2 computation is perform on board
+#define DB_LH2_FULL_COMPUTATION   (true)   ///< Wether the full LH2 computation is perform on board
 #define DB_LH2_COUNTER_MASK       (0x07)   ///< Maximum number of lh2 iterations without value received
 #define DB_BUFFER_MAX_BYTES       (255U)   ///< Max bytes in UART receive buffer
 #define DB_DIRECTION_THRESHOLD    (0.01)   ///< Threshold to update the direction
@@ -206,11 +206,16 @@ int main(void) {
         __WFE();
 
         bool need_advertize = false;
+        db_lh2_process_raw_data(&_dotbot_vars.lh2);
+        if (DB_LH2_FULL_COMPUTATION) {
+            // the location function has to be running all the time
+            db_lh2_process_location(&_dotbot_vars.lh2);
+        }
+
         if (_dotbot_vars.update_lh2) {
-            db_lh2_process_raw_data(&_dotbot_vars.lh2);
             // CHeck if data is ready to send
-            if (_dotbot_vars.lh2.data_ready[0][0] == DB_LH2_RAW_DATA_AVAILABLE && _dotbot_vars.lh2.data_ready[0][1] == DB_LH2_RAW_DATA_AVAILABLE) {
-                _dotbot_vars.lh2_update_counter = 0;
+            if (_dotbot_vars.lh2.data_ready[0][0] == DB_LH2_PROCESSED_DATA_AVAILABLE && _dotbot_vars.lh2.data_ready[1][0] == DB_LH2_PROCESSED_DATA_AVAILABLE) {  // \
+
                 db_lh2_stop();
                 // Prepare the radio buffer
                 db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_DOTBOT_DATA);
@@ -223,10 +228,7 @@ int main(void) {
                 _dotbot_vars.lh2.data_ready[1][0] = DB_LH2_NO_NEW_DATA;
                 db_radio_disable();
                 db_radio_tx(_dotbot_vars.radio_buffer, length);
-                if (DB_LH2_FULL_COMPUTATION) {
-                    // the location function has to be running all the time
-                    db_lh2_process_location(&_dotbot_vars.lh2);
-                }
+
                 db_lh2_start();
             } else {
                 _dotbot_vars.lh2_update_counter = (_dotbot_vars.lh2_update_counter + 1) & DB_LH2_COUNTER_MASK;

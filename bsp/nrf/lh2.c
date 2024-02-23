@@ -43,6 +43,9 @@
 #define CHECKPOINT_TABLE_BITS                  6                                                              ///< How many bits will be used for the checkpoint table for the lfsr search
 #define CHECKPOINT_TABLE_MASK_LOW              ((1 << CHECKPOINT_TABLE_BITS) - 1)                             ///< How big will the checkpoint table for the lfsr search
 #define CHECKPOINT_TABLE_MASK_HIGH             (((1 << CHECKPOINT_TABLE_BITS) - 1) << CHECKPOINT_TABLE_BITS)  ///< Mask selecting the CHECKPOINT_TABLE_BITS least significant bits
+#define LH2_MAX_DATA_VALID_TIME                2000000                                                        //< Data older than this is considered outdate and should be erased (in microseconds)
+#define LH2_SWEEP_PERIOD                       20000                                                          ///< time, in microseconds, between two full rotations of the LH2 motor
+#define LH2_SWEEP_PERIOD_THRESHOLD             1000                                                           ///< How close a LH2 pulse must arrive relative to LH2_SWEEP_PERIOD, to be considered the same type of sweep (first sweep or second second). (in microseconds)
 
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
 #define NRF_SPIM         NRF_SPIM4_S
@@ -638,6 +641,14 @@ static const gpio_t _lh2_spi_fake_sck_gpio = {
     .pin  = 3,
 };
 
+///< Encodes in two bits which sweep slot of a particular basestation is empty, (1 means data, 0 means empty)
+typedef enum {
+    LH2_SWEEP_BOTH_SLOTS_EMPTY,   ///< Both sweep slots are empty
+    LH2_SWEEP_SECOND_SLOT_EMPTY,  ///< Only the second sweep slot is empty
+    LH2_SWEEP_FIRST_SLOT_EMPTY,   ///< Only the first sweep slot is empty
+    LH2_SWEEP_BOTH_SLOTS_FULL,    ///< Both sweep slots are filled with raw data
+} db_lh2_sweep_slot_state_t;
+
 static lh2_vars_t _lh2_vars;  ///< local data of the LH2 driver
 
 //=========================== prototypes =======================================
@@ -764,6 +775,16 @@ void _fill_hash_table(uint16_t *hash_table);
  */
 void _update_lfsr_checkpoints(uint8_t polynomial, uint32_t bits, uint32_t count);
 
+/**
+ * @brief LH2 sweeps come with an almost perfect 20ms difference.
+ *        this function uses the timestamps to figure to which sweep-slot the new LH2 data belongs to.
+ *
+ * @param[in] lh2 pointer to the lh2 instance
+ * @param[in] polynomial: index of found polynomia
+ * @param[in] bits: timestamp of the SPI capture
+ */
+uint8_t _select_sweep(db_lh2_t *lh2, uint8_t polynomial, uint32_t timestamp);
+
 //=========================== public ===========================================
 
 void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
@@ -864,14 +885,7 @@ void db_lh2_process_raw_data(db_lh2_t *lh2) {
     }
 
     // Figure in which of the two sweep slots we should save the new data.
-    int8_t sweep = 1;                                                                                              // We consider the data in the second slot to be older by default.
-    if (lh2->timestamps[0][temp_selected_polynomial >> 1] <= lh2->timestamps[1][temp_selected_polynomial >> 1]) {  // Either: They are both equal to zero. The structure is empty
-        sweep = 0;                                                                                                 //         The data in the first slot is older.
-    }                                                                                                              //         either way, use the first slot
-    else {
-        // The data in the second slot is older.
-        sweep = 1;
-    }
+    uint8_t sweep = _select_sweep(lh2, temp_selected_polynomial, temp_timestamp);
 
     // Put the newly read polynomials in the data structure (polynomial 0,1 must map to LH0, 2,3 to LH1. This can be accomplish by  integer-dividing the selected poly in 2, a shift >> accomplishes this.)
     // This structur always holds the two most recent sweeps from any lighthouse
@@ -1648,6 +1662,98 @@ void _update_lfsr_checkpoints(uint8_t polynomial, uint32_t bits, uint32_t count)
     // Save the new count in the correct place in the checkpoint array
     _lfsr_checkpoint_bits[polynomial][index]  = bits;
     _lfsr_checkpoint_count[polynomial][index] = count;
+}
+
+uint8_t _select_sweep(db_lh2_t *lh2, uint8_t polynomial, uint32_t timestamp) {
+    // TODO: check the exact, per-mode period of each polynomial instead of using a blanket 20ms
+
+    uint8_t  basestation = polynomial >> 1;  ///< each base station uses 2 polynomials. integer dividing by 2 maps the polynomial number to the basestation number.
+    uint32_t now         = db_timer_hf_now();
+    // check that current data stored is not too old.
+    for (size_t sweep = 0; sweep < 2; sweep++) {
+        if (now - lh2->timestamps[0][basestation] > LH2_MAX_DATA_VALID_TIME) {
+            // Remove data that is too old.
+            lh2->raw_data[sweep][basestation].bits_sweep          = 0;
+            lh2->raw_data[sweep][basestation].selected_polynomial = LH2_POLYNOMIAL_ERROR_INDICATOR;
+            lh2->raw_data[sweep][basestation].bit_offset          = 0;
+            lh2->timestamps[sweep][basestation]                   = 0;
+            lh2->data_ready[sweep][basestation]                   = DB_LH2_NO_NEW_DATA;
+            // I don't think it's worth it to remove the location data. It is already marked as "No new data"
+        }
+    }
+
+    ///< Encode in two bits which sweep slot of this basestation is empty, (1 means data, 0 means empty)
+    uint8_t sweep_slot_state = ((lh2->timestamps[1][basestation] != 0) << 1) | (lh2->timestamps[0][basestation] != 0);
+    // by default, select the first slot
+    uint8_t selected_sweep = 0;
+
+    switch (sweep_slot_state) {
+
+        case LH2_SWEEP_BOTH_SLOTS_EMPTY:
+        {
+            // use the first slot
+            selected_sweep = 0;
+            break;
+        }
+
+        case LH2_SWEEP_FIRST_SLOT_EMPTY:
+        {
+            // check that the filled slot is not a perfect 20ms match to the new data.
+            uint32_t diff = (timestamp - lh2->timestamps[1][basestation]) % LH2_SWEEP_PERIOD;
+            diff          = diff < LH2_SWEEP_PERIOD - diff ? diff : LH2_SWEEP_PERIOD - diff;
+
+            if (diff < LH2_SWEEP_PERIOD_THRESHOLD) {
+                // match: use filled slot
+                selected_sweep = 1;
+            } else {
+                // no match: use empty slot
+                selected_sweep = 0;
+            }
+            break;
+        }
+
+        case LH2_SWEEP_SECOND_SLOT_EMPTY:
+        {
+            // check that the filled slot is not a perfect 20ms match to the new data.
+            uint32_t diff = (timestamp - lh2->timestamps[0][basestation]) % LH2_SWEEP_PERIOD;
+            diff          = diff < LH2_SWEEP_PERIOD - diff ? diff : LH2_SWEEP_PERIOD - diff;
+
+            if (diff < LH2_SWEEP_PERIOD_THRESHOLD) {
+                // match: use filled slot
+                selected_sweep = 0;
+            } else {
+                // no match: use empty slot
+                selected_sweep = 1;
+            }
+            break;
+        }
+
+        case LH2_SWEEP_BOTH_SLOTS_FULL:
+        {
+            // How far away is this new pulse from the already stored data
+            uint32_t diff_0 = (timestamp - lh2->timestamps[0][basestation]) % LH2_SWEEP_PERIOD;
+            diff_0          = diff_0 < LH2_SWEEP_PERIOD - diff_0 ? diff_0 : LH2_SWEEP_PERIOD - diff_0;
+            uint32_t diff_1 = (timestamp - lh2->timestamps[1][basestation]) % LH2_SWEEP_PERIOD;
+            diff_1          = diff_1 < LH2_SWEEP_PERIOD - diff_1 ? diff_1 : LH2_SWEEP_PERIOD - diff_1;
+
+            // Use the one that is closest to 20ms
+            if (diff_0 <= diff_1) {
+                selected_sweep = 0;
+            } else {
+                selected_sweep = 1;
+            }
+            break;
+        }
+
+        default:
+        {
+            // By default, use he first slot
+            selected_sweep = 0;
+            break;
+        }
+    }
+
+    return selected_sweep;
 }
 
 //=========================== interrupts =======================================
