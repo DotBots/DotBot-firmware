@@ -21,20 +21,19 @@
 
 //=========================== defines =========================================
 
-#define SPIM_INTERRUPT_PRIORITY                2           ///< Interrupt priority, as high as it will go
-#define SPI_BUFFER_SIZE                        64          ///< Size of buffers used for SPI communications
-#define SPI_FAKE_SCK_PIN                       6           ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
-#define SPI_FAKE_SCK_PORT                      1           ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
-#define FUZZY_CHIP                             0xFF        ///< not sure what this is about
-#define LH2_LOCATION_ERROR_INDICATOR           0xFFFFFFFF  ///< indicate the location value is false
-#define LH2_POLYNOMIAL_ERROR_INDICATOR         0xFF        ///< indicate the polynomial index is invalid
-#define POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD 4           ///< initial threshold of polynomial error
-#define LH2_BUFFER_SIZE                        10          ///< Amount of lh2 frames the buffer can contain
-#define GPIOTE_CH_IN_ENV_HiToLo                1           ///< falling edge gpio channel
-#define GPIOTE_CH_IN_ENV_LoToHi                2           ///< rising edge gpio channel
-#define PPI_SPI_START_CHAN                     2
-#define PPI_SPI_STOP_CHAN                      3
-#define PPI_SPI_GROUP                          0
+#define SPIM_INTERRUPT_PRIORITY                2                                                              ///< Interrupt priority, as high as it will go
+#define SPI_BUFFER_SIZE                        64                                                             ///< Size of buffers used for SPI communications
+#define SPI_FAKE_SCK_PIN                       6                                                              ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
+#define SPI_FAKE_SCK_PORT                      1                                                              ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
+#define FUZZY_CHIP                             0xFF                                                           ///< not sure what this is about
+#define LH2_LOCATION_ERROR_INDICATOR           0xFFFFFFFF                                                     ///< indicate the location value is false
+#define LH2_POLYNOMIAL_ERROR_INDICATOR         0xFF                                                           ///< indicate the polynomial index is invalid
+#define POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD 4                                                              ///< initial threshold of polynomial error
+#define LH2_BUFFER_SIZE                        10                                                             ///< Amount of lh2 frames the buffer can contain
+#define GPIOTE_CH_IN_ENV_HiToLo                1                                                              ///< falling edge gpio channel
+#define GPIOTE_CH_IN_ENV_LoToHi                2                                                              ///< rising edge gpio channel
+#define PPI_SPI_START_CHAN                     2                                                              ///< PPI channel for starting the GPIOTE to SPI capture ppi
+#define PPI_SPI_GROUP                          0                                                              ///< PPI group for automatically dissabling the ppi after a successful spi capture
 #define HASH_TABLE_BITS                        11                                                             ///< How many bits will be used for the hashtable for the _end_buffers
 #define HASH_TABLE_SIZE                        (1 << HASH_TABLE_BITS)                                         ///< How big will the hashtable for the _end_buffers
 #define HASH_TABLE_MASK                        ((1 << HASH_TABLE_BITS) - 1)                                   ///< Mask selecting the HAS_TABLE_BITS least significant bits
@@ -43,9 +42,9 @@
 #define CHECKPOINT_TABLE_BITS                  6                                                              ///< How many bits will be used for the checkpoint table for the lfsr search
 #define CHECKPOINT_TABLE_MASK_LOW              ((1 << CHECKPOINT_TABLE_BITS) - 1)                             ///< How big will the checkpoint table for the lfsr search
 #define CHECKPOINT_TABLE_MASK_HIGH             (((1 << CHECKPOINT_TABLE_BITS) - 1) << CHECKPOINT_TABLE_BITS)  ///< Mask selecting the CHECKPOINT_TABLE_BITS least significant bits
-#define LH2_MAX_DATA_VALID_TIME                2000000                                                        //< Data older than this is considered outdate and should be erased (in microseconds)
-#define LH2_SWEEP_PERIOD                       20000                                                          ///< time, in microseconds, between two full rotations of the LH2 motor
-#define LH2_SWEEP_PERIOD_THRESHOLD             1000                                                           ///< How close a LH2 pulse must arrive relative to LH2_SWEEP_PERIOD, to be considered the same type of sweep (first sweep or second second). (in microseconds)
+#define LH2_MAX_DATA_VALID_TIME_US             2000000                                                        //< Data older than this is considered outdate and should be erased (in microseconds)
+#define LH2_SWEEP_PERIOD_US                    20000                                                          ///< time, in microseconds, between two full rotations of the LH2 motor
+#define LH2_SWEEP_PERIOD_THRESHOLD_US          1000                                                           ///< How close a LH2 pulse must arrive relative to LH2_SWEEP_PERIOD_US, to be considered the same type of sweep (first sweep or second second). (in microseconds)
 
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
 #define NRF_SPIM         NRF_SPIM4_S
@@ -1671,7 +1670,7 @@ uint8_t _select_sweep(db_lh2_t *lh2, uint8_t polynomial, uint32_t timestamp) {
     uint32_t now         = db_timer_hf_now();
     // check that current data stored is not too old.
     for (size_t sweep = 0; sweep < 2; sweep++) {
-        if (now - lh2->timestamps[0][basestation] > LH2_MAX_DATA_VALID_TIME) {
+        if (now - lh2->timestamps[0][basestation] > LH2_MAX_DATA_VALID_TIME_US) {
             // Remove data that is too old.
             lh2->raw_data[sweep][basestation].bits_sweep          = 0;
             lh2->raw_data[sweep][basestation].selected_polynomial = LH2_POLYNOMIAL_ERROR_INDICATOR;
@@ -1699,10 +1698,10 @@ uint8_t _select_sweep(db_lh2_t *lh2, uint8_t polynomial, uint32_t timestamp) {
         case LH2_SWEEP_FIRST_SLOT_EMPTY:
         {
             // check that the filled slot is not a perfect 20ms match to the new data.
-            uint32_t diff = (timestamp - lh2->timestamps[1][basestation]) % LH2_SWEEP_PERIOD;
-            diff          = diff < LH2_SWEEP_PERIOD - diff ? diff : LH2_SWEEP_PERIOD - diff;
+            uint32_t diff = (timestamp - lh2->timestamps[1][basestation]) % LH2_SWEEP_PERIOD_US;
+            diff          = diff < LH2_SWEEP_PERIOD_US - diff ? diff : LH2_SWEEP_PERIOD_US - diff;
 
-            if (diff < LH2_SWEEP_PERIOD_THRESHOLD) {
+            if (diff < LH2_SWEEP_PERIOD_THRESHOLD_US) {
                 // match: use filled slot
                 selected_sweep = 1;
             } else {
@@ -1715,10 +1714,10 @@ uint8_t _select_sweep(db_lh2_t *lh2, uint8_t polynomial, uint32_t timestamp) {
         case LH2_SWEEP_SECOND_SLOT_EMPTY:
         {
             // check that the filled slot is not a perfect 20ms match to the new data.
-            uint32_t diff = (timestamp - lh2->timestamps[0][basestation]) % LH2_SWEEP_PERIOD;
-            diff          = diff < LH2_SWEEP_PERIOD - diff ? diff : LH2_SWEEP_PERIOD - diff;
+            uint32_t diff = (timestamp - lh2->timestamps[0][basestation]) % LH2_SWEEP_PERIOD_US;
+            diff          = diff < LH2_SWEEP_PERIOD_US - diff ? diff : LH2_SWEEP_PERIOD_US - diff;
 
-            if (diff < LH2_SWEEP_PERIOD_THRESHOLD) {
+            if (diff < LH2_SWEEP_PERIOD_THRESHOLD_US) {
                 // match: use filled slot
                 selected_sweep = 0;
             } else {
@@ -1731,10 +1730,10 @@ uint8_t _select_sweep(db_lh2_t *lh2, uint8_t polynomial, uint32_t timestamp) {
         case LH2_SWEEP_BOTH_SLOTS_FULL:
         {
             // How far away is this new pulse from the already stored data
-            uint32_t diff_0 = (timestamp - lh2->timestamps[0][basestation]) % LH2_SWEEP_PERIOD;
-            diff_0          = diff_0 < LH2_SWEEP_PERIOD - diff_0 ? diff_0 : LH2_SWEEP_PERIOD - diff_0;
-            uint32_t diff_1 = (timestamp - lh2->timestamps[1][basestation]) % LH2_SWEEP_PERIOD;
-            diff_1          = diff_1 < LH2_SWEEP_PERIOD - diff_1 ? diff_1 : LH2_SWEEP_PERIOD - diff_1;
+            uint32_t diff_0 = (timestamp - lh2->timestamps[0][basestation]) % LH2_SWEEP_PERIOD_US;
+            diff_0          = diff_0 < LH2_SWEEP_PERIOD_US - diff_0 ? diff_0 : LH2_SWEEP_PERIOD_US - diff_0;
+            uint32_t diff_1 = (timestamp - lh2->timestamps[1][basestation]) % LH2_SWEEP_PERIOD_US;
+            diff_1          = diff_1 < LH2_SWEEP_PERIOD_US - diff_1 ? diff_1 : LH2_SWEEP_PERIOD_US - diff_1;
 
             // Use the one that is closest to 20ms
             if (diff_0 <= diff_1) {
