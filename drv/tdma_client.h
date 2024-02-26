@@ -23,14 +23,14 @@
 
 ///< TDMA internal registrarion state
 typedef enum {
-    DB_TDMA_UNREGISTERED,       ///< the DotBot is not registered with the gateway
-    DB_TDMA_REGISTERED,         ///< the DotBot registered with the gateway
+    DB_TDMA_CLIENT_UNREGISTERED,       ///< the DotBot is not registered with the gateway
+    DB_TDMA_CLIENT_REGISTERED,         ///< the DotBot registered with the gateway
 } db_tdma_registration_state_t;
 
 ///< TDMA internal RX state
 typedef enum {
-    DB_TDMA_RX_WAIT,       ///< the DotBot receiver is OFF
-    DB_TDMA_RX_ON,         ///< the DotBot is receiving radio packets
+    DB_TDMA_CLIENT_RX_WAIT,       ///< the DotBot receiver is OFF
+    DB_TDMA_CLIENT_RX_ON,         ///< the DotBot is receiving radio packets
 } db_tdma_rx_state_t;
 
 

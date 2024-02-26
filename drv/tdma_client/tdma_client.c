@@ -24,26 +24,26 @@
 //=========================== defines ==========================================
 
 #if defined(BOARD_SAILBOT_V1)
-#define TDMA_RADIO_APPLICATION SailBot
+#define TDMA_CLIENT_RADIO_APPLICATION SailBot
 #else
-#define TDMA_RADIO_APPLICATION DotBot
+#define TDMA_CLIENT_RADIO_APPLICATION DotBot
 #endif
 
-#define TDMA_DEFAULT_FRAME_DURATION 500000                       ///< Default duration of the tdma frame, in microseconds.
-#define TDMA_DEFAULT_RX_START       0                            ///< start of the , in microseconds.
-#define TDMA_DEFAULT_RX_DURATION    TDMA_DEFAULT_FRAME_DURATION  ///< Default duration of the tdma frame, in microseconds.
-#define TDMA_DEFAULT_TX_START       10000                        ///< Default duration of the tdma frame, in microseconds.
-#define TDMA_DEFAULT_TX_DURATION    5000                         ///< Default duration of the tdma frame, in microseconds.
-#define TDMA_HF_TIMER_CC_TX         TIMER_HF_CB_CHANS            ///< Which timer channel will be used for the TX state machine.
-#define TDMA_HF_TIMER_CC_RX         TIMER_HF_CB_CHANS - 1        ///< Which timer channel will be used for the RX state machine.
-#define TDMA_MAX_DELAY_WITHOUT_TX   500000                       ///< Max amount of time that can pass without TXing anything
-#define TDMA_RING_BUFFER_SIZE       10                           ///< Amount of TX packets the buffer can contain
+#define TDMA_CLIENT_DEFAULT_FRAME_DURATION 500000                       ///< Default duration of the tdma frame, in microseconds.
+#define TDMA_CLIENT_DEFAULT_RX_START       0                            ///< start of the , in microseconds.
+#define TDMA_CLIENT_DEFAULT_RX_DURATION    TDMA_CLIENT_DEFAULT_FRAME_DURATION  ///< Default duration of the tdma frame, in microseconds.
+#define TDMA_CLIENT_DEFAULT_TX_START       10000                        ///< Default duration of the tdma frame, in microseconds.
+#define TDMA_CLIENT_DEFAULT_TX_DURATION    5000                         ///< Default duration of the tdma frame, in microseconds.
+#define TDMA_CLIENT_HF_TIMER_CC_TX         TIMER_HF_CB_CHANS            ///< Which timer channel will be used for the TX state machine.
+#define TDMA_CLIENT_HF_TIMER_CC_RX         TIMER_HF_CB_CHANS - 1        ///< Which timer channel will be used for the RX state machine.
+#define TDMA_CLIENT_MAX_DELAY_WITHOUT_TX   500000                       ///< Max amount of time that can pass without TXing anything
+#define TDMA_CLIENT_RING_BUFFER_SIZE       10                           ///< Amount of TX packets the buffer can contain
 #define RADIO_MESSAGE_MAX_SIZE      255                          ///< Size of buffers used for SPI communications
 #define RADIO_TX_RAMP_UP_TIME       140                          ///< time it takes the radio to start a transmission
 
 typedef struct {
-    uint8_t  buffer[TDMA_RING_BUFFER_SIZE][PAYLOAD_MAX_LENGTH];  ///< arrays of radio messages waiting to be sent
-    uint32_t packet_length[TDMA_RING_BUFFER_SIZE];               ///< arrays of the lenght of the packets in the buffer
+    uint8_t  buffer[TDMA_CLIENT_RING_BUFFER_SIZE][PAYLOAD_MAX_LENGTH];  ///< arrays of radio messages waiting to be sent
+    uint32_t packet_length[TDMA_CLIENT_RING_BUFFER_SIZE];               ///< arrays of the lenght of the packets in the buffer
     uint8_t  writeIndex;                                         ///< Index for next write
     uint8_t  readIndex;                                          ///< Index for next read
     uint8_t  count;                                              ///< Number of arrays in buffer
@@ -157,20 +157,20 @@ void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mo
     _tdma_client_vars.byte_onair_time = ble_mode_to_byte_time[radio_mode];
 
     // Set the default time table
-    _tdma_client_vars.tdma_client_table.frame       = TDMA_DEFAULT_FRAME_DURATION;
-    _tdma_client_vars.tdma_client_table.rx_start    = TDMA_DEFAULT_RX_START;
-    _tdma_client_vars.tdma_client_table.rx_duration = TDMA_DEFAULT_RX_DURATION;
-    _tdma_client_vars.tdma_client_table.tx_start    = TDMA_DEFAULT_TX_START;
-    _tdma_client_vars.tdma_client_table.tx_duration = TDMA_DEFAULT_TX_DURATION;
+    _tdma_client_vars.tdma_client_table.frame       = TDMA_CLIENT_DEFAULT_FRAME_DURATION;
+    _tdma_client_vars.tdma_client_table.rx_start    = TDMA_CLIENT_DEFAULT_RX_START;
+    _tdma_client_vars.tdma_client_table.rx_duration = TDMA_CLIENT_DEFAULT_RX_DURATION;
+    _tdma_client_vars.tdma_client_table.tx_start    = TDMA_CLIENT_DEFAULT_TX_START;
+    _tdma_client_vars.tdma_client_table.tx_duration = TDMA_CLIENT_DEFAULT_TX_DURATION;
 
     // Set the starting states
-    _tdma_client_vars.registration_flag = DB_TDMA_UNREGISTERED;
-    _tdma_client_vars.rx_flag           = DB_TDMA_RX_ON;
+    _tdma_client_vars.registration_flag = DB_TDMA_CLIENT_UNREGISTERED;
+    _tdma_client_vars.rx_flag           = DB_TDMA_CLIENT_RX_ON;
 
     // Configure the Timers
     _tdma_client_vars.last_tx_packet_timestamp = db_timer_hf_now();                                  // start the counter saving when was the last packet sent.
-    db_timer_hf_set_oneshot_us(TDMA_HF_TIMER_CC_TX, TDMA_DEFAULT_TX_START, &timer_tx_interrupt);     // start advertising behaviour
-    db_timer_hf_set_oneshot_us(TDMA_HF_TIMER_CC_RX, TDMA_DEFAULT_RX_DURATION, &timer_rx_interrupt);  // check RX timer once per frame.
+    db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_TX, TDMA_CLIENT_DEFAULT_TX_START, &timer_tx_interrupt);     // start advertising behaviour
+    db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_RX, TDMA_CLIENT_DEFAULT_RX_DURATION, &timer_rx_interrupt);  // check RX timer once per frame.
 }
 
 void db_tdma_client_update_table(tdma_client_table_t *table) {
@@ -212,13 +212,13 @@ void _add_to_tdma_client_ring_buffer(tdma_client_ring_buffer_t *rb, uint8_t data
 
     memcpy(rb->buffer[rb->writeIndex], data, PAYLOAD_MAX_LENGTH);
     rb->packet_length[rb->writeIndex] = packet_length;
-    rb->writeIndex                    = (rb->writeIndex + 1) % TDMA_RING_BUFFER_SIZE;
+    rb->writeIndex                    = (rb->writeIndex + 1) % TDMA_CLIENT_RING_BUFFER_SIZE;
 
-    if (rb->count < TDMA_RING_BUFFER_SIZE) {
+    if (rb->count < TDMA_CLIENT_RING_BUFFER_SIZE) {
         rb->count++;
     } else {
         // Overwrite oldest data, adjust readIndex
-        rb->readIndex = (rb->readIndex + 1) % TDMA_RING_BUFFER_SIZE;
+        rb->readIndex = (rb->readIndex + 1) % TDMA_CLIENT_RING_BUFFER_SIZE;
     }
 }
 
@@ -230,7 +230,7 @@ bool _get_from_tdma_client_ring_buffer(tdma_client_ring_buffer_t *rb, uint8_t da
 
     memcpy(data, rb->buffer[rb->readIndex], PAYLOAD_MAX_LENGTH);
     *packet_length = rb->packet_length[rb->readIndex];
-    rb->readIndex  = (rb->readIndex + 1) % TDMA_RING_BUFFER_SIZE;
+    rb->readIndex  = (rb->readIndex + 1) % TDMA_CLIENT_RING_BUFFER_SIZE;
     rb->count--;
 
     return true;
@@ -272,14 +272,14 @@ bool _send_queued_messages(uint16_t max_tx_duration_us) {
     }
 
     // renable the Radio RX
-    if (_tdma_client_vars.rx_flag == DB_TDMA_RX_ON) {
+    if (_tdma_client_vars.rx_flag == DB_TDMA_CLIENT_RX_ON) {
         db_radio_rx();
     }
 }
 
 void _send_keep_alive_message(void) {
 
-    db_protocol_header_to_buffer(_tdma_client_vars.radio_buffer, DB_BROADCAST_ADDRESS, TDMA_RADIO_APPLICATION, DB_PROTOCOL_TDMA_KEEP_ALIVE);
+    db_protocol_header_to_buffer(_tdma_client_vars.radio_buffer, DB_BROADCAST_ADDRESS, TDMA_CLIENT_RADIO_APPLICATION, DB_PROTOCOL_TDMA_KEEP_ALIVE);
     size_t length = sizeof(protocol_header_t);
     db_radio_disable();
     db_radio_tx(_tdma_client_vars.radio_buffer, length);
@@ -287,7 +287,7 @@ void _send_keep_alive_message(void) {
 
 void _send_tdma_register_message(void) {
 
-    db_protocol_header_to_buffer(_tdma_client_vars.radio_buffer, DB_BROADCAST_ADDRESS, TDMA_RADIO_APPLICATION, DB_PROTOCOL_ADVERTISEMENT);
+    db_protocol_header_to_buffer(_tdma_client_vars.radio_buffer, DB_BROADCAST_ADDRESS, TDMA_CLIENT_RADIO_APPLICATION, DB_PROTOCOL_ADVERTISEMENT);
     size_t length = sizeof(protocol_header_t);
     db_radio_disable();
     db_radio_tx(_tdma_client_vars.radio_buffer, length);
@@ -343,16 +343,16 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
             db_tdma_client_update_table(tdma_client_table);
 
             // Set the DotBot as registered
-            if (_tdma_client_vars.registration_flag == DB_TDMA_UNREGISTERED) {
-                _tdma_client_vars.registration_flag = DB_TDMA_REGISTERED;
+            if (_tdma_client_vars.registration_flag == DB_TDMA_CLIENT_UNREGISTERED) {
+                _tdma_client_vars.registration_flag = DB_TDMA_CLIENT_REGISTERED;
             }
 
             // Update the state machine
-            _tdma_client_vars.rx_flag = DB_TDMA_RX_WAIT;
+            _tdma_client_vars.rx_flag = DB_TDMA_CLIENT_RX_WAIT;
 
             // Update the timer interrupts
-            db_timer_hf_set_oneshot_us(TDMA_HF_TIMER_CC_TX, next_period_start + _tdma_client_vars.tdma_client_table.tx_start, &timer_tx_interrupt);
-            db_timer_hf_set_oneshot_us(TDMA_HF_TIMER_CC_RX, next_period_start + _tdma_client_vars.tdma_client_table.rx_start, &timer_rx_interrupt);
+            db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_TX, next_period_start + _tdma_client_vars.tdma_client_table.tx_start, &timer_tx_interrupt);
+            db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_RX, next_period_start + _tdma_client_vars.tdma_client_table.rx_start, &timer_rx_interrupt);
 
         } break;
 
@@ -360,17 +360,17 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
         {
             // There is no payload for this packet
             // Only resync the timer if the DotBot has already been registered.
-            if (_tdma_client_vars.registration_flag == DB_TDMA_REGISTERED) {
+            if (_tdma_client_vars.registration_flag == DB_TDMA_CLIENT_REGISTERED) {
 
                 // update the state machine
-                _tdma_client_vars.rx_flag = DB_TDMA_RX_WAIT;
+                _tdma_client_vars.rx_flag = DB_TDMA_CLIENT_RX_WAIT;
 
                 // Enable radio RX
                 db_radio_rx();
 
                 // Update the timer interrupts
-                db_timer_hf_set_oneshot_us(TDMA_HF_TIMER_CC_TX, _tdma_client_vars.tdma_client_table.tx_start, &timer_tx_interrupt);
-                db_timer_hf_set_oneshot_us(TDMA_HF_TIMER_CC_RX, _tdma_client_vars.tdma_client_table.rx_start, &timer_rx_interrupt);
+                db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_TX, _tdma_client_vars.tdma_client_table.tx_start, &timer_tx_interrupt);
+                db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_RX, _tdma_client_vars.tdma_client_table.rx_start, &timer_rx_interrupt);
             }
         } break;
 
@@ -393,17 +393,17 @@ void timer_tx_interrupt(void) {
     bool packet_sent = false;
 
     // Check the state of the device.
-    if (_tdma_client_vars.registration_flag == DB_TDMA_REGISTERED) {
+    if (_tdma_client_vars.registration_flag == DB_TDMA_CLIENT_REGISTERED) {
 
         // Prepare right now the next timer interruption
-        db_timer_hf_set_oneshot_us(TDMA_HF_TIMER_CC_TX, _tdma_client_vars.tdma_client_table.frame, &timer_tx_interrupt);
+        db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_TX, _tdma_client_vars.tdma_client_table.frame, &timer_tx_interrupt);
 
         // send messages if available
         packet_sent = _send_queued_messages(_tdma_client_vars.tdma_client_table.tx_duration);
 
         // if no packet has been sent for a while, send a keep_alive ping to maintain the connection.
         if (!packet_sent) {
-            if (db_timer_hf_now() - _tdma_client_vars.last_tx_packet_timestamp > TDMA_MAX_DELAY_WITHOUT_TX) {
+            if (db_timer_hf_now() - _tdma_client_vars.last_tx_packet_timestamp > TDMA_CLIENT_MAX_DELAY_WITHOUT_TX) {
 
                 _send_keep_alive_message();
             }
@@ -412,7 +412,7 @@ void timer_tx_interrupt(void) {
 
         // Prepare right now the next timer interruption.
         uint32_t delay_time = _get_random_delay_us();
-        db_timer_hf_set_oneshot_us(TDMA_HF_TIMER_CC_TX, delay_time, &timer_tx_interrupt);
+        db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_TX, delay_time, &timer_tx_interrupt);
 
         // Send the keep alive message
         _send_tdma_register_message();
@@ -434,15 +434,15 @@ void timer_rx_interrupt(void) {
 
     } else {
         // Check if we just came from an idle period or an rx period
-        if (_tdma_client_vars.rx_flag == DB_TDMA_RX_WAIT) {
+        if (_tdma_client_vars.rx_flag == DB_TDMA_CLIENT_RX_WAIT) {
             // Set the next interruption
-            db_timer_hf_set_oneshot_us(TDMA_HF_TIMER_CC_RX, _tdma_client_vars.tdma_client_table.rx_duration, &timer_rx_interrupt);
+            db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_RX, _tdma_client_vars.tdma_client_table.rx_duration, &timer_rx_interrupt);
             // turn the radio ON
             db_radio_rx();
-        } else if (_tdma_client_vars.rx_flag == DB_TDMA_RX_ON) {
+        } else if (_tdma_client_vars.rx_flag == DB_TDMA_CLIENT_RX_ON) {
             // Set the next interruption
             uint32_t delay = _tdma_client_vars.tdma_client_table.frame - _tdma_client_vars.tdma_client_table.rx_duration;
-            db_timer_hf_set_oneshot_us(TDMA_HF_TIMER_CC_RX, delay, &timer_rx_interrupt);
+            db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_RX, delay, &timer_rx_interrupt);
             // turn the radio OFF
             db_radio_disable();
         }
