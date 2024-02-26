@@ -68,14 +68,14 @@ typedef struct {
 void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e);
 
 /**
- * @brief Process raw data coming from the lighthouse
+ * @brief Process raw data coming from the lighthouse, but skip the polynomial count calculation.
  *
  * @param[in]   lh2 pointer to the lh2 instance
  */
 void db_lh2_process_raw_data(db_lh2_t *lh2);
 
 /**
- * @brief Compute the location based on available raw data
+ * @brief Compute the location based on raw data coming from the lighthouse
  *
  * @param[in]   lh2 pointer to the lh2 instance
  */

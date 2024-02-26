@@ -67,12 +67,8 @@ typedef struct {
 } lh2_ring_buffer_t;
 
 typedef struct {
-    uint8_t           transfer_counter;                ///< counter of spi transfer in the current cycle
     uint8_t           spi_rx_buffer[SPI_BUFFER_SIZE];  ///< buffer where data coming from SPI are stored
-    bool              buffers_ready;                   ///< specify when data buffers are ready to be process
     lh2_ring_buffer_t data;                            ///< array containing demodulation data of each locations
-    uint8_t           lha_packet_counter;              ///< number of packet received from LHA
-    uint8_t           lhb_packet_counter;              ///< number of packet received from LHB
 } lh2_vars_t;
 
 //=========================== variables ========================================
@@ -798,10 +794,6 @@ void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
 
     // Setup the LH2 local variables
     memset(_lh2_vars.spi_rx_buffer, 0, SPI_BUFFER_SIZE);
-    _lh2_vars.transfer_counter   = 0;
-    _lh2_vars.lha_packet_counter = 0;
-    _lh2_vars.lhb_packet_counter = 0;
-    _lh2_vars.buffers_ready      = false;
     // initialize the spi ring buffer
     memset(&_lh2_vars.data, 0, sizeof(lh2_ring_buffer_t));
 
@@ -855,7 +847,7 @@ void db_lh2_reset(db_lh2_t *lh2) {
 }
 
 void db_lh2_process_raw_data(db_lh2_t *lh2) {
-    if (_lh2_vars.data.count <= 0) {
+    if (_lh2_vars.data.count == 0) {
         return;
     }
 
@@ -896,36 +888,76 @@ void db_lh2_process_raw_data(db_lh2_t *lh2) {
 }
 
 void db_lh2_process_location(db_lh2_t *lh2) {
-
-    // compute LFSR locations and detect invalid packets
-    for (uint8_t basestation = 0; basestation < LH2_BASESTATION_COUNT; basestation++) {
-        for (uint8_t sweep = 0; sweep < 2; sweep++) {
-
-            // Check if this particular position has data point ready for sending
-            if (lh2->data_ready[sweep][basestation] == DB_LH2_RAW_DATA_AVAILABLE) {
-
-                // Sanity check, make sure you don't start the LFSR search with a bit-sequence full of zeros.
-                if ((lh2->raw_data[sweep][basestation].bits_sweep >> (47 - lh2->raw_data[sweep][basestation].bit_offset)) == 0x000000) {
-                    // Mark the data as wrong and keep going
-                    lh2->data_ready[sweep][basestation] = DB_LH2_NO_NEW_DATA;
-                    continue;
-                }
-
-                // Copy the selected polynomial
-                lh2->locations[sweep][basestation].selected_polynomial = lh2->raw_data[sweep][basestation].selected_polynomial;
-                // Copmute and save the lsfr location.
-                uint32_t lfsr_loc_temp = _reverse_count_p(
-                                             lh2->raw_data[sweep][basestation].selected_polynomial,
-                                             lh2->raw_data[sweep][basestation].bits_sweep >> (47 - lh2->raw_data[sweep][basestation].bit_offset)) -
-                                         lh2->raw_data[sweep][basestation].bit_offset;
-
-                lh2->locations[sweep][basestation].lfsr_location = lfsr_loc_temp;
-
-                // Mark the data point as processed
-                lh2->data_ready[sweep][basestation] = DB_LH2_PROCESSED_DATA_AVAILABLE;
-            }
-        }
+    if (_lh2_vars.data.count == 0) {
+        return;
     }
+
+    //*********************************************************************************//
+    //                              Prepare Raw Data                                   //
+    //*********************************************************************************//
+
+    // Get value before it's overwritten by the ringbuffer.
+    uint8_t temp_spi_bits[SPI_BUFFER_SIZE * 2] = { 0 };  // The temp buffer has to be 128 long because _demodulate_light() expects it to be so
+                                                         // Making it smaller causes a hardfault
+                                                         // I don't know why, the SPI buffer is clearly 64bytes long.
+                                                         // should ask fil about this
+
+    // stop the interruptions while you're reading the data.
+    uint32_t temp_timestamp = 0;  // default timestamp
+    if (!_get_from_spi_ring_buffer(&_lh2_vars.data, temp_spi_bits, &temp_timestamp)) {
+        return;
+    }
+    // perform the demodulation + poly search on the received packets
+    // convert the SPI reading to bits via zero-crossing counter demodulation and differential/biphasic manchester decoding
+    uint64_t temp_bits_sweep = _demodulate_light(temp_spi_bits);
+
+    // figure out which polynomial each one of the two samples come from.
+    int8_t  temp_bit_offset          = 0;  // default offset
+    uint8_t temp_selected_polynomial = _determine_polynomial(temp_bits_sweep, &temp_bit_offset);
+
+    // If there was an error with the polynomial, leave without updating anything
+    if (temp_selected_polynomial == LH2_POLYNOMIAL_ERROR_INDICATOR) {
+        return;
+    }
+
+    // Figure in which of the two sweep slots we should save the new data.
+    uint8_t sweep = _select_sweep(lh2, temp_selected_polynomial, temp_timestamp);
+
+    // Put the newly read polynomials in the data structure (polynomial 0,1 must map to LH0, 2,3 to LH1. This can be accomplish by  integer-dividing the selected poly in 2, a shift >> accomplishes this.)
+    // This structur always holds the two most recent sweeps from any lighthouse
+    uint8_t basestation = temp_selected_polynomial >> 1;
+
+    //*********************************************************************************//
+    //                           Compute Polynomial Count                              //
+    //*********************************************************************************//
+
+    // Sanity check, make sure you don't start the LFSR search with a bit-sequence full of zeros.
+    if ((temp_bits_sweep >> (47 - temp_bit_offset)) == 0x000000) {
+        // Mark the data as wrong and keep going
+        lh2->data_ready[sweep][basestation] = DB_LH2_NO_NEW_DATA;
+        return;
+    }
+
+    // Compute and save the lsfr location.
+    uint32_t lfsr_loc_temp = _reverse_count_p(
+                                 temp_selected_polynomial,
+                                 temp_bits_sweep >> (47 - temp_bit_offset)) -
+                             temp_bit_offset;
+
+    //*********************************************************************************//
+    //                                 Store results                                   //
+    //*********************************************************************************//
+
+    // Save raw data information
+    lh2->raw_data[sweep][basestation].bit_offset          = temp_bit_offset;
+    lh2->raw_data[sweep][basestation].selected_polynomial = temp_selected_polynomial;
+    lh2->raw_data[sweep][basestation].bits_sweep          = temp_bits_sweep;
+    lh2->timestamps[sweep][basestation]                   = temp_timestamp;
+    // Save processed location information
+    lh2->locations[sweep][basestation].lfsr_location       = lfsr_loc_temp;
+    lh2->locations[sweep][basestation].selected_polynomial = temp_selected_polynomial;
+    // Mark the data point as processed
+    lh2->data_ready[sweep][basestation] = DB_LH2_PROCESSED_DATA_AVAILABLE;
 }
 
 //=========================== private ==========================================

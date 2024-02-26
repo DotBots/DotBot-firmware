@@ -20,8 +20,6 @@
 
 //=========================== defines ==========================================
 
-#define DB2_LH2_FULL_COMPUTATION 1
-
 //=========================== variables ========================================
 
 static db_lh2_t _lh2;
@@ -42,12 +40,9 @@ int main(void) {
     while (1) {
         // wait until something happens e.g. an SPI interrupt
         __WFE();
-        db_lh2_process_raw_data(&_lh2);
 
-        if (DB2_LH2_FULL_COMPUTATION) {
-            // the location function has to be running all the time
-            db_lh2_process_location(&_lh2);
-        }
+        // the location function has to be running all the time
+        db_lh2_process_location(&_lh2);
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
