@@ -26,12 +26,17 @@
 
 //=========================== variables ========================================
 
-// static const uint8_t _data_to_send[] = {0x41, 0x42, 0x43, 0x44, 0x45};
-
+#if defined(BOARD_NRF52833DK)
+static const gpio_t _sck_pin  = { .port = 0, .pin = 23 };
+static const gpio_t _miso_pin = { .port = 0, .pin = 22 };
+static const gpio_t _mosi_pin = { .port = 0, .pin = 21 };
+static const gpio_t _cs_pin   = { .port = 0, .pin = 20 };
+#else
 static const gpio_t _sck_pin  = { .port = 1, .pin = 15 };
 static const gpio_t _miso_pin = { .port = 1, .pin = 14 };
 static const gpio_t _mosi_pin = { .port = 1, .pin = 13 };
 static const gpio_t _cs_pin   = { .port = 1, .pin = 12 };
+#endif
 
 const db_spim_conf_t _spim_conf = {
     .mosi = &_mosi_pin,
