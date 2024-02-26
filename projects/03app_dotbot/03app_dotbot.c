@@ -35,7 +35,6 @@
 #define DB_ADVERTIZEMENT_DELAY_MS (500U)   ///< 500ms delay between each advertizement packet sending
 #define DB_TIMEOUT_CHECK_DELAY_MS (200U)   ///< 200ms delay between each timeout delay check
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
-#define DB_LH2_FULL_COMPUTATION   (false)  ///< Wether the full LH2 computation is perform on board
 #define DB_LH2_COUNTER_MASK       (0x07)   ///< Maximum number of lh2 iterations without value received
 #define DB_BUFFER_MAX_BYTES       (255U)   ///< Max bytes in UART receive buffer
 #define DB_DIRECTION_THRESHOLD    (0.01)   ///< Threshold to update the direction
@@ -200,34 +199,36 @@ int main(void) {
     db_timer_set_periodic_ms(1, DB_ADVERTIZEMENT_DELAY_MS, &_advertise);
     db_timer_set_periodic_ms(2, DB_LH2_UPDATE_DELAY_MS, &_update_lh2);
     db_lh2_init(&_dotbot_vars.lh2, &db_lh2_d, &db_lh2_e);
-    db_lh2_start(&_dotbot_vars.lh2);
+    db_lh2_start();
 
     while (1) {
         __WFE();
 
         bool need_advertize = false;
+        // Process available lighthouse data
+        db_lh2_process_location(&_dotbot_vars.lh2);
+
         if (_dotbot_vars.update_lh2) {
-            db_lh2_process_raw_data(&_dotbot_vars.lh2);
-            if (_dotbot_vars.lh2.state == DB_LH2_RAW_DATA_READY) {
-                _dotbot_vars.lh2_update_counter = 0;
-                db_lh2_stop(&_dotbot_vars.lh2);
+            // Check if data is ready to send
+            if (_dotbot_vars.lh2.data_ready[0][0] == DB_LH2_PROCESSED_DATA_AVAILABLE && _dotbot_vars.lh2.data_ready[1][0] == DB_LH2_PROCESSED_DATA_AVAILABLE) {
+
+                db_lh2_stop();
+                // Prepare the radio buffer
                 db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_DOTBOT_DATA);
                 memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t), &_dotbot_vars.direction, sizeof(int16_t));
-                memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(int16_t), _dotbot_vars.lh2.raw_data, sizeof(db_lh2_raw_data_t) * LH2_LOCATIONS_COUNT);
-                size_t length = sizeof(protocol_header_t) + sizeof(int16_t) + sizeof(db_lh2_raw_data_t) * LH2_LOCATIONS_COUNT;
+                // Add the LH2 sweep
+                for (uint8_t lh2_sweep_index = 0; lh2_sweep_index < LH2_SWEEP_COUNT; lh2_sweep_index++) {
+                    memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(int16_t) + lh2_sweep_index * sizeof(db_lh2_raw_data_t), &_dotbot_vars.lh2.raw_data[lh2_sweep_index][0], sizeof(db_lh2_raw_data_t));
+                    // Mark the data as already sent
+                    _dotbot_vars.lh2.data_ready[lh2_sweep_index][0] = DB_LH2_NO_NEW_DATA;
+                }
+                size_t length = sizeof(protocol_header_t) + sizeof(int16_t) + sizeof(db_lh2_raw_data_t) * LH2_SWEEP_COUNT;
+
+                // Send the radio packet
                 db_radio_disable();
                 db_radio_tx(_dotbot_vars.radio_buffer, length);
-                if (DB_LH2_FULL_COMPUTATION) {
-                    // the location function has to be running all the time
-                    db_lh2_process_location(&_dotbot_vars.lh2);
 
-                    // Reset the LH2 driver if a packet is ready. At this point, locations
-                    // can be read from lh2.results array
-                    if (_dotbot_vars.lh2.state == DB_LH2_LOCATION_READY) {
-                        __NOP();  // Add this no-op to allow setting a breakpoint here
-                    }
-                }
-                db_lh2_start(&_dotbot_vars.lh2);
+                db_lh2_start();
             } else {
                 _dotbot_vars.lh2_update_counter = (_dotbot_vars.lh2_update_counter + 1) & DB_LH2_COUNTER_MASK;
                 need_advertize                  = (_dotbot_vars.lh2_update_counter == DB_LH2_COUNTER_MASK);
