@@ -23,6 +23,8 @@
 #include "conf/freebot_v1_0_config.h"
 #elif defined(BOARD_SAILBOT_V1)
 #include "conf/sailbot_v1_config.h"
+#elif defined(BOARD_LH2_MINI_MOTE)
+#include "conf/lh2_mini_mote_config.h"
 #elif defined(BOARD_NRF52840DK)
 #include "conf/nrf52840dk_config.h"
 #elif defined(BOARD_NRF52833DK)

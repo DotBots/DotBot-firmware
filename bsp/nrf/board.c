@@ -34,3 +34,5 @@ void db_board_init(void) {
     db_gpio_set(&_reg_pin);
 #endif
 }
+
+// TODO: add a 3v minimote UICR code

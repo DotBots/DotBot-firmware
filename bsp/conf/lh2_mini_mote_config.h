@@ -13,12 +13,28 @@
  * @}
  */
 
-/**1
+/**
  * @name    Debug pins definitions
  * @{
  */
 #define DB_DEBUG1_PORT 0
-#define DB_DEBUG1_PIN  29
+#define DB_DEBUG1_PIN  28
+/** @} */
+
+/**
+ * @name    LEDs pins definitions
+ * @{
+ */
+#define DB_LED1_PORT DB_DEBUG1_PORT
+#define DB_LED1_PIN  DB_DEBUG1_PIN
+/** @} */
+
+/**
+ * @name    Buttons pins definitions
+ * @{
+ */
+#define DB_BTN1_PORT 0
+#define DB_BTN1_PIN  29
 /** @} */
 
 /**
@@ -42,6 +58,16 @@
 /** @} */
 
 /**
+ * @name    UART pins definitions
+ * @{
+ */
+#define DB_UART_RX_PORT 0
+#define DB_UART_RX_PIN  29
+#define DB_UART_TX_PORT DB_DEBUG1_PORT
+#define DB_UART_TX_PIN  DB_DEBUG1_PIN
+/** @} */
+
+/**
  * @name    Regulator pin definitions
  * @{
  */
@@ -57,6 +83,20 @@
 #define DB_ISM330_INT1_PIN  11
 #define DB_ISM330_INT2_PORT 1
 #define DB_ISM330_INT2_PIN  9
+/** @} */
+
+/**
+ * @name    Motor driver pins definitions
+ * @{
+ */
+#define DB_MOTOR_AIN1_PORT 0
+#define DB_MOTOR_AIN1_PIN  2
+#define DB_MOTOR_AIN2_PORT 0
+#define DB_MOTOR_AIN2_PIN  28
+#define DB_MOTOR_BIN1_PORT 0
+#define DB_MOTOR_BIN1_PIN  3
+#define DB_MOTOR_BIN2_PORT 1
+#define DB_MOTOR_BIN2_PIN  6 // not connected pin. just used to get the code to compile. 
 /** @} */
 
 /**
