@@ -83,13 +83,4 @@ void db_spim_send(const void *bytes, size_t len);
  */
 void db_spim_receive(const void *bytes, size_t len);
 
-/**
- * @brief Transfer bytes over SPI
- *
- * @param[out]  out     Pointer to the output byte array
- * @param[in]   in      Pointer to the in byte array
- * @param[in]   len     Length of the bytes to transfer
- */
-void db_spim_transfer(const void *out, void *in, size_t len);
-
 #endif

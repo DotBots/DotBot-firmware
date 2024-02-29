@@ -137,7 +137,7 @@
   <project Name="00bsp_spim">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_gpio(bsp)"
+      project_dependencies="00bsp_gpio(bsp);00bsp_clock(bsp)"
       project_directory="."
       project_type="Library" />
     <file file_name="nrf/spim.c" />

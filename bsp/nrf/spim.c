@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "clock.h"
 #include "gpio.h"
 #include "spim.h"
 
@@ -34,11 +35,9 @@
 #define DB_SPIM_IRQ_HANDLER (SPIM0_SPIS0_TWIM0_TWIS0_SPI0_TWI0_IRQHandler)  ///< SPIM IRQ handler function
 #define DB_SPIM_IRQ         (SPIM0_SPIS0_TWIM0_TWIS0_SPI0_TWI0_IRQn)        ///< SPIM IRQ
 #endif
-#define DB_SPIM_BUFFER_SIZE (256U)  ///< TX max buffer size
 
 typedef struct {
-    uint8_t tx_buffer[DB_SPIM_BUFFER_SIZE];  ///< internal buffer used to send bytes on SPI bus
-    bool    running;                         ///< whether bytes are being sent/received
+    bool running;  ///< whether bytes are being sent/received
 } spim_vars_t;
 
 //=========================== variables ========================================
@@ -50,10 +49,16 @@ static spim_vars_t _spim_vars;
 void db_spim_init(const db_spim_conf_t *conf) {
     _spim_vars.running = false;
 
+    db_hfclk_init();
+
     // configure SPIM pins
     db_gpio_init(conf->mosi, DB_GPIO_OUT);
     db_gpio_init(conf->sck, DB_GPIO_OUT);
-    db_gpio_init(conf->miso, DB_GPIO_IN_PD);
+    db_gpio_init(conf->miso, DB_GPIO_IN);
+
+    nrf_port[conf->sck->port]->PIN_CNF[conf->sck->pin] |= GPIO_PIN_CNF_DRIVE_H0H1 << GPIO_PIN_CNF_DRIVE_Pos;
+    nrf_port[conf->mosi->port]->PIN_CNF[conf->mosi->pin] |= (GPIO_PIN_CNF_DRIVE_H0H1 << GPIO_PIN_CNF_DRIVE_Pos);
+    nrf_port[conf->miso->port]->PIN_CNF[conf->miso->pin] |= (GPIO_PIN_CNF_DRIVE_H0H1 << GPIO_PIN_CNF_DRIVE_Pos);
 
     DB_SPIM->PSEL.MOSI = (conf->mosi->port << SPIM_PSEL_MOSI_PORT_Pos) |
                          (conf->mosi->pin << SPIM_PSEL_MOSI_PIN_Pos) |
@@ -94,16 +99,19 @@ static void _start_transfer(void) {
 }
 
 void db_spim_send(const void *bytes, size_t len) {
-    assert(len <= DB_SPIM_BUFFER_SIZE);
-    memcpy(_spim_vars.tx_buffer, bytes, len);
-    DB_SPIM->TXD.PTR    = (uint32_t)_spim_vars.tx_buffer;
+    DB_SPIM->TXD.PTR = (uint32_t)bytes;
+    DB_SPIM->RXD.PTR = (uint32_t)NULL;
+
     DB_SPIM->TXD.MAXCNT = len;
+    DB_SPIM->RXD.MAXCNT = 0;
     _start_transfer();
 }
 
 void db_spim_receive(const void *bytes, size_t len) {
-    _spim_vars.running  = true;
-    DB_SPIM->RXD.PTR    = (uint32_t)bytes;
+    DB_SPIM->TXD.PTR = (uint32_t)NULL;
+    DB_SPIM->RXD.PTR = (uint32_t)bytes;
+
+    DB_SPIM->TXD.MAXCNT = 0;
     DB_SPIM->RXD.MAXCNT = len;
     _start_transfer();
 }
