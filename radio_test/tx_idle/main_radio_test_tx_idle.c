@@ -21,6 +21,7 @@
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
 #define RADIO_TXPOWER_TXPOWER_0dBm 0
 #endif
+
 static const gpio_t db_gpio_0_9 = { .port = 0, .pin = 9 };
 
 static void _led1_blink_slow(void) {
