@@ -28,6 +28,7 @@
 #include "rgbled_pwm.h"
 #include "timer.h"
 #include "log_flash.h"
+#include "timer_hf.h"
 
 //=========================== defines ==========================================
 
@@ -95,7 +96,6 @@ static void _update_control_loop(void);
 static void _update_lh2(void);
 static void radio_callback(uint8_t *pkt, uint8_t len);
 
-
 //=========================== main =============================================
 
 /**
@@ -116,50 +116,57 @@ int main(void) {
 
     // Set an invalid heading since the value is unknown on startup.
     // Control loop is stopped and advertize packets are sent
-    _dotbot_vars.advertize           = false;
+    _dotbot_vars.advertize = false;
 
     // Retrieve the device id once at startup
     _dotbot_vars.device_id = db_device_id();
 
+    // Setup up timer interrupts
     db_timer_init();
     db_timer_set_periodic_ms(1, DB_ADVERTIZEMENT_DELAY_MS, &_advertise);
     db_timer_set_periodic_ms(2, DB_LH2_UPDATE_DELAY_MS, &_update_lh2);
     db_lh2_init(&_dotbot_vars.lh2, &db_lh2_d, &db_lh2_e);
-    db_lh2_start(&_dotbot_vars.lh2);
+    db_lh2_start();
 
     while (1) {
         __WFE();
 
         bool need_advertize = false;
-        if (_dotbot_vars.update_lh2) {
-            db_lh2_process_raw_data(&_dotbot_vars.lh2);
-            if (_dotbot_vars.lh2.state == DB_LH2_RAW_DATA_READY) {
-                _dotbot_vars.lh2_update_counter = 0;
-                db_lh2_stop(&_dotbot_vars.lh2);
-                db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_DOTBOT_DATA);
-                memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t), &_dotbot_vars.direction, sizeof(int16_t));
-                memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(int16_t), _dotbot_vars.lh2.raw_data, sizeof(db_lh2_raw_data_t) * LH2_LOCATIONS_COUNT);
-                size_t length = sizeof(protocol_header_t) + sizeof(int16_t) + sizeof(db_lh2_raw_data_t) * LH2_LOCATIONS_COUNT;
-                db_radio_disable();
-                db_radio_tx(_dotbot_vars.radio_buffer, length);
-                if (DB_LH2_FULL_COMPUTATION) {
-                    // the location function has to be running all the time
-                    db_lh2_process_location(&_dotbot_vars.lh2);
+        // Process available lighthouse data
+        db_lh2_process_location(&_dotbot_vars.lh2);
 
-                    // Reset the LH2 driver if a packet is ready. At this point, locations
-                    // can be read from lh2.results array
-                    if (_dotbot_vars.lh2.state == DB_LH2_LOCATION_READY) {
-                        __NOP();  // Add this no-op to allow setting a breakpoint here
+        if (_dotbot_vars.update_lh2) {
+            // Check if data is ready to send
+            for (size_t basestation = 0; basestation < 2; basestation++) {
+                for (size_t sweep = 0; sweep < 2; sweep++) {
+                    if (_dotbot_vars.lh2.data_ready[sweep][basestation] == DB_LH2_PROCESSED_DATA_AVAILABLE) {
+
+                        // Prepare the radio buffer
+                        db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, LH2_mini_mote, DB_PROTOCOL_LH2_PROCESSED_DATA);
+
+                        // Package data into a variable
+                        protocol_lh2_processed_packet_t lh2_packet;
+                        lh2_packet.selected_polynomial = _dotbot_vars.lh2.locations[sweep][basestation].selected_polynomial;
+                        lh2_packet.lfsr_location       = _dotbot_vars.lh2.locations[sweep][basestation].lfsr_location;
+                        lh2_packet.delay_us            = db_timer_hf_now() - _dotbot_vars.lh2.timestamps[sweep][basestation];
+
+                        // Add the LH2 sweep
+                        memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t), &lh2_packet, sizeof(protocol_lh2_processed_packet_t));
+                        size_t length = sizeof(protocol_header_t) + sizeof(protocol_lh2_processed_packet_t);
+
+
+                        // Send through radio
+                        db_radio_disable();
+                        db_radio_tx(_dotbot_vars.radio_buffer, length);
+                        
+                        // Mark the data as already sent
+                        _dotbot_vars.lh2.data_ready[sweep][basestation] = DB_LH2_NO_NEW_DATA;
                     }
                 }
-                db_lh2_start(&_dotbot_vars.lh2);
-            } else {
-                _dotbot_vars.lh2_update_counter = (_dotbot_vars.lh2_update_counter + 1) & DB_LH2_COUNTER_MASK;
-                need_advertize                  = (_dotbot_vars.lh2_update_counter == DB_LH2_COUNTER_MASK);
             }
+
             _dotbot_vars.update_lh2 = false;
         }
-
 
         if (_dotbot_vars.advertize && need_advertize) {
             db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_ADVERTISEMENT);
@@ -180,7 +187,6 @@ static void _advertise(void) {
 static void _update_lh2(void) {
     _dotbot_vars.update_lh2 = true;
 }
-
 
 //=========================== callbacks ========================================
 
