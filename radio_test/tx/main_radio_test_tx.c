@@ -18,6 +18,10 @@
 #include "radio.h"
 #include "timer.h"
 
+#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+#define RADIO_TXPOWER_TXPOWER_0dBm 0
+#endif
+
 static const gpio_t db_gpio_0_9 = { .port = 0, .pin = 9 };
 
 static void _led1_blink_slow(void) {
@@ -37,7 +41,7 @@ int main(void) {
 
     db_radio_init(NULL, DB_RADIO_BLE_1MBit);
     db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
-    db_radio_set_tx_power(RADIO_TXPOWER_TXPOWER_Pos8dBm);
+    db_radio_set_tx_power(RADIO_TXPOWER_TXPOWER_0dBm);
 
     uint8_t packet_counter[100] = { 0 };
     uint8_t i;
