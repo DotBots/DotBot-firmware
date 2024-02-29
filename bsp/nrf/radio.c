@@ -10,6 +10,7 @@
  */
 #include <nrf.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -109,11 +110,11 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
 #endif
 
     if (mode == DB_RADIO_BLE_1MBit || mode == DB_RADIO_BLE_2MBit) {
-        NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_0dBm << RADIO_TXPOWER_TXPOWER_Pos);  // 0dBm == 1mW Power output
-        NRF_RADIO->PCNF0   = (0 << RADIO_PCNF0_S1LEN_Pos) |                              // S1 field length in bits
-                           (1 << RADIO_PCNF0_S0LEN_Pos) |                                // S0 field length in bytes
-                           (8 << RADIO_PCNF0_LFLEN_Pos) |                                // LENGTH field length in bits
-                           (RADIO_PCNF0_PLEN_8bit << RADIO_PCNF0_PLEN_Pos);              // PREAMBLE length is 1 byte in BLE 1Mbit/s and 2Mbit/s
+        db_radio_set_tx_power(RADIO_TXPOWER_TXPOWER_0dBm);                   // 0dBm == 1mW Power output
+        NRF_RADIO->PCNF0 = (0 << RADIO_PCNF0_S1LEN_Pos) |                    // S1 field length in bits
+                           (1 << RADIO_PCNF0_S0LEN_Pos) |                    // S0 field length in bytes
+                           (8 << RADIO_PCNF0_LFLEN_Pos) |                    // LENGTH field length in bits
+                           (RADIO_PCNF0_PLEN_8bit << RADIO_PCNF0_PLEN_Pos);  // PREAMBLE length is 1 byte in BLE 1Mbit/s and 2Mbit/s
 
         NRF_RADIO->PCNF1 = (4UL << RADIO_PCNF1_BALEN_Pos) |  // The base address is 4 Bytes long
                            (PAYLOAD_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos) |
@@ -122,9 +123,9 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
                            (RADIO_PCNF1_WHITEEN_Enabled << RADIO_PCNF1_WHITEEN_Pos);  // Enable data whitening feature.
     } else {                                                                          // Long ranges modes (125KBit/500KBit)
 #if defined(NRF5340_XXAA)
-        NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_0dBm << RADIO_TXPOWER_TXPOWER_Pos);  // 0dBm Power output
+        db_radio_set_tx_power(RADIO_TXPOWER_TXPOWER_0dBm);  // 0dBm Power output
 #else
-        NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_Pos8dBm << RADIO_TXPOWER_TXPOWER_Pos);  // 8dBm Power output
+        db_radio_set_tx_power(RADIO_TXPOWER_TXPOWER_Pos8dBm);  // 8dBm Power output
 #endif
 
         // Coded PHY (Long Range)
@@ -183,6 +184,10 @@ void db_radio_set_channel(uint8_t channel) {
     NRF_RADIO->FREQUENCY = (_chan_to_freq[channel] << RADIO_FREQUENCY_FREQUENCY_Pos);
 }
 
+void db_radio_set_tx_power(uint8_t power) {
+    NRF_RADIO->TXPOWER = (power << RADIO_TXPOWER_TXPOWER_Pos);
+}
+
 void db_radio_set_network_address(uint32_t addr) {
     NRF_RADIO->BASE0 = addr;
 }
@@ -196,8 +201,9 @@ void db_radio_tx(const uint8_t *tx_buffer, uint8_t length) {
 
     if (radio_vars.state == RADIO_STATE_IDLE) {
         _radio_enable();
-        NRF_RADIO->TASKS_TXEN = RADIO_TASKS_TXEN_TASKS_TXEN_Trigger << RADIO_TASKS_TXEN_TASKS_TXEN_Pos;
+        db_radio_tx_start();
     }
+
     radio_vars.state = RADIO_STATE_TX;
     while (radio_vars.state != RADIO_STATE_TX) {}
 }
@@ -211,6 +217,10 @@ void db_radio_rx(void) {
         NRF_RADIO->TASKS_RXEN = RADIO_TASKS_RXEN_TASKS_RXEN_Trigger;
     }
     radio_vars.state = RADIO_STATE_RX;
+}
+
+void db_radio_tx_start(void) {
+    NRF_RADIO->TASKS_TXEN = RADIO_TASKS_TXEN_TASKS_TXEN_Trigger << RADIO_TASKS_TXEN_TASKS_TXEN_Pos;
 }
 
 void db_radio_disable(void) {
@@ -255,10 +265,8 @@ void RADIO_IRQHandler(void) {
         NRF_RADIO->EVENTS_DISABLED = 0;
 
         if (radio_vars.state == (RADIO_STATE_BUSY | RADIO_STATE_RX)) {
-            if (NRF_RADIO->CRCSTATUS != RADIO_CRCSTATUS_CRCSTATUS_CRCOk) {
-                puts("Invalid CRC");
-            } else if (radio_vars.callback) {
-                radio_vars.callback(radio_vars.pdu.payload, radio_vars.pdu.length);
+            if (radio_vars.callback) {
+                radio_vars.callback(radio_vars.pdu.payload, radio_vars.pdu.length, NRF_RADIO->CRCSTATUS == RADIO_CRCSTATUS_CRCSTATUS_CRCOk);
             }
             radio_vars.state = RADIO_STATE_RX;
         } else {  // TX

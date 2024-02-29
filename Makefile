@@ -66,21 +66,26 @@ endif
 OTAP_APPS ?= $(shell find otap/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/otap// | sort)
 OTAP_APPS := $(filter-out bootloader,$(OTAP_APPS))
 
+RADIO_TEST_APPS ?= $(shell find radio_test/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/radio_test// | sort)
+
 # remove incompatible apps (nrf5340, sailbot gateway) for dotbot (v1, v2) builds
 ifneq (,$(filter dotbot-v1,$(BUILD_TARGET)))
   PROJECTS := $(filter-out 01bsp_qdec 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_nrf5340_%,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
+  RADIO_TEST_APPS :=
 endif
 
 ifneq (,$(filter dotbot-v2,$(BUILD_TARGET)))
   PROJECTS := $(filter-out 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_nrf5340_net,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
+  RADIO_TEST_APPS :=
 endif
 
 # remove incompatible apps (nrf5340, dotbot, gateway) for sailbot-v1 build
 ifeq (sailbot-v1,$(BUILD_TARGET))
   PROJECTS := $(filter-out 01bsp_qdec 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_dotbot 03app_nrf5340_%,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_sailbot
+  RADIO_TEST_APPS :=
 endif
 
 # remove incompatible apps (nrf5340) for nrf52833dk/nrf52840dk build
@@ -97,7 +102,7 @@ ifneq (,$(filter nrf5340dk-net,$(BUILD_TARGET)))
   ARTIFACT_PROJECTS := 03app_nrf5340_net
 endif
 
-SRCS ?= $(shell find bsp/ -name "*.[c|h]") $(shell find crypto/ -name "*.[c|h]") $(shell find drv/ -name "*.[c|h]") $(shell find projects/ -name "*.[c|h]") $(shell find otap/ -name "*.[c|h]")
+SRCS ?= $(shell find bsp/ -name "*.[c|h]") $(shell find crypto/ -name "*.[c|h]") $(shell find drv/ -name "*.[c|h]") $(shell find projects/ -name "*.[c|h]") $(shell find otap/ -name "*.[c|h]") $(shell find radio_test/ -name "*.[c|h]")
 CLANG_FORMAT ?= clang-format
 CLANG_FORMAT_TYPE ?= file
 
@@ -108,7 +113,7 @@ ARTIFACTS = $(ARTIFACT_ELF) $(ARTIFACT_HEX)
 
 .PHONY: $(PROJECTS) $(ARTIFACT_PROJECTS) artifacts docker docker-release format check-format
 
-all: $(PROJECTS) $(OTAP_APPS) $(BOOTLOADER)
+all: $(PROJECTS) $(OTAP_APPS) $(BOOTLOADER) $(RADIO_TEST_APPS)
 
 $(PROJECTS):
 	@echo "\e[1mBuilding project $@\e[0m"
@@ -117,6 +122,11 @@ $(PROJECTS):
 
 $(OTAP_APPS):
 	@echo "\e[1mBuilding otap application $@\e[0m"
+	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -project $@ -config $(BUILD_CONFIG) $(PACKAGES_DIR_OPT) -rebuild -verbose
+	@echo "\e[1mDone\e[0m\n"
+
+$(RADIO_TEST_APPS):
+	@echo "\e[1mBuilding radio_test application $@\e[0m"
 	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -project $@ -config $(BUILD_CONFIG) $(PACKAGES_DIR_OPT) -rebuild -verbose
 	@echo "\e[1mDone\e[0m\n"
 

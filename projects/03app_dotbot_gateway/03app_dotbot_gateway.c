@@ -88,7 +88,10 @@ static void _uart_callback(uint8_t data) {
     _gw_vars.uart_queue.last                             = (_gw_vars.uart_queue.last + 1) & (DB_UART_QUEUE_SIZE - 1);
 }
 
-static void _radio_callback(uint8_t *packet, uint8_t length) {
+static void _radio_callback(uint8_t *packet, uint8_t length, bool crc) {
+    if (!crc) {
+        return;
+    }
     if (!_gw_vars.handshake_done) {
         return;
     }

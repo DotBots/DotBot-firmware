@@ -91,7 +91,7 @@ static sailbot_vars_t _sailbot_vars = { 0 };
 
 //=========================== prototypes =========================================
 
-void          radio_callback(uint8_t *packet, uint8_t length);
+void          radio_callback(uint8_t *packet, uint8_t length, bool crc);
 void          control_loop_callback(void);
 static void   convert_geographical_to_cartesian(cartesian_coordinate_t *out, const protocol_gps_coordinate_t *in);
 static float  _distance(const cartesian_coordinate_t *pos1, const cartesian_coordinate_t *pos2);
@@ -180,9 +180,13 @@ int main(void) {
  *
  * @param[in] packet pointer to the array of data to send over the radio (max size = 32)
  * @param[in] length Number of bytes to send (max size = 32)
+ * @param[in] crc    Whether the CRC check passed
  *
  */
-void radio_callback(uint8_t *packet, uint8_t length) {
+void radio_callback(uint8_t *packet, uint8_t length, bool crc) {
+    if (!crc) {
+        return;
+    }
     (void)length;
     uint8_t           *ptk_ptr = packet;
     protocol_header_t *header  = (protocol_header_t *)ptk_ptr;

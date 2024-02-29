@@ -95,7 +95,10 @@ static void _update_lh2(void);
 
 //=========================== callbacks ========================================
 
-static void radio_callback(uint8_t *pkt, uint8_t len) {
+static void radio_callback(uint8_t *pkt, uint8_t len, bool crc) {
+    if (!crc) {
+        return;
+    }
     (void)len;
 
     _dotbot_vars.ts_last_packet_received = db_timer_ticks();

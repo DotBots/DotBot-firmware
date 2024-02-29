@@ -17,6 +17,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <nrf.h>
 
 //=========================== defines ==========================================
@@ -33,7 +34,7 @@ typedef enum {
     DB_RADIO_BLE_LR500Kbit,
 } db_radio_ble_mode_t;
 
-typedef void (*radio_cb_t)(uint8_t *packet, uint8_t length);  ///< Function pointer to the callback function called on packet receive
+typedef void (*radio_cb_t)(uint8_t *packet, uint8_t length, bool crc);  ///< Function pointer to the callback function called on packet receive
 
 //=========================== public ===========================================
 
@@ -68,6 +69,13 @@ void db_radio_set_frequency(uint8_t freq);
 void db_radio_set_channel(uint8_t channel);
 
 /**
+ * @brief Set the TX power of the radio
+ *
+ * @param[in] power of the radio
+ */
+void db_radio_set_tx_power(uint8_t power);
+
+/**
  * @brief Set the network address used to send/receive radio packets
  *
  * @param[in] addr Network address
@@ -97,6 +105,11 @@ void db_radio_tx(const uint8_t *packet, uint8_t length);
  *
  */
 void db_radio_rx(void);
+
+/**
+ * @brief Block Radio into TX idle state
+ */
+void db_radio_tx_start(void);
 
 /**
  * @brief Reads the RSSI of a received packet
