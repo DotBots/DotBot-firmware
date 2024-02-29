@@ -1,10 +1,10 @@
 <!DOCTYPE CrossStudio_Project_File>
 <solution Name="projects-lh2-minimote" target="8" version="2">
-  <project Name="03app_lh2_minimote_app">
+  <project Name="03app_lh2_mini_mote_app">
     <configuration
       Name="Common"
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_lh2(bsp);00bsp_dotbot_motors(bsp);00bsp_timer(bsp);00drv_dotbot_hdlc(drv);00drv_dotbot_protocol(drv);00bsp_radio(bsp);00drv_log_flash(drv);00drv_rgbled_pwm(drv)"
-      project_directory="03app_lh2_minimote_app"
+      project_directory="03app_lh2_mini_mote_app"
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(DeviceCommonHeaderFile)" />
@@ -29,7 +29,7 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="03app_lh2_minimote_app.c" />
+      <file file_name="03app_lh2_mini_mote_app.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="$(DeviceCommonVectorsFile)" />
@@ -39,11 +39,11 @@
       <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
-  <project Name="03app_lh2_minimote_test">
+  <project Name="03app_lh2_mini_mote_test">
     <configuration
       Name="Common"
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_lh2(bsp);00bsp_dotbot_motors(bsp);00bsp_timer(bsp);00drv_dotbot_hdlc(drv);00drv_dotbot_protocol(drv);00bsp_radio(bsp);00drv_log_flash(drv);00drv_rgbled_pwm(drv)"
-      project_directory="03app_lh2_minimote_test"
+      project_directory="03app_lh2_mini_mote_test"
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(DeviceCommonHeaderFile)" />
@@ -68,7 +68,7 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="03app_lh2_minimote_test.c" />
+      <file file_name="03app_lh2_mini_mote_test.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="$(DeviceCommonVectorsFile)" />

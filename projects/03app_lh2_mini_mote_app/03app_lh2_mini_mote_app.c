@@ -89,10 +89,7 @@ static const db_rgbled_pwm_conf_t rgbled_pwm_conf = {
 
 //=========================== prototypes =======================================
 
-static void _timeout_check(void);
 static void _advertise(void);
-static void _compute_angle(const protocol_lh2_location_t *next, const protocol_lh2_location_t *origin, int16_t *angle);
-static void _update_control_loop(void);
 static void _update_lh2(void);
 static void radio_callback(uint8_t *pkt, uint8_t len);
 
@@ -158,7 +155,7 @@ int main(void) {
                         // Send through radio
                         db_radio_disable();
                         db_radio_tx(_dotbot_vars.radio_buffer, length);
-                        
+
                         // Mark the data as already sent
                         _dotbot_vars.lh2.data_ready[sweep][basestation] = DB_LH2_NO_NEW_DATA;
                     }
