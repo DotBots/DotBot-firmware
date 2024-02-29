@@ -199,7 +199,13 @@ void db_radio_tx(const uint8_t *tx_buffer, uint8_t length) {
     NRF_RADIO->SHORTS   = RADIO_SHORTS_COMMON | (RADIO_SHORTS_DISABLED_RXEN_Enabled << RADIO_SHORTS_DISABLED_RXEN_Pos);
     NRF_RADIO->INTENSET = RADIO_INTERRUPTS;
 
-    db_radio_tx_start();
+    if (radio_vars.state == RADIO_STATE_IDLE) {
+        _radio_enable();
+        db_radio_tx_start();
+    }
+
+    radio_vars.state = RADIO_STATE_TX;
+    while (radio_vars.state != RADIO_STATE_TX) {}
 }
 
 void db_radio_rx(void) {
@@ -214,13 +220,7 @@ void db_radio_rx(void) {
 }
 
 void db_radio_tx_start(void) {
-    if (radio_vars.state == RADIO_STATE_IDLE) {
-        _radio_enable();
-        NRF_RADIO->TASKS_TXEN = RADIO_TASKS_TXEN_TASKS_TXEN_Trigger << RADIO_TASKS_TXEN_TASKS_TXEN_Pos;
-    }
-
-    radio_vars.state = RADIO_STATE_TX;
-    while (radio_vars.state != RADIO_STATE_TX) {}
+    NRF_RADIO->TASKS_TXEN = RADIO_TASKS_TXEN_TASKS_TXEN_Trigger << RADIO_TASKS_TXEN_TASKS_TXEN_Pos;
 }
 
 void db_radio_disable(void) {
