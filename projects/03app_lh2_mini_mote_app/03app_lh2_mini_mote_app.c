@@ -76,17 +76,6 @@ typedef struct {
 
 static dotbot_vars_t _dotbot_vars;
 
-#ifdef DB_RGB_LED_PWM_RED_PORT  // Only available on DotBot v2
-static const db_rgbled_pwm_conf_t rgbled_pwm_conf = {
-    .pwm  = 1,
-    .pins = {
-        { .port = DB_RGB_LED_PWM_RED_PORT, .pin = DB_RGB_LED_PWM_RED_PIN },
-        { .port = DB_RGB_LED_PWM_GREEN_PORT, .pin = DB_RGB_LED_PWM_GREEN_PIN },
-        { .port = DB_RGB_LED_PWM_BLUE_PORT, .pin = DB_RGB_LED_PWM_BLUE_PIN },
-    }
-};
-#endif
-
 //=========================== prototypes =======================================
 
 static void _advertise(void);
@@ -104,9 +93,6 @@ int main(void) {
     db_log_flash_init(LOG_DATA_DOTBOT);
 #endif
     db_protocol_init();
-#ifdef DB_RGB_LED_PWM_RED_PORT
-    db_rgbled_pwm_init(&rgbled_pwm_conf);
-#endif
     db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);
     db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
     db_radio_rx();              // Start receiving packets.

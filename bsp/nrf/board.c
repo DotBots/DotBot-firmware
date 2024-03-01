@@ -52,9 +52,9 @@ void db_board_init(void) {
     db_gpio_init(&_g_led_pin, DB_GPIO_OUT);
     db_gpio_init(&_b_led_pin, DB_GPIO_OUT);
     // Shutdown the LED
-    db_gpio_set(&_reg_pin);
-    db_gpio_set(&_reg_pin);
-    db_gpio_set(&_reg_pin);
+    db_gpio_set(&_r_led_pin);
+    db_gpio_set(&_g_led_pin);
+    db_gpio_set(&_b_led_pin);
 
 #endif
 
