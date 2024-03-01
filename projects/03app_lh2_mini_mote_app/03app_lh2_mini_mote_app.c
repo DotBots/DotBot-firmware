@@ -26,15 +26,14 @@
 #include "motors.h"
 #include "radio.h"
 #include "rgbled_pwm.h"
-#include "timer.h"
 #include "log_flash.h"
 #include "timer_hf.h"
 
 //=========================== defines ==========================================
 
-#define DB_LH2_UPDATE_DELAY_MS    (100U)   ///< 100ms delay between each LH2 data refresh
-#define DB_ADVERTIZEMENT_DELAY_MS (500U)   ///< 500ms delay between each advertizement packet sending
-#define DB_TIMEOUT_CHECK_DELAY_MS (200U)   ///< 200ms delay between each timeout delay check
+#define DB_LH2_UPDATE_DELAY_US    (100000U)   ///< 100ms delay between each LH2 data refresh
+#define DB_ADVERTIZEMENT_DELAY_US (500000U)   ///< 500ms delay between each advertizement packet sending
+#define DB_TIMEOUT_CHECK_DELAY_US (200000U)   ///< 200ms delay between each timeout delay check
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
 #define DB_LH2_FULL_COMPUTATION   (false)  ///< Wether the full LH2 computation is perform on board
 #define DB_LH2_COUNTER_MASK       (0x07)   ///< Maximum number of lh2 iterations without value received
@@ -75,11 +74,13 @@ typedef struct {
 //=========================== variables ========================================
 
 static dotbot_vars_t _dotbot_vars;
+static const gpio_t _r_led_pin = { .port = DB_RGB_LED_PWM_RED_PORT, .pin = DB_RGB_LED_PWM_RED_PIN };
 
 //=========================== prototypes =======================================
 
 static void _advertise(void);
 static void _update_lh2(void);
+static void _turn_off_led(void);
 static void radio_callback(uint8_t *pkt, uint8_t len);
 
 //=========================== main =============================================
@@ -105,9 +106,9 @@ int main(void) {
     _dotbot_vars.device_id = db_device_id();
 
     // Setup up timer interrupts
-    db_timer_init();
-    db_timer_set_periodic_ms(1, DB_ADVERTIZEMENT_DELAY_MS, &_advertise);
-    db_timer_set_periodic_ms(2, DB_LH2_UPDATE_DELAY_MS, &_update_lh2);
+    db_timer_hf_init();
+    db_timer_hf_set_periodic_us(1, DB_ADVERTIZEMENT_DELAY_US, &_advertise);
+    db_timer_hf_set_periodic_us(2, DB_LH2_UPDATE_DELAY_US, &_update_lh2);
     db_lh2_init(&_dotbot_vars.lh2, &db_lh2_d, &db_lh2_e);
     db_lh2_start();
 
@@ -123,6 +124,9 @@ int main(void) {
             for (size_t basestation = 0; basestation < 2; basestation++) {
                 for (size_t sweep = 0; sweep < 2; sweep++) {
                     if (_dotbot_vars.lh2.data_ready[sweep][basestation] == DB_LH2_PROCESSED_DATA_AVAILABLE) {
+
+                        db_gpio_clear(&_r_led_pin);
+                        db_timer_hf_set_oneshot_us(0 , 3000, &_turn_off_led);
 
                         // Prepare the radio buffer
                         db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, LH2_mini_mote, DB_PROTOCOL_LH2_PROCESSED_DATA);
@@ -144,6 +148,8 @@ int main(void) {
 
                         // Mark the data as already sent
                         _dotbot_vars.lh2.data_ready[sweep][basestation] = DB_LH2_NO_NEW_DATA;
+                        db_timer_hf_delay_us(200);
+                        // busy loop hf_delay_us hangs if I use it here
                     }
                 }
             }
@@ -169,6 +175,10 @@ static void _advertise(void) {
 
 static void _update_lh2(void) {
     _dotbot_vars.update_lh2 = true;
+}
+
+static void _turn_off_led(void) {
+    db_gpio_set(&_r_led_pin);
 }
 
 //=========================== callbacks ========================================
