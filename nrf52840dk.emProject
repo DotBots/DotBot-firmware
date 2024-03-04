@@ -66,5 +66,6 @@
   <import file_name="projects/projects-log-dump.emProject" />
   <import file_name="projects/projects-sailbot.emProject" />
   <import file_name="otap/otap.emProject" />
+  <import file_name="upgate/upgate.emProject" />
   <import file_name="projects/projects-xgo.emProject" />
 </solution>
