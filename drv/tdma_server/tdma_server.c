@@ -31,16 +31,16 @@
 
 #define TDMA_SERVER_DEFAULT_FRAME_DURATION_US 20000  ///< Default duration of the tdma frame, in microseconds.
 
-#define TDMA_SERVER_DEFAULT_RX_START_US    0                                          ///< start of the , in microseconds.
-#define TDMA_SERVER_DEFAULT_RX_DURATION_US TDMA_SERVER_DEFAULT_FRAME_DURATION_US   ///< Default duration of the tdma frame, in microseconds.
-#define TDMA_SERVER_DEFAULT_TX_START_US    0                                                                          ///< Default duration of the tdma frame, in microseconds.
-#define TDMA_SERVER_DEFAULT_TX_DURATION_US TDMA_SERVER_TIME_SLOT_DURATION_US                                          ///< Default duration of the tdma frame, in microseconds.
+#define TDMA_SERVER_DEFAULT_RX_START_US    0                                      ///< start of the , in microseconds.
+#define TDMA_SERVER_DEFAULT_RX_DURATION_US TDMA_SERVER_DEFAULT_FRAME_DURATION_US  ///< Default duration of the tdma frame, in microseconds.
+#define TDMA_SERVER_DEFAULT_TX_START_US    0                                      ///< Default duration of the tdma frame, in microseconds.
+#define TDMA_SERVER_DEFAULT_TX_DURATION_US TDMA_SERVER_TIME_SLOT_DURATION_US      ///< Default duration of the tdma frame, in microseconds.
 
-#define TDMA_SERVER_HF_TIMER_CC       TIMER_HF_CB_CHANS      ///< Which timer channel will be used for the TX state machine.
-#define TDMA_MAX_DELAY_WITHOUT_TX 500000                 ///< Max amount of time that can pass without TXing anything
-#define TDMA_RING_BUFFER_SIZE     10                     ///< Amount of TX packets the buffer can contain
-#define RADIO_MESSAGE_MAX_SIZE    255                    ///< Size of buffers used for SPI communications
-#define RADIO_TX_RAMP_UP_TIME     140                    ///< time it takes the radio to start a transmission
+#define TDMA_SERVER_HF_TIMER_CC   TIMER_HF_CB_CHANS  ///< Which timer channel will be used for the TX state machine.
+#define TDMA_MAX_DELAY_WITHOUT_TX 500000             ///< Max amount of time that can pass without TXing anything
+#define TDMA_RING_BUFFER_SIZE     10                 ///< Amount of TX packets the buffer can contain
+#define RADIO_MESSAGE_MAX_SIZE    255                ///< Size of buffers used for SPI communications
+#define RADIO_TX_RAMP_UP_TIME     140                ///< time it takes the radio to start a transmission
 
 typedef struct {
     uint8_t  buffer[TDMA_RING_BUFFER_SIZE][PAYLOAD_MAX_LENGTH];  ///< arrays of radio messages waiting to be sent
@@ -51,15 +51,15 @@ typedef struct {
 } tdma_ring_buffer_t;
 
 typedef struct {
-    tdma_server_cb_t    callback;                              ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
-    tdma_server_table_t tdma_table;                            ///< Timing table
-    uint16_t            active_slot_idx;                       ///< index of the current active slot in the TDMA table
-    uint32_t            last_tx_packet_ts;              ///< Timestamp of when the last packet was sent
-    uint32_t            frame_start_ts;              ///< Timestamp of when the last tdma superframe started
-    
-    uint64_t            device_id;                             ///< Device ID of the DotBot
-    tdma_ring_buffer_t  tx_ring_buffer;                        ///< ring buffer to queue the outgoing packets
-    uint8_t             radio_buffer[RADIO_MESSAGE_MAX_SIZE];  ///< Internal buffer that contains the command to send (from buttons)
+    tdma_server_cb_t    callback;           ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
+    tdma_server_table_t tdma_table;         ///< Timing table
+    uint16_t            active_slot_idx;    ///< index of the current active slot in the TDMA table
+    uint32_t            last_tx_packet_ts;  ///< Timestamp of when the last packet was sent
+    uint32_t            frame_start_ts;     ///< Timestamp of when the last tdma superframe started
+
+    uint64_t           device_id;                             ///< Device ID of the DotBot
+    tdma_ring_buffer_t tx_ring_buffer;                        ///< ring buffer to queue the outgoing packets
+    uint8_t            radio_buffer[RADIO_MESSAGE_MAX_SIZE];  ///< Internal buffer that contains the command to send (from buttons)
 } tdma_server_vars_t;
 
 //=========================== variables ========================================
@@ -121,10 +121,10 @@ bool _send_queued_messages(uint16_t max_tx_duration_us);
 void _send_keep_alive_message(void);
 
 /**
- * @brief register with the gatway to request a TDMA slot
+ * @brief Send a message to synchronize the client's and the server's clock
  *
  */
-void _send_keep_register_message(void);
+void _send_sync_frame(void);
 
 /**
  * @brief get a random delay between 100ms and 228ms in microseconds
@@ -151,7 +151,7 @@ void db_tdma_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mode, uin
     // Save the user callback to use in our interruption
     _tdma_vars.callback = callback;
 
-    // Set the default time table, and pupolate the first entry with the server
+    // Set the default time table, and populate the first entry with the server
     _tdma_vars.tdma_table.frame_duration_us    = TDMA_SERVER_DEFAULT_FRAME_DURATION_US;
     _tdma_vars.tdma_table.table[0].client      = _tdma_vars.device_id;
     _tdma_vars.tdma_table.table[0].rx_start    = TDMA_SERVER_DEFAULT_RX_START_US;
@@ -161,12 +161,11 @@ void db_tdma_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mode, uin
 
     // set the current active slot
     _tdma_vars.active_slot_idx = 0;
-    
 
     // Configure the Timers
-    _tdma_vars.last_tx_packet_ts = db_timer_hf_now();                                  // start the counter saving when was the last packet sent.
-    _tdma_vars.frame_start_ts = _tdma_vars.last_tx_packet_ts;                                  // start the counter saving when was the last packet sent.
-    db_timer_hf_set_oneshot_us(TDMA_SERVER_HF_TIMER_CC, _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].tx_duration, &timer_tdma_interrupt);     // start advertising behaviour
+    _tdma_vars.last_tx_packet_ts = db_timer_hf_now();                                                                                                 // start the counter saving when was the last packet sent.
+    _tdma_vars.frame_start_ts    = _tdma_vars.last_tx_packet_ts;                                                                                      // start the counter saving when was the last packet sent.
+    db_timer_hf_set_periodic_us(TDMA_SERVER_HF_TIMER_CC, _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].tx_duration, &timer_tdma_interrupt);  // start advertising behaviour
 }
 
 void db_tdma_update_table(tdma_table_t *table) {
@@ -275,14 +274,15 @@ void _send_keep_alive_message(void) {
     db_radio_tx(_tdma_vars.radio_buffer, length);
 }
 
-void _send_tdma_register_message(void) {
+void _send_sync_frame(void) {
 
-    db_protocol_header_to_buffer(_tdma_vars.radio_buffer, DB_BROADCAST_ADDRESS, TDMA_RADIO_APPLICATION, DB_PROTOCOL_ADVERTISEMENT);
-    size_t length = sizeof(protocol_header_t);
-    db_radio_disable();
-    db_radio_tx(_tdma_vars.radio_buffer, length);
+    // TODO
+
+    // db_protocol_header_to_buffer(_tdma_vars.radio_buffer, DB_BROADCAST_ADDRESS, TDMA_RADIO_APPLICATION, DB_PROTOCOL_ADVERTISEMENT);
+    // size_t length = sizeof(protocol_header_t);
+    // db_radio_disable();
+    // db_radio_tx(_tdma_vars.radio_buffer, length);
 }
-
 
 //=========================== interrupt handlers ===============================
 
@@ -373,43 +373,58 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
  */
 void timer_tmda_interrupt(void) {
 
-//TODO: implement this thing
-        // then implement what happens when you receive a radio packet.
-            // then implement what happens when someone registers
-            // .. when someone is lost
-            // when they transmit outside teir position
-        // when someone uses tdma_tx() function
-            // priority, and normal queue
-            // 
+    // TODO: implement this thing
+    //  then implement what happens when you receive a radio packet.
+    //  then implement what happens when someone registers
+    //  .. when someone is lost
+    //  when they transmit outside teir position
+    // when someone uses tdma_tx() function
+    // priority, and normal queue
+    //
 
     // Try to update the active client
-        //  (client_idx + 1 %) table_index
-        // some logic so that the gateway doesn't transmit all the time if it's alone
-        // if num_clients and tbale_index == 0, the next interrupt timer == 20ms
-        //  else set interrupt timer for the active client.
+    // +++ (client_idx + 1 %) table_index;
+    // +++ some logic so that the gateway doesn't transmit all the time if it's alone
+    // if num_clients and tbale_index == 0, the next interrupt timer == 20ms
+    //  else set interrupt timer for the active client.
 
     // Check if this is the start of the frame (current index = 0)
-        // Update the last_start_frmae packet
-        // check if nothing has been sent for to long, and send a resync_frame.
-        // go back to listening before leaving
+    // Update the last_start_frmae packet
+    // check if nothing has been sent for to long, and send a resync_frame.
+    // go back to listening before leaving
 
     // Check if this is your turn to transmit  (client = device id)
-        // transmit everything you can.
-        // Maybe make an allowance of -100us to execute the next bit of logic
-        // go back to listening before leaving
-        
+    // transmit everything you can.
+    // Maybe make an allowance of -100us to execute the next bit of logic
+    // go back to listening before leaving
+
+    // If there are not enough clients, make sure the the minimum frame time is respected, even if is just filled with empty slots.
+    if (_tdma_vars.tdma_table.frame_duration_us > TDMA_SERVER_DEFAULT_FRAME_DURATION_US) {
+        // enough clients, wrap around the end of the list
+        uint8_t last_slot = _tdma_vars.tdma_table.table_index;
+    } else {
+        // not enough clients, use the default amount of slots for the default frame duration
+        uint8_t last_slot = (TDMA_SERVER_DEFAULT_FRAME_DURATION_US / TDMA_SERVER_TIME_SLOT_DURATION_US) - 1;
+    }
+    // Update the active client for this slot. Wrap around after the end of the active clients is reached.
+    _tdma_vars.active_slot_idx = (_tdma_vars.active_slot_idx + 1) % (last_slot);
 
 
+    // Set the next interrupt
+    // Implement if you ever use variable timeslots fr the dotbots
+    // db_timer_hf_set_oneshot_us(TDMA_SERVER_HF_TIMER_CC, _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].tx_duration, &timer_tdma_interrupt);  // start advertising behaviour
 
+if (_tdma_vars.active_slot_idx == 0){
+
+}
 
 
     bool packet_sent = false;
 
-    // Check the state of the device.
-    if (_tdma_vars.registration_flag == DB_TDMA_REGISTERED) {
+    // Check that it's your timeslot
+    if (_tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].client == _tdma_vars.device_id) {
 
-        // Prepare right now the next timer interruption
-        db_timer_hf_set_oneshot_us(TDMA_HF_TIMER_CC_TX, _tdma_vars.tdma_table.frame, &timer_tx_interrupt);
+        if 
 
         // send messages if available
         packet_sent = _send_queued_messages(_tdma_vars.tdma_table.tx_duration);
@@ -421,15 +436,7 @@ void timer_tmda_interrupt(void) {
                 _send_keep_alive_message();
             }
         }
-    } else {  // Device is unregistered
-
-        // Prepare right now the next timer interruption.
-        uint32_t delay_time = _get_random_delay_us();
-        db_timer_hf_set_oneshot_us(TDMA_HF_TIMER_CC_TX, delay_time, &timer_tx_interrupt);
-
-        // Send the keep alive message
-        _send_tdma_register_message();
-    }
+    } 
 }
 
 /**

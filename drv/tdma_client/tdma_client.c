@@ -123,7 +123,7 @@ void _send_keep_alive_message(void);
  * @brief register with the gatway to request a TDMA slot
  *
  */
-void _send_keep_register_message(void);
+void _send_tdma_register_message(void);
 
 /**
  * @brief get a random delay between 100ms and 228ms in microseconds
