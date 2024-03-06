@@ -26,7 +26,7 @@ typedef void (*db_upgate_reply_t)(const uint8_t *, size_t);  ///< Transport agno
 
 ///< FPGA bitstream update configuration
 typedef struct {
-    db_upgate_reply_t reply;  ///< Pointer to the function used to reply to the upgate script
+    db_upgate_reply_t     reply;  ///< Pointer to the function used to reply to the upgate script
     const n25q128_conf_t *n25q128_conf;
 } db_upgate_conf_t;
 

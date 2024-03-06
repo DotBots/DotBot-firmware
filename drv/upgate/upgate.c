@@ -52,7 +52,7 @@ void db_upgate_start(uint32_t chunk_count) {
     (void)chunk_count;
     n25q128_base_address(&_upgate_vars.addr);
     // Erase the corresponding sectors.
-    uint32_t total_bytes = chunk_count * DB_UPGATE_CHUNK_SIZE;
+    uint32_t total_bytes  = chunk_count * DB_UPGATE_CHUNK_SIZE;
     uint32_t sector_count = (total_bytes / N25Q128_SECTOR_SIZE) + 1;
     printf("Sectors to erase: %u\n", sector_count);
     for (uint32_t sector = 0; sector < sector_count; sector++) {
@@ -80,13 +80,13 @@ void db_upgate_finish(void) {
 
 void db_upgate_write_chunk(const db_upgate_pkt_t *pkt) {
     printf("Received chunk %u:\n");
-    //for (uint8_t idx = 0; idx < DB_UPGATE_CHUNK_SIZE; idx++) {
-    //    printf("%d ", pkt->upgate_chunk[idx]);
-    //    if (idx > 0 && (idx + 1) % (DB_UPGATE_CHUNK_SIZE / 2) == 0) {
-    //        puts(""); 
-    //    }
-    //}
-    //puts("");
+    // for (uint8_t idx = 0; idx < DB_UPGATE_CHUNK_SIZE; idx++) {
+    //     printf("%d ", pkt->upgate_chunk[idx]);
+    //     if (idx > 0 && (idx + 1) % (DB_UPGATE_CHUNK_SIZE / 2) == 0) {
+    //         puts("");
+    //     }
+    // }
+    // puts("");
     memcpy(&_upgate_vars.write_buf[(pkt->index % 2) * DB_UPGATE_CHUNK_SIZE], pkt->upgate_chunk, DB_UPGATE_CHUNK_SIZE);
     if (pkt->index % 2 == 0) {
         return;
@@ -94,25 +94,25 @@ void db_upgate_write_chunk(const db_upgate_pkt_t *pkt) {
     uint32_t addr = _upgate_vars.addr + (pkt->index - 1) * DB_UPGATE_CHUNK_SIZE;
 
     printf("Programming 256 bytes at %p\n", addr);
-    //for (uint16_t idx = 0; idx < DB_UPGATE_CHUNK_SIZE * 2; idx++) {
-    //    printf("%d ", _upgate_vars.write_buf[idx]);
-    //    if (idx > 0 && (idx + 1) % (DB_UPGATE_CHUNK_SIZE / 2) == 0) {
-    //        puts("");
-    //    }
-    //}
-    //puts("");
+    // for (uint16_t idx = 0; idx < DB_UPGATE_CHUNK_SIZE * 2; idx++) {
+    //     printf("%d ", _upgate_vars.write_buf[idx]);
+    //     if (idx > 0 && (idx + 1) % (DB_UPGATE_CHUNK_SIZE / 2) == 0) {
+    //         puts("");
+    //     }
+    // }
+    // puts("");
     n25q128_program_page(addr, _upgate_vars.write_buf, DB_UPGATE_CHUNK_SIZE * 2);
     n25q128_read(addr, _upgate_vars.read_buf, DB_UPGATE_CHUNK_SIZE * 2);
-    //n25q128_read(addr + DB_UPGATE_CHUNK_SIZE, &_upgate_vars.read_buf[DB_UPGATE_CHUNK_SIZE], DB_UPGATE_CHUNK_SIZE);
+    // n25q128_read(addr + DB_UPGATE_CHUNK_SIZE, &_upgate_vars.read_buf[DB_UPGATE_CHUNK_SIZE], DB_UPGATE_CHUNK_SIZE);
 
-    //printf("Reading back the 256 bytes written to flash\n");
-    //for (uint16_t idx = 0; idx < DB_UPGATE_CHUNK_SIZE * 2; idx++) {
-    //    printf("%d ", _upgate_vars.read_buf[idx]);
-    //    if (idx > 0 && (idx + 1) % (DB_UPGATE_CHUNK_SIZE / 2) == 0) {
-    //        puts("");
-    //    }
-    //}
-    //puts("");
+    // printf("Reading back the 256 bytes written to flash\n");
+    // for (uint16_t idx = 0; idx < DB_UPGATE_CHUNK_SIZE * 2; idx++) {
+    //     printf("%d ", _upgate_vars.read_buf[idx]);
+    //     if (idx > 0 && (idx + 1) % (DB_UPGATE_CHUNK_SIZE / 2) == 0) {
+    //         puts("");
+    //     }
+    // }
+    // puts("");
     uint16_t delay = 0xffff;
     while (delay--) {}
     if (memcmp(pkt->upgate_chunk, _upgate_vars.read_buf, DB_UPGATE_CHUNK_SIZE * 2) != 0) {
@@ -141,13 +141,13 @@ void db_upgate_handle_message(const uint8_t *message) {
         } break;
         case DB_UPGATE_MESSAGE_TYPE_CHUNK:
         {
-            const db_upgate_pkt_t *upgate_pkt     = (const db_upgate_pkt_t *)&message[1];
-            const uint32_t      chunk_index = upgate_pkt->index;
-            const uint32_t      chunk_count = upgate_pkt->chunk_count;
+            const db_upgate_pkt_t *upgate_pkt  = (const db_upgate_pkt_t *)&message[1];
+            const uint32_t         chunk_index = upgate_pkt->index;
+            const uint32_t         chunk_count = upgate_pkt->chunk_count;
 
             if (_upgate_vars.last_index_acked != chunk_index) {
-                //printf("\rWriting packet %u", chunk_index);
-                // Skip writing the chunk if already acked
+                // printf("\rWriting packet %u", chunk_index);
+                //  Skip writing the chunk if already acked
                 db_upgate_write_chunk(upgate_pkt);
 #if defined(UPGATE_USE_CRYPTO)
                 crypto_sha256_update((const uint8_t *)upgate_pkt->upgate_chunk, DB_UPGATE_CHUNK_SIZE);
