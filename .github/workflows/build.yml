@@ -18,7 +18,7 @@ jobs:
         config: ["Debug", "Release"]
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Build projects
         run: BUILD_TARGET=${{ matrix.target }} BUILD_CONFIG=${{ matrix.config }} make docker
       - name: Build for release and convert elf artifacts to hex
@@ -26,9 +26,9 @@ jobs:
         run: BUILD_TARGET=${{ matrix.target }} DOCKER_TARGETS="artifacts" BUILD_CONFIG=${{ matrix.config }} make docker
       - name: Upload artifact
         if: matrix.config == 'Release'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: artifacts
+          name: artifacts-${{ matrix.target }}-${{ matrix.config }}
           path: artifacts/*
 
   build-success:
@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Check style
         run: make check-format
 
@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Install Doxygen
         run: sudo apt-get install -y doxygen graphviz
       - name: Install Sphinx
@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Build docker image
         run: docker build -t dotbot .
 
@@ -75,11 +75,10 @@ jobs:
       startsWith(github.event.ref, 'refs/tags')
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: artifacts
           path: ./artifacts
       - name: Release
         uses: ncipollo/release-action@v1
