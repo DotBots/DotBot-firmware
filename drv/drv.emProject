@@ -85,6 +85,14 @@
     <file file_name="lsm6ds.c" />
     <file file_name="../lsm6ds.h" />
   </project>
+  <project Name="00drv_lz4">
+    <configuration
+      Name="Common"
+      project_directory="lz4"
+      project_type="Library" />
+    <file file_name="lz4.c" />
+    <file file_name="../lz4.h" />
+  </project>
   <project Name="00drv_move">
     <configuration
       Name="Common"

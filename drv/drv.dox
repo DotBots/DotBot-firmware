@@ -2,3 +2,10 @@
 * @defgroup    drv High level libraries
 * @brief       Contains libraries related to sensor drivers, protocols, ota...
 */
+
+/**
+* @defgroup    drv_lz4  LZ4 compression/decompression
+* @brief       Extremly fast compression algorithm
+*
+* https://github.com/lz4/lz4
+*/
