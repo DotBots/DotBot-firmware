@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "lz4.h"
 #include "n25q128.h"
 #include "upgate.h"
 
@@ -26,6 +27,9 @@
 
 //=========================== defines ==========================================
 
+#define LZ4F_VERSION 100
+#define DECOMPRESS_BUFFER_SIZE  (4096)
+
 typedef struct {
     const db_upgate_conf_t *config;
     uint8_t                 reply_buffer[UINT8_MAX];
@@ -35,17 +39,21 @@ typedef struct {
     uint8_t                 hash[DB_UPGATE_SHA256_LENGTH];
     uint8_t                 read_buf[DB_UPGATE_CHUNK_SIZE * 2];
     uint8_t                 write_buf[DB_UPGATE_CHUNK_SIZE * 2];
+    uint8_t                 write_buf_pos;
+    uint8_t                 decompress_buffer[DECOMPRESS_BUFFER_SIZE];
 } db_upgate_vars_t;
 
 //=========================== variables ========================================
 
 static db_upgate_vars_t _upgate_vars = { 0 };
+//static LZ4F_decompressionContext_t dctx;
 
 //============================ public ==========================================
 
 void db_upgate_init(const db_upgate_conf_t *config) {
     n25q128_init(config->n25q128_conf);
     _upgate_vars.config = config;
+    //LZ4F_createDecompressionContext(&dctx, LZ4F_VERSION);
 }
 
 void db_upgate_start(uint32_t chunk_count) {
@@ -62,10 +70,12 @@ void db_upgate_start(uint32_t chunk_count) {
     }
     puts("");
     _upgate_vars.last_index_acked = UINT32_MAX;
+    //LZ4F_resetDecompressionContext(dctx);
     printf("Starting upgate at %p\n\n", _upgate_vars.addr);
 }
 
 void db_upgate_finish(void) {
+    puts("Finishing upgate");
 #if defined(UPGATE_USE_CRYPTO)
     uint8_t hash_result[DB_UPGATE_SHA256_LENGTH] = { 0 };
     crypto_sha256(hash_result);
@@ -79,45 +89,41 @@ void db_upgate_finish(void) {
 }
 
 void db_upgate_write_chunk(const db_upgate_pkt_t *pkt) {
-    printf("Received chunk %u:\n");
-    // for (uint8_t idx = 0; idx < DB_UPGATE_CHUNK_SIZE; idx++) {
-    //     printf("%d ", pkt->upgate_chunk[idx]);
-    //     if (idx > 0 && (idx + 1) % (DB_UPGATE_CHUNK_SIZE / 2) == 0) {
-    //         puts("");
-    //     }
-    // }
-    // puts("");
-    memcpy(&_upgate_vars.write_buf[(pkt->index % 2) * DB_UPGATE_CHUNK_SIZE], pkt->upgate_chunk, DB_UPGATE_CHUNK_SIZE);
-    if (pkt->index % 2 == 0) {
-        return;
-    }
-    uint32_t addr = _upgate_vars.addr + (pkt->index - 1) * DB_UPGATE_CHUNK_SIZE;
+    int32_t decompressed_length = LZ4_decompress_safe(
+        (const char *)pkt->upgate_chunk, (char *)_upgate_vars.decompress_buffer, DB_UPGATE_CHUNK_SIZE, DECOMPRESS_BUFFER_SIZE);
+    assert(decompressed_length < DECOMPRESS_BUFFER_SIZE);
+    uint32_t decompress_buffer_pos = 0;
+    do {
+        uint16_t write_buf_available = (DB_UPGATE_CHUNK_SIZE * 2) - _upgate_vars.write_buf_pos;
+        memcpy(&_upgate_vars.write_buf[_upgate_vars.write_buf_pos], &_upgate_vars.decompress_buffer[decompress_buffer_pos], write_buf_available);
+        decompressed_length -= write_buf_available;
+        decompress_buffer_pos += write_buf_available;
+        _upgate_vars.write_buf_pos = 0;
+        uint32_t addr = _upgate_vars.addr + (pkt->index - 1) * DB_UPGATE_CHUNK_SIZE;
 
-    printf("Programming 256 bytes at %p\n", addr);
-    // for (uint16_t idx = 0; idx < DB_UPGATE_CHUNK_SIZE * 2; idx++) {
-    //     printf("%d ", _upgate_vars.write_buf[idx]);
-    //     if (idx > 0 && (idx + 1) % (DB_UPGATE_CHUNK_SIZE / 2) == 0) {
-    //         puts("");
-    //     }
-    // }
-    // puts("");
-    n25q128_program_page(addr, _upgate_vars.write_buf, DB_UPGATE_CHUNK_SIZE * 2);
-    n25q128_read(addr, _upgate_vars.read_buf, DB_UPGATE_CHUNK_SIZE * 2);
-    // n25q128_read(addr + DB_UPGATE_CHUNK_SIZE, &_upgate_vars.read_buf[DB_UPGATE_CHUNK_SIZE], DB_UPGATE_CHUNK_SIZE);
+        printf("Programming 256 bytes at %p\n", addr);
+        n25q128_program_page(addr, _upgate_vars.write_buf, DB_UPGATE_CHUNK_SIZE * 2);
+        n25q128_read(addr, _upgate_vars.read_buf, DB_UPGATE_CHUNK_SIZE * 2);
+        if (memcmp(_upgate_vars.write_buf, _upgate_vars.read_buf, DB_UPGATE_CHUNK_SIZE * 2) != 0) {
+            puts("packet doesn't match!!");
+        }
+    } while (decompressed_length >= (int32_t)DB_UPGATE_CHUNK_SIZE * 2);
+    memcpy(&_upgate_vars.write_buf[_upgate_vars.write_buf_pos], &_upgate_vars.decompress_buffer[decompress_buffer_pos], decompressed_length);
+    _upgate_vars.write_buf_pos = decompressed_length;
 
-    // printf("Reading back the 256 bytes written to flash\n");
-    // for (uint16_t idx = 0; idx < DB_UPGATE_CHUNK_SIZE * 2; idx++) {
-    //     printf("%d ", _upgate_vars.read_buf[idx]);
-    //     if (idx > 0 && (idx + 1) % (DB_UPGATE_CHUNK_SIZE / 2) == 0) {
-    //         puts("");
-    //     }
-    // }
-    // puts("");
-    uint16_t delay = 0xffff;
-    while (delay--) {}
-    if (memcmp(pkt->upgate_chunk, _upgate_vars.read_buf, DB_UPGATE_CHUNK_SIZE * 2) != 0) {
-        puts("packet doesn't match!!");
-    }
+
+    //memcpy(&_upgate_vars.write_buf[(pkt->index % 2) * DB_UPGATE_CHUNK_SIZE], pkt->upgate_chunk, DB_UPGATE_CHUNK_SIZE);
+    //if (pkt->index % 2 == 0) {
+    //    return;
+    //}
+    //uint32_t addr = _upgate_vars.addr + (pkt->index - 1) * DB_UPGATE_CHUNK_SIZE;
+
+    //printf("Programming 256 bytes at %p\n", addr);
+    //n25q128_program_page(addr, _upgate_vars.write_buf, DB_UPGATE_CHUNK_SIZE * 2);
+    //n25q128_read(addr, _upgate_vars.read_buf, DB_UPGATE_CHUNK_SIZE * 2);
+    //if (memcmp(_upgate_vars.write_buf, _upgate_vars.read_buf, DB_UPGATE_CHUNK_SIZE * 2) != 0) {
+    //    puts("packet doesn't match!!");
+    //}
 }
 
 void db_upgate_handle_message(const uint8_t *message) {
@@ -146,7 +152,6 @@ void db_upgate_handle_message(const uint8_t *message) {
             const uint32_t         chunk_count = upgate_pkt->chunk_count;
 
             if (_upgate_vars.last_index_acked != chunk_index) {
-                // printf("\rWriting packet %u", chunk_index);
                 //  Skip writing the chunk if already acked
                 db_upgate_write_chunk(upgate_pkt);
 #if defined(UPGATE_USE_CRYPTO)

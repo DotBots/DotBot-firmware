@@ -140,7 +140,7 @@
   <project Name="00drv_upgate">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_partition(bsp);00bsp_nvmc(bsp);00crypto_ed25519(crypto);00crypto_sha256(crypto);00drv_n25q128(drv)"
+      project_dependencies="00bsp_partition(bsp);00bsp_nvmc(bsp);00crypto_ed25519(crypto);00crypto_sha256(crypto);00drv_n25q128(drv);00drv_lz4(drv)"
       project_directory="upgate"
       project_type="Library" />
     <file file_name="upgate.c" />
