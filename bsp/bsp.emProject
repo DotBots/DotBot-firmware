@@ -134,6 +134,15 @@
     <file file_name="nrf/saadc.c" />
     <file file_name="saadc.h" />
   </project>
+  <project Name="00bsp_spim">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_gpio(bsp);00bsp_clock(bsp)"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf/spim.c" />
+    <file file_name="spim.h" />
+  </project>
   <project Name="00bsp_timer">
     <configuration
       Name="Common"
