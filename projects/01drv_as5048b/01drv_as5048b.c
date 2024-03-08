@@ -4,7 +4,7 @@
  * @author      Diego Badillo-San-Juan <diego.badillo-san-juan@inria.fr>
  * @brief       This is an example on how to use the AS5048B driver.
  *
- * Raw encoder 14-bit uint16_t values are continuously printed as debug output.
+ * Float angles in degrees are printed periodically every 50ms
  *
  * @copyright   Inria, 2024
  *
