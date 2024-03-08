@@ -27,8 +27,9 @@
 
 //=========================== defines ==========================================
 
-#define LZ4F_VERSION           100
-#define DECOMPRESS_BUFFER_SIZE (4096)
+#define LZ4F_VERSION            100
+#define DECOMPRESS_BUFFER_SIZE  (4096)
+#define UPGATE_BASE_ADDRESS     (0x00000000)
 
 typedef struct {
     const db_upgate_conf_t *config;
@@ -56,8 +57,7 @@ void db_upgate_init(const db_upgate_conf_t *config) {
 }
 
 void db_upgate_start(uint32_t chunk_count) {
-    (void)chunk_count;
-    n25q128_base_address(&_upgate_vars.addr);
+    _upgate_vars.addr = UPGATE_BASE_ADDRESS;
     // Erase the corresponding sectors.
     uint32_t total_bytes  = chunk_count * DB_UPGATE_CHUNK_SIZE;
     uint32_t sector_count = (total_bytes / N25Q128_SECTOR_SIZE) + 1;
