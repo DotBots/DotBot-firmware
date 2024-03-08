@@ -32,7 +32,8 @@ typedef struct {
 
 ///< FPGA bitstream update start notification packet
 typedef struct __attribute__((packed, aligned(4))) {
-    uint32_t chunk_count;  ///< Number of chunks
+    uint32_t chunk_count;      ///< Number of chunks
+    bool     use_compression;  ///< True if bitstream is compressed
 #if defined(UPGATE_USE_CRYPTO)
     uint8_t hash[DB_UPGATE_SHA256_LENGTH];          ///< SHA256 hash of the bitsream
     uint8_t signature[DB_UPGATE_SIGNATURE_LENGTH];  ///< Signature of the bitstream hash

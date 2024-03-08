@@ -27,8 +27,8 @@
 
 //=========================== defines ==========================================
 
-#define LZ4F_VERSION 100
-#define DECOMPRESS_BUFFER_SIZE  (4096)
+#define LZ4F_VERSION           100
+#define DECOMPRESS_BUFFER_SIZE (4096)
 
 typedef struct {
     const db_upgate_conf_t *config;
@@ -39,6 +39,7 @@ typedef struct {
     uint8_t                 hash[DB_UPGATE_SHA256_LENGTH];
     uint8_t                 read_buf[DB_UPGATE_CHUNK_SIZE * 2];
     uint8_t                 write_buf[DB_UPGATE_CHUNK_SIZE * 2];
+    bool                    use_compression;
     uint8_t                 write_buf_pos;
     uint8_t                 decompress_buffer[DECOMPRESS_BUFFER_SIZE];
 } db_upgate_vars_t;
@@ -46,14 +47,12 @@ typedef struct {
 //=========================== variables ========================================
 
 static db_upgate_vars_t _upgate_vars = { 0 };
-//static LZ4F_decompressionContext_t dctx;
 
 //============================ public ==========================================
 
 void db_upgate_init(const db_upgate_conf_t *config) {
     n25q128_init(config->n25q128_conf);
     _upgate_vars.config = config;
-    //LZ4F_createDecompressionContext(&dctx, LZ4F_VERSION);
 }
 
 void db_upgate_start(uint32_t chunk_count) {
@@ -70,7 +69,6 @@ void db_upgate_start(uint32_t chunk_count) {
     }
     puts("");
     _upgate_vars.last_index_acked = UINT32_MAX;
-    //LZ4F_resetDecompressionContext(dctx);
     printf("Starting upgate at %p\n\n", _upgate_vars.addr);
 }
 
@@ -89,41 +87,33 @@ void db_upgate_finish(void) {
 }
 
 void db_upgate_write_chunk(const db_upgate_pkt_t *pkt) {
-    int32_t decompressed_length = LZ4_decompress_safe(
-        (const char *)pkt->upgate_chunk, (char *)_upgate_vars.decompress_buffer, DB_UPGATE_CHUNK_SIZE, DECOMPRESS_BUFFER_SIZE);
-    assert(decompressed_length < DECOMPRESS_BUFFER_SIZE);
-    uint32_t decompress_buffer_pos = 0;
-    do {
-        uint16_t write_buf_available = (DB_UPGATE_CHUNK_SIZE * 2) - _upgate_vars.write_buf_pos;
-        memcpy(&_upgate_vars.write_buf[_upgate_vars.write_buf_pos], &_upgate_vars.decompress_buffer[decompress_buffer_pos], write_buf_available);
-        decompressed_length -= write_buf_available;
-        decompress_buffer_pos += write_buf_available;
-        _upgate_vars.write_buf_pos = 0;
-        uint32_t addr = _upgate_vars.addr + (pkt->index - 1) * DB_UPGATE_CHUNK_SIZE;
-
-        printf("Programming 256 bytes at %p\n", addr);
-        n25q128_program_page(addr, _upgate_vars.write_buf, DB_UPGATE_CHUNK_SIZE * 2);
-        n25q128_read(addr, _upgate_vars.read_buf, DB_UPGATE_CHUNK_SIZE * 2);
-        if (memcmp(_upgate_vars.write_buf, _upgate_vars.read_buf, DB_UPGATE_CHUNK_SIZE * 2) != 0) {
-            puts("packet doesn't match!!");
+    if (_upgate_vars.use_compression) {
+        int32_t decompressed_length = LZ4_decompress_safe(
+            (const char *)pkt->upgate_chunk, (char *)_upgate_vars.decompress_buffer, DB_UPGATE_CHUNK_SIZE, DECOMPRESS_BUFFER_SIZE);
+        assert(decompressed_length < DECOMPRESS_BUFFER_SIZE);
+        uint32_t decompress_buffer_pos = 0;
+        do {
+            uint16_t write_buf_available = (DB_UPGATE_CHUNK_SIZE * 2) - _upgate_vars.write_buf_pos;
+            memcpy(&_upgate_vars.write_buf[_upgate_vars.write_buf_pos], &_upgate_vars.decompress_buffer[decompress_buffer_pos], write_buf_available);
+            decompressed_length -= write_buf_available;
+            decompress_buffer_pos += write_buf_available;
+            _upgate_vars.write_buf_pos = 0;
+        } while (decompressed_length >= (int32_t)DB_UPGATE_CHUNK_SIZE * 2);
+        memcpy(&_upgate_vars.write_buf[_upgate_vars.write_buf_pos], &_upgate_vars.decompress_buffer[decompress_buffer_pos], decompressed_length);
+        _upgate_vars.write_buf_pos = decompressed_length;
+    } else {
+        memcpy(&_upgate_vars.write_buf[(pkt->index % 2) * DB_UPGATE_CHUNK_SIZE], pkt->upgate_chunk, DB_UPGATE_CHUNK_SIZE);
+        if (pkt->index % 2 == 0) {
+            return;
         }
-    } while (decompressed_length >= (int32_t)DB_UPGATE_CHUNK_SIZE * 2);
-    memcpy(&_upgate_vars.write_buf[_upgate_vars.write_buf_pos], &_upgate_vars.decompress_buffer[decompress_buffer_pos], decompressed_length);
-    _upgate_vars.write_buf_pos = decompressed_length;
-
-
-    //memcpy(&_upgate_vars.write_buf[(pkt->index % 2) * DB_UPGATE_CHUNK_SIZE], pkt->upgate_chunk, DB_UPGATE_CHUNK_SIZE);
-    //if (pkt->index % 2 == 0) {
-    //    return;
-    //}
-    //uint32_t addr = _upgate_vars.addr + (pkt->index - 1) * DB_UPGATE_CHUNK_SIZE;
-
-    //printf("Programming 256 bytes at %p\n", addr);
-    //n25q128_program_page(addr, _upgate_vars.write_buf, DB_UPGATE_CHUNK_SIZE * 2);
-    //n25q128_read(addr, _upgate_vars.read_buf, DB_UPGATE_CHUNK_SIZE * 2);
-    //if (memcmp(_upgate_vars.write_buf, _upgate_vars.read_buf, DB_UPGATE_CHUNK_SIZE * 2) != 0) {
-    //    puts("packet doesn't match!!");
-    //}
+    }
+    uint32_t addr = _upgate_vars.addr + (pkt->index - 1) * DB_UPGATE_CHUNK_SIZE;
+    printf("Programming 256 bytes at %p\n", addr);
+    n25q128_program_page(addr, _upgate_vars.write_buf, DB_UPGATE_CHUNK_SIZE * 2);
+    n25q128_read(addr, _upgate_vars.read_buf, DB_UPGATE_CHUNK_SIZE * 2);
+    if (memcmp(_upgate_vars.write_buf, _upgate_vars.read_buf, DB_UPGATE_CHUNK_SIZE * 2) != 0) {
+        puts("packet doesn't match!!");
+    }
 }
 
 void db_upgate_handle_message(const uint8_t *message) {
@@ -140,6 +130,7 @@ void db_upgate_handle_message(const uint8_t *message) {
             memcpy(_upgate_vars.hash, hash, DB_UPGATE_SHA256_LENGTH);
             crypto_sha256_init();
 #endif
+            _upgate_vars.use_compression = upgate_start->use_compression;
             db_upgate_start(upgate_start->chunk_count);
             // Acknowledge the update start
             _upgate_vars.reply_buffer[0] = DB_UPGATE_MESSAGE_TYPE_START_ACK;

@@ -59,7 +59,7 @@ class DotBotUpgate:
             elif payload[0] == MessageType.UPGATE_MESSAGE_TYPE_CHUNK_ACK.value:
                 self.last_acked_chunk = int.from_bytes(payload[1:5], byteorder="little")
 
-    def init(self, secure):
+    def init(self, secure, use_compression):
         if secure is True:
             digest = hashes.Hash(hashes.SHA256())
             pos = 0
@@ -76,6 +76,8 @@ class DotBotUpgate:
         buffer += int((len(self.image) - 1) / CHUNK_SIZE).to_bytes(
             length=4, byteorder="little"
         )
+        if use_compression is True:
+            buffer += int(use_compression).to_bytes(length=1, byteorder="little")
         if secure is True:
             buffer += fw_hash
             signature = private_key.sign(bytes(buffer[1:]))
@@ -134,13 +136,19 @@ class DotBotUpgate:
     help="Use cryptographic security (hash and signature).",
 )
 @click.option(
+    "-c",
+    "--use-compression",
+    is_flag=True,
+    help="Compress the bitstream before sending it.",
+)
+@click.option(
     "-y",
     "--yes",
     is_flag=True,
     help="Continue the upgate without prompt.",
 )
 @click.argument("bitstream", type=click.File(mode="rb", lazy=True))
-def main(port, secure, yes, bitstream):
+def main(port, secure, use_compression, yes, bitstream):
     # Disable logging configure in PyDotBot
     structlog.configure(
         wrapper_class=structlog.make_filtering_bound_logger(logging.CRITICAL),
@@ -157,7 +165,7 @@ def main(port, secure, yes, bitstream):
     print("")
     if yes is False:
         click.confirm("Do you want to continue?", default=True, abort=True)
-    ret = upgater.init(secure)
+    ret = upgater.init(secure, use_compression)
     if ret is False:
         print("Error: No start acknowledment received. Aborting.")
         return
