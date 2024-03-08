@@ -10,6 +10,8 @@ import click
 import serial
 import structlog
 
+import lz4.block
+
 from tqdm import tqdm
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -41,8 +43,7 @@ class DotBotUpgate:
         self.device_info = None
         self.device_info_received = False
         self.start_ack_received = False
-        pad_length = CHUNK_SIZE - (len(image) % CHUNK_SIZE)
-        self.image = image + bytearray(b"\xff") * (pad_length + 1)
+        self.image = image
         self.last_acked_chunk = -1
         # Just write a single byte to fake a DotBot gateway handshake
         self.serial.write(int(PROTOCOL_VERSION).to_bytes(length=1))
@@ -68,7 +69,6 @@ class DotBotUpgate:
             fw_hash = digest.finalize()
             private_key_bytes = open(PRIVATE_KEY_PATH, "rb").read()
             private_key = Ed25519PrivateKey.from_private_bytes(private_key_bytes)
-        attempts = 0
         buffer = bytearray()
         buffer += int(MessageType.UPGATE_MESSAGE_TYPE_START.value).to_bytes(
             length=1, byteorder="little"
@@ -89,12 +89,18 @@ class DotBotUpgate:
         return self.start_ack_received is True
 
     def run(self):
+        # Compress the image by blocks and pad it to the next block size
+        compressed = lz4.block.compress(self.image)
+        pad_length = CHUNK_SIZE - (len(compressed) % CHUNK_SIZE)
+        compressed += bytearray(b"\xff") * (pad_length + 1)
+
+        # Send the compressed image by chunks
         pos = 0
         progress = tqdm(
             total=len(self.image), unit="B", unit_scale=False, colour="green", ncols=100
         )
-        progress.set_description(f"Flashing firmware ({int(len(self.image) / 1024)}kB)")
-        while pos + CHUNK_SIZE <= len(self.image) + 1:
+        progress.set_description(f"Flashing compressed firmware ({int(len(compressed) / 1024)}kB)")
+        while pos + CHUNK_SIZE <= len(compressed) + 1:
             chunk_index = int(pos / CHUNK_SIZE)
             while self.last_acked_chunk != chunk_index:
                 buffer = bytearray()
@@ -102,10 +108,10 @@ class DotBotUpgate:
                     length=1, byteorder="little"
                 )
                 buffer += int(chunk_index).to_bytes(length=4, byteorder="little")
-                buffer += int((len(self.image) - 1) / CHUNK_SIZE).to_bytes(
+                buffer += int((len(compressed) - 1) / CHUNK_SIZE).to_bytes(
                     length=4, byteorder="little"
                 )
-                buffer += self.image[pos : pos + CHUNK_SIZE]
+                buffer += compressed[pos : pos + CHUNK_SIZE]
                 self.serial.write(hdlc_encode(buffer))
                 time.sleep(0.005)
             pos += CHUNK_SIZE
