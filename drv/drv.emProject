@@ -128,4 +128,21 @@
     <file file_name="rgbled_pwm.c" />
     <file file_name="../rgbled_pwm.h" />
   </project>
+  <project Name="00drv_uzlib">
+    <configuration
+      Name="Common"
+      project_directory="uzlib"
+      project_type="Library" />
+    <file file_name="adler32.c" />
+    <file file_name="crc32.c" />
+    <file file_name="defl_static.c" />
+    <file file_name="defl_static.h" />
+    <file file_name="genlz77.c" />
+    <file file_name="tinf.h" />
+    <file file_name="tinfgzip.c" />
+    <file file_name="tinflate.c" />
+    <file file_name="tinfzlib.c" />
+    <file file_name="uzlib_conf.h" />
+    <file file_name="../uzlib.h" />
+  </project>
 </solution>
