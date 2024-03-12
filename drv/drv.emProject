@@ -5,6 +5,15 @@
     build_output_directory="Output/$(BuildTarget)/$(Configuration)/Obj"
     build_output_file_name="$(OutDir)/$(ProjectName)-$(BuildTarget)$(LIB)"
     c_user_include_directories="$(SolutionDir);$(SolutionDir)/../bsp;$(PackagesDir)/nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include" />
+  <project Name="00drv_as5048b">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_i2c(bsp)"
+      project_directory="as5048b"
+      project_type="Library" />
+    <file file_name="as5048b.c" />
+    <file file_name="../as5048b.h" />
+  </project>
   <project Name="00drv_dotbot_hdlc">
     <configuration
       Name="Common"

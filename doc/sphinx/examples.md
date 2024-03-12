@@ -43,6 +43,7 @@ Libraries examples
 ```{toctree}
 :maxdepth: 1
 
+_examples/01drv_as5048b
 _examples/01drv_imu
 _examples/01drv_ism330
 _examples/01drv_lis2mdl
