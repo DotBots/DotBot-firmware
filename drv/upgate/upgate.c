@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "gpio.h"
 #include "lz4.h"
 #include "n25q128.h"
 #include "upgate.h"
@@ -27,9 +28,9 @@
 
 //=========================== defines ==========================================
 
-#define LZ4F_VERSION            100
-#define DECOMPRESS_BUFFER_SIZE  (4096)
-#define UPGATE_BASE_ADDRESS     (0x00000000)
+#define LZ4F_VERSION           100
+#define DECOMPRESS_BUFFER_SIZE (4096)
+#define UPGATE_BASE_ADDRESS    (0x00000000)
 
 typedef struct {
     const db_upgate_conf_t *config;
@@ -52,11 +53,11 @@ static db_upgate_vars_t _upgate_vars = { 0 };
 //============================ public ==========================================
 
 void db_upgate_init(const db_upgate_conf_t *config) {
-    n25q128_init(config->n25q128_conf);
     _upgate_vars.config = config;
 }
 
 void db_upgate_start(uint32_t chunk_count) {
+    n25q128_init(_upgate_vars.config->n25q128_conf);
     _upgate_vars.addr = UPGATE_BASE_ADDRESS;
     // Erase the corresponding sectors.
     uint32_t total_bytes  = chunk_count * DB_UPGATE_CHUNK_SIZE;
@@ -74,6 +75,11 @@ void db_upgate_start(uint32_t chunk_count) {
 
 void db_upgate_finish(void) {
     puts("Finishing upgate");
+
+    // Put SPIM GPIOS as input otherwise the FPGA ends up in a broken state
+    db_gpio_init(_upgate_vars.config->n25q128_conf->mosi, DB_GPIO_IN);
+    db_gpio_init(_upgate_vars.config->n25q128_conf->sck, DB_GPIO_IN);
+    db_gpio_init(_upgate_vars.config->n25q128_conf->miso, DB_GPIO_IN);
 #if defined(UPGATE_USE_CRYPTO)
     uint8_t hash_result[DB_UPGATE_SHA256_LENGTH] = { 0 };
     crypto_sha256(hash_result);
