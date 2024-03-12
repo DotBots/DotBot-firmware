@@ -43,6 +43,8 @@
 extern "C" {
 #endif
 
+#if !DOXYGEN
+
 #include "uzlib/uzlib_conf.h"
 #if UZLIB_CONF_DEBUG_LOG
 #include <stdio.h>
@@ -169,6 +171,8 @@ void TINFCC uzlib_compress(struct uzlib_comp *c, const uint8_t *src, unsigned sl
 uint32_t TINFCC uzlib_adler32(const void *data, unsigned int length, uint32_t prev_sum);
 /* crc is previous value for incremental computation, 0xffffffff initially */
 uint32_t TINFCC uzlib_crc32(const void *data, unsigned int length, uint32_t crc);
+
+#endif /* !DOXYGEN */
 
 #ifdef __cplusplus
 } /* extern "C" */

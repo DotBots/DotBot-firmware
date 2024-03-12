@@ -9,3 +9,10 @@
 *
 * https://github.com/lz4/lz4
 */
+
+/**
+* @defgroup    drv_uzlib  ZLIB compression/decompression
+* @brief       Memory efficient zlib compression/decompression library
+*
+* https://github.com/pfalcon/uzlib
+*/
