@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import gzip
 import os
 import logging
 import time
@@ -9,8 +10,6 @@ from enum import Enum
 import click
 import serial
 import structlog
-
-import lz4.block
 
 from tqdm import tqdm
 from cryptography.hazmat.primitives import hashes
@@ -37,9 +36,11 @@ class MessageType(Enum):
 class DotBotUpgate:
     """Class used to send an FPGA bitstream."""
 
-    def __init__(self, port, baudrate, image):
+    def __init__(self, port, baudrate, image, use_compression=False, secure=False):
         self.serial = SerialInterface(port, baudrate, self.on_byte_received)
         self.hdlc_handler = HDLCHandler()
+        self.use_compression = use_compression
+        self.secure = secure
         self.device_info = None
         self.device_info_received = False
         self.start_ack_received = False
@@ -59,8 +60,8 @@ class DotBotUpgate:
             elif payload[0] == MessageType.UPGATE_MESSAGE_TYPE_CHUNK_ACK.value:
                 self.last_acked_chunk = int.from_bytes(payload[1:5], byteorder="little")
 
-    def init(self, secure, use_compression):
-        if secure is True:
+    def init(self):
+        if self.secure is True:
             digest = hashes.Hash(hashes.SHA256())
             pos = 0
             while pos + CHUNK_SIZE <= len(self.image) + 1:
@@ -76,9 +77,9 @@ class DotBotUpgate:
         buffer += int((len(self.image) - 1) / CHUNK_SIZE).to_bytes(
             length=4, byteorder="little"
         )
-        if use_compression is True:
-            buffer += int(use_compression).to_bytes(length=1, byteorder="little")
-        if secure is True:
+        if self.use_compression is True:
+            buffer += int(self.use_compression).to_bytes(length=1, byteorder="little")
+        if self.secure is True:
             buffer += fw_hash
             signature = private_key.sign(bytes(buffer[1:]))
             buffer += signature
@@ -91,18 +92,20 @@ class DotBotUpgate:
         return self.start_ack_received is True
 
     def run(self):
-        # Compress the image by blocks and pad it to the next block size
-        compressed = lz4.block.compress(self.image)
-        pad_length = CHUNK_SIZE - (len(compressed) % CHUNK_SIZE)
-        compressed += bytearray(b"\xff") * (pad_length + 1)
+        data = self.image
+        if self.use_compression:
+            # Compress the image by blocks and pad it to the next block size
+            data = gzip.compress(data)
+            pad_length = CHUNK_SIZE - (len(data) % CHUNK_SIZE)
+            data += bytearray(b"\xff") * (pad_length + 1)
 
         # Send the compressed image by chunks
         pos = 0
         progress = tqdm(
-            total=len(self.image), unit="B", unit_scale=False, colour="green", ncols=100
+            total=len(data), unit="B", unit_scale=False, colour="green", ncols=100
         )
-        progress.set_description(f"Flashing compressed firmware ({int(len(compressed) / 1024)}kB)")
-        while pos + CHUNK_SIZE <= len(compressed) + 1:
+        progress.set_description(f"Flashing compressed firmware ({int(len(data) / 1024)}kB)")
+        while pos + CHUNK_SIZE <= len(data) + 1:
             chunk_index = int(pos / CHUNK_SIZE)
             while self.last_acked_chunk != chunk_index:
                 buffer = bytearray()
@@ -110,10 +113,10 @@ class DotBotUpgate:
                     length=1, byteorder="little"
                 )
                 buffer += int(chunk_index).to_bytes(length=4, byteorder="little")
-                buffer += int((len(compressed) - 1) / CHUNK_SIZE).to_bytes(
+                buffer += int((len(data) - 1) / CHUNK_SIZE).to_bytes(
                     length=4, byteorder="little"
                 )
-                buffer += compressed[pos : pos + CHUNK_SIZE]
+                buffer += data[pos : pos + CHUNK_SIZE]
                 self.serial.write(hdlc_encode(buffer))
                 time.sleep(0.005)
             pos += CHUNK_SIZE
@@ -154,7 +157,12 @@ def main(port, secure, use_compression, yes, bitstream):
         wrapper_class=structlog.make_filtering_bound_logger(logging.CRITICAL),
     )
     try:
-        upgater = DotBotUpgate(port, BAUDRATE, bytearray(bitstream.read()))
+        upgater = DotBotUpgate(
+            port,
+            BAUDRATE,
+            bytearray(bitstream.read()),
+            use_compression=use_compression
+        )
     except (
         SerialInterfaceException,
         serial.serialutil.SerialException,
@@ -165,7 +173,7 @@ def main(port, secure, use_compression, yes, bitstream):
     print("")
     if yes is False:
         click.confirm("Do you want to continue?", default=True, abort=True)
-    ret = upgater.init(secure, use_compression)
+    ret = upgater.init()
     if ret is False:
         print("Error: No start acknowledment received. Aborting.")
         return
