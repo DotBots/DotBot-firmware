@@ -14,6 +14,7 @@
  */
 
 #include <stdint.h>
+#include "gpio.h"
 #include "n25q128.h"
 
 //=========================== defines ==========================================
@@ -28,6 +29,7 @@ typedef void (*db_upgate_reply_t)(const uint8_t *, size_t);  ///< Transport agno
 typedef struct {
     db_upgate_reply_t     reply;  ///< Pointer to the function used to reply to the upgate script
     const n25q128_conf_t *n25q128_conf;
+    const gpio_t         *prog;
 } db_upgate_conf_t;
 
 ///< FPGA bitstream update start notification packet

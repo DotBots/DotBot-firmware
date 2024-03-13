@@ -36,11 +36,13 @@ static const gpio_t _sck_pin  = { .port = 0, .pin = 23 };
 static const gpio_t _miso_pin = { .port = 0, .pin = 22 };
 static const gpio_t _mosi_pin = { .port = 0, .pin = 21 };
 static const gpio_t _cs_pin   = { .port = 0, .pin = 20 };
+static const gpio_t _prog_pin = { .port = 0, .pin = 19 };
 #else
 static const gpio_t _sck_pin  = { .port = 1, .pin = 15 };
 static const gpio_t _miso_pin = { .port = 1, .pin = 14 };
 static const gpio_t _mosi_pin = { .port = 1, .pin = 13 };
 static const gpio_t _cs_pin   = { .port = 1, .pin = 12 };
+static const gpio_t _prog_pin = { .port = 0, .pin = 11 };
 #endif
 
 static const n25q128_conf_t _n25q128_conf = {
@@ -67,6 +69,7 @@ static void _upgate_reply(const uint8_t *message, size_t len) {
 static const db_upgate_conf_t _upgate_config = {
     .reply = _upgate_reply,
     .n25q128_conf = &_n25q128_conf,
+    .prog = &_prog_pin,
 };
 
 //================================ main ========================================

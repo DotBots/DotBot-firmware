@@ -54,6 +54,9 @@ static db_upgate_vars_t _upgate_vars = { 0 };
 
 void db_upgate_init(const db_upgate_conf_t *config) {
     _upgate_vars.config = config;
+    db_gpio_init(config->prog, DB_GPIO_OUT);
+    nrf_port[config->prog->port]->PIN_CNF[config->prog->pin] |= GPIO_PIN_CNF_DRIVE_H0D1 << GPIO_PIN_CNF_DRIVE_Pos;
+    db_gpio_set(_upgate_vars.config->prog);
 }
 
 void db_upgate_start(uint32_t chunk_count) {
@@ -76,10 +79,6 @@ void db_upgate_start(uint32_t chunk_count) {
 void db_upgate_finish(void) {
     puts("Finishing upgate");
 
-    // Put SPIM GPIOS as input otherwise the FPGA ends up in a broken state
-    db_gpio_init(_upgate_vars.config->n25q128_conf->mosi, DB_GPIO_IN);
-    db_gpio_init(_upgate_vars.config->n25q128_conf->sck, DB_GPIO_IN);
-    db_gpio_init(_upgate_vars.config->n25q128_conf->miso, DB_GPIO_IN);
 #if defined(UPGATE_USE_CRYPTO)
     uint8_t hash_result[DB_UPGATE_SHA256_LENGTH] = { 0 };
     crypto_sha256(hash_result);
@@ -88,6 +87,15 @@ void db_upgate_finish(void) {
         return;
     }
 #endif
+
+    // Put SPIM GPIOS as input otherwise the FPGA ends up in a broken state
+    db_gpio_init(_upgate_vars.config->n25q128_conf->mosi, DB_GPIO_IN);
+    db_gpio_init(_upgate_vars.config->n25q128_conf->sck, DB_GPIO_IN);
+    db_gpio_init(_upgate_vars.config->n25q128_conf->miso, DB_GPIO_IN);
+
+    // Trigger FPGA program
+    db_gpio_clear(_upgate_vars.config->prog);
+    db_gpio_set(_upgate_vars.config->prog);
 
     // TODO: Reset the FPGA
 }
