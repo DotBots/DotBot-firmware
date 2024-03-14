@@ -100,7 +100,7 @@ static float  calculate_error(float heading, float bearing);
 static int8_t map_error_to_rudder_angle(float error);
 static void   _timeout_check(void);
 static void   _advertise(void);
-static void   _send_gps_data(const nmea_gprmc_t *data, uint16_t heading, uint16_t wind_angle);
+static void   _send_data(const nmea_gprmc_t *data, uint16_t heading, uint16_t wind_angle);
 
 //=========================== main =========================================
 
@@ -165,7 +165,7 @@ int main(void) {
         if (_sailbot_vars.send_log_data) {
             // For now I will read the encoder here, but the measurements must be added as a variable to _sailbot_vars
             wind_raw_angle = (uint16_t)as5048b_i2c_read_angle_degree();
-            _send_gps_data(_sailbot_vars.last_gps_data, _sailbot_vars.last_heading, wind_raw_angle);
+            _send_data(_sailbot_vars.last_gps_data, _sailbot_vars.last_heading, wind_raw_angle, 0, _sailbot_vars.sail_trim);
             _sailbot_vars.send_log_data = false;
         }
         __WFE();
@@ -313,20 +313,37 @@ void control_loop_callback(void) {
     }
 }
 
-// Not only GPS data. Maybe change function name or send wind sensor data in a different function.
-static void _send_gps_data(const nmea_gprmc_t *data, uint16_t heading, uint16_t wind_angle) {
+static void _send_data(const nmea_gprmc_t *data, uint16_t heading, uint16_t wind_angle, int8_t rudder_angle, int8_t sail_trim) {
     int32_t latitude  = (int32_t)(data->latitude * 1e6);
     int32_t longitude = (int32_t)(data->longitude * 1e6);
 
     db_protocol_header_to_buffer(_sailbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, SailBot, DB_PROTOCOL_SAILBOT_DATA);
 
-    memcpy(_sailbot_vars.radio_buffer + sizeof(protocol_header_t), &heading, sizeof(uint16_t));
-    memcpy(_sailbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(uint16_t), &latitude, sizeof(int32_t));
-    memcpy(_sailbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(uint16_t) + sizeof(int32_t), &longitude, sizeof(int32_t));
-    // Add wind sensor measurements
-    memcpy(_sailbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(uint16_t) + 2*sizeof(int32_t), &wind_angle, sizeof(uint16_t));
+    // define the offsets based on the order of the data
+    size_t header_size      = sizeof(protocol_header_t);
+    size_t heading_size     = sizeof(uint16_t);
+    size_t latitude_size    = sizeof(int32_t);
+    size_t longitude_size   = sizeof(int32_t);
+    size_t wind_angle_size  = sizeof(uint16_t);
+    size_t rudder_angle_size = sizeof(int8_t);
+    size_t sail_trim_size    = sizeof(int8_t);
 
-    size_t length = sizeof(protocol_header_t) + sizeof(uint16_t) + 2 * sizeof(int32_t) + sizeof(uint16_t);
+    size_t heading_offset    = header_size;
+    size_t latitude_offset   = heading_offset + heading_size;
+    size_t longitude_offset  = latitude_offset + latitude_size;
+    size_t wind_angle_offset = longitude_offset + longitude_size;
+    size_t rudder_angle_offset = wind_angle_offset + rudder_angle_size;
+    size_t sail_trim_offset    = rudder_angle_offset + sail_trim_size;
+
+    memcpy(_sailbot_vars.radio_buffer + heading_offset, &heading, heading_size);
+    memcpy(_sailbot_vars.radio_buffer + latitude_offset, &latitude, latitude_size);
+    memcpy(_sailbot_vars.radio_buffer + longitude_offset, &longitude, longitude_size);
+    memcpy(_sailbot_vars.radio_buffer + wind_angle_offset, &wind_angle, wind_angle_size);
+    memcpy(_sailbot_vars.radio_buffer + rudder_angle_offset, &rudder_angle, rudder_angle_size);
+    memcpy(_sailbot_vars.radio_buffer + sail_trim_offset, &sail_trim, sail_trim_size);
+
+    size_t length = header_size + heading_size + latitude_size + longitude_size + wind_angle_size + rudder_angle_size + sail_trim_size;
+
     db_radio_disable();
     db_radio_tx(_sailbot_vars.radio_buffer, length);
 }
