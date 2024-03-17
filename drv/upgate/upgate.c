@@ -16,8 +16,8 @@
 #include <string.h>
 
 #include "gpio.h"
-#include "lz4.h"
 #include "n25q128.h"
+#include "uzlib.h"
 #include "upgate.h"
 
 #if defined(UPGATE_USE_CRYPTO)
@@ -28,22 +28,25 @@
 
 //=========================== defines ==========================================
 
-#define LZ4F_VERSION           100
-#define DECOMPRESS_BUFFER_SIZE (4096)
-#define UPGATE_BASE_ADDRESS    (0x00000000)
+#define LZ4F_VERSION        100
+#define BUFFER_SIZE         (8192)
+#define UPGATE_BASE_ADDRESS (0x00000000)
 
 typedef struct {
     const db_upgate_conf_t *config;
     uint8_t                 reply_buffer[UINT8_MAX];
     uint32_t                target_partition;
     uint32_t                addr;
-    uint32_t                last_index_acked;
+    uint32_t                last_packet_acked;
+    uint32_t                bistream_size;
     uint8_t                 hash[DB_UPGATE_SHA256_LENGTH];
     uint8_t                 read_buf[DB_UPGATE_CHUNK_SIZE * 2];
     uint8_t                 write_buf[DB_UPGATE_CHUNK_SIZE * 2];
     bool                    use_compression;
-    uint8_t                 write_buf_pos;
-    uint8_t                 decompress_buffer[DECOMPRESS_BUFFER_SIZE];
+    uint8_t                 temp_buffer[BUFFER_SIZE];
+    uint16_t                compressed_length;
+    uint8_t                 decompressed_buffer[BUFFER_SIZE];
+    struct uzlib_uncomp     d;
 } db_upgate_vars_t;
 
 //=========================== variables ========================================
@@ -59,12 +62,11 @@ void db_upgate_init(const db_upgate_conf_t *config) {
     db_gpio_set(_upgate_vars.config->prog);
 }
 
-void db_upgate_start(uint32_t chunk_count) {
+void db_upgate_start(void) {
     n25q128_init(_upgate_vars.config->n25q128_conf);
     _upgate_vars.addr = UPGATE_BASE_ADDRESS;
     // Erase the corresponding sectors.
-    uint32_t total_bytes  = chunk_count * DB_UPGATE_CHUNK_SIZE;
-    uint32_t sector_count = (total_bytes / N25Q128_SECTOR_SIZE) + 1;
+    uint32_t sector_count = (_upgate_vars.bistream_size / N25Q128_SECTOR_SIZE) + (_upgate_vars.bistream_size % N25Q128_SECTOR_SIZE != 0);
     printf("Sectors to erase: %u\n", sector_count);
     for (uint32_t sector = 0; sector < sector_count; sector++) {
         uint32_t addr = _upgate_vars.addr + sector * N25Q128_SECTOR_SIZE;
@@ -72,7 +74,8 @@ void db_upgate_start(uint32_t chunk_count) {
         n25q128_sector_erase(addr);
     }
     puts("");
-    _upgate_vars.last_index_acked = UINT32_MAX;
+    uzlib_init();
+    _upgate_vars.last_packet_acked = UINT32_MAX;
     printf("Starting upgate at %p\n\n", _upgate_vars.addr);
 }
 
@@ -93,40 +96,61 @@ void db_upgate_finish(void) {
     db_gpio_init(_upgate_vars.config->n25q128_conf->sck, DB_GPIO_IN);
     db_gpio_init(_upgate_vars.config->n25q128_conf->miso, DB_GPIO_IN);
 
-    // Trigger FPGA program
+    // Reset the FPGA by triggerring the FPGA prog pin
     db_gpio_clear(_upgate_vars.config->prog);
     db_gpio_set(_upgate_vars.config->prog);
-
-    // TODO: Reset the FPGA
 }
 
-void db_upgate_write_chunk(const db_upgate_pkt_t *pkt) {
+void db_upgate_handle_packet(const db_upgate_pkt_t *pkt) {
     if (_upgate_vars.use_compression) {
-        int32_t decompressed_length = LZ4_decompress_safe(
-            (const char *)pkt->upgate_chunk, (char *)_upgate_vars.decompress_buffer, DB_UPGATE_CHUNK_SIZE, DECOMPRESS_BUFFER_SIZE);
-        assert(decompressed_length < DECOMPRESS_BUFFER_SIZE);
-        uint32_t decompress_buffer_pos = 0;
-        do {
-            uint16_t write_buf_available = (DB_UPGATE_CHUNK_SIZE * 2) - _upgate_vars.write_buf_pos;
-            memcpy(&_upgate_vars.write_buf[_upgate_vars.write_buf_pos], &_upgate_vars.decompress_buffer[decompress_buffer_pos], write_buf_available);
-            decompressed_length -= write_buf_available;
-            decompress_buffer_pos += write_buf_available;
-            _upgate_vars.write_buf_pos = 0;
-        } while (decompressed_length >= (int32_t)DB_UPGATE_CHUNK_SIZE * 2);
-        memcpy(&_upgate_vars.write_buf[_upgate_vars.write_buf_pos], &_upgate_vars.decompress_buffer[decompress_buffer_pos], decompressed_length);
-        _upgate_vars.write_buf_pos = decompressed_length;
+        uint8_t packet_size = pkt->packet_size;
+        _upgate_vars.compressed_length += packet_size;
+        if (pkt->packet_index == 0) {
+            memset(_upgate_vars.temp_buffer, 0, sizeof(_upgate_vars.temp_buffer));
+            memset(_upgate_vars.decompressed_buffer, 0, sizeof(_upgate_vars.decompressed_buffer));
+            uzlib_uncompress_init(&_upgate_vars.d, NULL, 0);
+            _upgate_vars.d.source         = _upgate_vars.temp_buffer;
+            _upgate_vars.d.source_limit   = _upgate_vars.temp_buffer + sizeof(_upgate_vars.temp_buffer);
+            _upgate_vars.d.source_read_cb = NULL;
+            _upgate_vars.d.dest_start = _upgate_vars.d.dest = _upgate_vars.decompressed_buffer;
+        }
+        memcpy(&_upgate_vars.temp_buffer[pkt->packet_index * DB_UPGATE_CHUNK_SIZE], pkt->data, packet_size);
+        if (pkt->packet_index == pkt->packet_count - 1) {
+            _upgate_vars.d.source_limit = _upgate_vars.temp_buffer + _upgate_vars.compressed_length;
+            int ret                     = uzlib_gzip_parse_header(&_upgate_vars.d);
+            assert(ret == TINF_OK);
+            uint16_t remaining_data = BUFFER_SIZE;
+            while (remaining_data) {
+                uint8_t block_len         = remaining_data < DB_UPGATE_CHUNK_SIZE ? remaining_data : DB_UPGATE_CHUNK_SIZE;
+                _upgate_vars.d.dest_limit = _upgate_vars.d.dest + block_len;
+                int ret                   = uzlib_uncompress(&_upgate_vars.d);
+                if (ret != TINF_OK) {
+                    break;
+                }
+                remaining_data -= block_len;
+            }
+            uint32_t base_addr = _upgate_vars.addr + pkt->chunk_index * BUFFER_SIZE;
+            for (uint32_t block = 0; block < BUFFER_SIZE / N25Q128_PAGE_SIZE; block++) {
+                printf("Programming %d bytes at %p\n", N25Q128_PAGE_SIZE, base_addr + block * N25Q128_PAGE_SIZE);
+                n25q128_program_page(base_addr + block * N25Q128_PAGE_SIZE, &_upgate_vars.decompressed_buffer[block * N25Q128_PAGE_SIZE], N25Q128_PAGE_SIZE);
+                n25q128_read(base_addr + block * N25Q128_PAGE_SIZE, _upgate_vars.temp_buffer, N25Q128_PAGE_SIZE);
+                if (memcmp(&_upgate_vars.decompressed_buffer[block * N25Q128_PAGE_SIZE], _upgate_vars.temp_buffer, N25Q128_PAGE_SIZE) != 0) {
+                    puts("packet doesn't match!!");
+                }
+            }
+        }
     } else {
-        memcpy(&_upgate_vars.write_buf[(pkt->index % 2) * DB_UPGATE_CHUNK_SIZE], pkt->upgate_chunk, DB_UPGATE_CHUNK_SIZE);
-        if (pkt->index % 2 == 0) {
+        memcpy(&_upgate_vars.write_buf[(pkt->chunk_index % 2) * DB_UPGATE_CHUNK_SIZE], pkt->data, DB_UPGATE_CHUNK_SIZE);
+        if (pkt->chunk_index % 2 == 0) {
             return;
         }
-    }
-    uint32_t addr = _upgate_vars.addr + (pkt->index - 1) * DB_UPGATE_CHUNK_SIZE;
-    printf("Programming 256 bytes at %p\n", addr);
-    n25q128_program_page(addr, _upgate_vars.write_buf, DB_UPGATE_CHUNK_SIZE * 2);
-    n25q128_read(addr, _upgate_vars.read_buf, DB_UPGATE_CHUNK_SIZE * 2);
-    if (memcmp(_upgate_vars.write_buf, _upgate_vars.read_buf, DB_UPGATE_CHUNK_SIZE * 2) != 0) {
-        puts("packet doesn't match!!");
+        uint32_t addr = _upgate_vars.addr + (pkt->chunk_index - 1) * DB_UPGATE_CHUNK_SIZE;
+        printf("Programming 256 bytes at %p\n", addr);
+        n25q128_program_page(addr, _upgate_vars.write_buf, DB_UPGATE_CHUNK_SIZE * 2);
+        n25q128_read(addr, _upgate_vars.read_buf, DB_UPGATE_CHUNK_SIZE * 2);
+        if (memcmp(_upgate_vars.write_buf, _upgate_vars.read_buf, DB_UPGATE_CHUNK_SIZE * 2) != 0) {
+            puts("packet doesn't match!!");
+        }
     }
 }
 
@@ -144,37 +168,40 @@ void db_upgate_handle_message(const uint8_t *message) {
             memcpy(_upgate_vars.hash, hash, DB_UPGATE_SHA256_LENGTH);
             crypto_sha256_init();
 #endif
-            _upgate_vars.use_compression = upgate_start->use_compression;
-            db_upgate_start(upgate_start->chunk_count);
+            bool     use_compression     = upgate_start->use_compression;
+            uint32_t bitstream_size      = upgate_start->bitstream_size;
+            _upgate_vars.use_compression = use_compression;
+            _upgate_vars.bistream_size   = bitstream_size;
+            db_upgate_start();
             // Acknowledge the update start
             _upgate_vars.reply_buffer[0] = DB_UPGATE_MESSAGE_TYPE_START_ACK;
             _upgate_vars.config->reply(_upgate_vars.reply_buffer, sizeof(db_upgate_message_type_t));
         } break;
-        case DB_UPGATE_MESSAGE_TYPE_CHUNK:
+        case DB_UPGATE_MESSAGE_TYPE_PACKET:
         {
-            const db_upgate_pkt_t *upgate_pkt  = (const db_upgate_pkt_t *)&message[1];
-            const uint32_t         chunk_index = upgate_pkt->index;
-            const uint32_t         chunk_count = upgate_pkt->chunk_count;
-
-            if (_upgate_vars.last_index_acked != chunk_index) {
+            const db_upgate_pkt_t *upgate_pkt = (const db_upgate_pkt_t *)&message[1];
+            const uint32_t         token      = upgate_pkt->packet_token;
+            if (_upgate_vars.last_packet_acked != token) {
                 //  Skip writing the chunk if already acked
-                db_upgate_write_chunk(upgate_pkt);
+                db_upgate_handle_packet(upgate_pkt);
 #if defined(UPGATE_USE_CRYPTO)
                 crypto_sha256_update((const uint8_t *)upgate_pkt->upgate_chunk, DB_UPGATE_CHUNK_SIZE);
 #endif
             }
 
-            // Acknowledge the received chunk
-            _upgate_vars.reply_buffer[0] = DB_UPGATE_MESSAGE_TYPE_CHUNK_ACK;
-            memcpy(&_upgate_vars.reply_buffer[1], &chunk_index, sizeof(uint32_t));
+            // Acknowledge the received packet
+            _upgate_vars.reply_buffer[0] = DB_UPGATE_MESSAGE_TYPE_PACKET_ACK;
+            memcpy(&_upgate_vars.reply_buffer[1], &token, sizeof(uint32_t));
             _upgate_vars.config->reply(_upgate_vars.reply_buffer, sizeof(db_upgate_message_type_t) + sizeof(uint32_t));
-            _upgate_vars.last_index_acked = chunk_index;
-
-            if (chunk_index == chunk_count - 1) {
-                puts("");
-                db_upgate_finish();
-            }
+            _upgate_vars.last_packet_acked = token;
         } break;
+        case DB_UPGATE_MESSAGE_TYPE_FINALIZE:
+            puts("");
+            db_upgate_finish();
+            // Acknowledge the finalize step
+            _upgate_vars.reply_buffer[0] = DB_UPGATE_MESSAGE_TYPE_FINALIZE_ACK;
+            _upgate_vars.config->reply(_upgate_vars.reply_buffer, sizeof(db_upgate_message_type_t));
+            break;
         default:
             break;
     }
