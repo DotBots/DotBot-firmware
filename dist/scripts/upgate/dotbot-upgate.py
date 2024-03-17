@@ -3,8 +3,10 @@
 import gzip
 import os
 import logging
+import secrets
 import time
 
+from dataclasses import dataclass
 from enum import Enum
 
 import click
@@ -22,6 +24,7 @@ from dotbot.serial_interface import SerialInterface, SerialInterfaceException
 
 BAUDRATE = 1000000
 CHUNK_SIZE = 128
+COMPRESSED_CHUNK_SIZE = 8192
 PRIVATE_KEY_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "private_key")
 
 class MessageType(Enum):
@@ -29,8 +32,28 @@ class MessageType(Enum):
 
     UPGATE_MESSAGE_TYPE_START = 0
     UPGATE_MESSAGE_TYPE_START_ACK = 1
-    UPGATE_MESSAGE_TYPE_CHUNK = 2
-    UPGATE_MESSAGE_TYPE_CHUNK_ACK = 3
+    UPGATE_MESSAGE_TYPE_PACKET = 2
+    UPGATE_MESSAGE_TYPE_PACKET_ACK = 3
+    UPGATE_MESSAGE_TYPE_FINALIZE = 4
+    UPGATE_MESSAGE_TYPE_FINALIZE_ACK = 5
+
+@dataclass
+class RadioPacket:
+    """Class that holds radio packets."""
+
+    index: int
+    token: bytes
+    data: bytes
+
+
+@dataclass
+class DataChunk:
+    """Class that holds data chunks."""
+
+    index: int
+    dsize: int
+    csize: int
+    packets: bytes
 
 
 class DotBotUpgate:
@@ -44,8 +67,10 @@ class DotBotUpgate:
         self.device_info = None
         self.device_info_received = False
         self.start_ack_received = False
+        self.finalize_ack_received = False
         self.image = image
-        self.last_acked_chunk = -1
+        self.last_acked_token = -1
+        self.chunks = []
         # Just write a single byte to fake a DotBot gateway handshake
         self.serial.write(int(PROTOCOL_VERSION).to_bytes(length=1))
 
@@ -57,10 +82,67 @@ class DotBotUpgate:
                 return
             if payload[0] == MessageType.UPGATE_MESSAGE_TYPE_START_ACK.value:
                 self.start_ack_received = True
-            elif payload[0] == MessageType.UPGATE_MESSAGE_TYPE_CHUNK_ACK.value:
-                self.last_acked_chunk = int.from_bytes(payload[1:5], byteorder="little")
+            if payload[0] == MessageType.UPGATE_MESSAGE_TYPE_FINALIZE_ACK.value:
+                self.finalize_ack_received = True
+            elif payload[0] == MessageType.UPGATE_MESSAGE_TYPE_PACKET_ACK.value:
+                self.last_acked_token = int.from_bytes(payload[1:5], byteorder="little")
 
     def init(self):
+        if self.use_compression is True:
+            chunks_count = int(len(self.image) / COMPRESSED_CHUNK_SIZE) + int(len(self.image) % COMPRESSED_CHUNK_SIZE != 0)
+            for chunk in range(chunks_count):
+                if chunk == chunks_count - 1:
+                    compressed = gzip.compress(
+                        self.image[chunk * COMPRESSED_CHUNK_SIZE:]
+                    )
+                    dsize = len(self.image) % COMPRESSED_CHUNK_SIZE
+                else:
+                    compressed = gzip.compress(
+                        self.image[chunk * COMPRESSED_CHUNK_SIZE : (chunk + 1) * COMPRESSED_CHUNK_SIZE]
+                    )
+                    dsize = COMPRESSED_CHUNK_SIZE
+                packets_count = int(len(compressed) / CHUNK_SIZE) + int(len(compressed) % CHUNK_SIZE != 0)
+                packets = []
+                for packet_idx in range(packets_count):
+                    if packet_idx == packets_count - 1:
+                        packet_data = compressed[packet_idx * CHUNK_SIZE:]
+                    else:
+                        packet_data = compressed[packet_idx * CHUNK_SIZE : (packet_idx + 1) * CHUNK_SIZE]
+                    packets.append(
+                        RadioPacket(index=packet_idx, token=secrets.token_bytes(4), data=packet_data)
+                    )
+                self.chunks.append(
+                    DataChunk(
+                        index=chunk,
+                        dsize=dsize,
+                        csize=len(compressed),
+                        packets=packets,
+                    )
+                )
+            image_size = len(self.image)
+            compressed_size = sum([c.csize for c in self.chunks])
+            print(f"Compression ratio: {(1 - compressed_size / image_size) * 100:.2f}% ({image_size}B -> {compressed_size}B)")
+            print(f"Compressed chunks ({COMPRESSED_CHUNK_SIZE}B): {len(self.chunks)}")
+        else:
+            chunks_count = int(len(self.image) / CHUNK_SIZE) + int(len(self.image) % CHUNK_SIZE != 0)
+            for chunk in range(chunks_count):
+                if chunk == chunks_count - 1:
+                    data=self.image[chunks_count * CHUNK_SIZE:]
+                    dsize = len(self.image) % CHUNK_SIZE
+                else:
+                    data = self.image[chunk * CHUNK_SIZE : (chunk + 1) * CHUNK_SIZE]
+                    dsize = CHUNK_SIZE
+                self.chunks.append(
+                    DataChunk(
+                        index=chunk,
+                        dsize=dsize,
+                        csize=dsize,
+                        packets=[
+                            RadioPacket(index=0, token=secrets.token_bytes(4), data=data)
+                        ],
+                    )
+                )
+        print(f"Radio packets ({CHUNK_SIZE}B): {sum([len(c.packets) for c in self.chunks])}")
         if self.secure is True:
             digest = hashes.Hash(hashes.SHA256())
             pos = 0
@@ -70,20 +152,18 @@ class DotBotUpgate:
             fw_hash = digest.finalize()
             private_key_bytes = open(PRIVATE_KEY_PATH, "rb").read()
             private_key = Ed25519PrivateKey.from_private_bytes(private_key_bytes)
+
         buffer = bytearray()
         buffer += int(MessageType.UPGATE_MESSAGE_TYPE_START.value).to_bytes(
             length=1, byteorder="little"
         )
-        buffer += int((len(self.image) - 1) / CHUNK_SIZE).to_bytes(
-            length=4, byteorder="little"
-        )
-        if self.use_compression is True:
-            buffer += int(self.use_compression).to_bytes(length=1, byteorder="little")
+        buffer += len(self.image).to_bytes(length=4, byteorder="little")
+        buffer += int(self.use_compression).to_bytes(length=1, byteorder="little")
         if self.secure is True:
             buffer += fw_hash
             signature = private_key.sign(bytes(buffer[1:]))
             buffer += signature
-        print("Sending start update notification...")
+        print("Sending start upgate notification...")
         self.serial.write(hdlc_encode(buffer))
         timeout = 0  # ms
         while self.start_ack_received is False and timeout < 60000:
@@ -91,39 +171,51 @@ class DotBotUpgate:
             time.sleep(0.01)
         return self.start_ack_received is True
 
-    def run(self):
-        data = self.image
-        if self.use_compression:
-            # Compress the image by blocks and pad it to the next block size
-            data = gzip.compress(data)
-            pad_length = CHUNK_SIZE - (len(data) % CHUNK_SIZE)
-            data += bytearray(b"\xff") * (pad_length + 1)
-
-        # Send the compressed image by chunks
-        pos = 0
-        progress = tqdm(
-            total=len(data), unit="B", unit_scale=False, colour="green", ncols=100
+    def finalize(self):
+        buffer = bytearray()
+        buffer += int(MessageType.UPGATE_MESSAGE_TYPE_FINALIZE.value).to_bytes(
+            length=1, byteorder="little"
         )
-        progress.set_description(f"Flashing compressed firmware ({int(len(data) / 1024)}kB)")
-        while pos + CHUNK_SIZE <= len(data) + 1:
-            chunk_index = int(pos / CHUNK_SIZE)
-            while self.last_acked_chunk != chunk_index:
-                buffer = bytearray()
-                buffer += int(MessageType.UPGATE_MESSAGE_TYPE_CHUNK.value).to_bytes(
-                    length=1, byteorder="little"
-                )
-                buffer += int(chunk_index).to_bytes(length=4, byteorder="little")
-                buffer += int((len(data) - 1) / CHUNK_SIZE).to_bytes(
-                    length=4, byteorder="little"
-                )
-                buffer += data[pos : pos + CHUNK_SIZE]
-                self.serial.write(hdlc_encode(buffer))
-                time.sleep(0.005)
-            pos += CHUNK_SIZE
-            progress.update(CHUNK_SIZE)
+        buffer += int((len(self.image) - 1) / CHUNK_SIZE).to_bytes(
+            length=4, byteorder="little"
+        )
+        print("Sending upgate finalize...")
+        self.serial.write(hdlc_encode(buffer))
+        timeout = 0  # ms
+        while self.finalize_ack_received is False and timeout < 60000:
+            timeout += 1
+            time.sleep(0.01)
+        return self.finalize_ack_received is True
+
+    def send_packet(self, chunk_index, packet, packet_count):
+        while self.last_acked_token != int.from_bytes(packet.token, byteorder="little"):
+            buffer = bytearray()
+            buffer += int(MessageType.UPGATE_MESSAGE_TYPE_PACKET.value).to_bytes(
+                length=1, byteorder="little"
+            )
+            buffer += int(chunk_index).to_bytes(length=4, byteorder="little")
+            buffer += packet.token
+            buffer += int(packet.index).to_bytes(length=1, byteorder="little")
+            buffer += int(packet_count).to_bytes(length=1, byteorder="little")
+            buffer += int(len(packet.data)).to_bytes(length=1, byteorder="little")
+            buffer += packet.data
+            self.serial.write(hdlc_encode(buffer))
+            time.sleep(0.005)
+
+    def transfer(self):
+        if self.use_compression is True:
+            data_size = sum([c.csize for c in self.chunks])
+        else:
+            data_size = len(self.image)
+        progress = tqdm(total=data_size, unit="B", unit_scale=False, colour="green", ncols=100)
+        progress.set_description(f"Flashing compressed firmware ({int(data_size / 1024)}kB)")
+        for idx, chunk in enumerate(self.chunks):
+            for packet in chunk.packets:
+                self.send_packet(chunk.index, packet, len(chunk.packets))
+            if idx < len(self.chunks) - 1:
+                progress.update(chunk.csize if self.use_compression is True else chunk.dsize)
         progress.update(1)
         progress.close()
-
 
 @click.command()
 @click.option(
@@ -161,7 +253,8 @@ def main(port, secure, use_compression, yes, bitstream):
             port,
             BAUDRATE,
             bytearray(bitstream.read()),
-            use_compression=use_compression
+            use_compression=use_compression,
+            secure=secure,
         )
     except (
         SerialInterfaceException,
@@ -175,9 +268,13 @@ def main(port, secure, use_compression, yes, bitstream):
         click.confirm("Do you want to continue?", default=True, abort=True)
     ret = upgater.init()
     if ret is False:
-        print("Error: No start acknowledment received. Aborting.")
+        print("Error: No start acknowledgment received. Aborting.")
         return
-    upgater.run()
+    upgater.transfer()
+    ret = upgater.finalize()
+    if ret is False:
+        print("Error: No finalize acknowledgment received. Upgate failed.")
+        return
     print("Done")
 
 
