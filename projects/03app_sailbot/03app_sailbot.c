@@ -100,7 +100,7 @@ static float  calculate_error(float heading, float bearing);
 static int8_t map_error_to_rudder_angle(float error);
 static void   _timeout_check(void);
 static void   _advertise(void);
-static void   _send_data(const nmea_gprmc_t *data, uint16_t heading, uint16_t wind_angle, int8_t rudder_angle, int8_t sail_trim));
+static void   _send_data(const nmea_gprmc_t *data, uint16_t heading, uint16_t wind_angle, int8_t rudder_angle, int8_t sail_trim);
 
 //=========================== main =========================================
 
