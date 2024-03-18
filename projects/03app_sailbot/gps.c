@@ -20,8 +20,8 @@
 
 //=========================== defines ==========================================
 
-#define GPS_UART_MAX_BYTES (128U)   ///< max bytes in UART receive buffer, must be greater than 82 bytes for NMEA
-#define UART_SLEEP 1000  ///< delay after calling UART functions, a short delay can result in invalid writing of GPS data after a reset.
+#define GPS_UART_MAX_BYTES (128U)  ///< max bytes in UART receive buffer, must be greater than 82 bytes for NMEA
+#define UART_SLEEP         1000    ///< delay after calling UART functions, a short delay can result in invalid writing of GPS data after a reset.
 
 typedef struct {
     uint8_t      buffer[GPS_UART_MAX_BYTES];  ///< buffer where message received on UART is stored

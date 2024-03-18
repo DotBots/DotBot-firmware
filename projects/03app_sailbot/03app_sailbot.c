@@ -36,26 +36,26 @@
 
 //=========================== defines =========================================
 
-#define CONTROL_LOOP_PERIOD_MS          (1000)  ///< control loop period
-#define WAYPOINT_DISTANCE_THRESHOLD     (10)    ///< in meters
+#define CONTROL_LOOP_PERIOD_MS      (1000)  ///< control loop period
+#define WAYPOINT_DISTANCE_THRESHOLD (10)    ///< in meters
 
-#define SAIL_TRIM_ANGLE_UNIT_STEP       (10)     ///< unit step increase/decrease when trimming the sails
-#define TIMEOUT_CHECK_DELAY_TICKS       (17000)  ///< ~500 ms delay between packet received timeout checks
-#define TIMEOUT_CHECK_DELAY_MS          (200)    ///< 200 ms delay between packet received timeout checks
-#define ADVERTISEMENT_PERIOD_MS         (500)    ///< send an advertisement every 500 ms
-#define DB_BUFFER_MAX_BYTES             (64U)    ///< Max bytes in UART receive buffer
+#define SAIL_TRIM_ANGLE_UNIT_STEP (10)     ///< unit step increase/decrease when trimming the sails
+#define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
+#define TIMEOUT_CHECK_DELAY_MS    (200)    ///< 200 ms delay between packet received timeout checks
+#define ADVERTISEMENT_PERIOD_MS   (500)    ///< send an advertisement every 500 ms
+#define DB_BUFFER_MAX_BYTES       (64U)    ///< Max bytes in UART receive buffer
 
-#define CONST_EARTH_RADIUS_KM           (6371.0F)               // 6371 km
-#define CONST_COS_PHI_0_INRIA_PARIS     (0.658139837F)          // cos(0.85245092073) where 0.85245092073 represent radians latitude of Inria Paris
-#define CONST_COS_PHI_0_UFF             (0.92114562603F)        // cos(0.3997826147759739) where 0.3997826147759739 represents radians latitude of UFF
-#define CONST_METRO_LIBERTE_LAT         (48.825908013055255F)   // coordinates of Metro Liberte subway station in Paris
-#define CONST_METRO_LIBERTE_LONG        (2.4064333460310094F)   // coordinates of Metro Liberte subway station in Paris
-#define CONST_NOTRE_DAME_DE_PARIS_LAT   (48.85443748F)          // coordinates of Notre Dame de Paris
-#define CONST_NOTRE_DAME_DE_PARIS_LONG  (2.350162268F)          // coordinates of Notre Dame de Paris
-#define CONST_METRO_BERCY_LAT           (48.840280818580354F)   // coordinates of Metro Bercy subway station in Paris
-#define CONST_METRO_BERCY_LONG          (2.379762322245707F)    // coordinates of Metro Bercy subway station in Paris
-#define CONST_ESCOLA_NAVAL_LAT          (-22.913357509339527F)  // coordinates of Escola Naval in Rio
-#define CONST_ESCOLA_NAVAL_LONG         (-43.15753771789026F)   // coordinates of Escola Naval in Rio
+#define CONST_EARTH_RADIUS_KM          (6371.0F)               // 6371 km
+#define CONST_COS_PHI_0_INRIA_PARIS    (0.658139837F)          // cos(0.85245092073) where 0.85245092073 represent radians latitude of Inria Paris
+#define CONST_COS_PHI_0_UFF            (0.92114562603F)        // cos(0.3997826147759739) where 0.3997826147759739 represents radians latitude of UFF
+#define CONST_METRO_LIBERTE_LAT        (48.825908013055255F)   // coordinates of Metro Liberte subway station in Paris
+#define CONST_METRO_LIBERTE_LONG       (2.4064333460310094F)   // coordinates of Metro Liberte subway station in Paris
+#define CONST_NOTRE_DAME_DE_PARIS_LAT  (48.85443748F)          // coordinates of Notre Dame de Paris
+#define CONST_NOTRE_DAME_DE_PARIS_LONG (2.350162268F)          // coordinates of Notre Dame de Paris
+#define CONST_METRO_BERCY_LAT          (48.840280818580354F)   // coordinates of Metro Bercy subway station in Paris
+#define CONST_METRO_BERCY_LONG         (2.379762322245707F)    // coordinates of Metro Bercy subway station in Paris
+#define CONST_ESCOLA_NAVAL_LAT         (-22.913357509339527F)  // coordinates of Escola Naval in Rio
+#define CONST_ESCOLA_NAVAL_LONG        (-43.15753771789026F)   // coordinates of Escola Naval in Rio
 
 // user-select defines
 // make sure CONST_COS_PHI_0 latitude is approximately at the middle of the map
@@ -320,18 +320,18 @@ static void _send_data(const nmea_gprmc_t *data, uint16_t heading, uint16_t wind
     db_protocol_header_to_buffer(_sailbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, SailBot, DB_PROTOCOL_SAILBOT_DATA);
 
     // define the offsets based on the order of the data
-    size_t header_size      = sizeof(protocol_header_t);
-    size_t heading_size     = sizeof(uint16_t);
-    size_t latitude_size    = sizeof(int32_t);
-    size_t longitude_size   = sizeof(int32_t);
-    size_t wind_angle_size  = sizeof(uint16_t);
+    size_t header_size       = sizeof(protocol_header_t);
+    size_t heading_size      = sizeof(uint16_t);
+    size_t latitude_size     = sizeof(int32_t);
+    size_t longitude_size    = sizeof(int32_t);
+    size_t wind_angle_size   = sizeof(uint16_t);
     size_t rudder_angle_size = sizeof(int8_t);
     size_t sail_trim_size    = sizeof(int8_t);
 
-    size_t heading_offset    = header_size;
-    size_t latitude_offset   = heading_offset + heading_size;
-    size_t longitude_offset  = latitude_offset + latitude_size;
-    size_t wind_angle_offset = longitude_offset + longitude_size;
+    size_t heading_offset      = header_size;
+    size_t latitude_offset     = heading_offset + heading_size;
+    size_t longitude_offset    = latitude_offset + latitude_size;
+    size_t wind_angle_offset   = longitude_offset + longitude_size;
     size_t rudder_angle_offset = wind_angle_offset + rudder_angle_size;
     size_t sail_trim_offset    = rudder_angle_offset + sail_trim_size;
 
