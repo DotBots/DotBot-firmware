@@ -19,6 +19,9 @@
 #include "as5048b.h"
 
 //=========================== defines ==========================================
+// Define scl and sda gpio pins
+// db_scl and db_sda are defined in board_config.h
+// For SailBot PCB: sda=TP3, scl=TP4
 
 // Hardware settings of pins A1 and A2 define the last two bits of the slave address
 // Set A1 and A2 to GND to get default address 0x40
