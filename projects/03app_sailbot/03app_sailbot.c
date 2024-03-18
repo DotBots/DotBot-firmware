@@ -100,7 +100,7 @@ static float  calculate_error(float heading, float bearing);
 static int8_t map_error_to_rudder_angle(float error);
 static void   _timeout_check(void);
 static void   _advertise(void);
-static void   _send_data(const nmea_gprmc_t *data, uint16_t heading, uint16_t wind_angle);
+static void   _send_data(const nmea_gprmc_t *data, uint16_t heading, uint16_t wind_angle, int8_t rudder_angle, int8_t sail_trim));
 
 //=========================== main =========================================
 
@@ -135,7 +135,7 @@ int main(void) {
 
     // Init the wind direction sensor
     as5048b_init();
-    uint16_t wind_raw_angle;
+    uint16_t wind_angle_deg;
 
     // Configure GPS without callback
     gps_init(NULL);
@@ -164,8 +164,8 @@ int main(void) {
         }
         if (_sailbot_vars.send_log_data) {
             // For now I will read the encoder here, but the measurements must be added as a variable to _sailbot_vars
-            wind_raw_angle = (uint16_t)as5048b_i2c_read_angle_degree();
-            _send_data(_sailbot_vars.last_gps_data, _sailbot_vars.last_heading, wind_raw_angle, 0, _sailbot_vars.sail_trim);
+            wind_angle_deg = (uint16_t)as5048b_i2c_read_angle_degree();
+            _send_data(_sailbot_vars.last_gps_data, _sailbot_vars.last_heading, wind_angle_deg, 0, _sailbot_vars.sail_trim);
             _sailbot_vars.send_log_data = false;
         }
         __WFE();
