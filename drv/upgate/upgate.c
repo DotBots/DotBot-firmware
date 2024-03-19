@@ -81,17 +81,18 @@ void db_upgate_start(void) {
 }
 
 void db_upgate_finish(void) {
-    puts("Finishing upgate");
-
 #if defined(UPGATE_USE_CRYPTO)
     uint8_t hash_result[DB_UPGATE_SHA256_LENGTH] = { 0 };
     crypto_sha256(hash_result);
 
     if (memcmp(hash_result, _upgate_vars.hash, DB_UPGATE_SHA256_LENGTH) != 0) {
+        puts("Bitstream hashes don't match!");
         return;
     }
+    puts("Bitstream hashes match!");
 #endif
 
+    puts("Finishing upgate");
     // Put SPIM GPIOS as input otherwise the FPGA ends up in a broken state
     db_gpio_init(_upgate_vars.config->n25q128_conf->mosi, DB_GPIO_IN);
     db_gpio_init(_upgate_vars.config->n25q128_conf->sck, DB_GPIO_IN);
@@ -142,7 +143,7 @@ void db_upgate_handle_packet(const db_upgate_pkt_t *pkt) {
             }
             _upgate_vars.compressed_length = 0;
             uint32_t base_addr             = _upgate_vars.addr + pkt->chunk_index * BUFFER_SIZE;
-            for (uint32_t block = 0; block < BUFFER_SIZE / N25Q128_PAGE_SIZE; block++) {
+            for (uint32_t block = 0; block < pkt->original_size / N25Q128_PAGE_SIZE; block++) {
                 printf("Programming %d bytes at %p\n", N25Q128_PAGE_SIZE, base_addr + block * N25Q128_PAGE_SIZE);
                 n25q128_program_page(base_addr + block * N25Q128_PAGE_SIZE, &_upgate_vars.decompressed_buffer[block * N25Q128_PAGE_SIZE], N25Q128_PAGE_SIZE);
                 n25q128_read(base_addr + block * N25Q128_PAGE_SIZE, _upgate_vars.temp_buffer, N25Q128_PAGE_SIZE);
@@ -150,19 +151,27 @@ void db_upgate_handle_packet(const db_upgate_pkt_t *pkt) {
                     puts("packet doesn't match!!");
                 }
             }
+#if defined(UPGATE_USE_CRYPTO)
+            crypto_sha256_update((const uint8_t *)_upgate_vars.decompressed_buffer, pkt->original_size);
+#endif
         }
     } else {
-        memcpy(&_upgate_vars.write_buf[(pkt->chunk_index % 2) * DB_UPGATE_CHUNK_SIZE], pkt->data, DB_UPGATE_CHUNK_SIZE);
-        if (pkt->chunk_index % 2 == 0) {
+        memcpy(&_upgate_vars.write_buf[(pkt->chunk_index % 2) * DB_UPGATE_CHUNK_SIZE], pkt->data, pkt->original_size);
+        uint32_t chunk_count = (_upgate_vars.bistream_size / DB_UPGATE_CHUNK_SIZE) + ((_upgate_vars.bistream_size % DB_UPGATE_CHUNK_SIZE) != 0);
+        if (pkt->chunk_index % 2 == 0 && pkt->chunk_index != chunk_count - 1) {
             return;
         }
-        uint32_t addr = _upgate_vars.addr + (pkt->chunk_index - 1) * DB_UPGATE_CHUNK_SIZE;
-        printf("Programming 256 bytes at %p\n", addr);
-        n25q128_program_page(addr, _upgate_vars.write_buf, DB_UPGATE_CHUNK_SIZE * 2);
-        n25q128_read(addr, _upgate_vars.read_buf, DB_UPGATE_CHUNK_SIZE * 2);
-        if (memcmp(_upgate_vars.write_buf, _upgate_vars.read_buf, DB_UPGATE_CHUNK_SIZE * 2) != 0) {
+        uint32_t addr      = _upgate_vars.addr + (pkt->chunk_index - 1) * DB_UPGATE_CHUNK_SIZE;
+        size_t   data_size = (pkt->chunk_index == chunk_count - 1 && chunk_count % 2 == 1) ? pkt->original_size : DB_UPGATE_CHUNK_SIZE + pkt->original_size;
+        printf("Programming %d bytes at %p\n", data_size, addr);
+        n25q128_program_page(addr, _upgate_vars.write_buf, data_size);
+        n25q128_read(addr, _upgate_vars.read_buf, data_size);
+        if (memcmp(_upgate_vars.write_buf, _upgate_vars.read_buf, data_size) != 0) {
             puts("packet doesn't match!!");
         }
+#if defined(UPGATE_USE_CRYPTO)
+        crypto_sha256_update((const uint8_t *)_upgate_vars.read_buf, data_size);
+#endif
     }
 }
 
@@ -173,10 +182,13 @@ void db_upgate_handle_message(const uint8_t *message) {
         {
             const db_upgate_start_notification_t *upgate_start = (const db_upgate_start_notification_t *)&message[1];
 #if defined(UPGATE_USE_CRYPTO)
+            printf("Verifying ed25519 signature: ");
             const uint8_t *hash = upgate_start->hash;
             if (!crypto_ed25519_verify(upgate_start->signature, DB_UPGATE_SIGNATURE_LENGTH, (const uint8_t *)upgate_start, sizeof(db_upgate_start_notification_t) - DB_UPGATE_SIGNATURE_LENGTH, public_key)) {
+                puts("Failed!");
                 break;
             }
+            puts("Success!");
             memcpy(_upgate_vars.hash, hash, DB_UPGATE_SHA256_LENGTH);
             crypto_sha256_init();
 #endif
@@ -196,9 +208,6 @@ void db_upgate_handle_message(const uint8_t *message) {
             if (_upgate_vars.last_packet_acked != token) {
                 //  Skip writing the chunk if already acked
                 db_upgate_handle_packet(upgate_pkt);
-#if defined(UPGATE_USE_CRYPTO)
-                crypto_sha256_update((const uint8_t *)upgate_pkt->upgate_chunk, DB_UPGATE_CHUNK_SIZE);
-#endif
             }
 
             // Acknowledge the received packet

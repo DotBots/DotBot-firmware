@@ -40,7 +40,7 @@ typedef struct {
 } db_upgate_conf_t;
 
 ///< FPGA bitstream update start notification packet
-typedef struct __attribute__((packed, aligned(4))) {
+typedef struct __attribute__((packed)) {
     uint32_t                     bitstream_size;  ///< Size of the bitstream in bytes
     db_upgate_compression_mode_t compression;     ///< Compression mode used
 #if defined(UPGATE_USE_CRYPTO)
