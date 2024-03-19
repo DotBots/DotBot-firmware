@@ -17,6 +17,7 @@
 
 #include "gpio.h"
 #include "n25q128.h"
+#include "lz4.h"
 #include "uzlib.h"
 #include "upgate.h"
 
@@ -33,20 +34,20 @@
 #define UPGATE_BASE_ADDRESS (0x00000000)
 
 typedef struct {
-    const db_upgate_conf_t *config;
-    uint8_t                 reply_buffer[UINT8_MAX];
-    uint32_t                target_partition;
-    uint32_t                addr;
-    uint32_t                last_packet_acked;
-    uint32_t                bistream_size;
-    uint8_t                 hash[DB_UPGATE_SHA256_LENGTH];
-    uint8_t                 read_buf[DB_UPGATE_CHUNK_SIZE * 2];
-    uint8_t                 write_buf[DB_UPGATE_CHUNK_SIZE * 2];
-    bool                    use_compression;
-    uint8_t                 temp_buffer[BUFFER_SIZE];
-    uint16_t                compressed_length;
-    uint8_t                 decompressed_buffer[BUFFER_SIZE];
-    struct uzlib_uncomp     d;
+    const db_upgate_conf_t      *config;
+    uint8_t                      reply_buffer[UINT8_MAX];
+    uint32_t                     target_partition;
+    uint32_t                     addr;
+    uint32_t                     last_packet_acked;
+    uint32_t                     bistream_size;
+    uint8_t                      hash[DB_UPGATE_SHA256_LENGTH];
+    uint8_t                      read_buf[DB_UPGATE_CHUNK_SIZE * 2];
+    uint8_t                      write_buf[DB_UPGATE_CHUNK_SIZE * 2];
+    db_upgate_compression_mode_t compression;
+    uint8_t                      temp_buffer[BUFFER_SIZE];
+    uint16_t                     compressed_length;
+    uint8_t                      decompressed_buffer[BUFFER_SIZE];
+    struct uzlib_uncomp          d;
 } db_upgate_vars_t;
 
 //=========================== variables ========================================
@@ -102,34 +103,45 @@ void db_upgate_finish(void) {
 }
 
 void db_upgate_handle_packet(const db_upgate_pkt_t *pkt) {
-    if (_upgate_vars.use_compression) {
+    if (_upgate_vars.compression != DB_UPGATE_COMPRESSION_NONE) {
         uint8_t packet_size = pkt->packet_size;
         _upgate_vars.compressed_length += packet_size;
         if (pkt->packet_index == 0) {
             memset(_upgate_vars.temp_buffer, 0, sizeof(_upgate_vars.temp_buffer));
-            memset(_upgate_vars.decompressed_buffer, 0, sizeof(_upgate_vars.decompressed_buffer));
-            uzlib_uncompress_init(&_upgate_vars.d, NULL, 0);
-            _upgate_vars.d.source         = _upgate_vars.temp_buffer;
-            _upgate_vars.d.source_limit   = _upgate_vars.temp_buffer + sizeof(_upgate_vars.temp_buffer);
-            _upgate_vars.d.source_read_cb = NULL;
-            _upgate_vars.d.dest_start = _upgate_vars.d.dest = _upgate_vars.decompressed_buffer;
+            memset(_upgate_vars.decompressed_buffer, 0xff, sizeof(_upgate_vars.decompressed_buffer));
+            if (_upgate_vars.compression == DB_UPGATE_COMPRESSION_GZIP) {
+                uzlib_uncompress_init(&_upgate_vars.d, NULL, 0);
+                _upgate_vars.d.source         = _upgate_vars.temp_buffer;
+                _upgate_vars.d.source_limit   = _upgate_vars.temp_buffer + sizeof(_upgate_vars.temp_buffer);
+                _upgate_vars.d.source_read_cb = NULL;
+                _upgate_vars.d.dest_start = _upgate_vars.d.dest = _upgate_vars.decompressed_buffer;
+            }
         }
         memcpy(&_upgate_vars.temp_buffer[pkt->packet_index * DB_UPGATE_CHUNK_SIZE], pkt->data, packet_size);
         if (pkt->packet_index == pkt->packet_count - 1) {
-            _upgate_vars.d.source_limit = _upgate_vars.temp_buffer + _upgate_vars.compressed_length;
-            int ret                     = uzlib_gzip_parse_header(&_upgate_vars.d);
-            assert(ret == TINF_OK);
-            uint16_t remaining_data = BUFFER_SIZE;
-            while (remaining_data) {
-                uint8_t block_len         = remaining_data < DB_UPGATE_CHUNK_SIZE ? remaining_data : DB_UPGATE_CHUNK_SIZE;
-                _upgate_vars.d.dest_limit = _upgate_vars.d.dest + block_len;
-                int ret                   = uzlib_uncompress(&_upgate_vars.d);
-                if (ret != TINF_OK) {
-                    break;
+            if (_upgate_vars.compression == DB_UPGATE_COMPRESSION_GZIP) {
+                _upgate_vars.d.source_limit = _upgate_vars.temp_buffer + _upgate_vars.compressed_length;
+                int ret                     = uzlib_gzip_parse_header(&_upgate_vars.d);
+                assert(ret == TINF_OK);
+                uint16_t remaining_data = BUFFER_SIZE;
+                while (remaining_data) {
+                    uint8_t block_len         = remaining_data < DB_UPGATE_CHUNK_SIZE ? remaining_data : DB_UPGATE_CHUNK_SIZE;
+                    _upgate_vars.d.dest_limit = _upgate_vars.d.dest + block_len;
+                    int ret                   = uzlib_uncompress(&_upgate_vars.d);
+                    if (ret != TINF_OK) {
+                        break;
+                    }
+                    remaining_data -= block_len;
                 }
-                remaining_data -= block_len;
+            } else if (_upgate_vars.compression == DB_UPGATE_COMPRESSION_LZ4) {
+                const uint32_t decompressed_len = LZ4_decompress_safe_partial((const char *)_upgate_vars.temp_buffer, (char *)_upgate_vars.decompressed_buffer, _upgate_vars.compressed_length, pkt->original_size, BUFFER_SIZE);
+                (void)decompressed_len;
+                assert(decompressed_len == pkt->original_size);
+            } else {  // Invalid compression
+                assert(0);
             }
-            uint32_t base_addr = _upgate_vars.addr + pkt->chunk_index * BUFFER_SIZE;
+            _upgate_vars.compressed_length = 0;
+            uint32_t base_addr             = _upgate_vars.addr + pkt->chunk_index * BUFFER_SIZE;
             for (uint32_t block = 0; block < BUFFER_SIZE / N25Q128_PAGE_SIZE; block++) {
                 printf("Programming %d bytes at %p\n", N25Q128_PAGE_SIZE, base_addr + block * N25Q128_PAGE_SIZE);
                 n25q128_program_page(base_addr + block * N25Q128_PAGE_SIZE, &_upgate_vars.decompressed_buffer[block * N25Q128_PAGE_SIZE], N25Q128_PAGE_SIZE);
@@ -168,10 +180,10 @@ void db_upgate_handle_message(const uint8_t *message) {
             memcpy(_upgate_vars.hash, hash, DB_UPGATE_SHA256_LENGTH);
             crypto_sha256_init();
 #endif
-            bool     use_compression     = upgate_start->use_compression;
-            uint32_t bitstream_size      = upgate_start->bitstream_size;
-            _upgate_vars.use_compression = use_compression;
-            _upgate_vars.bistream_size   = bitstream_size;
+            db_upgate_compression_mode_t compression    = upgate_start->compression;
+            uint32_t                     bitstream_size = upgate_start->bitstream_size;
+            _upgate_vars.compression                    = compression;
+            _upgate_vars.bistream_size                  = bitstream_size;
             db_upgate_start();
             // Acknowledge the update start
             _upgate_vars.reply_buffer[0] = DB_UPGATE_MESSAGE_TYPE_START_ACK;

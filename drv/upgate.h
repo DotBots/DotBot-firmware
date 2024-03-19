@@ -25,6 +25,13 @@
 
 typedef void (*db_upgate_reply_t)(const uint8_t *, size_t);  ///< Transport agnostic function used to reply to the flasher script
 
+///< Compression modes
+typedef enum {
+    DB_UPGATE_COMPRESSION_NONE,
+    DB_UPGATE_COMPRESSION_GZIP,
+    DB_UPGATE_COMPRESSION_LZ4,
+} db_upgate_compression_mode_t;
+
 ///< FPGA bitstream update configuration
 typedef struct {
     db_upgate_reply_t     reply;  ///< Pointer to the function used to reply to the upgate script
@@ -34,8 +41,8 @@ typedef struct {
 
 ///< FPGA bitstream update start notification packet
 typedef struct __attribute__((packed, aligned(4))) {
-    uint32_t bitstream_size;   ///< Size of the bitstream in bytes
-    bool     use_compression;  ///< True if bitstream is compressed
+    uint32_t                     bitstream_size;  ///< Size of the bitstream in bytes
+    db_upgate_compression_mode_t compression;     ///< Compression mode used
 #if defined(UPGATE_USE_CRYPTO)
     uint8_t hash[DB_UPGATE_SHA256_LENGTH];          ///< SHA256 hash of the bitsream
     uint8_t signature[DB_UPGATE_SIGNATURE_LENGTH];  ///< Signature of the bitstream hash
@@ -46,6 +53,7 @@ typedef struct __attribute__((packed, aligned(4))) {
 typedef struct __attribute__((packed, aligned(4))) {
     uint32_t chunk_index;                 ///< Index of the chunk
     uint32_t packet_token;                ///< Random token of the packet
+    uint16_t original_size;               ///< Original size
     uint8_t  packet_index;                ///< Index of the packet in the chunk
     uint8_t  packet_count;                ///< Number of packet composing the chunk
     uint8_t  packet_size;                 ///< Size of the packet
