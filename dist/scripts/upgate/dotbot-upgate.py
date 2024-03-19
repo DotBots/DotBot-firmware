@@ -105,7 +105,29 @@ class DotBotUpgate:
                 self.last_acked_token = int.from_bytes(payload[1:5], byteorder="little")
 
     def init(self):
-        if self.compression != "none":
+        private_key_bytes = open(PRIVATE_KEY_PATH, "rb").read()
+        private_key = Ed25519PrivateKey.from_private_bytes(private_key_bytes)
+        digest = hashes.Hash(hashes.SHA256())
+        if self.compression == "none":
+            chunks_count = int(len(self.image) / CHUNK_SIZE) + int(len(self.image) % CHUNK_SIZE != 0)
+            for chunk in range(chunks_count):
+                if chunk == chunks_count - 1:
+                    dsize = len(self.image) % CHUNK_SIZE
+                else:
+                    dsize = CHUNK_SIZE
+                data = self.image[chunk * CHUNK_SIZE : chunk * CHUNK_SIZE + dsize]
+                digest.update(data)
+                self.chunks.append(
+                    DataChunk(
+                        index=chunk,
+                        dsize=dsize,
+                        csize=dsize,
+                        packets=[
+                            RadioPacket(index=0, token=secrets.token_bytes(4), data=data)
+                        ],
+                    )
+                )
+        else:
             chunks_count = int(len(self.image) / COMPRESSED_CHUNK_SIZE) + int(len(self.image) % COMPRESSED_CHUNK_SIZE != 0)
             for chunk in range(chunks_count):
                 if chunk == chunks_count - 1:
@@ -113,6 +135,7 @@ class DotBotUpgate:
                 else:
                     dsize = COMPRESSED_CHUNK_SIZE
                 data = self.image[chunk * COMPRESSED_CHUNK_SIZE : chunk * COMPRESSED_CHUNK_SIZE + dsize]
+                digest.update(data)
                 if self.compression == "gzip":
                     compressed = gzip.compress(data)
                 elif self.compression == "lz4":
@@ -141,35 +164,8 @@ class DotBotUpgate:
             compressed_size = sum([c.csize for c in self.chunks])
             print(f"Compression ratio: {(1 - compressed_size / image_size) * 100:.2f}% ({image_size}B -> {compressed_size}B)")
             print(f"Compressed chunks ({COMPRESSED_CHUNK_SIZE}B): {len(self.chunks)}")
-        else:
-            chunks_count = int(len(self.image) / CHUNK_SIZE) + int(len(self.image) % CHUNK_SIZE != 0)
-            for chunk in range(chunks_count):
-                if chunk == chunks_count - 1:
-                    data=self.image[chunks_count * CHUNK_SIZE:]
-                    dsize = len(self.image) % CHUNK_SIZE
-                else:
-                    data = self.image[chunk * CHUNK_SIZE : (chunk + 1) * CHUNK_SIZE]
-                    dsize = CHUNK_SIZE
-                self.chunks.append(
-                    DataChunk(
-                        index=chunk,
-                        dsize=dsize,
-                        csize=dsize,
-                        packets=[
-                            RadioPacket(index=0, token=secrets.token_bytes(4), data=data)
-                        ],
-                    )
-                )
         print(f"Radio packets ({CHUNK_SIZE}B): {sum([len(c.packets) for c in self.chunks])}")
-        if self.secure is True:
-            digest = hashes.Hash(hashes.SHA256())
-            pos = 0
-            while pos + CHUNK_SIZE <= len(self.image) + 1:
-                digest.update(self.image[pos : pos + CHUNK_SIZE])
-                pos += CHUNK_SIZE
-            fw_hash = digest.finalize()
-            private_key_bytes = open(PRIVATE_KEY_PATH, "rb").read()
-            private_key = Ed25519PrivateKey.from_private_bytes(private_key_bytes)
+        fw_hash = digest.finalize()
 
         buffer = bytearray()
         buffer += int(MessageType.UPGATE_MESSAGE_TYPE_START.value).to_bytes(
@@ -231,7 +227,7 @@ class DotBotUpgate:
         for chunk in self.chunks:
             for packet in chunk.packets:
                 self.send_packet(chunk, packet)
-            progress.update(chunk.dsize if self.compression == "none" else chunk.csize)
+            progress.update(chunk.csize)
         progress.close()
 
 @click.command()

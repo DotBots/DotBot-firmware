@@ -11,7 +11,7 @@ from cryptography.hazmat.primitives.serialization import (
 )
 
 PRIVATE_KEY_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "private_key")
-PUBLIC_KEY_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../../drv/ota/public_key.h")
+PUBLIC_KEY_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../../drv/upgate/public_key.h")
 
 HEADER_FORMAT = """/*
  * PLEASE DON'T EDIT
