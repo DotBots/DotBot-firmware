@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 import click
+import lz4.block
 import serial
 import structlog
 
@@ -37,6 +38,22 @@ class MessageType(Enum):
     UPGATE_MESSAGE_TYPE_FINALIZE = 4
     UPGATE_MESSAGE_TYPE_FINALIZE_ACK = 5
 
+
+class CompressionMode(Enum):
+    """Types of compression."""
+
+    UPGATE_COMPRESSION_NONE = 0
+    UPGATE_COMPRESSION_GZIP = 1
+    UPGATE_COMPRESSION_LZ4 = 2
+
+
+COMPRESSION_MODES_MAP = {
+    "none": CompressionMode.UPGATE_COMPRESSION_NONE,
+    "gzip": CompressionMode.UPGATE_COMPRESSION_GZIP,
+    "lz4": CompressionMode.UPGATE_COMPRESSION_LZ4,
+}
+
+
 @dataclass
 class RadioPacket:
     """Class that holds radio packets."""
@@ -59,10 +76,10 @@ class DataChunk:
 class DotBotUpgate:
     """Class used to send an FPGA bitstream."""
 
-    def __init__(self, port, baudrate, image, use_compression=False, secure=False):
+    def __init__(self, port, baudrate, image, compression="none", secure=False):
         self.serial = SerialInterface(port, baudrate, self.on_byte_received)
         self.hdlc_handler = HDLCHandler()
-        self.use_compression = use_compression
+        self.compression = compression
         self.secure = secure
         self.device_info = None
         self.device_info_received = False
@@ -88,19 +105,20 @@ class DotBotUpgate:
                 self.last_acked_token = int.from_bytes(payload[1:5], byteorder="little")
 
     def init(self):
-        if self.use_compression is True:
+        if self.compression != "none":
             chunks_count = int(len(self.image) / COMPRESSED_CHUNK_SIZE) + int(len(self.image) % COMPRESSED_CHUNK_SIZE != 0)
             for chunk in range(chunks_count):
                 if chunk == chunks_count - 1:
-                    compressed = gzip.compress(
-                        self.image[chunk * COMPRESSED_CHUNK_SIZE:]
-                    )
                     dsize = len(self.image) % COMPRESSED_CHUNK_SIZE
                 else:
-                    compressed = gzip.compress(
-                        self.image[chunk * COMPRESSED_CHUNK_SIZE : (chunk + 1) * COMPRESSED_CHUNK_SIZE]
-                    )
                     dsize = COMPRESSED_CHUNK_SIZE
+                data = self.image[chunk * COMPRESSED_CHUNK_SIZE : chunk * COMPRESSED_CHUNK_SIZE + dsize]
+                if self.compression == "gzip":
+                    compressed = gzip.compress(data)
+                elif self.compression == "lz4":
+                    compressed = lz4.block.compress(data, mode="high_compression", store_size=False)
+                else:
+                    compressed = []
                 packets_count = int(len(compressed) / CHUNK_SIZE) + int(len(compressed) % CHUNK_SIZE != 0)
                 packets = []
                 for packet_idx in range(packets_count):
@@ -158,7 +176,7 @@ class DotBotUpgate:
             length=1, byteorder="little"
         )
         buffer += len(self.image).to_bytes(length=4, byteorder="little")
-        buffer += int(self.use_compression).to_bytes(length=1, byteorder="little")
+        buffer += int(COMPRESSION_MODES_MAP[self.compression].value).to_bytes(length=1, byteorder="little")
         if self.secure is True:
             buffer += fw_hash
             signature = private_key.sign(bytes(buffer[1:]))
@@ -187,34 +205,33 @@ class DotBotUpgate:
             time.sleep(0.01)
         return self.finalize_ack_received is True
 
-    def send_packet(self, chunk_index, packet, packet_count):
+    def send_packet(self, chunk, packet):
         while self.last_acked_token != int.from_bytes(packet.token, byteorder="little"):
             buffer = bytearray()
             buffer += int(MessageType.UPGATE_MESSAGE_TYPE_PACKET.value).to_bytes(
                 length=1, byteorder="little"
             )
-            buffer += int(chunk_index).to_bytes(length=4, byteorder="little")
+            buffer += int(chunk.index).to_bytes(length=4, byteorder="little")
             buffer += packet.token
+            buffer += int(chunk.dsize).to_bytes(length=2, byteorder="little")
             buffer += int(packet.index).to_bytes(length=1, byteorder="little")
-            buffer += int(packet_count).to_bytes(length=1, byteorder="little")
+            buffer += int(len(chunk.packets)).to_bytes(length=1, byteorder="little")
             buffer += int(len(packet.data)).to_bytes(length=1, byteorder="little")
             buffer += packet.data
             self.serial.write(hdlc_encode(buffer))
             time.sleep(0.005)
 
     def transfer(self):
-        if self.use_compression is True:
+        if self.compression in ["gzip", "lz4"]:
             data_size = sum([c.csize for c in self.chunks])
         else:
             data_size = len(self.image)
-        progress = tqdm(total=data_size, unit="B", unit_scale=False, colour="green", ncols=100)
+        progress = tqdm(range(0, data_size), unit="B", unit_scale=False, colour="green", ncols=100)
         progress.set_description(f"Flashing compressed firmware ({int(data_size / 1024)}kB)")
-        for idx, chunk in enumerate(self.chunks):
+        for chunk in self.chunks:
             for packet in chunk.packets:
-                self.send_packet(chunk.index, packet, len(chunk.packets))
-            if idx < len(self.chunks) - 1:
-                progress.update(chunk.csize if self.use_compression is True else chunk.dsize)
-        progress.update(1)
+                self.send_packet(chunk, packet)
+            progress.update(chunk.dsize if self.compression == "none" else chunk.csize)
         progress.close()
 
 @click.command()
@@ -232,9 +249,10 @@ class DotBotUpgate:
 )
 @click.option(
     "-c",
-    "--use-compression",
-    is_flag=True,
-    help="Compress the bitstream before sending it.",
+    "--compression",
+    type=click.Choice(['none', 'gzip', 'lz4']),
+    default="none",
+    help="Bitstream compression mode.",
 )
 @click.option(
     "-y",
@@ -243,7 +261,7 @@ class DotBotUpgate:
     help="Continue the upgate without prompt.",
 )
 @click.argument("bitstream", type=click.File(mode="rb", lazy=True))
-def main(port, secure, use_compression, yes, bitstream):
+def main(port, secure, compression, yes, bitstream):
     # Disable logging configure in PyDotBot
     structlog.configure(
         wrapper_class=structlog.make_filtering_bound_logger(logging.CRITICAL),
@@ -253,7 +271,7 @@ def main(port, secure, use_compression, yes, bitstream):
             port,
             BAUDRATE,
             bytearray(bitstream.read()),
-            use_compression=use_compression,
+            compression=compression,
             secure=secure,
         )
     except (
