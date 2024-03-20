@@ -216,7 +216,7 @@ class DotBotUpgate:
             buffer += int(len(packet.data)).to_bytes(length=1, byteorder="little")
             buffer += packet.data
             self.serial.write(hdlc_encode(buffer))
-            time.sleep(0.005)
+            time.sleep(0.01)
 
     def transfer(self):
         if self.compression in ["gzip", "lz4"]:
