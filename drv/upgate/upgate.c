@@ -123,6 +123,7 @@ void db_upgate_handle_packet(const db_upgate_pkt_t *pkt) {
             if (_upgate_vars.compression == DB_UPGATE_COMPRESSION_GZIP) {
                 _upgate_vars.d.source_limit = _upgate_vars.temp_buffer + _upgate_vars.compressed_length;
                 int ret                     = uzlib_gzip_parse_header(&_upgate_vars.d);
+                (void)ret;
                 assert(ret == TINF_OK);
                 uint16_t remaining_data = BUFFER_SIZE;
                 while (remaining_data) {
