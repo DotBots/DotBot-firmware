@@ -147,8 +147,8 @@ void db_upgate_handle_packet(const db_upgate_pkt_t *pkt) {
             for (uint32_t block = 0; block < pkt->original_size / N25Q128_PAGE_SIZE; block++) {
                 printf("Programming %d bytes at %p\n", N25Q128_PAGE_SIZE, base_addr + block * N25Q128_PAGE_SIZE);
                 n25q128_program_page(base_addr + block * N25Q128_PAGE_SIZE, &_upgate_vars.decompressed_buffer[block * N25Q128_PAGE_SIZE], N25Q128_PAGE_SIZE);
-                n25q128_read(base_addr + block * N25Q128_PAGE_SIZE, _upgate_vars.temp_buffer, N25Q128_PAGE_SIZE);
-                if (memcmp(&_upgate_vars.decompressed_buffer[block * N25Q128_PAGE_SIZE], _upgate_vars.temp_buffer, N25Q128_PAGE_SIZE) != 0) {
+                n25q128_read(base_addr + block * N25Q128_PAGE_SIZE, &_upgate_vars.temp_buffer[block * N25Q128_PAGE_SIZE], N25Q128_PAGE_SIZE);
+                if (memcmp(&_upgate_vars.temp_buffer[block * N25Q128_PAGE_SIZE], &_upgate_vars.temp_buffer[block * N25Q128_PAGE_SIZE], N25Q128_PAGE_SIZE) != 0) {
                     puts("packet doesn't match!!");
                 }
             }
