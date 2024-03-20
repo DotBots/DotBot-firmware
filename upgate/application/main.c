@@ -42,7 +42,7 @@ static const gpio_t _sck_pin  = { .port = 1, .pin = 15 };
 static const gpio_t _miso_pin = { .port = 1, .pin = 14 };
 static const gpio_t _mosi_pin = { .port = 1, .pin = 13 };
 static const gpio_t _cs_pin   = { .port = 1, .pin = 12 };
-static const gpio_t _prog_pin = { .port = 0, .pin = 11 };
+static const gpio_t _prog_pin = { .port = 1, .pin = 11 };
 #endif
 
 static const n25q128_conf_t _n25q128_conf = {
@@ -78,7 +78,7 @@ int main(void) {
     db_upgate_init(&_upgate_config);
 
     db_radio_init(&_radio_callback, DB_RADIO_BLE_1MBit);
-    db_radio_set_frequency(8);
+    db_radio_set_frequency(20);
     db_radio_rx();
 
     db_gpio_init(&db_led1, DB_GPIO_OUT);
