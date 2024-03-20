@@ -5,7 +5,7 @@
       Name="Common"
       linker_additional_files="$(SolutionDir)/../crypto/nrf_cc310/lib/libnrf_cc310_0.9.13-hard-float-no-interrupts-$(Target).a"
       linker_output_format="bin"
-      project_dependencies="00bsp_gpio(bsp);00drv_upgate(drv);00bsp_radio(bsp)"
+      project_dependencies="00bsp_gpio(bsp);00drv_upgate(drv);00bsp_radio(bsp);00bsp_uart(bsp);00drv_dotbot_hdlc(drv)"
       project_directory="application"
       project_type="Executable" />
     <folder Name="CMSIS Files">
