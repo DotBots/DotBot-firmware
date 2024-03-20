@@ -23,6 +23,7 @@ from dotbot.protocol import PROTOCOL_VERSION
 from dotbot.serial_interface import SerialInterface, SerialInterfaceException
 
 
+SERIAL_PORT = "/dev/ttyACM0"
 BAUDRATE = 1000000
 CHUNK_SIZE = 128
 COMPRESSED_CHUNK_SIZE = 8192
@@ -234,8 +235,14 @@ class DotBotUpgate:
 @click.option(
     "-p",
     "--port",
-    default="/dev/ttyACM0",
-    help="Serial port to use to send the bitstream to the gateway.",
+    default=SERIAL_PORT,
+    help=f"Serial port to use to send the bitstream to the gateway. Default: {SERIAL_PORT}.",
+)
+@click.option(
+    "-b",
+    "--baudrate",
+    default=BAUDRATE,
+    help=f"Serial port baudrate. Default: {BAUDRATE}.",
 )
 @click.option(
     "-s",
@@ -257,7 +264,7 @@ class DotBotUpgate:
     help="Continue the upgate without prompt.",
 )
 @click.argument("bitstream", type=click.File(mode="rb", lazy=True))
-def main(port, secure, compression, yes, bitstream):
+def main(port, baudrate, secure, compression, yes, bitstream):
     # Disable logging configure in PyDotBot
     structlog.configure(
         wrapper_class=structlog.make_filtering_bound_logger(logging.CRITICAL),
@@ -265,7 +272,7 @@ def main(port, secure, compression, yes, bitstream):
     try:
         upgater = DotBotUpgate(
             port,
-            BAUDRATE,
+            baudrate,
             bytearray(bitstream.read()),
             compression=compression,
             secure=secure,
