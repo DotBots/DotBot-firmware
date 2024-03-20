@@ -26,11 +26,9 @@
 typedef void (*db_upgate_reply_t)(const uint8_t *, size_t);  ///< Transport agnostic function used to reply to the flasher script
 
 ///< Compression modes
-typedef enum {
-    DB_UPGATE_COMPRESSION_NONE,
-    DB_UPGATE_COMPRESSION_GZIP,
-    DB_UPGATE_COMPRESSION_LZ4,
-} db_upgate_compression_mode_t;
+#define DB_UPGATE_COMPRESSION_NONE 0x00
+#define DB_UPGATE_COMPRESSION_GZIP 0x01
+#define DB_UPGATE_COMPRESSION_LZ4  0x02
 
 ///< FPGA bitstream update configuration
 typedef struct {
@@ -41,8 +39,8 @@ typedef struct {
 
 ///< FPGA bitstream update start notification packet
 typedef struct __attribute__((packed)) {
-    uint32_t                     bitstream_size;  ///< Size of the bitstream in bytes
-    db_upgate_compression_mode_t compression;     ///< Compression mode used
+    uint32_t bitstream_size;  ///< Size of the bitstream in bytes
+    uint8_t  compression;     ///< Compression mode used
 #if defined(UPGATE_USE_CRYPTO)
     uint8_t hash[DB_UPGATE_SHA256_LENGTH];          ///< SHA256 hash of the bitsream
     uint8_t signature[DB_UPGATE_SIGNATURE_LENGTH];  ///< Signature of the bitstream hash

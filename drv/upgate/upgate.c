@@ -34,20 +34,20 @@
 #define UPGATE_BASE_ADDRESS (0x00000000)
 
 typedef struct {
-    const db_upgate_conf_t      *config;
-    uint8_t                      reply_buffer[UINT8_MAX];
-    uint32_t                     target_partition;
-    uint32_t                     addr;
-    uint32_t                     last_packet_acked;
-    uint32_t                     bistream_size;
-    uint8_t                      hash[DB_UPGATE_SHA256_LENGTH];
-    uint8_t                      read_buf[DB_UPGATE_CHUNK_SIZE * 2];
-    uint8_t                      write_buf[DB_UPGATE_CHUNK_SIZE * 2];
-    db_upgate_compression_mode_t compression;
-    uint8_t                      temp_buffer[BUFFER_SIZE];
-    uint16_t                     compressed_length;
-    uint8_t                      decompressed_buffer[BUFFER_SIZE];
-    struct uzlib_uncomp          d;
+    const db_upgate_conf_t *config;
+    uint8_t                 reply_buffer[UINT8_MAX];
+    uint32_t                target_partition;
+    uint32_t                addr;
+    uint32_t                last_packet_acked;
+    uint32_t                bistream_size;
+    uint8_t                 hash[DB_UPGATE_SHA256_LENGTH];
+    uint8_t                 read_buf[DB_UPGATE_CHUNK_SIZE * 2];
+    uint8_t                 write_buf[DB_UPGATE_CHUNK_SIZE * 2];
+    uint8_t                 compression;
+    uint8_t                 temp_buffer[BUFFER_SIZE];
+    uint16_t                compressed_length;
+    uint8_t                 decompressed_buffer[BUFFER_SIZE];
+    struct uzlib_uncomp     d;
 } db_upgate_vars_t;
 
 //=========================== variables ========================================
@@ -192,10 +192,10 @@ void db_upgate_handle_message(const uint8_t *message) {
             memcpy(_upgate_vars.hash, hash, DB_UPGATE_SHA256_LENGTH);
             crypto_sha256_init();
 #endif
-            db_upgate_compression_mode_t compression    = upgate_start->compression;
-            uint32_t                     bitstream_size = upgate_start->bitstream_size;
-            _upgate_vars.compression                    = compression;
-            _upgate_vars.bistream_size                  = bitstream_size;
+            uint8_t  compression       = upgate_start->compression;
+            uint32_t bitstream_size    = upgate_start->bitstream_size;
+            _upgate_vars.compression   = compression;
+            _upgate_vars.bistream_size = bitstream_size;
             db_upgate_start();
             // Acknowledge the update start
             _upgate_vars.reply_buffer[0] = DB_UPGATE_MESSAGE_TYPE_START_ACK;
