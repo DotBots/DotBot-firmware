@@ -103,7 +103,7 @@ class DotBotUpgate:
             if payload[0] == MessageType.UPGATE_MESSAGE_TYPE_FINALIZE_ACK.value:
                 self.finalize_ack_received = True
             elif payload[0] == MessageType.UPGATE_MESSAGE_TYPE_PACKET_ACK.value:
-                self.last_acked_token = int.from_bytes(payload[1:5], byteorder="little")
+                self.last_acked_token = payload[1:5].hex()
 
     def init(self):
         private_key_bytes = open(PRIVATE_KEY_PATH, "rb").read()
@@ -181,7 +181,7 @@ class DotBotUpgate:
         print("Sending start upgate notification...")
         self.serial.write(hdlc_encode(buffer))
         timeout = 0  # ms
-        while self.start_ack_received is False and timeout < 60000:
+        while self.start_ack_received is False and timeout < 10000:
             timeout += 1
             time.sleep(0.01)
         return self.start_ack_received is True
@@ -197,26 +197,37 @@ class DotBotUpgate:
         print("Sending upgate finalize...")
         self.serial.write(hdlc_encode(buffer))
         timeout = 0  # ms
-        while self.finalize_ack_received is False and timeout < 60000:
+        while self.finalize_ack_received is False and timeout < 10000:
             timeout += 1
             time.sleep(0.01)
         return self.finalize_ack_received is True
 
     def send_packet(self, chunk, packet):
-        while self.last_acked_token != int.from_bytes(packet.token, byteorder="little"):
-            buffer = bytearray()
-            buffer += int(MessageType.UPGATE_MESSAGE_TYPE_PACKET.value).to_bytes(
-                length=1, byteorder="little"
-            )
-            buffer += int(chunk.index).to_bytes(length=4, byteorder="little")
-            buffer += packet.token
-            buffer += int(chunk.dsize).to_bytes(length=2, byteorder="little")
-            buffer += int(packet.index).to_bytes(length=1, byteorder="little")
-            buffer += int(len(chunk.packets)).to_bytes(length=1, byteorder="little")
-            buffer += int(len(packet.data)).to_bytes(length=1, byteorder="little")
-            buffer += packet.data
-            self.serial.write(hdlc_encode(buffer))
-            time.sleep(0.01)
+        send_time = time.time()
+        send = True
+        tries = 0
+        while tries < 3:
+            if self.last_acked_token == packet.token.hex():
+                break
+            if send is True:
+                buffer = bytearray()
+                buffer += int(MessageType.UPGATE_MESSAGE_TYPE_PACKET.value).to_bytes(
+                    length=1, byteorder="little"
+                )
+                buffer += int(chunk.index).to_bytes(length=4, byteorder="little")
+                buffer += packet.token
+                buffer += int(chunk.dsize).to_bytes(length=2, byteorder="little")
+                buffer += int(packet.index).to_bytes(length=1, byteorder="little")
+                buffer += int(len(chunk.packets)).to_bytes(length=1, byteorder="little")
+                buffer += int(len(packet.data)).to_bytes(length=1, byteorder="little")
+                buffer += packet.data
+                self.serial.write(hdlc_encode(buffer))
+                send_time = time.time()
+                tries += 1
+            time.sleep(0.0001)
+            send = time.time() - send_time > 0.1
+        else:
+            raise Exception(f"packet #{chunk.index} ({packet.token.hex()}) not acknowledged. Aborting.")
 
     def transfer(self):
         if self.compression in ["gzip", "lz4"]:
@@ -291,7 +302,11 @@ def main(port, baudrate, secure, compression, yes, bitstream):
     if ret is False:
         print("Error: No start acknowledgment received. Aborting.")
         return
-    upgater.transfer()
+    try:
+        upgater.transfer()
+    except Exception as exc:
+        print(f"Error during transfer: {exc}")
+        return
     ret = upgater.finalize()
     if ret is False:
         print("Error: No finalize acknowledgment received. Upgate failed.")
