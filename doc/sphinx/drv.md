@@ -17,6 +17,7 @@ _api/drv_lis2mdl
 _api/drv_lis3mdl
 _api/drv_log_flash
 _api/drv_lsm6ds
+_api/drv_lz4
 _api/drv_move
 _api/drv_ota
 _api/drv_pid
