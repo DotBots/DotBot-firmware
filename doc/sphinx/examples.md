@@ -54,6 +54,7 @@ _examples/01drv_move
 _examples/01drv_n25q128
 _examples/01drv_pid
 _examples/01drv_rgbled_pwm
+_examples/01drv_uzlib
 ```
 
 Crypto examples
