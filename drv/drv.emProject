@@ -102,6 +102,15 @@
     <file file_name="move/move.c" />
     <file file_name="move.h" />
   </project>
+  <project Name="00drv_n25q128">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_spim(bsp)"
+      project_directory="n25q128"
+      project_type="Library" />
+    <file file_name="n25q128.c" />
+    <file file_name="../n25q128.h" />
+  </project>
   <project Name="00drv_ota">
     <configuration
       Name="Common"
