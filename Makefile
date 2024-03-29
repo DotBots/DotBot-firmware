@@ -18,6 +18,7 @@ ifeq (nrf5340dk-app,$(BUILD_TARGET))
     01bsp_motors \
     01bsp_nvmc \
     01bsp_qdec \
+    01bsp_qspi \
     01bsp_radio_txrx \
     01bsp_radio_txrx_lr \
     01bsp_rgbled \
@@ -28,8 +29,10 @@ ifeq (nrf5340dk-app,$(BUILD_TARGET))
     01bsp_uart \
     01drv_lis2mdl \
     01drv_lis3mdl \
+    01drv_lz4 \
     01drv_move \
     01drv_pid \
+    01drv_uzlib \
     03app_dotbot \
     03app_dotbot_gateway \
     03app_dotbot_gateway_lr \
@@ -81,7 +84,7 @@ endif
 
 # remove incompatible apps (nrf5340, sailbot gateway) for dotbot (v1, v2) builds
 ifneq (,$(filter dotbot-v1,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 01bsp_qdec 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_nrf5340_% 03app_freebot 03app_xgo,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 01bsp_qspi 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_nrf5340_% 03app_freebot 03app_xgo,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
 endif
 
@@ -92,12 +95,12 @@ endif
 
 # remove incompatible apps (nrf5340, dotbot, gateway) for sailbot-v1 build
 ifeq (sailbot-v1,$(BUILD_TARGET))
-  PROJECTS := $(filter-out 01bsp_qdec 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_dotbot 03app_nrf5340_% 03app_freebot 03app_xgo,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 01bsp_qspi 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_dotbot 03app_nrf5340_% 03app_freebot 03app_xgo,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_sailbot
 endif
 
 ifneq (,$(filter nrf52833dk,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 01crypto_%,$(PROJECTS))
+  PROJECTS := $(filter-out 01crypto_% 01bsp_qspi,$(PROJECTS))
   # Bootloader not supported on nrf52833dk
   BOOTLOADER :=
 endif
