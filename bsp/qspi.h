@@ -2,7 +2,7 @@
 #define __QSPI_H
 
 /**
- * @defgroup    bsp_spim QSPI flash
+ * @defgroup    bsp_qspi QSPI flash
  * @ingroup     bsp
  * @brief       Control the QSPI flash peripheral
  *
@@ -56,7 +56,8 @@ void db_qspi_init(const db_qspi_conf_t *conf);
 /**
  * @brief Read bytes from flash
  *
- * @param[in]   bytes   Pointer to the input bytes
+ * @param[in]   addr    24bit address
+ * @param[in]   in      Pointer to the incoming bytes
  * @param[in]   len     Length of the bytes to send
  */
 void db_qspi_read(const uint32_t addr, void *in, size_t len);
@@ -64,7 +65,8 @@ void db_qspi_read(const uint32_t addr, void *in, size_t len);
 /**
  * @brief Program bytes on flash
  *
- * @param[in]   bytes   Pointer to the output bytes
+ * @param[in]   addr    24bit address
+ * @param[in]   out     Pointer to the output bytes
  * @param[in]   len     Length of the bytes to receive
  */
 void db_qspi_program(const uint32_t addr, const void *out, size_t len);
@@ -72,8 +74,7 @@ void db_qspi_program(const uint32_t addr, const void *out, size_t len);
 /**
  * @brief Erase page/blocks of flash
  *
- * @param[in]   bytes   Pointer to the output bytes
- * @param[in]   len     Length of the bytes to receive
+ * @param[in]   addr    24bit address
  */
 void db_qspi_block_erase(const uint32_t addr);
 

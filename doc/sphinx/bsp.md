@@ -21,6 +21,7 @@ _api/bsp_nvmc
 _api/bsp_partition
 _api/bsp_pwm
 _api/bsp_qdec
+_api/bsp_qspi
 _api/bsp_radio
 _api/bsp_rgbled
 _api/bsp_rng
