@@ -133,7 +133,7 @@ def main():
                                             bit_to_bit_error[i] += int(
                                                 bit_to_bit_compare[-i - 1]
                                             )
-                                            
+
                                 else:
                                     sum_rssi += rssi
 
@@ -179,7 +179,7 @@ def main():
                     f"The Blocker used is {blocker_type(int(blocker_choice)).name} with a RSSI of {sum_rssi_blocker/received_count_blocker} dBm"
                 )
 
-        if (crc_for_plot > 0) & save_data == "y":
+        if (crc_for_plot > 0):
             bit_to_bit_error = [(i * 100 / crc_for_plot) for i in bit_to_bit_error]
             plt.scatter(range(800), bit_to_bit_error, c=bit_to_bit_error, cmap="tab20")
             plt.colorbar()
@@ -188,7 +188,8 @@ def main():
             )
             plt.xlabel("bit number")
             plt.ylabel("error[%]")
-            plt.savefig(filename_png)
+            if (save_data == "y") :
+                plt.savefig(filename_png)
             plt.show()
 
 
