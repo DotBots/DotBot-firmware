@@ -28,12 +28,12 @@
 
 #define payload_size 100
 
-static const gpio_t db_gpio_0_8            = { .port = 0, .pin = 8 };  // P0.08
-#if !(defined(NRF5340_XXAA) && defined(NRF_APPLICATION))
-static const gpio_t db_gpio_0_6            = { .port = 0, .pin = 6 };  // P0.06
+static const gpio_t db_gpio_0_8 = { .port = 0, .pin = 8 };  // P0.08
+#if !(defined(NRF5340_XXAA))
+static const gpio_t db_gpio_0_6 = { .port = 0, .pin = 6 };  // P0.06
 #endif
-static uint8_t      _payload[payload_size] = { 0 };
-static uint8_t      i;
+static uint8_t _payload[payload_size] = { 0 };
+static uint8_t i;
 
 static void _led1_blink_slow(void) {
     db_gpio_toggle(&db_led1);
@@ -59,7 +59,7 @@ static void _radio_tx(void) {
 }
 
 int main(void) {
-#if !(defined(NRF5340_XXAA) && defined(NRF_APPLICATION))
+#if !(defined(NRF5340_XXAA))
     // Debug radio tx visualisation
     uint32_t event_tx_ready   = (uint32_t)&NRF_RADIO->EVENTS_TXREADY;
     uint32_t event_tx_end     = (uint32_t)&NRF_RADIO->EVENTS_END;

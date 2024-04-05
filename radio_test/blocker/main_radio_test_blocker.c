@@ -34,8 +34,8 @@
 #define t_bytes         8
 
 #define payload_size 75
-#if !(defined(NRF5340_XXAA) && defined(NRF_APPLICATION))
-static const gpio_t db_gpio_0_8            = { .port = 0, .pin = 8 };  // P0.08
+#if !(defined(NRF5340_XXAA))
+static const gpio_t db_gpio_0_8 = { .port = 0, .pin = 8 };  // P0.08
 #endif
 static const gpio_t db_gpio_0_7            = { .port = 0, .pin = 7 };  // P0.07
 static uint8_t      _payload[payload_size] = { 0 };
@@ -75,7 +75,7 @@ static void _gpio_callback(void *ctx) {
 }
 
 int main(void) {
-#if !(defined(NRF5340_XXAA) && defined(NRF_APPLICATION))
+#if !(defined(NRF5340_XXAA))
     // Debug radio Blocker visualisation
     uint32_t event_tx_ready    = (uint32_t)&NRF_RADIO->EVENTS_TXREADY;
     uint32_t event_tx_disabled = (uint32_t)&NRF_RADIO->EVENTS_DISABLED;
