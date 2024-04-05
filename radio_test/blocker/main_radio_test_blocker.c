@@ -34,8 +34,9 @@
 #define t_bytes         8
 
 #define payload_size 75
-
-static const gpio_t db_gpio_0_6            = { .port = 0, .pin = 8 };  // P0.06
+#if !(defined(NRF5340_XXAA) && defined(NRF_APPLICATION))
+static const gpio_t db_gpio_0_8            = { .port = 0, .pin = 8 };  // P0.08
+#endif
 static const gpio_t db_gpio_0_7            = { .port = 0, .pin = 7 };  // P0.07
 static uint8_t      _payload[payload_size] = { 0 };
 uint8_t             radio_tx_bytes         = 0;
@@ -82,8 +83,8 @@ int main(void) {
     uint32_t task_gpiote_clr   = (uint32_t)&NRF_GPIOTE->TASKS_CLR[1];
 
     NRF_GPIOTE->CONFIG[1] = (GPIOTE_CONFIG_MODE_Task << GPIOTE_CONFIG_MODE_Pos) |
-                            (db_gpio_0_6.pin << GPIOTE_CONFIG_PSEL_Pos) |
-                            (db_gpio_0_6.port << GPIOTE_CONFIG_PORT_Pos) |
+                            (db_gpio_0_8.pin << GPIOTE_CONFIG_PSEL_Pos) |
+                            (db_gpio_0_8.port << GPIOTE_CONFIG_PORT_Pos) |
                             (GPIOTE_CONFIG_POLARITY_None << GPIOTE_CONFIG_POLARITY_Pos) |
                             (GPIOTE_CONFIG_OUTINIT_Low << GPIOTE_CONFIG_OUTINIT_Pos);
 

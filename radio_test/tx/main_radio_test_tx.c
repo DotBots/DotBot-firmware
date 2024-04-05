@@ -29,7 +29,9 @@
 #define payload_size 100
 
 static const gpio_t db_gpio_0_8            = { .port = 0, .pin = 8 };  // P0.08
+#if !(defined(NRF5340_XXAA) && defined(NRF_APPLICATION))
 static const gpio_t db_gpio_0_6            = { .port = 0, .pin = 6 };  // P0.06
+#endif
 static uint8_t      _payload[payload_size] = { 0 };
 static uint8_t      i;
 
