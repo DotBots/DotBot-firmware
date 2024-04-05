@@ -20,7 +20,7 @@
 #include "timer.h"
 #include "timer_hf.h"
 
-#define mode 1  // Mode focus the payload 1) Tone 2) BLE_1MBit 3) 802.15.4  Mode Always on 4)Tone
+#define mode 1  // Mode focus the payload 1) Tone 2) BLE_1MBit 3) 802.15.4
 
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
 #define RADIO_TXPOWER_TXPOWER_0dBm 0
