@@ -74,7 +74,8 @@ static void _gpio_callback(void *ctx) {
 }
 
 int main(void) {
-    // Debug radio tx visualisation
+#if !(defined(NRF5340_XXAA) && defined(NRF_APPLICATION))
+    // Debug radio Blocker visualisation
     uint32_t event_tx_ready    = (uint32_t)&NRF_RADIO->EVENTS_TXREADY;
     uint32_t event_tx_disabled = (uint32_t)&NRF_RADIO->EVENTS_DISABLED;
     uint32_t task_gpiote_set   = (uint32_t)&NRF_GPIOTE->TASKS_SET[1];
@@ -93,6 +94,7 @@ int main(void) {
 
     NRF_PPI->CH[1].EEP = event_tx_disabled;
     NRF_PPI->CH[1].TEP = task_gpiote_clr;
+#endif
 
     // Init timer ,radio and gpio
     db_gpio_init(&db_led1, DB_GPIO_OUT);

@@ -57,6 +57,7 @@ static void _radio_tx(void) {
 }
 
 int main(void) {
+#if !(defined(NRF5340_XXAA) && defined(NRF_APPLICATION))
     // Debug radio tx visualisation
     uint32_t event_tx_ready   = (uint32_t)&NRF_RADIO->EVENTS_TXREADY;
     uint32_t event_tx_end     = (uint32_t)&NRF_RADIO->EVENTS_END;
@@ -84,6 +85,7 @@ int main(void) {
 
     NRF_PPI->CH[3].EEP = event_tx_end;
     NRF_PPI->CH[3].TEP = task_gpiote_clr;
+#endif
 
     // Init timer ,radio and gpio
     db_gpio_init(&db_gpio_0_8, DB_GPIO_OUT);
