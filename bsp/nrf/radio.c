@@ -98,7 +98,11 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
 #endif
 
     // General configuration of the radio.
-    NRF_RADIO->MODE = ((RADIO_MODE_MODE_Ble_1Mbit + mode) << RADIO_MODE_MODE_Pos);  // Configure BLE mode
+    if (mode == DB_RADIO_IEEE802154_250Kbit) {
+        NRF_RADIO->MODE = (RADIO_MODE_MODE_Ieee802154_250Kbit << RADIO_MODE_MODE_Pos);  // Configure 802.15.4 mode
+    } else {
+        NRF_RADIO->MODE = ((RADIO_MODE_MODE_Ble_1Mbit + mode) << RADIO_MODE_MODE_Pos);  // Configure BLE mode
+    }
 #if defined(NRF5340_XXAA)
     // From errata v1.6 - 3.15 [117] RADIO: Changing MODE requires additional configuration
     if (mode == DB_RADIO_BLE_2MBit) {
@@ -121,7 +125,7 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
                            (0 << RADIO_PCNF1_STATLEN_Pos) |
                            (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |    // Make the on air packet be little endian (this enables some useful features)
                            (RADIO_PCNF1_WHITEEN_Enabled << RADIO_PCNF1_WHITEEN_Pos);  // Enable data whitening feature.
-    } else {                                                                          // Long ranges modes (125KBit/500KBit)
+    } else if (mode == DB_RADIO_BLE_LR125Kbit || mode == DB_RADIO_BLE_LR500Kbit) {    // Long ranges modes (125KBit/500KBit)
 #if defined(NRF5340_XXAA)
         db_radio_set_tx_power(RADIO_TXPOWER_TXPOWER_0dBm);  // 0dBm Power output
 #else
@@ -141,6 +145,23 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
                            (3 << RADIO_PCNF1_BALEN_Pos) |
                            (0 << RADIO_PCNF1_STATLEN_Pos) |
                            (PAYLOAD_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos);
+    } else {  // 802.15.4 250kbit
+        db_radio_set_tx_power(RADIO_TXPOWER_TXPOWER_0dBm);
+        NRF_RADIO->PCNF0 = (0 << RADIO_PCNF0_S1LEN_Pos) |
+                           (0 << RADIO_PCNF0_S0LEN_Pos) |
+                           (8 << RADIO_PCNF0_LFLEN_Pos) |
+                           (RADIO_PCNF0_PLEN_32bitZero << RADIO_PCNF0_PLEN_Pos) |
+                           (RADIO_PCNF0_CRCINC_Include << RADIO_PCNF0_CRCINC_Pos);
+
+        NRF_RADIO->PCNF1 = (RADIO_PCNF1_WHITEEN_Disabled << RADIO_PCNF1_WHITEEN_Pos) |
+                           (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |
+                           (0 << RADIO_PCNF1_STATLEN_Pos) |
+                           (127 << RADIO_PCNF1_MAXLEN_Pos);
+
+        NRF_RADIO->CCACTRL = ((RADIO_CCACTRL_CCAMODE_EdMode << RADIO_CCACTRL_CCAMODE_Pos) |
+                              (0x14 << RADIO_CCACTRL_CCAEDTHRES_Pos) |
+                              (0x14 << RADIO_CCACTRL_CCACORRTHRES_Pos) |
+                              (0x02 << RADIO_CCACTRL_CCACORRCNT_Pos));
     }
 
     // Configuring the on-air radio address.
@@ -154,9 +175,13 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
     NRF_RADIO->TIFS = RADIO_TIFS;
 
     // CRC Config
-    NRF_RADIO->CRCCNF  = (RADIO_CRCCNF_LEN_Three << RADIO_CRCCNF_LEN_Pos) | (RADIO_CRCCNF_SKIPADDR_Skip << RADIO_CRCCNF_SKIPADDR_Pos);  // Checksum uses 3 bytes, and is enabled.
-    NRF_RADIO->CRCINIT = 0xFFFFUL;                                                                                                      // initial value
-    NRF_RADIO->CRCPOLY = 0x00065b;                                                                                                      // CRC poly: x^16 + x^12^x^5 + 1
+    if (mode == DB_RADIO_IEEE802154_250Kbit) {
+        NRF_RADIO->CRCCNF = (RADIO_CRCCNF_LEN_Two << RADIO_CRCCNF_LEN_Pos) | (RADIO_CRCCNF_SKIPADDR_Skip << RADIO_CRCCNF_SKIPADDR_Pos);  // Checksum uses 2 bytes, and is enabled.
+    } else {
+        NRF_RADIO->CRCCNF = (RADIO_CRCCNF_LEN_Three << RADIO_CRCCNF_LEN_Pos) | (RADIO_CRCCNF_SKIPADDR_Skip << RADIO_CRCCNF_SKIPADDR_Pos);  // Checksum uses 3 bytes, and is enabled.
+    }
+    NRF_RADIO->CRCINIT = 0xFFFFUL;  // initial value
+    NRF_RADIO->CRCPOLY = 0x00065b;  // CRC poly: x^16 + x^12^x^5 + 1
 
     // Configure pointer to PDU for EasyDMA
     NRF_RADIO->PACKETPTR = (uint32_t)&radio_vars.pdu;
@@ -226,6 +251,7 @@ void db_radio_tx_start(void) {
 void db_radio_disable(void) {
     NRF_RADIO->INTENCLR        = RADIO_INTERRUPTS;
     NRF_RADIO->SHORTS          = 0;
+    NRF_RADIO->EVENTS_TXREADY  = 0;
     NRF_RADIO->EVENTS_DISABLED = 0;
     NRF_RADIO->TASKS_DISABLE   = RADIO_TASKS_DISABLE_TASKS_DISABLE_Trigger << RADIO_TASKS_DISABLE_TASKS_DISABLE_Pos;
     while (NRF_RADIO->EVENTS_DISABLED == 0) {}

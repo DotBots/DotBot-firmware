@@ -26,12 +26,13 @@
 #define DEFAULT_NETWORK_ADDRESS 0x12345678UL  ///< Default network address
 #endif
 
-/// BLE modes supported by the radio
+/// BLE modes + 802.15.4 mode supported by the radio
 typedef enum {
     DB_RADIO_BLE_1MBit,
     DB_RADIO_BLE_2MBit,
     DB_RADIO_BLE_LR125Kbit,
     DB_RADIO_BLE_LR500Kbit,
+    DB_RADIO_IEEE802154_250Kbit,
 } db_radio_ble_mode_t;
 
 typedef void (*radio_cb_t)(uint8_t *packet, uint8_t length, bool crc);  ///< Function pointer to the callback function called on packet receive
@@ -45,7 +46,7 @@ typedef void (*radio_cb_t)(uint8_t *packet, uint8_t length, bool crc);  ///< Fun
  * with the db_radio_set_frequency function.
  *
  * @param[in] callback pointer to a function that will be called each time a packet is received.
- * @param[in] mode     BLE mode used by the radio (1MBit, 2MBit, LR125KBit, LR500Kbit)
+ * @param[in] mode     BLE mode used by the radio (1MBit, 2MBit, LR125KBit, LR500Kbit) and 802.15.4 (250kbit)
  *
  */
 void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode);
