@@ -6,6 +6,7 @@
   * Tx: **build** then **load** `solution Radio test -> project 'Tx'` on the first nRF
   * Rx: **build** then **load** `solution Radio test -> project 'Rx'` on the second nRF (you can change the power for your test line 107)
   * Blocker: **build** then **load** `solution Radio test -> project 'Blocker'` on the third nRF (you can change the power for your test line 113)
+  * **Link** `pin 0.08` from the TX to `pin 0.07` from blocker
 
   ![Démo](../doc/sphinx/_static/images/radio_test_setup.jpg)
     
