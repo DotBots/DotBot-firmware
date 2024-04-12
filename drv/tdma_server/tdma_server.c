@@ -378,6 +378,25 @@ void _send_registration_messages(void) {
  */
 static void tdma_server_callback(uint8_t *packet, uint8_t length) {
 
+    /*
+    TODO: 
+    - Check message sender is in the TDMA table
+        NO:
+            - Assign it a slot in the table.
+            - Record in the ringbuffer to send the registration message
+                - check that it's not already in the ring buffer waiting to go be sent.
+        YES:
+            - Is it in the correct slot?
+                NO:
+                    - Record in the ringbuffer to send a reminder message.
+                YES:
+                    - Check the message type:
+                        REGISTER MESSAGE:
+                            
+    
+    */
+
+
     (void)length;
     uint8_t           *ptk_ptr = packet;
     protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
@@ -420,7 +439,7 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
 
         } break;
 
-        case DB_PROTOCOL_TDMA_SYNC_FRAME:
+        case DB_PROTOCOL_ADVERTISEMENT:
         {
             // There is no payload for this packet
             // Only resync the timer if the DotBot has already been registered.
