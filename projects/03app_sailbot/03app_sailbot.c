@@ -17,6 +17,8 @@
 #include <nrf.h>
 #include <stdbool.h>
 #include <string.h>
+#include <math.h>
+#include <assert.h>
 
 // Include BSP packages
 #include "device.h"
@@ -30,15 +32,14 @@
 #include "timer.h"
 #include "timer_hf.h"
 #include "gpio.h"
-#include "assert.h"
-#include "math.h"
+#include "as5048b.h"
 
 //=========================== defines =========================================
 
 #define CONTROL_LOOP_PERIOD_MS      (1000)  ///< control loop period
 #define WAYPOINT_DISTANCE_THRESHOLD (10)    ///< in meters
 
-#define SAIL_TRIM_ANGLE_UNIT_STEP (10)     //< unit step increase/decrease when trimming the sails
+#define SAIL_TRIM_ANGLE_UNIT_STEP (10)     ///< unit step increase/decrease when trimming the sails
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
 #define TIMEOUT_CHECK_DELAY_MS    (200)    ///< 200 ms delay between packet received timeout checks
 #define ADVERTISEMENT_PERIOD_MS   (500)    ///< send an advertisement every 500 ms
@@ -99,13 +100,10 @@ static float  calculate_error(float heading, float bearing);
 static int8_t map_error_to_rudder_angle(float error);
 static void   _timeout_check(void);
 static void   _advertise(void);
-static void   _send_gps_data(const nmea_gprmc_t *data, uint16_t heading);
+static void   _send_data(const nmea_gprmc_t *data, uint16_t heading, uint16_t wind_angle, int8_t rudder_angle, int8_t sail_trim);
 
 //=========================== main =========================================
 
-/**
- *  @brief The program starts executing here.
- */
 int main(void) {
     // Turn ON the LED1
     NRF_P0->DIRSET = 1 << _led1_pin.pin;  // set pin as output
@@ -132,21 +130,25 @@ int main(void) {
     servos_init();
     servos_set(0, _sailbot_vars.sail_trim);
 
-    // init the timers
+    // Init the timers
     db_timer_init();
+
+    // Init the wind direction sensor
+    as5048b_init();
+    uint16_t wind_angle_deg;
 
     // Configure GPS without callback
     gps_init(NULL);
 
-    // set timer callbacks
+    // Set timer callbacks
     db_timer_set_periodic_ms(0, TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
     db_timer_set_periodic_ms(1, ADVERTISEMENT_PERIOD_MS, &_advertise);
     db_timer_set_periodic_ms(2, CONTROL_LOOP_PERIOD_MS, &control_loop_callback);
 
     // Wait for radio packets to arrive
     while (1) {
-        // processor idle until an interrupt occurs and is handled
-        // if IMU data is ready, trigger the I2C transfer from outside the interrupt context
+        // Processor idle until an interrupt occurs and is handled
+        // If IMU data is ready, trigger the I2C transfer from outside the interrupt context
         if (lis2mdl_data_ready()) {
             lis2mdl_read_magnetometer(&_sailbot_vars.last_magnetometer);
         }
@@ -161,7 +163,9 @@ int main(void) {
             _sailbot_vars.advertise = false;
         }
         if (_sailbot_vars.send_log_data) {
-            _send_gps_data(_sailbot_vars.last_gps_data, _sailbot_vars.last_heading);
+            // For now I will read the encoder here, but the measurements must be added as a variable to _sailbot_vars
+            wind_angle_deg = (uint16_t)as5048b_i2c_read_angle_degree();
+            _send_data(_sailbot_vars.last_gps_data, _sailbot_vars.last_heading, wind_angle_deg, 0, _sailbot_vars.sail_trim);
             _sailbot_vars.send_log_data = false;
         }
         __WFE();
@@ -309,17 +313,37 @@ void control_loop_callback(void) {
     }
 }
 
-static void _send_gps_data(const nmea_gprmc_t *data, uint16_t heading) {
+static void _send_data(const nmea_gprmc_t *data, uint16_t heading, uint16_t wind_angle, int8_t rudder_angle, int8_t sail_trim) {
     int32_t latitude  = (int32_t)(data->latitude * 1e6);
     int32_t longitude = (int32_t)(data->longitude * 1e6);
 
     db_protocol_header_to_buffer(_sailbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, SailBot, DB_PROTOCOL_SAILBOT_DATA);
 
-    memcpy(_sailbot_vars.radio_buffer + sizeof(protocol_header_t), &heading, sizeof(uint16_t));
-    memcpy(_sailbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(uint16_t), &latitude, sizeof(int32_t));
-    memcpy(_sailbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(uint16_t) + sizeof(int32_t), &longitude, sizeof(int32_t));
+    // define the offsets based on the order of the data
+    size_t header_size       = sizeof(protocol_header_t);
+    size_t heading_size      = sizeof(uint16_t);
+    size_t latitude_size     = sizeof(int32_t);
+    size_t longitude_size    = sizeof(int32_t);
+    size_t wind_angle_size   = sizeof(uint16_t);
+    size_t rudder_angle_size = sizeof(int8_t);
+    size_t sail_trim_size    = sizeof(int8_t);
 
-    size_t length = sizeof(protocol_header_t) + sizeof(uint16_t) + 2 * sizeof(int32_t);
+    size_t heading_offset      = header_size;
+    size_t latitude_offset     = heading_offset + heading_size;
+    size_t longitude_offset    = latitude_offset + latitude_size;
+    size_t wind_angle_offset   = longitude_offset + longitude_size;
+    size_t rudder_angle_offset = wind_angle_offset + rudder_angle_size;
+    size_t sail_trim_offset    = rudder_angle_offset + sail_trim_size;
+
+    memcpy(_sailbot_vars.radio_buffer + heading_offset, &heading, heading_size);
+    memcpy(_sailbot_vars.radio_buffer + latitude_offset, &latitude, latitude_size);
+    memcpy(_sailbot_vars.radio_buffer + longitude_offset, &longitude, longitude_size);
+    memcpy(_sailbot_vars.radio_buffer + wind_angle_offset, &wind_angle, wind_angle_size);
+    memcpy(_sailbot_vars.radio_buffer + rudder_angle_offset, &rudder_angle, rudder_angle_size);
+    memcpy(_sailbot_vars.radio_buffer + sail_trim_offset, &sail_trim, sail_trim_size);
+
+    size_t length = header_size + heading_size + latitude_size + longitude_size + wind_angle_size + rudder_angle_size + sail_trim_size;
+
     db_radio_disable();
     db_radio_tx(_sailbot_vars.radio_buffer, length);
 }
