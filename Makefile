@@ -162,6 +162,7 @@ docker:
 docclean:
 	make -C doc/doxygen clean --no-print-directory
 	make -C doc/sphinx clean --no-print-directory
+	rm -rf $(addprefix doc/sphinx/_,api examples projects)
 
 doc:
 	make -C doc/sphinx linkcheck html --no-print-directory SPHINXOPTS="-W --keep-going -n"
