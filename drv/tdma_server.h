@@ -29,24 +29,6 @@
         TDMA_SERVER_MAX_CLIENTS / (TDMA_SERVER_MAX_GATEWAY_TX_DELAY / TDMA_SERVER_TIME_SLOT_DURATION - 1) + 1  ///< Total amount of slots available in the tdma table, adds extra slots to MAX_CLIENTS
                                                                                                                //   to accomodate the gateway slots
 
-// ///< TDMA internal registrarion state
-// typedef enum {
-//     DB_TDMA_UNREGISTERED,  ///< the DotBot is not registered with the gateway
-//     DB_TDMA_REGISTERED,    ///< the DotBot registered with the gateway
-// } db_tdma_registration_state_t;
-
-// ///< TDMA internal TX state
-// typedef enum {
-//     DB_TDMA_TX_WAIT,  ///< the DotBot can't transmit right now
-//     DB_TDMA_TX_ON,    ///< the DotBot has permission to transmit
-// } db_tdma_tx_state_t;
-
-// ///< TDMA internal RX state
-// typedef enum {
-//     DB_TDMA_RX_WAIT,  ///< the DotBot receiver is OFF
-//     DB_TDMA_RX_ON,    ///< the DotBot is receiving radio packets
-// } db_tdma_rx_state_t;
-
 //=========================== variables ========================================
 
 /// Data type to store the TDMA table
