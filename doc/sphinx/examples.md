@@ -15,6 +15,7 @@ BSP examples
 ```{toctree}
 :maxdepth: 1
 
+_examples/01bsp_device
 _examples/01bsp_gpio
 _examples/01bsp_i2c
 _examples/01bsp_lighthouse
