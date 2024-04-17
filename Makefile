@@ -11,6 +11,7 @@ BOOTLOADER ?= bootloader
 
 ifeq (nrf5340dk-app,$(BUILD_TARGET))
   PROJECTS ?= \
+    01bsp_device \
     01bsp_gpio \
     01bsp_i2c \
     01bsp_lighthouse \
@@ -38,6 +39,7 @@ ifeq (nrf5340dk-app,$(BUILD_TARGET))
     #
 else ifeq (nrf5340dk-net,$(BUILD_TARGET))
   PROJECTS ?= \
+    01bsp_device \
     01bsp_gpio \
     01bsp_i2c \
     01bsp_motors \
