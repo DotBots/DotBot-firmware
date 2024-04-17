@@ -11,6 +11,7 @@ BOOTLOADER ?= bootloader
 
 ifeq (nrf5340dk-app,$(BUILD_TARGET))
   PROJECTS ?= \
+    01bsp_device \
     01bsp_gpio \
     01bsp_i2c \
     01bsp_lighthouse \
@@ -38,6 +39,7 @@ ifeq (nrf5340dk-app,$(BUILD_TARGET))
     #
 else ifeq (nrf5340dk-net,$(BUILD_TARGET))
   PROJECTS ?= \
+    01bsp_device \
     01bsp_gpio \
     01bsp_i2c \
     01bsp_motors \
@@ -162,6 +164,7 @@ docker:
 docclean:
 	make -C doc/doxygen clean --no-print-directory
 	make -C doc/sphinx clean --no-print-directory
+	rm -rf $(addprefix doc/sphinx/_,api examples projects)
 
 doc:
 	make -C doc/sphinx linkcheck html --no-print-directory SPHINXOPTS="-W --keep-going -n"
