@@ -122,7 +122,8 @@ bool _message_rb_get(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], u
 /**
  * @brief Sends all the queued messages that can be sent in during the TX timeslot
  *
- * @param[out]   packet_sent   true is a packet was sent, false if no packet was sent.
+ * @param[in]    max_tx_duration_us     max time available to send messages.
+ * @return                              true is a packet was sent, false if no packet was sent.
  */
 bool _message_rb_tx_queue(uint16_t max_tx_duration_us);
 
@@ -131,7 +132,7 @@ bool _message_rb_tx_queue(uint16_t max_tx_duration_us);
  *
  * @param[in]   rb  pointer to ring buffer structure
  */
-void client_rb_init(new_client_ring_buffer_t *rb);
+void _client_rb_init(new_client_ring_buffer_t *rb);
 
 /**
  * @brief add one element to the ring buffer for tdma captures
@@ -139,7 +140,7 @@ void client_rb_init(new_client_ring_buffer_t *rb);
  * @param[in]   rb          pointer to ring buffer structure
  * @param[in]   new_client  id of the client waiting to register.
  */
-void client_rb_add(new_client_ring_buffer_t *rb, uint64_t new_client);
+void _client_rb_add(new_client_ring_buffer_t *rb, uint64_t new_client);
 
 /**
  * @brief retreive the oldest element from the ring buffer for tdma captures
@@ -148,7 +149,25 @@ void client_rb_add(new_client_ring_buffer_t *rb, uint64_t new_client);
  * @param[out]   new_client  pointer to the variable where the new client ID will be saved.
  * @return                   true if ID was successfully copied, false buffer is empty.
  */
-bool client_rb_get(new_client_ring_buffer_t *rb, uint64_t *new_client);
+bool _client_rb_get(new_client_ring_buffer_t *rb, uint64_t *new_client);
+
+/**
+ * @brief Sends all the queued messages that can be sent in during the TX timeslot
+ *
+ * @param[in]    rb                  pointer to ring buffer structure
+ * @param[in]    max_tx_duration_us  max time available to send messages.
+ * @return                           true is a packet was sent, false if no packet was sent.
+ */
+bool _client_rb_tx_queue(new_client_ring_buffer_t *rb, uint16_t max_tx_duration_us);
+
+/**
+ * @brief searches if a client id already has a reminder message queued up
+ *
+ * @param[in]    rb          pointer to ring buffer structure
+ * @param[out]   client      ID client to search.
+ * @return                   true if ID was found, false otherwise.
+ */
+bool _client_rb_id_exists(new_client_ring_buffer_t *rb, uint64_t *new_client);
 
 /**
  * @brief Send a message to synchronize the client's and the server's clock
@@ -188,7 +207,7 @@ void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mo
     _message_rb_init(&_tdma_vars.tx_ring_buffer);
 
     // Initialize the client buffer of outbound messages
-    client_rb_init(&_tdma_vars.new_clients_rb);
+    _client_rb_init(&_tdma_vars.new_clients_rb);
 
     // Initialize Radio
     db_radio_init(&tdma_server_callback, radio_mode);  // set the radio callback to our tdma catch function
@@ -307,13 +326,13 @@ bool _message_rb_tx_queue(uint16_t max_tx_duration_us) {
     return packet_sent_flag;
 }
 
-void client_rb_init(new_client_ring_buffer_t *rb) {
+void _client_rb_init(new_client_ring_buffer_t *rb) {
     rb->writeIndex = 0;
     rb->readIndex  = 0;
     rb->count      = 0;
 }
 
-void client_rb_add(new_client_ring_buffer_t *rb, uint64_t new_client) {
+void _client_rb_add(new_client_ring_buffer_t *rb, uint64_t new_client) {
 
     rb->buffer[rb->writeIndex] = new_client;
     rb->writeIndex             = (rb->writeIndex + 1) % TDMA_NEW_CLIENT_BUFFER_SIZE;
@@ -326,7 +345,7 @@ void client_rb_add(new_client_ring_buffer_t *rb, uint64_t new_client) {
     }
 }
 
-bool client_rb_get(new_client_ring_buffer_t *rb, uint64_t *new_client) {
+bool _client_rb_get(new_client_ring_buffer_t *rb, uint64_t *new_client) {
     if (rb->count <= 0) {
         // Buffer is empty
         return false;
@@ -339,8 +358,32 @@ bool client_rb_get(new_client_ring_buffer_t *rb, uint64_t *new_client) {
     return true;
 }
 
-void _tx_sync_frame(void) {
+bool _client_rb_tx_queue(new_client_ring_buffer_t *rb, uint16_t max_tx_duration_us) {
 
+    // TODO
+}
+
+bool _client_rb_id_exists(new_client_ring_buffer_t *rb, uint64_t client) {
+
+    // get the raw pointer for the ring buffer.
+    // check all valid values
+
+    if (rb->count <= 0) {
+        // Buffer is empty
+        return false;
+    }
+
+    for (size_t i = rb->readIndex; i != rb->writeIndex; i = (i + 1) % TDMA_NEW_CLIENT_BUFFER_SIZE) {
+        if (rb->buffer[i] == client) {
+            return true;
+        }
+    }
+
+    return false
+}
+
+void _tx_sync_frame(void) {
+    // TODO add to sync frame the frame duration for the current frame.
     db_protocol_header_to_buffer(_tdma_vars.radio_buffer, DB_BROADCAST_ADDRESS, TDMA_RADIO_APPLICATION, DB_PROTOCOL_TDMA_SYNC_FRAME);
     size_t length = sizeof(protocol_header_t);
     db_radio_disable();
@@ -363,43 +406,64 @@ uint8_t _server_find_client(tdma_server_table_t *tdma_table, uint64_t client) {
 }
 
 void _server_register_new_client(tdma_server_table_t *tdma_table, uint64_t client) {
-    // TODO: calculate the new positions in the tdma for the new client, and update it.
-    // Calculate if more slots for the server are needed.
-    // Check if the "new client" already exists to not modify the table
-
     // Broadcast the new frame duration.
     // Send the registration message to the specific dotbot.
 
-    // Check if the current index of the table should be a gateway slot.
-    if(((tdma_table->table_index + 1) % (int)(TDMA_SERVER_MAX_GATEWAY_TX_DELAY_US / TDMA_SERVER_TIME_SLOT_DURATION_US)) == 0) {
+    // Check if the next slot should go to the gateway
+    //  YES: Assign next+1 slot to the new client
+    //  NO: Assign next slot.
+
+    // Check if the next index of the table should be a gateway slot.
+    if (((tdma_table->table_index + 1) % (int)(TDMA_SERVER_MAX_GATEWAY_TX_DELAY_US / TDMA_SERVER_TIME_SLOT_DURATION_US)) == 0) {
 
         // Compute the new frame duration knowing that we will add two new slots to the table (gateway + client)
         uint32_t frame_duration = ((tdma_table->table_index + 2) + 1) * TDMA_SERVER_DEFAULT_TX_DURATION_US;
         // if the new frame is smaller than the minimum frame time, keep the minimum frame time.
-        frame_duration = (frame_duration > TDMA_SERVER_DEFAULT_FRAME_DURATION_US) ? frame_duration : TDMA_SERVER_DEFAULT_FRAME_DURATION_US; 
+        frame_duration = (frame_duration > TDMA_SERVER_DEFAULT_FRAME_DURATION_US) ? frame_duration : TDMA_SERVER_DEFAULT_FRAME_DURATION_US;
 
         // first slot belongs to the gateway.
         tdma_table->table_index += 1;
-        uint8_t idx = tdma_table->table_index;      // use a shorter variable to make  the code more understandable
+        uint8_t idx = tdma_table->table_index;  // use a shorter variable to make  the code more understandable
 
-        tdma_table->table[idx].client = _tdma_vars.device_id;
-
-        tdma_table->table[idx].client      = tdma_table->device_id;
+        tdma_table->table[idx].client      = _tdma_vars.device_id;
         tdma_table->table[idx].rx_start    = TDMA_SERVER_DEFAULT_RX_START_US;
-        tdma_table->table[idx].rx_duration = TDMA_SERVER_DEFAULT_RX_DURATION_US;
-        tdma_table->table[idx].tx_start    = TDMA_SERVER_DEFAULT_TX_START_US;
+        tdma_table->table[idx].rx_duration = frame_duration;
+        tdma_table->table[idx].tx_start    = (idx)*TDMA_SERVER_DEFAULT_TX_DURATION_US;
         tdma_table->table[idx].tx_duration = TDMA_SERVER_DEFAULT_TX_DURATION_US;
 
-        tdma_table->frame_duration_us    = TDMA_SERVER_DEFAULT_FRAME_DURATION_US;
+        // second slot belongs to the client.
+        tdma_table->table_index += 1;
+        idx = tdma_table->table_index;  // use a shorter variable to make  the code more understandable
 
+        tdma_table->table[idx].client      = client;
+        tdma_table->table[idx].rx_start    = TDMA_SERVER_DEFAULT_RX_START_US;
+        tdma_table->table[idx].rx_duration = frame_duration;
+        tdma_table->table[idx].tx_start    = (idx)*TDMA_SERVER_DEFAULT_TX_DURATION_US;
+        tdma_table->table[idx].tx_duration = TDMA_SERVER_DEFAULT_TX_DURATION_US;
+        // Update the frame duration
+        tdma_table->frame_duration_us = frame_duration;
+    } else {
+        // first slot belongs to the client.
+        tdma_table->table_index += 1;
+        uint8_t idx = tdma_table->table_index;  // use a shorter variable to make  the code more understandable
+
+        // Compute the new frame duration knowing that we will add one new slots to the table (client)
+        uint32_t frame_duration = (idx + 1) * TDMA_SERVER_DEFAULT_TX_DURATION_US;
+        // if the new frame is smaller than the minimum frame time, keep the minimum frame time.
+        frame_duration = (frame_duration > TDMA_SERVER_DEFAULT_FRAME_DURATION_US) ? frame_duration : TDMA_SERVER_DEFAULT_FRAME_DURATION_US;
+
+        tdma_table->table[idx].client      = client;
+        tdma_table->table[idx].rx_start    = TDMA_SERVER_DEFAULT_RX_START_US;
+        tdma_table->table[idx].rx_duration = frame_duration;
+        tdma_table->table[idx].tx_start    = (idx)*TDMA_SERVER_DEFAULT_TX_DURATION_US;
+        tdma_table->table[idx].tx_duration = TDMA_SERVER_DEFAULT_TX_DURATION_US;
+
+        // Update the frame duration
+        tdma_table->frame_duration_us = frame_duration;
     }
-    // Check if the next slot should go to the gateway
-    //  YES: Assign next+1 slot to the new client 
-    //  NO: Assign next slot.
-
 
     // Update the last slot, table index, number of clients, in the TDMA table
-
+    tdma_table->num_clients += 1;
 }
 
 //=========================== interrupt handlers ===============================
@@ -453,18 +517,26 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
     if (!_server_find_client(&_tdma_vars.tdma_table, header->src)) {
 
         // register the new client and exit
-        // TODO:register new client to the table
-        // TODO: Put it in the list of clients to transmit to in your next turn.
+        // register new client to the table
+        _server_register_new_client(&_tdma_vars.tdma_table, header->src)
+            // Put it in the list of clients to transmit to in your next turn.
+            _client_rb_add(&_tdma_vars.new_clients_rb, header->src);
 
+        // discard message
         return;
     } else {
         // If this is not the correct TX slot for this client
         uint64_t current_client = _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].client;
         if (current_client != header->src) {
 
-            // TODO: Check that you don't already have a a reminder queued up for this client
-            // TODO: Put it in the list of clients to transmit to in your next turn.
+            // Check that you don't already have a a reminder queued up for this client
+            if (!_client_rb_id_exists(&_tdma_vars.new_clients_rb, header->src)) {
 
+                // Put it in the list of clients to transmit to in your next turn.
+                _client_rb_add(&_tdma_vars.new_clients_rb, header->src);
+            }
+
+            // discard message
             return;
         }
     }
@@ -575,7 +647,8 @@ void timer_tmda_interrupt(void) {
     // Check that it's your timeslot
     if (_tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].client == _tdma_vars.device_id) {
 
-        // TODO: Send registration messages. + Out of slot messages
+        // TODO: Send registration messages. + Out of slot messages.
+        // Implement function that reminds clients of their time slot
 
         // send messages if available. time_available (slot_start + slot_duration - current_time)
         uint32_t remaining_slot_time_us = _tdma_vars.slot_start_ts + _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].tx_duration - db_timer_hf_now();
