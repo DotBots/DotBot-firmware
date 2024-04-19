@@ -50,9 +50,9 @@ typedef struct __attribute__((packed)) {
 } ieee_radio_pdu_t;
 
 typedef struct {
-    ieee_radio_pdu_t pdu;       ///< Variable that stores the radio PDU (protocol data unit) that arrives and the radio packets that are about to be sent for IEEE 802.15.4.
-    radio_ieee_802154_cb_t       callback;  ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
-    uint8_t          state;     ///< Internal state of the radio
+    ieee_radio_pdu_t       pdu;       ///< Variable that stores the radio PDU (protocol data unit) that arrives and the radio packets that are about to be sent for IEEE 802.15.4.
+    radio_ieee_802154_cb_t callback;  ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
+    uint8_t                state;     ///< Internal state of the radio
 } radio_vars_t;
 
 //=========================== variables ========================================
