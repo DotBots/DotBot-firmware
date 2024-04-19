@@ -5,8 +5,9 @@
  * @brief  nRF52833-specific definition of the "radio" bsp module.
  *
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
+ * @author Simoes Raphael <raphael.simoes@inria.fr>
  *
- * @copyright Inria, 2022
+ * @copyright Inria, 2024
  */
 #include <nrf.h>
 #include <stdint.h>
@@ -16,7 +17,7 @@
 #include <string.h>
 
 #include "clock.h"
-#include "radio.h"
+#include "radio_ieee_802154.h"
 
 //=========================== defines ==========================================
 
@@ -24,7 +25,7 @@
 #define NRF_RADIO NRF_RADIO_NS
 #endif
 
-#define PAYLOAD_MAX_LENGTH UINT8_MAX
+#define IEEE802154_FRAME_LEN_MAX (127U)
 #if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
 #define RADIO_INTERRUPT_PRIORITY 2
 #else
@@ -44,15 +45,14 @@
 #define RADIO_STATE_BUSY 0x04
 
 typedef struct __attribute__((packed)) {
-    uint8_t header;                       ///< PDU header (depends on the type of PDU - advertising physical channel or Data physical channel)
-    uint8_t length;                       ///< Length of the payload + MIC (if any)
-    uint8_t payload[PAYLOAD_MAX_LENGTH];  ///< Payload + MIC (if any)
-} ble_radio_pdu_t;
+    uint8_t length;                             ///< Length of the payload + MIC (if any)
+    uint8_t payload[IEEE802154_FRAME_LEN_MAX];  ///< Payload + MIC (if any)
+} ieee_radio_pdu_t;
 
 typedef struct {
-    ble_radio_pdu_t pdu;       ///< Variable that stores the radio PDU (protocol data unit) that arrives and the radio packets that are about to be sent.
-    radio_cb_t      callback;  ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
-    uint8_t         state;     ///< Internal state of the radio
+    ieee_radio_pdu_t pdu;       ///< Variable that stores the radio PDU (protocol data unit) that arrives and the radio packets that are about to be sent for IEEE 802.15.4.
+    radio_ieee_802154_cb_t       callback;  ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
+    uint8_t          state;     ///< Internal state of the radio
 } radio_vars_t;
 
 //=========================== variables ========================================
@@ -77,7 +77,7 @@ static void _radio_enable(void);
 
 //=========================== public ===========================================
 
-void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
+void db_radio_ieee_802154_init(radio_ieee_802154_cb_t callback) {
 
 #if defined(NRF5340_XXAA)
     // On nrf53 configure constant latency mode for better performances
@@ -98,7 +98,7 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
 #endif
 
     // General configuration of the radio.
-    NRF_RADIO->MODE = ((RADIO_MODE_MODE_Ble_1Mbit + mode) << RADIO_MODE_MODE_Pos);  // Configure BLE mode
+    NRF_RADIO->MODE = (RADIO_MODE_MODE_Ieee802154_250Kbit << RADIO_MODE_MODE_Pos);  // Configure 802.15.4 mode
 
 #if defined(NRF5340_XXAA)
     // From errata v1.6 - 3.15 [117] RADIO: Changing MODE requires additional configuration
@@ -110,39 +110,12 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
 
 #endif
 
-    if (mode == DB_RADIO_BLE_1MBit || mode == DB_RADIO_BLE_2MBit) {
-        db_radio_set_tx_power(RADIO_TXPOWER_TXPOWER_0dBm);                   // 0dBm == 1mW Power output
-        NRF_RADIO->PCNF0 = (0 << RADIO_PCNF0_S1LEN_Pos) |                    // S1 field length in bits
-                           (1 << RADIO_PCNF0_S0LEN_Pos) |                    // S0 field length in bytes
-                           (8 << RADIO_PCNF0_LFLEN_Pos) |                    // LENGTH field length in bits
-                           (RADIO_PCNF0_PLEN_8bit << RADIO_PCNF0_PLEN_Pos);  // PREAMBLE length is 1 byte in BLE 1Mbit/s and 2Mbit/s
+    db_radio_ieee_802154_set_tx_power(RADIO_TXPOWER_TXPOWER_0dBm);
+    NRF_RADIO->PCNF0 = (8 << RADIO_PCNF0_LFLEN_Pos) |
+                       (RADIO_PCNF0_PLEN_32bitZero << RADIO_PCNF0_PLEN_Pos) |
+                       (RADIO_PCNF0_CRCINC_Include << RADIO_PCNF0_CRCINC_Pos);
 
-        NRF_RADIO->PCNF1 = (4UL << RADIO_PCNF1_BALEN_Pos) |  // The base address is 4 Bytes long
-                           (PAYLOAD_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos) |
-                           (0 << RADIO_PCNF1_STATLEN_Pos) |
-                           (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |    // Make the on air packet be little endian (this enables some useful features)
-                           (RADIO_PCNF1_WHITEEN_Enabled << RADIO_PCNF1_WHITEEN_Pos);  // Enable data whitening feature.
-    } else {                                                                          // Long ranges modes (125KBit/500KBit)
-#if defined(NRF5340_XXAA)
-        db_radio_set_tx_power(RADIO_TXPOWER_TXPOWER_0dBm);  // 0dBm Power output
-#else
-        db_radio_set_tx_power(RADIO_TXPOWER_TXPOWER_Pos8dBm);  // 8dBm Power output
-#endif
-
-        // Coded PHY (Long Range)
-        NRF_RADIO->PCNF0 = (0 << RADIO_PCNF0_S1LEN_Pos) |
-                           (1 << RADIO_PCNF0_S0LEN_Pos) |
-                           (8 << RADIO_PCNF0_LFLEN_Pos) |
-                           (3 << RADIO_PCNF0_TERMLEN_Pos) |
-                           (2 << RADIO_PCNF0_CILEN_Pos) |
-                           (RADIO_PCNF0_PLEN_LongRange << RADIO_PCNF0_PLEN_Pos);
-
-        NRF_RADIO->PCNF1 = (RADIO_PCNF1_WHITEEN_Disabled << RADIO_PCNF1_WHITEEN_Pos) |
-                           (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |
-                           (3 << RADIO_PCNF1_BALEN_Pos) |
-                           (0 << RADIO_PCNF1_STATLEN_Pos) |
-                           (PAYLOAD_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos);
-    }
+    NRF_RADIO->PCNF1 = (127 << RADIO_PCNF1_MAXLEN_Pos);
 
     // Configuring the on-air radio address.
     NRF_RADIO->BASE0 = DEFAULT_NETWORK_ADDRESS;
@@ -154,11 +127,11 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
     // Inter frame spacing in us
     NRF_RADIO->TIFS = RADIO_TIFS;
 
-    // CRC Config
-    NRF_RADIO->CRCCNF  = (RADIO_CRCCNF_LEN_Three << RADIO_CRCCNF_LEN_Pos) | (RADIO_CRCCNF_SKIPADDR_Skip << RADIO_CRCCNF_SKIPADDR_Pos);  // Checksum uses 3 bytes, and is enabled.
-    NRF_RADIO->CRCINIT = 0xFFFFUL;                                                                                                      // initial value
-    NRF_RADIO->CRCPOLY = 0x00065b;                                                                                                      // CRC poly: x^16 + x^12^x^5 + 1
+    // CRC Config &
 
+    NRF_RADIO->CRCCNF  = (RADIO_CRCCNF_LEN_Two << RADIO_CRCCNF_LEN_Pos) | (RADIO_CRCCNF_SKIPADDR_Ieee802154 << RADIO_CRCCNF_SKIPADDR_Pos);  // Checksum uses 2 bytes, and is enabled.
+    NRF_RADIO->CRCINIT = 0;                                                                                                                 // initial value
+    NRF_RADIO->CRCPOLY = 0x11021;
     // Configure pointer to PDU for EasyDMA
     NRF_RADIO->PACKETPTR = (uint32_t)&radio_vars.pdu;
 
@@ -176,24 +149,25 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
     NVIC_EnableIRQ(RADIO_IRQn);
 }
 
-void db_radio_set_frequency(uint8_t freq) {
+void db_radio_ieee_802154_set_frequency(uint8_t freq) {
 
     NRF_RADIO->FREQUENCY = freq << RADIO_FREQUENCY_FREQUENCY_Pos;
 }
 
-void db_radio_set_channel(uint8_t channel) {
+void db_radio_ieee_802154_set_channel(uint8_t channel) {
     NRF_RADIO->FREQUENCY = (_chan_to_freq[channel] << RADIO_FREQUENCY_FREQUENCY_Pos);
 }
 
-void db_radio_set_tx_power(uint8_t power) {
+void db_radio_ieee_802154_set_tx_power(uint8_t power) {
     NRF_RADIO->TXPOWER = (power << RADIO_TXPOWER_TXPOWER_Pos);
 }
 
-void db_radio_set_network_address(uint32_t addr) {
+void db_radio_ieee_802154_set_network_address(uint32_t addr) {
     NRF_RADIO->BASE0 = addr;
 }
 
-void db_radio_tx(const uint8_t *tx_buffer, uint8_t length) {
+void db_radio_ieee_802154_tx(const uint8_t *tx_buffer, uint8_t length) {
+
     radio_vars.pdu.length = length;
     memcpy(radio_vars.pdu.payload, tx_buffer, length);
 
@@ -202,14 +176,14 @@ void db_radio_tx(const uint8_t *tx_buffer, uint8_t length) {
 
     if (radio_vars.state == RADIO_STATE_IDLE) {
         _radio_enable();
-        db_radio_tx_start();
+        db_radio_ieee_802154_tx_start();
     }
 
     radio_vars.state = RADIO_STATE_TX;
     while (radio_vars.state != RADIO_STATE_TX) {}
 }
 
-void db_radio_rx(void) {
+void db_radio_ieee_802154_rx(void) {
     NRF_RADIO->SHORTS   = RADIO_SHORTS_COMMON | (RADIO_SHORTS_DISABLED_RXEN_Enabled << RADIO_SHORTS_DISABLED_RXEN_Pos);
     NRF_RADIO->INTENSET = RADIO_INTERRUPTS;
 
@@ -220,11 +194,11 @@ void db_radio_rx(void) {
     radio_vars.state = RADIO_STATE_RX;
 }
 
-void db_radio_tx_start(void) {
+void db_radio_ieee_802154_tx_start(void) {
     NRF_RADIO->TASKS_TXEN = RADIO_TASKS_TXEN_TASKS_TXEN_Trigger << RADIO_TASKS_TXEN_TASKS_TXEN_Pos;
 }
 
-void db_radio_disable(void) {
+void db_radio_ieee_802154_disable(void) {
     NRF_RADIO->INTENCLR        = RADIO_INTERRUPTS;
     NRF_RADIO->SHORTS          = 0;
     NRF_RADIO->EVENTS_TXREADY  = 0;
@@ -234,7 +208,7 @@ void db_radio_disable(void) {
     radio_vars.state = RADIO_STATE_IDLE;
 }
 
-int8_t db_radio_rssi(void) {
+int8_t db_radio_ieee_802154_rssi(void) {
     return (uint8_t)NRF_RADIO->RSSISAMPLE * -1;
 }
 

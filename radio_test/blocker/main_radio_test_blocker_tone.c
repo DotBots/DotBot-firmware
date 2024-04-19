@@ -20,30 +20,23 @@
 #include "timer.h"
 #include "timer_hf.h"
 
-#define mode 1  // Mode focus the payload 1) Tone 2) BLE_1MBit 3) 802.15.4
-
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
 #define RADIO_TXPOWER_TXPOWER_0dBm 0
 #endif
 
 // time in µs
-#define t_start_synchro 14
-#define t_adress_send   48
-#define t_length_send   8
-#define t_min_wait      1040
-#define t_bytes         8
+#define t_start_ble  150
+#define t_start_ieee 200
+#define t_end_ble    1800
+#define t_end_ieee   4000
 
-#define payload_size 75
 #if !(defined(NRF5340_XXAA))
 static const gpio_t db_gpio_0_8 = { .port = 0, .pin = 8 };  // P0.08
 #endif
-static const gpio_t db_gpio_0_7            = { .port = 0, .pin = 7 };  // P0.07
-static uint8_t      _payload[payload_size] = { 0 };
-uint8_t             radio_tx_bytes         = 0;
-int                 i                      = 0;
+static const gpio_t db_gpio_0_7 = { .port = 0, .pin = 7 };  // P0.07
 
-static void _led1_blink_slow(void) {
-    db_gpio_toggle(&db_led1);
+static void _led3_blink(void) {
+    db_gpio_toggle(&db_led3);
 }
 
 static void _disable_radio(void) {
@@ -51,27 +44,13 @@ static void _disable_radio(void) {
 }
 
 static void _enable_radio(void) {
-    int j;
-    if (mode == 1) {
-        db_radio_tx_start();
-    } else {
-        for (j = 0; j < payload_size; j++)
-            _payload[j] = (rand() % 255);
-        db_radio_disable();
-        db_radio_tx(&_payload[0], payload_size * sizeof(uint8_t));
-    }
+    db_radio_tx_start();
 }
 
 static void _gpio_callback(void *ctx) {
     (void)ctx;
-
-    if (i > 500 && i < 600) {
-        db_timer_hf_set_oneshot_us(0, t_start_synchro + t_adress_send + t_length_send, _enable_radio);
-        if (mode == 1) {
-            db_timer_hf_set_oneshot_us(1, t_min_wait + t_adress_send + t_length_send + t_bytes * 2, _disable_radio);
-        }
-    }
-    i++;
+    db_timer_hf_set_oneshot_us(0, t_start_ble, _enable_radio);
+    db_timer_hf_set_oneshot_us(1, t_end_ble, _disable_radio);
 }
 
 int main(void) {
@@ -98,30 +77,18 @@ int main(void) {
 #endif
 
     // Init timer ,radio and gpio
-    db_gpio_init(&db_led1, DB_GPIO_OUT);
+    db_gpio_init(&db_led3, DB_GPIO_OUT);
 
     db_timer_init();
-    db_timer_set_periodic_ms(0, 2000, _led1_blink_slow);
+    db_timer_set_periodic_ms(0, 100, _led3_blink);
     db_timer_hf_init();
 
-    if (mode == 3) {
-        db_radio_init(NULL, DB_RADIO_IEEE802154_250Kbit);
-    } else {
-        db_radio_init(NULL, DB_RADIO_BLE_1MBit);
-    }
-
+    db_radio_init(NULL, DB_RADIO_BLE_1MBit);
     db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
     db_radio_set_tx_power(RADIO_TXPOWER_TXPOWER_0dBm);
+    db_radio_disable();
 
     // srand( time( NULL ) );
-    //  Send RSSI
-    for (i = 0; i < 100; i++) {
-        db_radio_disable();
-        db_radio_tx(&_payload[0], payload_size * sizeof(uint8_t));
-        db_timer_delay_ms(100);
-    }
-    i = 0;
-    db_radio_disable();
 
     db_gpio_init_irq(&db_gpio_0_7, DB_GPIO_IN, DB_GPIO_IRQ_EDGE_RISING, _gpio_callback, NULL);  // can receive GPIO IRq from Tx and begin to block
 

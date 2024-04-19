@@ -20,8 +20,6 @@
 #include "timer.h"
 #include "timer_hf.h"
 
-#define mode 1  // Mode 1) BLE_1MBit 2) 802.15.4
-
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
 #define RADIO_TXPOWER_TXPOWER_0dBm 0
 #endif
@@ -35,22 +33,20 @@ static const gpio_t db_gpio_0_6 = { .port = 0, .pin = 6 };  // P0.06
 static uint8_t _payload[payload_size] = { 0 };
 static uint8_t i;
 
-static void _led1_blink_slow(void) {
-    db_gpio_toggle(&db_led1);
+static void _led2_blink(void) {
+    db_gpio_toggle(&db_led2);
 }
 
 static void _gpio_trigger(void) {
     db_gpio_clear(&db_gpio_0_8);
+    db_radio_disable();
 }
 
 static void _radio_tx(void) {
 
     db_gpio_set(&db_gpio_0_8);
-    db_timer_hf_set_oneshot_us(1, 1000, _gpio_trigger);
-
-    db_radio_disable();
+    db_timer_hf_set_oneshot_us(1, 2000, _gpio_trigger);
     db_radio_tx(&_payload[0], payload_size * sizeof(uint8_t));
-
     _payload[0]++;
     i = 1;
     while (_payload[i - 1] == 0 && i < payload_size) {
@@ -91,20 +87,15 @@ int main(void) {
 
     // Init timer ,radio and gpio
     db_gpio_init(&db_gpio_0_8, DB_GPIO_OUT);
-    db_gpio_init(&db_led1, DB_GPIO_OUT);
+    db_gpio_init(&db_led2, DB_GPIO_OUT);
 
     db_timer_init();
-    db_timer_set_periodic_ms(0, 1000, _led1_blink_slow);
+    db_timer_set_periodic_ms(0, 500, _led2_blink);
 
     db_timer_hf_init();
     db_timer_hf_set_periodic_us(0, 100000, _radio_tx);
 
-    if (mode == 1) {
-        db_radio_init(NULL, DB_RADIO_BLE_1MBit);
-    } else {
-        db_radio_init(NULL, DB_RADIO_IEEE802154_250Kbit);
-    }
-
+    db_radio_init(NULL, DB_RADIO_BLE_1MBit);
     db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
     db_radio_set_tx_power(RADIO_TXPOWER_TXPOWER_0dBm);
     db_radio_disable();
