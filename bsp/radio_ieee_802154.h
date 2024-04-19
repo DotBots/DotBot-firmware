@@ -2,7 +2,7 @@
 #define __RADIO_H_IEEE_802154
 
 /**
- * @defgroup    bsp_radio   Radio support
+ * @defgroup    bsp_radio_ieee_802154   Radio support
  * @ingroup     bsp
  * @brief       Control the radio peripheral
  *
@@ -23,8 +23,8 @@
 
 //=========================== defines ==========================================
 
-#ifndef DEFAULT_NETWORK_ADDRESS
-#define DEFAULT_NETWORK_ADDRESS 0x12345678UL  ///< Default network address
+#ifndef DEFAULT_NETWORK_ADDRESS_IEEE
+#define DEFAULT_NETWORK_ADDRESS_IEEE 0x12345678UL  ///< Default network address
 #endif
 
 typedef void (*radio_ieee_802154_cb_t)(uint8_t *packet, uint8_t length, bool crc);  ///< Function pointer to the callback function called on packet receive

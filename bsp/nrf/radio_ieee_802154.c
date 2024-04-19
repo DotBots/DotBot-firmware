@@ -1,6 +1,6 @@
 /**
  * @file
- * @ingroup bsp_radio
+ * @ingroup bsp_radio_ieee_802154
  *
  * @brief  nRF52833-specific definition of the "radio" bsp module.
  *
@@ -118,7 +118,7 @@ void db_radio_ieee_802154_init(radio_ieee_802154_cb_t callback) {
     NRF_RADIO->PCNF1 = (127 << RADIO_PCNF1_MAXLEN_Pos);
 
     // Configuring the on-air radio address.
-    NRF_RADIO->BASE0 = DEFAULT_NETWORK_ADDRESS;
+    NRF_RADIO->BASE0 = DEFAULT_NETWORK_ADDRESS_IEEE;
     // only send using logical address 0
     NRF_RADIO->TXADDRESS = 0UL;
     // only receive from logical address 0

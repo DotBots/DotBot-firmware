@@ -22,6 +22,7 @@ _api/bsp_partition
 _api/bsp_pwm
 _api/bsp_qdec
 _api/bsp_radio
+_api/bsp_radio_ieee_802154
 _api/bsp_rgbled
 _api/bsp_rng
 _api/bsp_rpm
