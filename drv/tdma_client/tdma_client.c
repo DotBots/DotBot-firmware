@@ -365,15 +365,19 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
             // Only resync the timer if the DotBot has already been registered.
             if (_tdma_client_vars.registration_flag == DB_TDMA_CLIENT_REGISTERED) {
 
+                // Update the timer interrupts
+                db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_TX, _tdma_client_vars.tdma_client_table.tx_start, &timer_tx_interrupt);
+                db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_RX, _tdma_client_vars.tdma_client_table.rx_start, &timer_rx_interrupt);
+
+                // Update the frame period
+                uint8_t *cmd_ptr                          = ptk_ptr + sizeof(protocol_header_t);
+                _tdma_client_vars.tdma_client_table.frame = ((const protocol_sync_frame_t *)cmd_ptr)->frame_period;
+
                 // update the state machine
                 _tdma_client_vars.rx_flag = DB_TDMA_CLIENT_RX_WAIT;
 
                 // Enable radio RX
                 db_radio_rx();
-
-                // Update the timer interrupts
-                db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_TX, _tdma_client_vars.tdma_client_table.tx_start, &timer_tx_interrupt);
-                db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_RX, _tdma_client_vars.tdma_client_table.rx_start, &timer_rx_interrupt);
             }
         } break;
 

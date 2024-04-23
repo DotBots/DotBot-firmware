@@ -40,6 +40,7 @@ typedef enum {
     DB_PROTOCOL_LH2_PROCESSED_DATA = 12,  ///< Lighthouse 2 data processed at the DotBot
     DB_PROTOCOL_TDMA_KEEP_ALIVE   = 11,  ///< Sent by the DotBot periodically to keep the connection alive, if there is nothing else to send.
     DB_PROTOCOL_TDMA_UPDATE_TABLE = 12,  ///< Receive new timings for the TDMA table
+// TODO add the frame duration to the packet
     DB_PROTOCOL_TDMA_SYNC_FRAME   = 13,  ///< Sent by the gateway at the begining of a TDMA frame, if there is nothing else to send.
 } command_type_t;
 
@@ -125,6 +126,11 @@ typedef struct __attribute__((packed)) {
     uint16_t tx_duration;        ///< duration of the TX period
     uint32_t next_period_start;  ///< time until the start of the next TDMA frame
 } protocol_tdma_table_t;
+
+///< DotBot protocol sync messages marks the start of a TDMA frame [all units are in microseconds]
+typedef struct __attribute__((packed)) {
+    uint32_t frame_period;       ///< duration of a full TDMA frame
+} protocol_sync_frame_t;
 
 //=========================== public ===========================================
 

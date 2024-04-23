@@ -167,7 +167,7 @@ bool _client_rb_tx_queue(new_client_ring_buffer_t *rb, uint16_t max_tx_duration_
  * @param[out]   client      ID client to search.
  * @return                   true if ID was found, false otherwise.
  */
-bool _client_rb_id_exists(new_client_ring_buffer_t *rb, uint64_t *new_client);
+bool _client_rb_id_exists(new_client_ring_buffer_t *rb, uint64_t client);
 
 /**
  * @brief Send a message to synchronize the client's and the server's clock
@@ -180,7 +180,7 @@ void _tx_sync_frame(void);
  *        or correct those that stray away from their slot
  *
  */
-void _tx_registration_messages(void);
+void _tx_registration_messages(uint64_t client);
 
 /**
  * @brief find the slot in which a client is registered
@@ -291,7 +291,6 @@ bool _message_rb_get(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], u
 bool _message_rb_tx_queue(uint16_t max_tx_duration_us) {
 
     // initialize variables
-    uint32_t start_tx_slot = db_timer_hf_now();
     uint8_t  length        = 0;
     uint8_t  packet[PAYLOAD_MAX_LENGTH];
     bool     packet_sent_flag = false;  ///< flag to keep track if a packet get sent during this function call
@@ -303,14 +302,14 @@ bool _message_rb_tx_queue(uint16_t max_tx_duration_us) {
         // and send messages until queue is empty
         while (_tdma_vars.tx_ring_buffer.count > 0) {
             // retrieve the oldest packet from the queue
-            bool error = _get_from_spi_ring_buffer(&_tdma_vars.tx_ring_buffer, packet, &length);
+            bool error = _message_rb_get(&_tdma_vars.tx_ring_buffer, packet, &length);
             if (!error) {
                 break;
             }
             // Compute if there is still time to send the packet [in microseconds]
             uint16_t tx_time = RADIO_TX_RAMP_UP_TIME + length * _tdma_vars.byte_onair_time;
             // If there is time to send the packet, send it
-            if (db_timer_hf_now() + tx_time - start_tx_slot < max_tx_duration_us) {
+            if (db_timer_hf_now() + tx_time - _tdma_vars.slot_start_ts < max_tx_duration_us) {
 
                 db_radio_tx(packet, length);
                 packet_sent_flag = true;
@@ -321,7 +320,7 @@ bool _message_rb_tx_queue(uint16_t max_tx_duration_us) {
             }
         }
         // Update the last packet timer
-        _tdma_vars.last_tx_packet_ts = start_tx_slot;
+        _tdma_vars.last_tx_packet_ts = _tdma_vars.slot_start_ts;
     }
     return packet_sent_flag;
 }
@@ -360,7 +359,38 @@ bool _client_rb_get(new_client_ring_buffer_t *rb, uint64_t *new_client) {
 
 bool _client_rb_tx_queue(new_client_ring_buffer_t *rb, uint16_t max_tx_duration_us) {
 
-    // TODO
+    // initialize variables
+    uint64_t client = 0;
+    bool     packet_sent_flag = false;  ///< flag to keep track if a packet get sent during this function call
+
+    // check if there is something to send
+    if (rb->count > 0) {
+        // if yes, disable the radio.
+        db_radio_disable();
+        // and send messages until queue is empty
+        while (rb->count > 0) {
+            // retrieve the oldest packet from the queue
+            bool error = _client_rb_get(rb, &client);
+            if (!error) {
+                break;
+            }
+            // Compute if there is still time to send the packet [in microseconds]
+            uint16_t tx_time = RADIO_TX_RAMP_UP_TIME + sizeof(protocol_tdma_table_t) * _tdma_vars.byte_onair_time;
+            // If there is time to send the packet, send it
+            if (db_timer_hf_now() + tx_time - _tdma_vars.slot_start_ts < max_tx_duration_us) {
+
+                _tx_registration_messages(client);
+                packet_sent_flag = true;
+            } else {  // otherwise, put the packet back in the queue and leave
+
+                _client_rb_add(rb, client);
+                break;
+            }
+        }
+        // Update the last packet timer
+        _tdma_vars.last_tx_packet_ts = _tdma_vars.slot_start_ts;
+    }
+    return packet_sent_flag;
 }
 
 bool _client_rb_id_exists(new_client_ring_buffer_t *rb, uint64_t client) {
@@ -383,16 +413,47 @@ bool _client_rb_id_exists(new_client_ring_buffer_t *rb, uint64_t client) {
 }
 
 void _tx_sync_frame(void) {
-    // TODO add to sync frame the frame duration for the current frame.
+    // This message signals the start of a TDMA frame 
+    // Prepare packet
+    protocol_sync_frame_t frame = {_tdma_vars.tdma_table.frame_duration_us};
+    // Send the packet
     db_protocol_header_to_buffer(_tdma_vars.radio_buffer, DB_BROADCAST_ADDRESS, TDMA_RADIO_APPLICATION, DB_PROTOCOL_TDMA_SYNC_FRAME);
+    memcpy(_tdma_vars.radio_buffer + sizeof(protocol_header_t), &frame, sizeof(protocol_sync_frame_t));
     size_t length = sizeof(protocol_header_t);
     db_radio_disable();
     db_radio_tx(_tdma_vars.radio_buffer, length);
 }
 
-void _tx_registration_messages(void) {
-    // TODO: Send the sync packet to a particular client.
-    //  Calculate the correct time to send the the slot start timer.
+void _tx_registration_messages(uint64_t client) {
+    // Send the sync packet to a particular client.
+
+    // Create the TDMA table we will send
+    protocol_tdma_table_t table = { 0 };
+
+    // Get the info of the client we are sending too.
+    uint8_t slot = _server_find_client(&_tdma_vars.tdma_table, client);
+
+    // global frame data
+    table.frame_period = _tdma_vars.tdma_table.frame_duration_us;
+    // Client specific data
+    table.rx_duration = _tdma_vars.tdma_table.table[slot].rx_duration;
+    table.rx_start    = _tdma_vars.tdma_table.table[slot].rx_start;
+    table.tx_duration = _tdma_vars.tdma_table.table[slot].tx_duration;
+    table.tx_start    = _tdma_vars.tdma_table.table[slot].tx_start;
+
+    // Start filling out the Message header
+    db_protocol_header_to_buffer(_tdma_vars.radio_buffer, client, TDMA_RADIO_APPLICATION, DB_PROTOCOL_TDMA_UPDATE_TABLE);
+
+    // Compute the time before the next frame. (as close as possible to the TX as you can, so that it's more accurate)
+    table.next_period_start = table.frame_period - (timer_hf_now() - _tdma_vars.frame_start_ts);
+
+    // Fill the rest of the message.
+    memcpy(_tdma_vars.radio_buffer + sizeof(protocol_header_t), &table, sizeof(protocol_tdma_table_t));
+    size_t length = sizeof(protocol_header_t) + sizeof(protocol_tdma_table_t);
+
+    // Send the message
+    db_radio_disable();
+    db_radio_tx(_tdma_vars.radio_buffer, length);
 }
 
 uint8_t _server_find_client(tdma_server_table_t *tdma_table, uint64_t client) {
@@ -518,9 +579,9 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
 
         // register the new client and exit
         // register new client to the table
-        _server_register_new_client(&_tdma_vars.tdma_table, header->src)
-            // Put it in the list of clients to transmit to in your next turn.
-            _client_rb_add(&_tdma_vars.new_clients_rb, header->src);
+        _server_register_new_client(&_tdma_vars.tdma_table, header->src);
+        // Put it in the list of clients to transmit to in your next turn.
+        _client_rb_add(&_tdma_vars.new_clients_rb, header->src);
 
         // discard message
         return;
