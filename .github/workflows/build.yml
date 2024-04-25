@@ -28,7 +28,7 @@ jobs:
         if: matrix.config == 'Release'
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-${{ matrix.target }}-${{ matrix.config }}
+          name: artifacts-${{ matrix.target }}
           path: artifacts/*
 
   build-success:
@@ -76,9 +76,35 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-      - name: Download artifacts
+      - name: Download DotBot v2 artifacts
         uses: actions/download-artifact@v4
         with:
+          name: artifacts-dotbot-v2
+          path: ./artifacts
+      - name: Download Sailbot v1 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-sailbot-v1
+          path: ./artifacts
+      - name: Download nRF52833DK artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-nrf52833dk
+          path: ./artifacts
+      - name: Download nRF52840DK artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-nrf52840dk
+          path: ./artifacts
+      - name: Download nRF5340DK application artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-nrf5340dk-app
+          path: ./artifacts
+      - name: Download nRF5340DK network artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-nrf5340dk-net
           path: ./artifacts
       - name: Release
         uses: ncipollo/release-action@v1
