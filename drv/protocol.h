@@ -42,6 +42,7 @@ typedef enum {
 typedef enum {
     DotBot  = 0,  ///< DotBot application
     SailBot = 1,  ///< SailBot application
+    FreeBot = 2,  ///< FreeBot application
 } application_type_t;
 
 /// Control mode

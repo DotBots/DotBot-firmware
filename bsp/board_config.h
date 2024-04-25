@@ -19,6 +19,8 @@
 #include "conf/dotbot_v1_config.h"
 #elif defined(BOARD_DOTBOT_V2)
 #include "conf/dotbot_v2_config.h"
+#elif defined(BOARD_FREEBOT_V1_0)
+#include "conf/freebot_v1_0_config.h"
 #elif defined(BOARD_SAILBOT_V1)
 #include "conf/sailbot_v1_config.h"
 #elif defined(BOARD_NRF52840DK)
@@ -79,11 +81,15 @@ static const gpio_t db_uart_rx = { .port = DB_UART_RX_PORT, .pin = DB_UART_RX_PI
 ///! UART TX pin
 static const gpio_t db_uart_tx = { .port = DB_UART_TX_PORT, .pin = DB_UART_TX_PIN };
 
+#ifdef DB_LH2_E_PORT
 ///! LH2 event gpio
 static const gpio_t db_lh2_e = { .port = DB_LH2_E_PORT, .pin = DB_LH2_E_PIN };
+#endif
 
+#ifdef DB_LH2_D_PORT
 ///! LH2 data gpio
 static const gpio_t db_lh2_d = { .port = DB_LH2_D_PORT, .pin = DB_LH2_D_PIN };
+#endif
 
 ///! Motor driver pins
 static const gpio_t db_motors_pins[] = {
@@ -93,15 +99,19 @@ static const gpio_t db_motors_pins[] = {
     { .port = DB_MOTOR_BIN2_PORT, .pin = DB_MOTOR_BIN2_PIN },
 };
 
+#ifdef DB_RPM_LEFT_PORT
 ///! Left wheel encoder pin
 static const gpio_t db_rpm_left_pin = {
     .port = DB_RPM_LEFT_PORT, .pin = DB_RPM_LEFT_PORT
 };
+#endif
 
+#ifdef DB_RPM_RIGHT_PORT
 ///! Right wheel encoder pin
 static const gpio_t db_rpm_right_pin = {
     .port = DB_RPM_RIGHT_PORT, .pin = DB_RPM_RIGHT_PORT
 };
+#endif
 
 #ifdef DB_QDEC_LEFT_A_PORT
 ///! Left wheel encoder pin A
