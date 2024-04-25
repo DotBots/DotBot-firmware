@@ -22,7 +22,7 @@ The DotBots ecosystem provides Python
 used a gateway.
 
 The DotBots hardware design are published on GitHub at
-[https://github.com/DotBots/DotBot-harware](https://github.com/DotBots/DotBot-hardware).
+[https://github.com/DotBots/DotBot-hardware](https://github.com/DotBots/DotBot-hardware).
 
 ## Building firmwares
 
