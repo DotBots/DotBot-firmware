@@ -61,6 +61,9 @@ else ifeq (nrf5340dk-net,$(BUILD_TARGET))
     #
   # Bootloader not supported on nrf5340 network core
   BOOTLOADER :=
+else ifeq (freebot,$(BUILD_TARGET))
+  PROJECTS ?= 03app_freebot
+  ARTIFACT_PROJECTS := 03app_dotbot
 else
   PROJECTS ?= $(shell find projects/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/projects// | sort)
 endif
@@ -70,24 +73,24 @@ OTAP_APPS := $(filter-out bootloader,$(OTAP_APPS))
 
 # remove incompatible apps (nrf5340, sailbot gateway) for dotbot (v1, v2) builds
 ifneq (,$(filter dotbot-v1,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 01bsp_qdec 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_nrf5340_%,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_nrf5340_% 03app_freebot,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
 endif
 
 ifneq (,$(filter dotbot-v2,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_nrf5340_net,$(PROJECTS))
+  PROJECTS := $(filter-out 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_nrf5340_net 03app_freebot,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
 endif
 
 # remove incompatible apps (nrf5340, dotbot, gateway) for sailbot-v1 build
 ifeq (sailbot-v1,$(BUILD_TARGET))
-  PROJECTS := $(filter-out 01bsp_qdec 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_dotbot 03app_nrf5340_%,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_dotbot 03app_nrf5340_% 03app_freebot,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_sailbot
 endif
 
 # remove incompatible apps (nrf5340) for nrf52833dk/nrf52840dk build
 ifneq (,$(filter nrf52833dk nrf52840dk,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 01bsp_qdec 01drv_move 03app_nrf5340_%,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 01drv_move 03app_nrf5340_% 03app_freebot,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot_gateway 03app_dotbot_gateway_lr
 endif
 
