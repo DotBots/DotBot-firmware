@@ -4,6 +4,12 @@
       "url": "https://dotbot-firmware.readthedocs.io/en/latest/"
     },
     {
+      "name": "REL-1.15 (stable)",
+      "version": "REL-1.15",
+      "url": "https://dotbot-firmware.readthedocs.io/en/stable/",
+      "preferred": true
+    },
+    {
       "name": "REL-1.14",
       "version": "REL-1.14",
       "url": "https://dotbot-firmware.readthedocs.io/en/rel-1.14/"
