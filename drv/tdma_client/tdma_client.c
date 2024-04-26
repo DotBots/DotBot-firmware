@@ -63,7 +63,6 @@ typedef struct {
 
 //=========================== variables ========================================
 
-tdma_client_vars_t _tdma_client_vars = { 0 };
 
 // Transform the ble mode into how many microseconds it takes to send a single byte.
 uint8_t ble_mode_to_byte_time[] = {
