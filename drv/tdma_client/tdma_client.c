@@ -86,7 +86,7 @@ void timer_rx_interrupt(void);
  *
  * @param[in]   rb  pointer to ring buffer structure
  */
-void _init_tdma_client_ring_buffer(tdma_client_ring_buffer_t *rb);
+void _message_rb_init(tdma_client_ring_buffer_t *rb);
 
 /**
  * @brief add one element to the ring buffer for tdma captures
@@ -95,7 +95,7 @@ void _init_tdma_client_ring_buffer(tdma_client_ring_buffer_t *rb);
  * @param[in]   data        pointer to the data array to save in the ring buffer
  * @param[in]   packet_length   length of the packet to send trough the radio
  */
-void _add_to_tdma_client_ring_buffer(tdma_client_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t packet_length);
+void _message_rb_add(tdma_client_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t packet_length);
 
 /**
  * @brief retreive the oldest element from the ring buffer for tdma captures
@@ -104,7 +104,7 @@ void _add_to_tdma_client_ring_buffer(tdma_client_ring_buffer_t *rb, uint8_t data
  * @param[out]   data        pointer to the array where the ring buffer data will be saved
  * @param[out]   packet_length   length of the packet to send trough the radio
  */
-bool _get_from_tdma_client_ring_buffer(tdma_client_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t *packet_length);
+bool _message_rb_get(tdma_client_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t *packet_length);
 
 /**
  * @brief Sends all the queued messages that can be sent in during the TX timeslot
@@ -117,13 +117,13 @@ bool _message_rb_tx_queue(uint16_t max_tx_duration_us);
  * @brief sends a keep_alive packet to the gateway
  *
  */
-void _send_keep_alive_message(void);
+void _tx_keep_alive_message(void);
 
 /**
  * @brief register with the gatway to request a TDMA slot
  *
  */
-void _send_tdma_register_message(void);
+void _tx_tdma_register_message(void);
 
 /**
  * @brief get a random delay between 100ms and 228ms in microseconds
@@ -137,7 +137,7 @@ uint32_t _get_random_delay_us(void);
 void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq) {
 
     // Initialize the ring buffer of outbound messages
-    _init_tdma_client_ring_buffer(&_tdma_client_vars.tx_ring_buffer);
+    _message_rb_init(&_tdma_client_vars.tx_ring_buffer);
 
     // Initialize Radio
     db_radio_init(&tdma_client_callback, radio_mode);  // set the radio callback to our tdma catch function
@@ -194,7 +194,7 @@ void db_tdma_client_get_table(tdma_client_table_t *table) {
 void db_tdma_client_tx(const uint8_t *packet, uint8_t length) {
 
     // Add packet to the output buffer
-    _add_to_tdma_client_ring_buffer(&_tdma_client_vars.tx_ring_buffer, packet, length);
+    _message_rb_add(&_tdma_client_vars.tx_ring_buffer, packet, length);
 }
 
 void db_tdma_client_flush(void) {
@@ -206,7 +206,7 @@ void db_tdma_client_flush(void) {
 void db_tdma_client_empty(void) {
 
     // Reinitialize the ring buffer to erase it
-    _init_tdma_client_ring_buffer(&_tdma_client_vars.tx_ring_buffer);
+    _message_rb_init(&_tdma_client_vars.tx_ring_buffer);
 }
 
 db_tdma_registration_state_t db_tdma_client_get_status(void) {
@@ -214,13 +214,13 @@ db_tdma_registration_state_t db_tdma_client_get_status(void) {
 }
 //=========================== private ==========================================
 
-void _init_tdma_client_ring_buffer(tdma_client_ring_buffer_t *rb) {
+void _message_rb_init(tdma_client_ring_buffer_t *rb) {
     rb->writeIndex = 0;
     rb->readIndex  = 0;
     rb->count      = 0;
 }
 
-void _add_to_tdma_client_ring_buffer(tdma_client_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t packet_length) {
+void _message_rb_add(tdma_client_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t packet_length) {
 
     memcpy(rb->buffer[rb->writeIndex], data, PAYLOAD_MAX_LENGTH);
     rb->packet_length[rb->writeIndex] = packet_length;
@@ -234,7 +234,7 @@ void _add_to_tdma_client_ring_buffer(tdma_client_ring_buffer_t *rb, uint8_t data
     }
 }
 
-bool _get_from_tdma_client_ring_buffer(tdma_client_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t *packet_length) {
+bool _message_rb_get(tdma_client_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t *packet_length) {
     if (rb->count <= 0) {
         // Buffer is empty
         return false;
@@ -276,7 +276,7 @@ bool _message_rb_tx_queue(uint16_t max_tx_duration_us) {
                 packet_sent_flag = true;
             } else {  // otherwise, put the packet back in the queue and leave
 
-                _add_to_tdma_client_ring_buffer(&_tdma_client_vars.tx_ring_buffer, packet, length);
+                _message_rb_add(&_tdma_client_vars.tx_ring_buffer, packet, length);
                 break;
             }
         }
@@ -292,7 +292,7 @@ bool _message_rb_tx_queue(uint16_t max_tx_duration_us) {
     return packet_sent_flag;
 }
 
-void _send_keep_alive_message(void) {
+void _tx_keep_alive_message(void) {
 
     db_protocol_header_to_buffer(_tdma_client_vars.radio_buffer, DB_BROADCAST_ADDRESS, TDMA_CLIENT_RADIO_APPLICATION, DB_PROTOCOL_ADVERTISEMENT);
     size_t length = sizeof(protocol_header_t);
@@ -300,7 +300,7 @@ void _send_keep_alive_message(void) {
     db_radio_tx(_tdma_client_vars.radio_buffer, length);
 }
 
-void _send_tdma_register_message(void) {
+void _tx_tdma_register_message(void) {
 
     db_protocol_header_to_buffer(_tdma_client_vars.radio_buffer, DB_BROADCAST_ADDRESS, TDMA_CLIENT_RADIO_APPLICATION, DB_PROTOCOL_ADVERTISEMENT);
     size_t length = sizeof(protocol_header_t);
@@ -424,7 +424,7 @@ void timer_tx_interrupt(void) {
         if (!packet_sent) {
             if (db_timer_hf_now() - _tdma_client_vars.last_tx_packet_timestamp > TDMA_CLIENT_MAX_DELAY_WITHOUT_TX) {
 
-                _send_keep_alive_message();
+                _tx_keep_alive_message();
             }
         }
     } else {  // Device is unregistered
@@ -434,7 +434,7 @@ void timer_tx_interrupt(void) {
         db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_TX, delay_time, &timer_tx_interrupt);
 
         // Send the keep alive message
-        _send_tdma_register_message();
+        _tx_tdma_register_message();
     }
 }
 
