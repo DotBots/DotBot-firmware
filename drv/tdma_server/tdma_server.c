@@ -89,7 +89,7 @@ uint8_t ble_mode_to_byte_time[] = {
 
 //========================== prototypes ========================================
 
-static void tdma_callback(uint8_t *packet, uint8_t length);
+static void tdma_server_callback(uint8_t *packet, uint8_t length);
 
 ///< TDMA timer Interrupts
 void timer_tdma_interrupt(void);
@@ -613,7 +613,7 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
  * @brief Interruption handler for the TX state machine timer
  *
  */
-void timer_tmda_interrupt(void) {
+void timer_tdma_interrupt(void) {
 
     // Save the timestamp start of the current slot, to ensure accurate computation of the end of the slot
     _tdma_vars.slot_start_ts = db_timer_hf_now();
