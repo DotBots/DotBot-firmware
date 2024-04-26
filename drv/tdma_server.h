@@ -61,17 +61,16 @@ typedef void (*tdma_server_cb_t)(uint8_t *packet, uint8_t length);  ///< Functio
  * @param[in] callback      pointer to a function that will be called each time a packet is received.
  * @param[in] radio_mode    BLE mode used by the radio (1MBit, 2MBit, LR125KBit, LR500Kbit)
  * @param[in] freq          Frequency of the radio [0, 100]
- * @param[in] buffer_size   Number of messages that can be queued for sending via radio.
  *
  */
-void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq, uint8_t buffer_size);
+void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq);
 
 /**
- * @brief Returns the contents of the TDMA table
+ * @brief Get the current TDMA table
  *
- * @param[out] table       New table of TDMA timings
+ * @param[out] table       Pointer to the current table of TDMA timings
  */
-void db_tdma_server_read_tdma_table(tdma_server_table_t *table);
+void db_tdma_server_get_table(tdma_server_table_t *table);
 
 /**
  * @brief Queues a single packet to send through the Radio
