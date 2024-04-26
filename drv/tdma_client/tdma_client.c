@@ -63,6 +63,7 @@ typedef struct {
 
 //=========================== variables ========================================
 
+static tdma_client_vars_t _tdma_client_vars = { 0 };
 
 // Transform the ble mode into how many microseconds it takes to send a single byte.
 uint8_t ble_mode_to_byte_time[] = {
@@ -156,11 +157,11 @@ void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mo
     _tdma_client_vars.byte_onair_time = ble_mode_to_byte_time[radio_mode];
 
     // Set the default time table
-    _tdma_client_vars.tdma_client_table.frame_duration       = TDMA_CLIENT_DEFAULT_FRAME_DURATION;
-    _tdma_client_vars.tdma_client_table.rx_start    = TDMA_CLIENT_DEFAULT_RX_START;
-    _tdma_client_vars.tdma_client_table.rx_duration = TDMA_CLIENT_DEFAULT_RX_DURATION;
-    _tdma_client_vars.tdma_client_table.tx_start    = TDMA_CLIENT_DEFAULT_TX_START;
-    _tdma_client_vars.tdma_client_table.tx_duration = TDMA_CLIENT_DEFAULT_TX_DURATION;
+    _tdma_client_vars.tdma_client_table.frame_duration = TDMA_CLIENT_DEFAULT_FRAME_DURATION;
+    _tdma_client_vars.tdma_client_table.rx_start       = TDMA_CLIENT_DEFAULT_RX_START;
+    _tdma_client_vars.tdma_client_table.rx_duration    = TDMA_CLIENT_DEFAULT_RX_DURATION;
+    _tdma_client_vars.tdma_client_table.tx_start       = TDMA_CLIENT_DEFAULT_TX_START;
+    _tdma_client_vars.tdma_client_table.tx_duration    = TDMA_CLIENT_DEFAULT_TX_DURATION;
 
     // Set the starting states
     _tdma_client_vars.registration_flag = DB_TDMA_CLIENT_UNREGISTERED;
@@ -174,20 +175,20 @@ void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mo
 
 void db_tdma_client_set_table(tdma_client_table_t *table) {
 
-    _tdma_client_vars.tdma_client_table.frame_duration       = table->frame_duration;
-    _tdma_client_vars.tdma_client_table.rx_start    = table->rx_start;
-    _tdma_client_vars.tdma_client_table.rx_duration = table->rx_duration;
-    _tdma_client_vars.tdma_client_table.tx_start    = table->tx_start;
-    _tdma_client_vars.tdma_client_table.tx_duration = table->tx_duration;
+    _tdma_client_vars.tdma_client_table.frame_duration = table->frame_duration;
+    _tdma_client_vars.tdma_client_table.rx_start       = table->rx_start;
+    _tdma_client_vars.tdma_client_table.rx_duration    = table->rx_duration;
+    _tdma_client_vars.tdma_client_table.tx_start       = table->tx_start;
+    _tdma_client_vars.tdma_client_table.tx_duration    = table->tx_duration;
 }
 
 void db_tdma_client_get_table(tdma_client_table_t *table) {
 
-    table->frame_duration       = _tdma_client_vars.tdma_client_table.frame_duration;
-    table->rx_start    = _tdma_client_vars.tdma_client_table.rx_start;
-    table->rx_duration = _tdma_client_vars.tdma_client_table.rx_duration;
-    table->tx_start    = _tdma_client_vars.tdma_client_table.tx_start;
-    table->tx_duration = _tdma_client_vars.tdma_client_table.tx_duration;
+    table->frame_duration = _tdma_client_vars.tdma_client_table.frame_duration;
+    table->rx_start       = _tdma_client_vars.tdma_client_table.rx_start;
+    table->rx_duration    = _tdma_client_vars.tdma_client_table.rx_duration;
+    table->tx_start       = _tdma_client_vars.tdma_client_table.tx_start;
+    table->tx_duration    = _tdma_client_vars.tdma_client_table.tx_duration;
 }
 
 void db_tdma_client_tx(const uint8_t *packet, uint8_t length) {
@@ -381,7 +382,7 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
                 db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_RX, _tdma_client_vars.tdma_client_table.rx_start, &timer_rx_interrupt);
 
                 // Update the frame period
-                uint8_t *cmd_ptr                          = ptk_ptr + sizeof(protocol_header_t);
+                uint8_t *cmd_ptr                                   = ptk_ptr + sizeof(protocol_header_t);
                 _tdma_client_vars.tdma_client_table.frame_duration = ((const protocol_sync_frame_t *)cmd_ptr)->frame_period;
 
                 // update the state machine

@@ -37,11 +37,11 @@ typedef enum {
 
 /// Data type to store the TDMA table
 typedef struct __attribute__((packed)) {
-    uint32_t frame_duration;        ///< Duration of the entire TDMA frame [microseconds]
-    uint32_t rx_start;     ///< Time between the start of the frame and when the gateway starts transmitting
-    uint16_t rx_duration;  ///< Duration the gateway will transmit messages
-    uint32_t tx_start;     ///< Time between the start of the frame and the start of the DotBot's alloted frame
-    uint16_t tx_duration;  ///< Duration of the DotBot's alloted frame.
+    uint32_t frame_duration;  ///< Duration of the entire TDMA frame [microseconds]
+    uint32_t rx_start;        ///< Time between the start of the frame and when the gateway starts transmitting
+    uint16_t rx_duration;     ///< Duration the gateway will transmit messages
+    uint32_t tx_start;        ///< Time between the start of the frame and the start of the DotBot's alloted frame
+    uint16_t tx_duration;     ///< Duration of the DotBot's alloted frame.
 } tdma_client_table_t;
 
 typedef void (*tdma_client_cb_t)(uint8_t *packet, uint8_t length);  ///< Function pointer to the callback function called on packet receive
@@ -70,7 +70,7 @@ void db_tdma_client_set_table(tdma_client_table_t *table);
 /**
  * @brief Get the current RX and TX timings of the TDMA table
  *
- * @param[in] table       current table of TDMA timings
+ * @param[in] table       Copy of the current table of TDMA timings
  */
 void db_tdma_client_get_table(tdma_client_table_t *table);
 
