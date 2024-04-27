@@ -26,7 +26,7 @@
 
 //=========================== variables ========================================
 
-static const uint8_t packet_tx[300] = { 0 };
+static uint8_t packet_tx[300] = { 0 };
 tdma_server_table_t  *tdma_table_ptr;
 
 //========================== prototypes ========================================
@@ -43,11 +43,11 @@ int main(void) {
     db_board_init();
 
     // Initialize the TDMA server
-    void db_tdma_server_init(&radio_callback, RADIO_MODE, RADIO_FREQ);
+    db_tdma_server_init(&radio_callback, RADIO_MODE, RADIO_FREQ);
 
     while (1) {
         // Print current status
-        db_tdma_server_get_table(tdma_table_ptr);
+        tdma_table_ptr = db_tdma_server_get_table();
         printf("[*] Frame duration = {%d}\n", tdma_table_ptr->frame_duration_us);
         printf("[*] Num. of Clients = {%d}\n", tdma_table_ptr->num_clients);
         printf("[*] Client 1 = {%d}\n", tdma_table_ptr->table[0]);

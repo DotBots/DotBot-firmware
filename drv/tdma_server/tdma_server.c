@@ -457,7 +457,7 @@ void _tx_registration_messages(uint64_t client) {
     db_protocol_header_to_buffer(_tdma_vars.radio_buffer, client, TDMA_RADIO_APPLICATION, DB_PROTOCOL_TDMA_UPDATE_TABLE);
 
     // Compute the time before the next frame. (as close as possible to the TX as you can, so that it's more accurate)
-    table.next_period_start = table.frame_period - (timer_hf_now() - _tdma_vars.frame_start_ts);
+    table.next_period_start = table.frame_period - (db_timer_hf_now() - _tdma_vars.frame_start_ts);
 
     // Fill the rest of the message.
     memcpy(_tdma_vars.radio_buffer + sizeof(protocol_header_t), &table, sizeof(protocol_tdma_table_t));
@@ -645,11 +645,11 @@ void timer_tdma_interrupt(void) {
 
         // Send registration messages. + Out of slot messages. (Use AT MOST, helf of the available slot time.)
         uint32_t remaining_slot_time_us = _tdma_vars.slot_start_ts + _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].tx_duration - db_timer_hf_now();
-        packet_sent                     = _message_rb_tx_queue(remaining_slot_time_us / 2 - TDMA_TX_DEADTIME_US);
+        packet_sent                     = _message_rb_tx_queue(&_tdma_vars.tx_ring_buffer ,remaining_slot_time_us / 2 - TDMA_TX_DEADTIME_US);
 
         // send messages if available. time_available (slot_start + slot_duration - current_time)
-        uint32_t remaining_slot_time_us = _tdma_vars.slot_start_ts + _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].tx_duration - db_timer_hf_now();
-        packet_sent                     = _message_rb_tx_queue(remaining_slot_time_us - TDMA_TX_DEADTIME_US);
+        remaining_slot_time_us = _tdma_vars.slot_start_ts + _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].tx_duration - db_timer_hf_now();
+        packet_sent                     = _message_rb_tx_queue(&_tdma_vars.tx_ring_buffer ,remaining_slot_time_us - TDMA_TX_DEADTIME_US);
 
         // mark last time you sent anything
         if (packet_sent) {
