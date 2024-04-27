@@ -241,23 +241,21 @@ void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mo
     db_timer_hf_set_periodic_us(TDMA_SERVER_HF_TIMER_CC, _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].tx_duration, &timer_tdma_interrupt);  // start advertising behaviour
 }
 
-void db_tdma_server_get_table(tdma_server_table_t *table) {
-    table->frame_duration = _tdma_vars.tdma_table.frame_duration;
-    table->rx_start       = _tdma_vars.tdma_table.rx_start;
-    table->rx_duration    = _tdma_vars.tdma_table.rx_duration;
-    table->tx_start       = _tdma_vars.tdma_table.tx_start;
-    table->tx_duration    = _tdma_vars.tdma_table.tx_duration;
+tdma_server_table_t *db_tdma_server_get_table(void) {
+
+    return &_tdma_vars.tdma_table;
+
 }
 
 void db_tdma_server_tx(const uint8_t *packet, uint8_t length) {
     // Add packet to the output buffer
-    _message_rb_add(&_tdma_vars.tx_ring_buffer, packet, length);
+    _message_rb_add(&_tdma_vars.tx_ring_buffer, (uint8_t *) packet, length);
 }
 
 void db_tdma_server_flush(void) {
     // Use the normal function to send queue messages, but with a really long time
     // So that there is enough time to send everything.
-    _message_rb_tx_queue(50000);
+    _message_rb_tx_queue(&_tdma_vars.tx_ring_buffer ,50000);
 }
 
 void db_tdma_server_empty(void) {
@@ -423,7 +421,7 @@ bool _client_rb_id_exists(new_client_ring_buffer_t *rb, uint64_t client) {
         }
     }
 
-    return false
+    return false;
 }
 
 void _tx_sync_frame(void) {

@@ -69,9 +69,9 @@ void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mo
 /**
  * @brief Get the current TDMA table
  *
- * @param[out] table       Pointer to the current table of TDMA timings
+ * @return Pointer to the current table of TDMA clients
  */
-void db_tdma_server_get_table(tdma_server_table_t *table);
+tdma_server_table_t *db_tdma_server_get_table(void);
 
 /**
  * @brief Queues a single packet to send through the Radio
