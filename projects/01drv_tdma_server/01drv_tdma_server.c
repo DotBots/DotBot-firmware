@@ -58,7 +58,7 @@ int main(void) {
         // Send an advertisement message
         db_protocol_header_to_buffer(packet_tx, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_ADVERTISEMENT);
         size_t length = sizeof(protocol_header_t);
-        db_tdma_client_tx((uint8_t *)packet_tx, length);
+        db_tdma_server_tx((uint8_t *)packet_tx, length);
 
         // Wait a bit before sending another message
         db_timer_hf_delay_ms(DELAY_MS);

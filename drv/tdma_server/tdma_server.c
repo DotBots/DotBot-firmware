@@ -645,7 +645,7 @@ void timer_tdma_interrupt(void) {
 
         // Send registration messages. + Out of slot messages. (Use AT MOST, helf of the available slot time.)
         uint32_t remaining_slot_time_us = _tdma_vars.slot_start_ts + _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].tx_duration - db_timer_hf_now();
-        packet_sent                     = _client_rb_tx_queue(&_tdma_vars.tx_ring_buffer ,remaining_slot_time_us / 2 - TDMA_TX_DEADTIME_US);
+        packet_sent                     = _client_rb_tx_queue(&_tdma_vars.new_clients_rb ,remaining_slot_time_us / 2 - TDMA_TX_DEADTIME_US);
 
         // send messages if available. time_available (slot_start + slot_duration - current_time)
         remaining_slot_time_us = _tdma_vars.slot_start_ts + _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].tx_duration - db_timer_hf_now();
