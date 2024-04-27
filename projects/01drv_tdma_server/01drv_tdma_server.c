@@ -26,8 +26,8 @@
 
 //=========================== variables ========================================
 
-static uint8_t packet_tx[300] = { 0 };
-tdma_server_table_t  *tdma_table_ptr;
+static uint8_t       packet_tx[300] = { 0 };
+tdma_server_table_t *tdma_table_ptr;
 
 //========================== prototypes ========================================
 
@@ -53,7 +53,6 @@ int main(void) {
         printf("[*] Client 1 = {%d}\n", tdma_table_ptr->table[0]);
         printf("[*] Client 2 = {%d}\n", tdma_table_ptr->table[1]);
         printf("[*] Client 3 = {%d}\n", tdma_table_ptr->table[2]);
-
 
         // Send an advertisement message
         db_protocol_header_to_buffer(packet_tx, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_ADVERTISEMENT);

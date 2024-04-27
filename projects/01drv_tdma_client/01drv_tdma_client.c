@@ -26,8 +26,8 @@
 
 //=========================== variables ========================================
 
-static uint8_t packet_tx[300] = { 0 };
-tdma_client_table_t  tdma_table     = { 0 };
+static uint8_t      packet_tx[300] = { 0 };
+tdma_client_table_t tdma_table     = { 0 };
 
 //========================== prototypes ========================================
 

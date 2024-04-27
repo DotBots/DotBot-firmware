@@ -77,8 +77,8 @@ void db_tdma_client_get_table(tdma_client_table_t *table);
 /**
  * @brief Queues a single packet to send through the Radio
  *
- * @param[in] packet pointer to the array of data to send over the radio 
- * @param[in] length Number of bytes to send 
+ * @param[in] packet pointer to the array of data to send over the radio
+ * @param[in] length Number of bytes to send
  *
  */
 void db_tdma_client_tx(const uint8_t *packet, uint8_t length);

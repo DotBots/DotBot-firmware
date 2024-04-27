@@ -244,18 +244,17 @@ void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mo
 tdma_server_table_t *db_tdma_server_get_table(void) {
 
     return &_tdma_vars.tdma_table;
-
 }
 
 void db_tdma_server_tx(const uint8_t *packet, uint8_t length) {
     // Add packet to the output buffer
-    _message_rb_add(&_tdma_vars.tx_ring_buffer, (uint8_t *) packet, length);
+    _message_rb_add(&_tdma_vars.tx_ring_buffer, (uint8_t *)packet, length);
 }
 
 void db_tdma_server_flush(void) {
     // Use the normal function to send queue messages, but with a really long time
     // So that there is enough time to send everything.
-    _message_rb_tx_queue(&_tdma_vars.tx_ring_buffer ,50000);
+    _message_rb_tx_queue(&_tdma_vars.tx_ring_buffer, 50000);
 }
 
 void db_tdma_server_empty(void) {
@@ -645,11 +644,11 @@ void timer_tdma_interrupt(void) {
 
         // Send registration messages. + Out of slot messages. (Use AT MOST, helf of the available slot time.)
         uint32_t remaining_slot_time_us = _tdma_vars.slot_start_ts + _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].tx_duration - db_timer_hf_now();
-        packet_sent                     = _client_rb_tx_queue(&_tdma_vars.new_clients_rb ,remaining_slot_time_us / 2 - TDMA_TX_DEADTIME_US);
+        packet_sent                     = _client_rb_tx_queue(&_tdma_vars.new_clients_rb, remaining_slot_time_us / 2 - TDMA_TX_DEADTIME_US);
 
         // send messages if available. time_available (slot_start + slot_duration - current_time)
         remaining_slot_time_us = _tdma_vars.slot_start_ts + _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].tx_duration - db_timer_hf_now();
-        packet_sent                     = _message_rb_tx_queue(&_tdma_vars.tx_ring_buffer ,remaining_slot_time_us - TDMA_TX_DEADTIME_US);
+        packet_sent            = _message_rb_tx_queue(&_tdma_vars.tx_ring_buffer, remaining_slot_time_us - TDMA_TX_DEADTIME_US);
 
         // mark last time you sent anything
         if (packet_sent) {

@@ -351,8 +351,8 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
         case DB_PROTOCOL_TDMA_UPDATE_TABLE:
         {
             // Get the payload
-            uint8_t                   *cmd_ptr           = ptk_ptr + sizeof(protocol_header_t);
-            const uint32_t             next_period_start = ((const protocol_tdma_table_t *)cmd_ptr)->next_period_start;
+            uint8_t                   *cmd_ptr               = ptk_ptr + sizeof(protocol_header_t);
+            const uint32_t             next_period_start     = ((const protocol_tdma_table_t *)cmd_ptr)->next_period_start;
             const tdma_client_table_t *tdma_client_table_ptr = (const tdma_client_table_t *)cmd_ptr;
 
             // Update the TDMA table

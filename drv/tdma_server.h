@@ -42,12 +42,11 @@ typedef struct __attribute__((packed)) {
 
 /// Data type to store the TDMA table
 typedef struct __attribute__((packed)) {
-    uint32_t           frame_duration_us;              ///< Duration of the entire TDMA frame [microseconds]
-    uint16_t           num_clients;                    ///< Number of clients currently connected to the tdma server
-    uint16_t           table_index;                    ///< index of the last entry in the tdma table, includes slots taken by the gateway
+    uint32_t           frame_duration_us;               ///< Duration of the entire TDMA frame [microseconds]
+    uint16_t           num_clients;                     ///< Number of clients currently connected to the tdma server
+    uint16_t           table_index;                     ///< index of the last entry in the tdma table, includes slots taken by the gateway
     tdma_table_entry_t table[TDMA_SERVER_MAX_CLIENTS];  ///< array of tdma clients
 } tdma_server_table_t;
-
 
 typedef void (*tdma_server_cb_t)(uint8_t *packet, uint8_t length);  ///< Function pointer to the callback function called on packet receive
 
