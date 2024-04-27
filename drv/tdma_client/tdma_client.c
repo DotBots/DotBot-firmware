@@ -195,7 +195,7 @@ void db_tdma_client_get_table(tdma_client_table_t *table) {
 void db_tdma_client_tx(const uint8_t *packet, uint8_t length) {
 
     // Add packet to the output buffer
-    _message_rb_add(&_tdma_client_vars.tx_ring_buffer, packet, length);
+    _message_rb_add(&_tdma_client_vars.tx_ring_buffer, (uint8_t *)packet, length);
 }
 
 void db_tdma_client_flush(void) {
@@ -211,7 +211,7 @@ void db_tdma_client_empty(void) {
 }
 
 db_tdma_registration_state_t db_tdma_client_get_status(void) {
-    return _tdma_client_vars.registration_flag
+    return _tdma_client_vars.registration_flag;
 }
 //=========================== private ==========================================
 
