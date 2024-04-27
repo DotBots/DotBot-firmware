@@ -43,9 +43,9 @@ typedef struct __attribute__((packed)) {
 typedef struct __attribute__((packed)) {
     uint64_t client;       ///< ID of the client registered to in this time slot
     uint32_t rx_start;     ///< Time between the start of the frame and when the gateway starts transmitting
-    uint16_t rx_duration;  ///< Duration the gateway will transmit messages
+    uint32_t rx_duration;  ///< Duration the gateway will transmit messages
     uint32_t tx_start;     ///< Time between the start of the frame and the start of the DotBot's alloted frame
-    uint16_t tx_duration;  ///< Duration of the DotBot's alloted frame.
+    uint32_t tx_duration;  ///< Duration of the DotBot's alloted frame.
 } tdma_table_entry_t;
 
 typedef void (*tdma_server_cb_t)(uint8_t *packet, uint8_t length);  ///< Function pointer to the callback function called on packet receive
