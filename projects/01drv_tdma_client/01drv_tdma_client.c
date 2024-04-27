@@ -26,7 +26,7 @@
 
 //=========================== variables ========================================
 
-static const uint8_t packet_tx[300] = { 0 };
+static uint8_t packet_tx[300] = { 0 };
 tdma_client_table_t  tdma_table     = { 0 };
 
 //========================== prototypes ========================================
@@ -43,7 +43,7 @@ int main(void) {
     db_board_init();
 
     // Initialize the TDMA client
-    void db_tdma_client_init(&radio_callback, RADIO_MODE, RADIO_FREQ);
+    db_tdma_client_init(&radio_callback, RADIO_MODE, RADIO_FREQ);
 
     while (1) {
         // Print current status
