@@ -264,7 +264,7 @@ bool _message_rb_tx_queue(uint16_t max_tx_duration_us) {
         // and send messages until queue is empty
         while (_tdma_client_vars.tx_ring_buffer.count > 0) {
             // retrieve the oldest packet from the queue
-            bool error = _get_from_spi_ring_buffer(&_tdma_client_vars.tx_ring_buffer, packet, &length);
+            bool error = _message_rb_get(&_tdma_client_vars.tx_ring_buffer, packet, &length);
             if (!error) {
                 break;
             }
