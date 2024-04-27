@@ -105,7 +105,7 @@
   <project Name="00drv_tdma_client">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_radio(bsp);0000bsp_timer_hf(bsp)"
+      project_dependencies="00bsp_radio(bsp);00bsp_timer_hf(bsp);00bsp_rng(bsp)"
       project_directory="tdma_client"
       project_type="Library" />
     <file file_name="tdma_client.c" />

@@ -17,6 +17,7 @@
 #include "tdma_client.h"
 #include "clock.h"
 #include "radio.h"
+#include "rng.h"
 #include "timer_hf.h"
 #include "protocol.h"
 #include "device.h"
