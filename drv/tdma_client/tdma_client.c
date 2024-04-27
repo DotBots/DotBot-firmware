@@ -174,7 +174,7 @@ void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mo
     db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_RX, TDMA_CLIENT_DEFAULT_RX_DURATION, &timer_rx_interrupt);  // check RX timer once per frame.
 }
 
-void db_tdma_client_set_table(tdma_client_table_t *table) {
+void db_tdma_client_set_table(const tdma_client_table_t *table) {
 
     _tdma_client_vars.tdma_client_table.frame_duration = table->frame_duration;
     _tdma_client_vars.tdma_client_table.rx_start       = table->rx_start;
@@ -353,10 +353,10 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
             // Get the payload
             uint8_t                   *cmd_ptr           = ptk_ptr + sizeof(protocol_header_t);
             const uint32_t             next_period_start = ((const protocol_tdma_table_t *)cmd_ptr)->next_period_start;
-            const tdma_client_table_t *tdma_client_table = (const tdma_client_table_t *)cmd_ptr;
+            const tdma_client_table_t *tdma_client_table_ptr = (const tdma_client_table_t *)cmd_ptr;
 
             // Update the TDMA table
-            db_tdma_client_set_table(tdma_client_table);
+            db_tdma_client_set_table(tdma_client_table_ptr);
 
             // Set the DotBot as registered
             if (_tdma_client_vars.registration_flag == DB_TDMA_CLIENT_UNREGISTERED) {

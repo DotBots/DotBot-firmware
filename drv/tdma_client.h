@@ -65,7 +65,7 @@ void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mo
  *
  * @param[in] table       New table of TDMA timings
  */
-void db_tdma_client_set_table(tdma_client_table_t *table);
+void db_tdma_client_set_table(const tdma_client_table_t *table);
 
 /**
  * @brief Get the current RX and TX timings of the TDMA table
