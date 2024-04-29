@@ -65,4 +65,5 @@
   <import file_name="projects/projects-sailbot.emProject" />
   <import file_name="projects/projects-nrf5340-app.emProject" />
   <import file_name="otap/otap.emProject" />
+  <import file_name="radio_test/radio_test.emProject" />
 </solution>

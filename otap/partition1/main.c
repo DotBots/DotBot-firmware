@@ -36,7 +36,10 @@ static application_vars_t _app_vars = { 0 };
 
 //=========================== callbacks ========================================
 
-static void _radio_callback(uint8_t *pkt, uint8_t len) {
+static void _radio_callback(uint8_t *pkt, uint8_t len, bool crc) {
+    if (!crc) {
+        return;
+    }
     memcpy(&_app_vars.message_buffer, pkt, len);
     _app_vars.packet_received = true;
 }

@@ -118,6 +118,15 @@
     <file file_name="nrf/$(RadioImplementationFile)" />
     <file file_name="radio.h" />
   </project>
+  <project Name="00bsp_radio_ieee_802154">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_clock"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf/radio_ieee_802154.c" />
+    <file file_name="radio_ieee_802154.h" />
+  </project>
   <project Name="00bsp_rng">
     <configuration
       Name="Common"
