@@ -386,7 +386,7 @@ bool _client_rb_tx_queue(new_client_ring_buffer_t *rb, uint16_t max_tx_duration_
                 break;
             }
             // Compute if there is still time to send the packet [in microseconds]
-            uint16_t tx_time = RADIO_TX_RAMP_UP_TIME + sizeof(protocol_tdma_table_t) * _tdma_vars.byte_onair_time;
+            uint16_t tx_time = RADIO_TX_RAMP_UP_TIME + (sizeof(protocol_header_t) + sizeof(protocol_tdma_table_t)) * _tdma_vars.byte_onair_time;
             // If there is time to send the packet, send it
             if (db_timer_hf_now() + tx_time - _tdma_vars.slot_start_ts < max_tx_duration_us) {
 
