@@ -66,16 +66,14 @@ else ifeq (freebot,$(BUILD_TARGET))
   ARTIFACT_PROJECTS := 03app_dotbot
 else ifeq (xgo,$(BUILD_TARGET))
   PROJECTS ?= \
-    01bsp_uart \
     03app_xgo \
     #
   ARTIFACT_PROJECTS := 03app_freebot
+  # Bootloader not supported on xgo
+  BOOTLOADER :=
 else
   PROJECTS ?= $(shell find projects/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/projects// | sort)
 endif
-
-OTAP_APPS ?= $(shell find otap/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/otap// | sort)
-OTAP_APPS := $(filter-out bootloader,$(OTAP_APPS))
 
 # remove incompatible apps (nrf5340, sailbot gateway) for dotbot (v1, v2) builds
 ifneq (,$(filter dotbot-v1,$(BUILD_TARGET)))
@@ -111,6 +109,14 @@ endif
 ifneq (,$(filter nrf5340dk-net,$(BUILD_TARGET)))
   ARTIFACT_PROJECTS := 03app_nrf5340_net
 endif
+
+ifneq (,$(filter xgo,$(BUILD_TARGET)))
+  ARTIFACT_PROJECTS := 03app_nrf5340_net
+  OTAP_APPS :=
+endif
+
+OTAP_APPS ?= $(shell find otap/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/otap// | sort)
+OTAP_APPS := $(filter-out bootloader,$(OTAP_APPS))
 
 SRCS ?= $(shell find bsp/ -name "*.[c|h]") $(shell find crypto/ -name "*.[c|h]") $(shell find drv/ -name "*.[c|h]") $(shell find projects/ -name "*.[c|h]") $(shell find otap/ -name "*.[c|h]")
 CLANG_FORMAT ?= clang-format

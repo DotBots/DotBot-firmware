@@ -56,6 +56,5 @@
     gcc_optimization_level="Level 2 balanced" />
   <import file_name="bsp/bsp.emProject" />
   <import file_name="drv/drv.emProject" />
-  <import file_name="projects/projects-bsp-drv.emProject" />
   <import file_name="projects/projects-xgo.emProject" />
 </solution>
