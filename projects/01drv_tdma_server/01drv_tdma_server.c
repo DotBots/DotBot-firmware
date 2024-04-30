@@ -41,6 +41,10 @@ static void radio_callback(uint8_t *packet, uint8_t length);
 int main(void) {
     // Initialize the board core features (voltage regulator)
     db_board_init();
+    db_timer_hf_init();
+    NRF_P0->DIRSET = 1<<26;
+    NRF_P1->DIRSET = 1<<13;
+    NRF_P1->DIRSET = 1<<10;
 
     // Initialize the TDMA server
     db_tdma_server_init(&radio_callback, RADIO_MODE, RADIO_FREQ);

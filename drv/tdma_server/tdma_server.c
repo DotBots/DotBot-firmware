@@ -15,7 +15,6 @@
 #include <stdbool.h>
 
 #include "tdma_server.h"
-#include "clock.h"
 #include "radio.h"
 #include "timer_hf.h"
 #include "protocol.h"
@@ -392,7 +391,7 @@ bool _client_rb_tx_queue(new_client_ring_buffer_t *rb, uint16_t max_tx_duration_
             uint16_t tx_time = RADIO_TX_RAMP_UP_TIME + (sizeof(protocol_header_t) + sizeof(protocol_tdma_table_t)) * _tdma_vars.byte_onair_time;
             // If there is time to send the packet, send it
             if (db_timer_hf_now() + tx_time - _tdma_vars.slot_start_ts < max_tx_duration_us) {
-
+NRF_P1->OUTSET = 1<<10;
                 _tx_registration_messages(client);
                 packet_sent_flag = true;
             } else {  // otherwise, put the packet back in the queue and leave
@@ -404,7 +403,9 @@ bool _client_rb_tx_queue(new_client_ring_buffer_t *rb, uint16_t max_tx_duration_
         // Update the last packet timer
         _tdma_vars.last_tx_packet_ts = _tdma_vars.slot_start_ts;
     }
+        NRF_P1->OUTCLR = 1<<10;
     return packet_sent_flag;
+
 }
 
 bool _client_rb_id_exists(new_client_ring_buffer_t *rb, uint64_t client) {
@@ -566,6 +567,7 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
 
     */
 
+    NRF_P1  ->OUTSET = 1<<13;
     (void)length;
     uint8_t           *ptk_ptr = packet;
     protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
@@ -607,6 +609,7 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
     if (_tdma_vars.callback) {
         _tdma_vars.callback(packet, length);
     }
+    NRF_P1  ->OUTCLR = 1<<13;
 }
 
 /**
@@ -614,6 +617,8 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
  *
  */
 void timer_tdma_interrupt(void) {
+    
+    NRF_P0  ->OUTSET = 1<<26;
 
     // Save the timestamp start of the current slot, to ensure accurate computation of the end of the slot
     _tdma_vars.slot_start_ts = db_timer_hf_now();
@@ -658,4 +663,5 @@ void timer_tdma_interrupt(void) {
             _tdma_vars.last_tx_packet_ts = db_timer_hf_now();
         }
     }
+    NRF_P0  ->OUTCLR = 1<<26;
 }

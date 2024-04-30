@@ -348,7 +348,7 @@ uint32_t _get_random_delay_us(void) {
  *
  */
 static void tdma_client_callback(uint8_t *packet, uint8_t length) {
-
+    NRF_P1->OUTSET = 1 << 10;
     (void)length;
     uint8_t           *ptk_ptr = packet;
     protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
@@ -423,6 +423,7 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
             }
         }
     }
+    NRF_P1->OUTCLR = 1 << 10;
 }
 
 /**
@@ -431,6 +432,7 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
  */
 void timer_tx_interrupt(void) {
 
+    NRF_P0->OUTSET   = 1 << 26;
     bool packet_sent = false;
 
     // Check the state of the device.
@@ -458,6 +460,7 @@ void timer_tx_interrupt(void) {
         // Send the keep alive message
         _tx_tdma_register_message();
     }
+    NRF_P0->OUTCLR = 1 << 26;
 }
 
 /**
@@ -468,9 +471,10 @@ void timer_rx_interrupt(void) {
 
     // If the duration of the RX timer is equal to the frame duration
     // just leave the radio ON permanently
-
+    NRF_P1->OUTSET = 1 << 13;
     if (_tdma_client_vars.tdma_client_table.rx_duration == _tdma_client_vars.tdma_client_table.frame_duration) {
         db_radio_rx();
+        NRF_P1->OUTCLR = 1 << 13;
         return;
 
     } else {
@@ -488,4 +492,5 @@ void timer_rx_interrupt(void) {
             db_radio_disable();
         }
     }
+    NRF_P1->OUTCLR = 1 << 13;
 }
