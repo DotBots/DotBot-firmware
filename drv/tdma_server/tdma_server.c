@@ -622,7 +622,7 @@ void timer_tdma_interrupt(void) {
         last_slot = _tdma_vars.tdma_table.table_index;
     } else {
         // not enough clients, use the default amount of slots for the default frame duration
-        last_slot = (TDMA_SERVER_DEFAULT_FRAME_DURATION_US / TDMA_SERVER_TIME_SLOT_DURATION_US) - 1;
+        last_slot = (TDMA_SERVER_DEFAULT_FRAME_DURATION_US / TDMA_SERVER_TIME_SLOT_DURATION_US);
     }
     // Update the active client for this slot. Wrap around after the end of the active clients is reached.
     _tdma_vars.active_slot_idx = (_tdma_vars.active_slot_idx + 1) % (last_slot);
