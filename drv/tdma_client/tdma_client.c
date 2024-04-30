@@ -83,6 +83,14 @@ void timer_tx_interrupt(void);
 void timer_rx_interrupt(void);
 
 /**
+ * @brief Updates the RX and TX timings for the TDMA table.
+ *        DIrectly from an DB_PROTOCOL_TDMA_UPDATE_TABLE packet.
+ *
+ * @param[in] table       New table of TDMA timings
+ */
+void _protocol_tdma_set_table(const protocol_tdma_table_t *table);
+
+/**
  * @brief Initialize the ring buffer for spi captures
  *
  * @param[in]   rb  pointer to ring buffer structure
@@ -214,6 +222,15 @@ db_tdma_registration_state_t db_tdma_client_get_status(void) {
     return _tdma_client_vars.registration_flag;
 }
 //=========================== private ==========================================
+
+void _protocol_tdma_set_table(const protocol_tdma_table_t *table) {
+
+    _tdma_client_vars.tdma_client_table.frame_duration = table->frame_period;
+    _tdma_client_vars.tdma_client_table.rx_start       = table->rx_start;
+    _tdma_client_vars.tdma_client_table.rx_duration    = table->rx_duration;
+    _tdma_client_vars.tdma_client_table.tx_start       = table->tx_start;
+    _tdma_client_vars.tdma_client_table.tx_duration    = table->tx_duration;
+}
 
 void _message_rb_init(tdma_client_ring_buffer_t *rb) {
     rb->writeIndex = 0;
