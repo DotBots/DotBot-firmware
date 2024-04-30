@@ -50,9 +50,9 @@ int main(void) {
         tdma_table_ptr = db_tdma_server_get_table();
         printf("[*] Frame duration = {%d}\n", tdma_table_ptr->frame_duration_us);
         printf("[*] Num. of Clients = {%d}\n", tdma_table_ptr->num_clients);
-        printf("[*] Client 1 = {%d}\n", tdma_table_ptr->table[0]);
-        printf("[*] Client 2 = {%d}\n", tdma_table_ptr->table[1]);
-        printf("[*] Client 3 = {%d}\n", tdma_table_ptr->table[2]);
+        printf("[*] Client 1 = {%x}\n", tdma_table_ptr->table[0]);
+        printf("[*] Client 2 = {%x}\n", tdma_table_ptr->table[1]);
+        printf("[*] Client 3 = {%x}\n", tdma_table_ptr->table[2]);
 
         // Send an advertisement message
         db_protocol_header_to_buffer(packet_tx, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_ADVERTISEMENT);
