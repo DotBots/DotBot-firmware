@@ -469,7 +469,7 @@ void _tx_registration_messages(uint64_t client) {
 
 uint8_t _server_find_client(tdma_server_table_t *tdma_table, uint64_t client) {
 
-    for (size_t i = 0; i < tdma_table->table_index; i++) {
+    for (size_t i = 0; i <= tdma_table->table_index; i++) {
         if (tdma_table->table[i].client == client) {
             return i;
         }
