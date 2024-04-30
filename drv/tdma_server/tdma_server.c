@@ -36,7 +36,7 @@
 #define TDMA_SERVER_DEFAULT_TX_START_US    0                                      ///< Default duration of the tdma frame, in microseconds.
 #define TDMA_SERVER_DEFAULT_TX_DURATION_US TDMA_SERVER_TIME_SLOT_DURATION_US      ///< Default duration of the tdma frame, in microseconds.
 
-#define TDMA_SERVER_HF_TIMER_CC      TIMER_HF_CB_CHANS  ///< Which timer channel will be used for the TX state machine.
+#define TDMA_SERVER_HF_TIMER_CC      TIMER_HF_CB_CHANS - 2  ///< Which timer channel will be used for the TX state machine.
 #define TDMA_MAX_DELAY_WITHOUT_TX    500000             ///< Max amount of time that can pass without TXing anything
 #define TDMA_RING_BUFFER_SIZE        10                 ///< Amount of TX packets the buffer can contain
 #define TDMA_NEW_CLIENT_BUFFER_SIZE  30                 ///< Amount of clients waiting to register the buffer can contain
@@ -203,6 +203,9 @@ void _server_register_new_client(tdma_server_table_t *tdma_table, uint64_t clien
 //=========================== public ===========================================
 
 void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq) {
+
+    // Initialize high frequency clock
+    db_timer_hf_init();
 
     // Initialize the ring buffer of outbound messages
     _message_rb_init(&_tdma_vars.tx_ring_buffer);
