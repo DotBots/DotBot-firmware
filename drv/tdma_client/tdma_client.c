@@ -35,8 +35,8 @@
 #define TDMA_CLIENT_DEFAULT_RX_DURATION    TDMA_CLIENT_DEFAULT_FRAME_DURATION  ///< Default duration of the tdma frame, in microseconds.
 #define TDMA_CLIENT_DEFAULT_TX_START       10000                               ///< Default duration of the tdma frame, in microseconds.
 #define TDMA_CLIENT_DEFAULT_TX_DURATION    5000                                ///< Default duration of the tdma frame, in microseconds.
-#define TDMA_CLIENT_HF_TIMER_CC_TX         TIMER_HF_CB_CHANS                   ///< Which timer channel will be used for the TX state machine.
-#define TDMA_CLIENT_HF_TIMER_CC_RX         TIMER_HF_CB_CHANS - 1               ///< Which timer channel will be used for the RX state machine.
+#define TDMA_CLIENT_HF_TIMER_CC_TX         TIMER_HF_CB_CHANS - 2               ///< Which timer channel will be used for the TX state machine.
+#define TDMA_CLIENT_HF_TIMER_CC_RX         TIMER_HF_CB_CHANS - 3               ///< Which timer channel will be used for the RX state machine.
 #define TDMA_CLIENT_MAX_DELAY_WITHOUT_TX   500000                              ///< Max amount of time that can pass without TXing anything
 #define TDMA_CLIENT_RING_BUFFER_SIZE       10                                  ///< Amount of TX packets the buffer can contain
 #define RADIO_MESSAGE_MAX_SIZE             255                                 ///< Size of buffers used for SPI communications
@@ -144,6 +144,9 @@ uint32_t _get_random_delay_us(void);
 //=========================== public ===========================================
 
 void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq) {
+
+    // Initialize high frequency clock
+    db_timer_hf_init();
 
     // Initialize the ring buffer of outbound messages
     _message_rb_init(&_tdma_client_vars.tx_ring_buffer);
