@@ -431,8 +431,18 @@ void _tx_sync_frame(void) {
     // This message signals the start of a TDMA frame
     // Prepare packet
     protocol_sync_frame_t frame = { _tdma_vars.tdma_table.frame_duration_us };
-    // Send the packet
-    db_protocol_header_to_buffer(_tdma_vars.radio_buffer, DB_BROADCAST_ADDRESS, TDMA_RADIO_APPLICATION, DB_PROTOCOL_TDMA_SYNC_FRAME);
+    // Prepare packet, don't use the helper function, it takes too long to calculate the random message ID
+    protocol_header_t header = {
+        .dst         = DB_BROADCAST_ADDRESS,
+        .src         = _tdma_vars.device_id,
+        .swarm_id    = DB_SWARM_ID,
+        .application = TDMA_RADIO_APPLICATION,
+        .version     = DB_FIRMWARE_VERSION,
+        .msg_id      = 0x00000000,          // Use a static msg ID to avoid the penalty of calculating the random ID
+        .type        = DB_PROTOCOL_TDMA_SYNC_FRAME,
+    };
+    memcpy(_tdma_vars.radio_buffer, &header, sizeof(protocol_header_t));
+    // db_protocol_header_to_buffer(_tdma_vars.radio_buffer, DB_BROADCAST_ADDRESS, TDMA_RADIO_APPLICATION, DB_PROTOCOL_TDMA_SYNC_FRAME);
     memcpy(_tdma_vars.radio_buffer + sizeof(protocol_header_t), &frame, sizeof(protocol_sync_frame_t));
     size_t length = sizeof(protocol_header_t);
     db_radio_disable();
