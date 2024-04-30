@@ -351,12 +351,13 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
         case DB_PROTOCOL_TDMA_UPDATE_TABLE:
         {
             // Get the payload
-            uint8_t                   *cmd_ptr               = ptk_ptr + sizeof(protocol_header_t);
-            const uint32_t             next_period_start     = ((const protocol_tdma_table_t *)cmd_ptr)->next_period_start;
-            const tdma_client_table_t *tdma_client_table_ptr = (const tdma_client_table_t *)cmd_ptr;
+            uint8_t              *cmd_ptr = ptk_ptr + sizeof(protocol_header_t);
+            protocol_tdma_table_t tdma_table;
+            memcpy(&tdma_table, cmd_ptr, sizeof(protocol_tdma_table_t));
+            const uint32_t next_period_start = tdma_table.next_period_start;
 
             // Update the TDMA table
-            db_tdma_client_set_table(tdma_client_table_ptr);
+            _protocol_tdma_set_table(&tdma_table);
 
             // Set the DotBot as registered
             if (_tdma_client_vars.registration_flag == DB_TDMA_CLIENT_UNREGISTERED) {
