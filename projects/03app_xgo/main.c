@@ -108,9 +108,12 @@ typedef struct {
 
 //=========================== variables ========================================
 
-#if defined(BOARD_XGO)
+#if defined(BOARD_XGO_V1)
 static const gpio_t _uart_rx = { .port = 0, .pin = 3 };
 static const gpio_t _uart_tx = { .port = 0, .pin = 4 };
+#elif defined(BOARD_XGO_V2)
+static const gpio_t _uart_rx = { .port = 0, .pin = 17 };
+static const gpio_t _uart_tx = { .port = 0, .pin = 1 };
 #else
 static const gpio_t _uart_rx = { .port = 0, .pin = 13 };  // RX connected to P0.13 on nrf52 DKs
 static const gpio_t _uart_tx = { .port = 0, .pin = 14 };  // TX connected to P0.14 on nrf52 DKs

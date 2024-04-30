@@ -64,11 +64,11 @@ else ifeq (nrf5340dk-net,$(BUILD_TARGET))
 else ifeq (freebot,$(BUILD_TARGET))
   PROJECTS ?= 03app_freebot
   ARTIFACT_PROJECTS := 03app_dotbot
-else ifeq (xgo,$(BUILD_TARGET))
+else ifneq (,$(filter xgo%,$(BUILD_TARGET)))
   PROJECTS ?= \
     03app_xgo \
     #
-  ARTIFACT_PROJECTS := 03app_freebot
+  ARTIFACT_PROJECTS := 03app_xgo
   # Bootloader not supported on xgo
   BOOTLOADER :=
 else
@@ -110,8 +110,7 @@ ifneq (,$(filter nrf5340dk-net,$(BUILD_TARGET)))
   ARTIFACT_PROJECTS := 03app_nrf5340_net
 endif
 
-ifneq (,$(filter xgo,$(BUILD_TARGET)))
-  ARTIFACT_PROJECTS := 03app_nrf5340_net
+ifneq (,$(filter xgo%,$(BUILD_TARGET)))
   OTAP_APPS :=
 endif
 
