@@ -1229,7 +1229,7 @@
   <project Name="01drv_tdma_client">
     <configuration
       Name="Common"
-      project_dependencies="00drv_tdma_client(drv);00bsp_dotbot_board(bsp);00bsp_radio(bsp);00bsp_timer_hf(bsp);00drv_dotbot_protocol(drv)"
+      project_dependencies="00drv_tdma_client(drv);00bsp_dotbot_board(bsp);00bsp_radio(bsp);00bsp_timer(bsp);00drv_dotbot_protocol(drv)"
       project_directory="01drv_tdma_client"
       project_type="Executable" />
     <configuration Name="Debug" linker_printf_fp_enabled="Float" />
