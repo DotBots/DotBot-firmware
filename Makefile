@@ -64,33 +64,41 @@ else ifeq (nrf5340dk-net,$(BUILD_TARGET))
 else ifeq (freebot,$(BUILD_TARGET))
   PROJECTS ?= 03app_freebot
   ARTIFACT_PROJECTS := 03app_dotbot
+else ifneq (,$(filter xgo%,$(BUILD_TARGET)))
+  PROJECTS ?= \
+    03app_xgo \
+    #
+  ARTIFACT_PROJECTS := 03app_xgo
+  # Bootloader not supported on xgo
+  BOOTLOADER :=
 else
   PROJECTS ?= $(shell find projects/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/projects// | sort)
 endif
 
-OTAP_APPS ?= $(shell find otap/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/otap// | sort)
-OTAP_APPS := $(filter-out bootloader,$(OTAP_APPS))
-
 # remove incompatible apps (nrf5340, sailbot gateway) for dotbot (v1, v2) builds
 ifneq (,$(filter dotbot-v1,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 01bsp_qdec 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_nrf5340_% 03app_freebot,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_nrf5340_% 03app_freebot 03app_xgo,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
 endif
 
 ifneq (,$(filter dotbot-v2,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_nrf5340_net 03app_freebot,$(PROJECTS))
+  PROJECTS := $(filter-out 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_xgo 03app_nrf5340_net 03app_freebot,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
 endif
 
 # remove incompatible apps (nrf5340, dotbot, gateway) for sailbot-v1 build
 ifeq (sailbot-v1,$(BUILD_TARGET))
-  PROJECTS := $(filter-out 01bsp_qdec 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_dotbot 03app_nrf5340_% 03app_freebot,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_dotbot 03app_nrf5340_% 03app_freebot 03app_xgo,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_sailbot
+endif
+
+ifneq (,$(filter nrf52833dk,$(BUILD_TARGET)))
+  PROJECTS := $(filter-out 01crypto_%,$(PROJECTS))
 endif
 
 # remove incompatible apps (nrf5340) for nrf52833dk/nrf52840dk build
 ifneq (,$(filter nrf52833dk nrf52840dk,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 01bsp_qdec 01drv_move 03app_nrf5340_% 03app_freebot,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 01drv_move 03app_nrf5340_% 03app_freebot 03app_xgo,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot_gateway 03app_dotbot_gateway_lr
 endif
 
@@ -101,6 +109,13 @@ endif
 ifneq (,$(filter nrf5340dk-net,$(BUILD_TARGET)))
   ARTIFACT_PROJECTS := 03app_nrf5340_net
 endif
+
+ifneq (,$(filter xgo%,$(BUILD_TARGET)))
+  OTAP_APPS :=
+endif
+
+OTAP_APPS ?= $(shell find otap/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/otap// | sort)
+OTAP_APPS := $(filter-out bootloader,$(OTAP_APPS))
 
 SRCS ?= $(shell find bsp/ -name "*.[c|h]") $(shell find crypto/ -name "*.[c|h]") $(shell find drv/ -name "*.[c|h]") $(shell find projects/ -name "*.[c|h]") $(shell find otap/ -name "*.[c|h]")
 CLANG_FORMAT ?= clang-format
