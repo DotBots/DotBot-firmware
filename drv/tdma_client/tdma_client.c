@@ -410,8 +410,15 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
                 uint8_t              *cmd_ptr = ptk_ptr + sizeof(protocol_header_t);
                 protocol_sync_frame_t sync_frame;
                 memcpy(&sync_frame, cmd_ptr, sizeof(protocol_sync_frame_t));
-                const uint32_t frame_period = sync_frame.frame_period;
+                uint32_t frame_period = sync_frame.frame_period;
+
+                // Protect against receiving garbage
+                if (frame_period > 0 && frame_period < 500000) {
                 _tdma_client_vars.tdma_client_table.frame_duration = frame_period;
+                // Also update the RX_duration, becaus ewe are working on ALWAYS_ON mode
+                _tdma_client_vars.tdma_client_table.rx_duration = frame_period;
+                }
+
                 // Also update the RX_duration, becaus ewe are working on ALWAYS_ON mode
 
                 // update the state machine
