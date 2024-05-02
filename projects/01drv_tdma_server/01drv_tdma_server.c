@@ -54,9 +54,17 @@ int main(void) {
         tdma_table_ptr = db_tdma_server_get_table();
         printf("[*] Frame duration = {%d}\n", tdma_table_ptr->frame_duration_us);
         printf("[*] Num. of Clients = {%d}\n", tdma_table_ptr->num_clients);
-        printf("[*] Client 1 = {%x}\n", tdma_table_ptr->table[0]);
-        printf("[*] Client 2 = {%x}\n", tdma_table_ptr->table[1]);
-        printf("[*] Client 3 = {%x}\n", tdma_table_ptr->table[2]);
+        printf("[*] Server   = {%x}\n", tdma_table_ptr->table[0]);
+        printf("[*] Client 1 = {%x}\n", tdma_table_ptr->table[1]);
+        printf("[*] Client 2 = {%x}\n", tdma_table_ptr->table[2]);
+        printf("[*] Client 3 = {%x}\n", tdma_table_ptr->table[3]);
+        printf("[*] Client 4 = {%x}\n", tdma_table_ptr->table[4]);
+        printf("[*] Client 5 = {%x}\n", tdma_table_ptr->table[5]);
+        printf("[*] Client 6 = {%x}\n", tdma_table_ptr->table[6]);
+        printf("[*] Client 7 = {%x}\n", tdma_table_ptr->table[7]);
+        printf("[*] Client 8 = {%x}\n", tdma_table_ptr->table[8]);
+        printf("[*] Client 9 = {%x}\n", tdma_table_ptr->table[9]);
+        printf("[*] Client 10 = {%x}\n", tdma_table_ptr->table[10]);
 
         // Send an advertisement message
         db_protocol_header_to_buffer(packet_tx, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_ADVERTISEMENT);
