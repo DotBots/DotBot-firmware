@@ -399,9 +399,12 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
             // Only resync the timer if the DotBot has already been registered.
             if (_tdma_client_vars.registration_flag == DB_TDMA_CLIENT_REGISTERED) {
 
+                // Calculate delay caused by the transmission of the Sync frame by the server
+                uint16_t tx_time = RADIO_TX_RAMP_UP_TIME + (sizeof(protocol_header_t) + sizeof(protocol_sync_frame_t)) * _tdma_client_vars.byte_onair_time;
+
                 // Update the timer interrupts
-                db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_TX, _tdma_client_vars.tdma_client_table.tx_start, &timer_tx_interrupt);
-                db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_RX, _tdma_client_vars.tdma_client_table.rx_start, &timer_rx_interrupt);
+                db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_TX, _tdma_client_vars.tdma_client_table.tx_start - tx_time, &timer_tx_interrupt);
+                db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_RX, _tdma_client_vars.tdma_client_table.rx_start - tx_time, &timer_rx_interrupt);
 
                 // Update the frame period
                 uint8_t *cmd_ptr                                   = ptk_ptr + sizeof(protocol_header_t);
