@@ -279,8 +279,7 @@ bool _message_rb_tx_queue(uint16_t max_tx_duration_us) {
 
     // check if there is something to send
     if (_tdma_client_vars.tx_ring_buffer.count > 0) {
-        // if yes, disable the radio.
-        db_radio_disable();
+
         // and send messages until queue is empty
         while (_tdma_client_vars.tx_ring_buffer.count > 0) {
             // retrieve the oldest packet from the queue
@@ -292,7 +291,9 @@ bool _message_rb_tx_queue(uint16_t max_tx_duration_us) {
             uint16_t tx_time = RADIO_TX_RAMP_UP_TIME + length * _tdma_client_vars.byte_onair_time;
             // If there is time to send the packet, send it
             if (db_timer_hf_now() + tx_time - start_tx_slot < max_tx_duration_us) {
-
+            
+                // disable the radio, before sending.
+                db_radio_disable();
                 db_radio_tx(packet, length);
                 packet_sent_flag = true;
             } else {  // otherwise, put the packet back in the queue and leave
