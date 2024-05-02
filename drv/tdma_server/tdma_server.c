@@ -637,7 +637,7 @@ void timer_tdma_interrupt(void) {
     uint8_t last_slot;
     if (_tdma_vars.tdma_table.frame_duration_us > TDMA_SERVER_DEFAULT_FRAME_DURATION_US) {
         // enough clients, wrap around the end of the list
-        last_slot = _tdma_vars.tdma_table.table_index;
+        last_slot = _tdma_vars.tdma_table.table_index + 1;
     } else {
         // not enough clients, use the default amount of slots for the default frame duration
         last_slot = (TDMA_SERVER_DEFAULT_FRAME_DURATION_US / TDMA_SERVER_TIME_SLOT_DURATION_US);
