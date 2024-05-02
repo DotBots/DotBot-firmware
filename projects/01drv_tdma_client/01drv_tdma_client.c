@@ -64,6 +64,13 @@ int main(void) {
         // Send an advertisement message
         db_protocol_header_to_buffer(packet_tx, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_ADVERTISEMENT);
         size_t length = sizeof(protocol_header_t);
+        // Send 5 messages in a row, to test the QUEUE system
+        db_tdma_client_tx((uint8_t *)packet_tx, length);
+        db_tdma_client_tx((uint8_t *)packet_tx, length);
+        db_tdma_client_tx((uint8_t *)packet_tx, length);
+        db_tdma_client_tx((uint8_t *)packet_tx, length);
+        db_tdma_client_tx((uint8_t *)packet_tx, length);
+        db_tdma_client_tx((uint8_t *)packet_tx, length);
         db_tdma_client_tx((uint8_t *)packet_tx, length);
 
         // Wait a bit before sending another message
