@@ -486,10 +486,10 @@ void timer_rx_interrupt(void) {
 
     // If the duration of the RX timer is equal to the frame duration
     // just leave the radio ON permanently
-    NRF_P1->OUTSET = 1 << 13;
+
     if (_tdma_client_vars.tdma_client_table.rx_duration == _tdma_client_vars.tdma_client_table.frame_duration) {
         db_radio_rx();
-        NRF_P1->OUTCLR = 1 << 13;
+
         return;
 
     } else {
@@ -507,5 +507,5 @@ void timer_rx_interrupt(void) {
             db_radio_disable();
         }
     }
-    NRF_P1->OUTCLR = 1 << 13;
+
 }

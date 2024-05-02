@@ -45,6 +45,7 @@ int main(void) {
     NRF_P0->DIRSET = 1<<26;
     NRF_P1->DIRSET = 1<<13;
     NRF_P1->DIRSET = 1<<10;
+    NRF_P1->DIRSET = 1<<5;
 
     // Initialize the TDMA server
     db_tdma_server_init(&radio_callback, RADIO_MODE, RADIO_FREQ);
@@ -82,5 +83,9 @@ int main(void) {
 //=========================== Callbacks ===============================
 
 static void radio_callback(uint8_t *packet, uint8_t length) {
-    printf("packet received (%dB): %s\n", length, (char *)packet);
+
+    if (packet[0] == length){
+      NRF_P1->DIRCLR = 1;
+    }
+    //printf("packet received (%dB): %s\n", length, (char *)packet);
 }

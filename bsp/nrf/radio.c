@@ -23,7 +23,6 @@
 #define NRF_RADIO NRF_RADIO_NS
 #endif
 
-
 #if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
 #define RADIO_INTERRUPT_PRIORITY 2
 #else

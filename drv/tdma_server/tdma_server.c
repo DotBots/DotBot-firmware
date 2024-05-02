@@ -648,6 +648,8 @@ void timer_tdma_interrupt(void) {
     // check if this is the start of the super frame to send a sync message.
     if (_tdma_vars.active_slot_idx == 0) {
 
+        NRF_P1  ->OUTSET = 1<<5;
+
         // Update last-superframe timestamp
         _tdma_vars.frame_start_ts = _tdma_vars.slot_start_ts;
 
@@ -674,4 +676,5 @@ void timer_tdma_interrupt(void) {
         }
     }
     NRF_P0  ->OUTCLR = 1<<26;
+    NRF_P1  ->OUTCLR = 1<<5;
 }
