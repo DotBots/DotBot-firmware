@@ -407,11 +407,15 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
                 db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_RX, _tdma_client_vars.tdma_client_table.rx_start - tx_time, &timer_rx_interrupt);
 
                 // Update the frame period
-                uint8_t *cmd_ptr                                   = ptk_ptr + sizeof(protocol_header_t);
-                _tdma_client_vars.tdma_client_table.frame_duration = ((const protocol_sync_frame_t *)cmd_ptr)->frame_period;
+                uint8_t              *cmd_ptr = ptk_ptr + sizeof(protocol_header_t);
+                protocol_sync_frame_t sync_frame;
+                memcpy(&sync_frame, cmd_ptr, sizeof(protocol_sync_frame_t));
+                const uint32_t frame_period = sync_frame.frame_period;
+                _tdma_client_vars.tdma_client_table.frame_duration = frame_period;
+                // Also update the RX_duration, becaus ewe are working on ALWAYS_ON mode
 
                 // update the state machine
-                _tdma_client_vars.rx_flag = DB_TDMA_CLIENT_RX_WAIT;
+                _tdma_client_vars.rx_flag = DB_TDMA_CLIENT_RX_ON;
 
                 // Enable radio RX
                 db_radio_rx();
