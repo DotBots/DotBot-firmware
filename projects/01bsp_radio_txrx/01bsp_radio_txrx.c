@@ -17,8 +17,6 @@
 #include "radio.h"
 #include "timer_hf.h"
 
-#include "conf.h"
-
 //=========================== defines ===========================================
 
 #define DELAY_MS   (100)  // Wait 100ms between each send
