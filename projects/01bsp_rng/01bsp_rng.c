@@ -19,7 +19,7 @@
  *  @brief The program starts executing here.
  */
 int main(void) {
-    db_timer_hf_init();
+    db_timer_hf_init(0);
     db_rng_init();
 
     while (1) {
@@ -27,7 +27,7 @@ int main(void) {
         db_rng_read(&value);
         printf("Random value: %d\n", value);
 
-        db_timer_hf_delay_ms(100);
+        db_timer_hf_delay_ms(0, 100);
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.

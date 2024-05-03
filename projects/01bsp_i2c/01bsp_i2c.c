@@ -42,7 +42,7 @@ typedef struct {
  */
 int main(void) {
     db_board_init();
-    db_timer_hf_init();
+    db_timer_hf_init(0);
     db_i2c_init(&db_scl, &db_sda);
     db_i2c_begin();
     uint8_t who_am_i;
@@ -79,7 +79,7 @@ int main(void) {
         data.z |= tmp << 8;
         db_i2c_end();
         printf("x: %i, y: %i, z: %i\n", data.x, data.y, data.z);
-        db_timer_hf_delay_ms(200);
+        db_timer_hf_delay_ms(0, 200);
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.

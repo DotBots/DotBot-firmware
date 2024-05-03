@@ -39,16 +39,11 @@ static const pid_gains_t _pid_params = {
     .kd = 0,
 };
 
-//=========================== prototypes =======================================
-
 //=========================== main =============================================
 
-/**
- *  @brief The program starts executing here.
- */
 int main(void) {
     // Initialize high frequency timer used to loop sample time delays
-    db_timer_hf_init();
+    db_timer_hf_init(0);
 
     // Turn ON the DotBot board regulator
     db_board_init();
@@ -82,11 +77,6 @@ int main(void) {
         puts("");
 
         db_motors_set_speed((int16_t)_pid_left.output, (int16_t)_pid_right.output);
-        db_timer_hf_delay_ms(PID_SAMPLE_TIME_MS);
+        db_timer_hf_delay_ms(0, PID_SAMPLE_TIME_MS);
     }
-
-    // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
-    __NOP();
 }
-
-//=========================== functions ========================================

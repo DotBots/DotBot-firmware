@@ -19,9 +19,7 @@
 #include "gpio.h"
 #include "timer_hf.h"
 
-//=========================== defines =========================================
-
-//=========================== variables =========================================
+//=========================== variables ====================================
 
 #if defined(DB_LED2_PORT)
 static const gpio_t led = { .port = DB_LED2_PORT, .pin = DB_LED2_PIN };
@@ -29,7 +27,7 @@ static const gpio_t led = { .port = DB_LED2_PORT, .pin = DB_LED2_PIN };
 static const gpio_t led = { .port = DB_LED1_PORT, .pin = DB_LED1_PIN };
 #endif
 
-//=========================== main =========================================
+//=========================== callbacks ====================================
 
 static void message_callback(void) {
     printf("Hello from callback\n");
@@ -43,23 +41,21 @@ static void led_callback(void) {
     db_gpio_toggle(&led);
 }
 
-/**
- *  @brief The program starts executing here.
- */
+//=========================== main =========================================
+
 int main(void) {
     db_gpio_init(&led, DB_GPIO_OUT);
     db_gpio_set(&led);
-    db_timer_hf_init();
-    db_timer_hf_set_periodic_us(0, 2000000, &message_callback);
-    db_timer_hf_set_periodic_us(1, 500000, &led_callback);
-    db_timer_hf_set_oneshot_ms(2, 1000, &message_one_shot_callback);
+    db_timer_hf_init(0);
+    db_timer_hf_init(1);
+    db_timer_hf_init(2);
+    db_timer_hf_set_periodic_us(0, 0, 2000000, &message_callback);
+    db_timer_hf_set_periodic_us(1, 1, 500000, &led_callback);
+    db_timer_hf_set_oneshot_ms(2, 2, 1000, &message_one_shot_callback);
     while (1) {
         printf("Hello dotbot\n");
-        db_timer_hf_delay_ms(500);
+        db_timer_hf_delay_ms(0, 500);
         printf("Hello dotbot again\n");
-        db_timer_hf_delay_s(1);
+        db_timer_hf_delay_s(0, 1);
     }
-
-    // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
-    __NOP();
 }
