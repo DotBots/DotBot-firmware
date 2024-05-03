@@ -464,6 +464,8 @@ void timer_tx_interrupt(void) {
             if (db_timer_hf_now() - _tdma_client_vars.last_tx_packet_timestamp > TDMA_CLIENT_MAX_DELAY_WITHOUT_TX) {
 
                 _tx_keep_alive_message();
+                // Save the timestamp of the last packet
+                _tdma_client_vars.last_tx_packet_timestamp = db_timer_hf_now();
             }
         }
     } else {  // Device is unregistered
@@ -474,6 +476,8 @@ void timer_tx_interrupt(void) {
 
         // Send the keep alive message
         _tx_tdma_register_message();
+        // Save the timestamp of the last packet
+        _tdma_client_vars.last_tx_packet_timestamp = db_timer_hf_now();
     }
     NRF_P0->OUTCLR = 1 << 26;
 }
