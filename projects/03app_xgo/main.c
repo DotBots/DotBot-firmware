@@ -179,7 +179,7 @@ static void _action(xgo_action_id_t action_id) {
     _xgo_vars.action_running = true;
     _write(XGO_ADDRESS_ACTION_COMMAND, action_id);
     // Wait for the action to complete
-    db_timer_hf_delay_s(_action_execution_time_s[action_id]);
+    db_timer_hf_delay_s(0, _action_execution_time_s[action_id]);
     _xgo_vars.action_running = false;
 }
 
@@ -278,14 +278,14 @@ int main(void) {
 
     db_uart_init(0, &_uart_rx, &_uart_tx, XGO_UART_BAUDRATE, NULL);
 
-    db_timer_hf_init();
-    db_timer_hf_set_periodic_us(0, XGO_TIMEOUT_CHECK_DELAY_US, &_timeout_check);
-    db_timer_hf_set_periodic_us(1, XGO_ADVERTIZEMENT_DELAY_US, &_advertize);
+    db_timer_hf_init(0);
+    db_timer_hf_set_periodic_us(0, 0, XGO_TIMEOUT_CHECK_DELAY_US, &_timeout_check);
+    db_timer_hf_set_periodic_us(0, 1, XGO_ADVERTIZEMENT_DELAY_US, &_advertize);
 
     while (1) {
         __WFE();
         if (_xgo_vars.packet_received) {
-            _xgo_vars.ts_last_packet_received = db_timer_hf_now();
+            _xgo_vars.ts_last_packet_received = db_timer_hf_now(0);
             _xgo_vars.packet_received         = false;
         }
 
@@ -297,7 +297,7 @@ int main(void) {
         }
 
         if (_xgo_vars.timeout_check) {
-            uint32_t now = db_timer_hf_now();
+            uint32_t now = db_timer_hf_now(0);
             if (now > _xgo_vars.ts_last_packet_received + TIMEOUT_CHECK_DELAY_US) {
                 _action(XGO_ACTION_RESTORE);
             }

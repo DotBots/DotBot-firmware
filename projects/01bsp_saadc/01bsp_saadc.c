@@ -16,7 +16,7 @@
 //=========================== main =============================================
 
 int main(void) {
-    db_timer_hf_init();
+    db_timer_hf_init(0);
     db_saadc_init(DB_SAADC_RESOLUTION_12BIT);
 
     while (1) {
@@ -35,6 +35,6 @@ int main(void) {
         printf("VDDH: %i\n", value);
         db_saadc_read(DB_SAADC_INPUT_VDD, &value);
         printf("VDD : %i\n", value);
-        db_timer_hf_delay_ms(100);
+        db_timer_hf_delay_ms(0, 100);
     }
 }

@@ -65,7 +65,7 @@ int main(void) {
     //=========================== Initialize GPIO and timer =====================
 
     db_gpio_init(&_dbg_pin, DB_GPIO_OUT);
-    db_timer_hf_init();
+    db_timer_hf_init(0);
 
     //=========================== Configure Radio ===============================
 
@@ -76,6 +76,6 @@ int main(void) {
     while (1) {
         db_radio_disable();
         db_radio_tx((uint8_t *)packet_tx, sizeof(packet_tx) / sizeof(packet_tx[0]));
-        db_timer_hf_delay_ms(DELAY_MS);
+        db_timer_hf_delay_ms(0, DELAY_MS);
     }
 }

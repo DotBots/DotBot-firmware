@@ -31,7 +31,7 @@ static uint32_t *_read_address = (uint32_t *)(DB_LOG_FLASH_START + DB_FLASH_OFFS
 //=========================== main =============================================
 
 int main(void) {
-    db_timer_hf_init();
+    db_timer_hf_init(0);
 
     db_log_header_t header;
     db_nvmc_read(&header, _read_address++, sizeof(db_log_header_t));
@@ -66,7 +66,7 @@ int main(void) {
             goto loop;
     }
 
-    db_timer_hf_delay_ms(20);
+    db_timer_hf_delay_ms(0, 20);
     bool read = true;
     while (read) {
         switch (header.log_type) {
@@ -89,7 +89,7 @@ int main(void) {
                 _read_address += (sizeof(db_log_dotbot_data_t) >> 2);
             } break;
         }
-        db_timer_hf_delay_ms(20);
+        db_timer_hf_delay_ms(0, 20);
         read = ((uint32_t)_read_address < DB_FLASH_PAGE_NUM * DB_FLASH_PAGE_SIZE);
         if (!read) {
             puts("STOP (end of flash reached)");

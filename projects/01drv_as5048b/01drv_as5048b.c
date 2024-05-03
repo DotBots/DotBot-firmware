@@ -22,11 +22,11 @@ int main(void) {
     // Init the encoder I2C communication
     as5048b_init();
     // Init high frequency clock
-    db_timer_hf_init();
+    db_timer_hf_init(0);
 
     while (1) {
         float angle_degrees = as5048b_i2c_read_angle_degree();
         printf("Angle degrees: %.1f\n", angle_degrees);
-        db_timer_hf_delay_ms(50);
+        db_timer_hf_delay_ms(0, 50);
     }
 }

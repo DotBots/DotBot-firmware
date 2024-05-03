@@ -43,6 +43,8 @@
 #define DB_UART_MAX_BYTES (64U)
 #define DB_UART_BAUDRATE  (1000000U)
 
+#define DB_TIMER_DEV (0)  // Timer device index
+
 typedef struct {
     db_partitions_table_t table;
     uint8_t               uart_byte;
@@ -146,8 +148,8 @@ int main(void) {
         db_gpio_init(&db_led4, DB_GPIO_OUT);
         db_gpio_init(&db_btn1, DB_GPIO_IN_PU);
         db_gpio_init(&db_btn2, DB_GPIO_IN_PU);
-        db_timer_hf_init();
-        db_timer_hf_set_periodic_us(0, 100000, &_blink_led4);
+        db_timer_hf_init(DB_TIMER_DEV);
+        db_timer_hf_set_periodic_us(DB_TIMER_DEV, 0, 100000, &_blink_led4);
         db_uart_init(0, &db_uart_rx, &db_uart_tx, DB_UART_BAUDRATE, &_uart_callback);
         db_ota_init(&_bootloader_ota_config);
     }

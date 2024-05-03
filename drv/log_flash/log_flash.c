@@ -20,6 +20,7 @@
 //=========================== defines ==========================================
 
 #define DB_LOG_FLASH_START ((DB_FLASH_PAGE_SIZE * DB_FLASH_PAGE_NUM) / 2)
+#define DB_LOG_FLASH_TIMER (1)
 
 //=========================== variables ========================================
 
@@ -29,7 +30,7 @@ static uint32_t *_write_address = (uint32_t *)(DB_LOG_FLASH_START + DB_FLASH_OFF
 
 void db_log_flash_init(db_log_data_type_t type) {
     // Initialize the timer hf used to timestamp the logs
-    db_timer_hf_init();
+    db_timer_hf_init(DB_LOG_FLASH_TIMER);
 
     // Erase all pages that can be used to store the logs
     for (uint16_t page = DB_FLASH_PAGE_NUM / 2; page < DB_FLASH_PAGE_NUM; page++) {
@@ -52,7 +53,7 @@ void db_log_flash_write(const void *data, size_t len) {
         return;
     }
 
-    const uint32_t now = db_timer_hf_now();
+    const uint32_t now = db_timer_hf_now(DB_LOG_FLASH_TIMER);
     db_nvmc_write(_write_address++, &now, sizeof(uint32_t));
     db_nvmc_write(_write_address, data, len);
     _write_address += (len >> 2);
