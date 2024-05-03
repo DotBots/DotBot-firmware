@@ -474,7 +474,7 @@ void timer_tx_interrupt(void) {
         uint32_t delay_time = _get_random_delay_us();
         db_timer_hf_set_oneshot_us(TDMA_CLIENT_HF_TIMER_CC_TX, delay_time, &timer_tx_interrupt);
 
-        // Send the keep alive message
+        // Try to register with the TDMA server
         _tx_tdma_register_message();
         // Save the timestamp of the last packet
         _tdma_client_vars.last_tx_packet_timestamp = db_timer_hf_now();
