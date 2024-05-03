@@ -47,6 +47,7 @@
 #define LH2_MAX_DATA_VALID_TIME_US             2000000                                                        //< Data older than this is considered outdate and should be erased (in microseconds)
 #define LH2_SWEEP_PERIOD_US                    20000                                                          ///< time, in microseconds, between two full rotations of the LH2 motor
 #define LH2_SWEEP_PERIOD_THRESHOLD_US          1000                                                           ///< How close a LH2 pulse must arrive relative to LH2_SWEEP_PERIOD_US, to be considered the same type of sweep (first sweep or second second). (in microseconds)
+#define LH2_TIMER_DEV                          2                                                              ///< Timer device used for LH2
 
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
 #define NRF_SPIM         NRF_SPIM4_S
@@ -967,7 +968,7 @@ void db_lh2_process_location(db_lh2_t *lh2) {
 void _initialize_ts4231(const gpio_t *gpio_d, const gpio_t *gpio_e) {
 
     // Configure the wait timer
-    db_timer_hf_init();
+    db_timer_hf_init(LH2_TIMER_DEV);
 
     // Filip's code define these pins as inputs, and then changes them quickly to outputs. Not sure why, but it works.
     _lh2_pin_set_input(gpio_d);
@@ -976,33 +977,33 @@ void _initialize_ts4231(const gpio_t *gpio_d, const gpio_t *gpio_e) {
     // start the TS4231 initialization
     // Wiggle the Envelope and Data pins
     _lh2_pin_set_output(gpio_e);
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;  // set pin HIGH
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;  // set pin LOW
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     _lh2_pin_set_output(gpio_d);
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     nrf_port[gpio_d->port]->OUTSET = 1 << gpio_d->pin;
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     // Turn the pins back to inputs
     _lh2_pin_set_input(gpio_d);
     _lh2_pin_set_input(gpio_e);
     // finally, wait 1 milisecond
-    db_timer_hf_delay_us(1000);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 1000);
 
     // Send the configuration magic number/sequence
     uint16_t config_val = 0x392B;
     // Turn the Data and Envelope lines back to outputs and clear them.
     _lh2_pin_set_output(gpio_e);
     _lh2_pin_set_output(gpio_d);
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     nrf_port[gpio_d->port]->OUTCLR = 1 << gpio_d->pin;
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     // Send the magic configuration value, MSB first.
     for (uint8_t i = 0; i < 15; i++) {
 
@@ -1014,68 +1015,68 @@ void _initialize_ts4231(const gpio_t *gpio_d, const gpio_t *gpio_e) {
         }
 
         // Toggle the Envelope line as a clock.
-        db_timer_hf_delay_us(10);
+        db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
         nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
-        db_timer_hf_delay_us(10);
+        db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
         nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;
-        db_timer_hf_delay_us(10);
+        db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     }
     // Finish send sequence and turn pins into inputs again.
     nrf_port[gpio_d->port]->OUTCLR = 1 << gpio_d->pin;
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     nrf_port[gpio_d->port]->OUTSET = 1 << gpio_d->pin;
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     _lh2_pin_set_input(gpio_d);
     _lh2_pin_set_input(gpio_e);
     // Finish by waiting 10usec
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
 
     // Now read back the sequence that the TS4231 answers.
     _lh2_pin_set_output(gpio_e);
     _lh2_pin_set_output(gpio_d);
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     nrf_port[gpio_d->port]->OUTCLR = 1 << gpio_d->pin;
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     nrf_port[gpio_d->port]->OUTSET = 1 << gpio_d->pin;
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     // Set Data pin as an input, to receive the data
     _lh2_pin_set_input(gpio_d);
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     // Use the Envelope pin to output a clock while the data arrives.
     for (uint8_t i = 0; i < 14; i++) {
         nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
-        db_timer_hf_delay_us(10);
+        db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
         nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;
-        db_timer_hf_delay_us(10);
+        db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     }
 
     // Finish the configuration procedure
     _lh2_pin_set_output(gpio_d);
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     nrf_port[gpio_d->port]->OUTSET = 1 << gpio_d->pin;
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
 
     nrf_port[gpio_e->port]->OUTCLR = 1 << gpio_e->pin;
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     nrf_port[gpio_d->port]->OUTCLR = 1 << gpio_d->pin;
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
     nrf_port[gpio_e->port]->OUTSET = 1 << gpio_e->pin;
-    db_timer_hf_delay_us(10);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 10);
 
     _lh2_pin_set_input(gpio_d);
     _lh2_pin_set_input(gpio_e);
 
-    db_timer_hf_delay_us(50000);
+    db_timer_hf_delay_us(LH2_TIMER_DEV, 50000);
 }
 
 uint64_t _demodulate_light(uint8_t *sample_buffer) {  // bad input variable name!!
@@ -1701,7 +1702,7 @@ uint8_t _select_sweep(db_lh2_t *lh2, uint8_t polynomial, uint32_t timestamp) {
     // TODO: check the exact, per-mode period of each polynomial instead of using a blanket 20ms
 
     uint8_t  basestation = polynomial >> 1;  ///< each base station uses 2 polynomials. integer dividing by 2 maps the polynomial number to the basestation number.
-    uint32_t now         = db_timer_hf_now();
+    uint32_t now         = db_timer_hf_now(LH2_TIMER_DEV);
     // check that current data stored is not too old.
     for (size_t sweep = 0; sweep < 2; sweep++) {
         if (now - lh2->timestamps[0][basestation] > LH2_MAX_DATA_VALID_TIME_US) {
@@ -1799,7 +1800,7 @@ void SPIM_IRQ_HANDLER(void) {
         // Reenable the PPI channel
         db_lh2_start();
         // Read the current time.
-        uint32_t timestamp = db_timer_hf_now();
+        uint32_t timestamp = db_timer_hf_now(LH2_TIMER_DEV);
         // Add new reading to the ring buffer
         _add_to_spi_ring_buffer(&_lh2_vars.data, _lh2_vars.spi_rx_buffer, timestamp);
     }
