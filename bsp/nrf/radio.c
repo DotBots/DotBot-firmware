@@ -196,10 +196,12 @@ void db_radio_tx(const uint8_t *tx_buffer, uint8_t length) {
 
     if (radio_vars.state == RADIO_STATE_IDLE) {
         _radio_enable();
+        NRF_RADIO->EVENTS_END = 0;
         NRF_RADIO->TASKS_TXEN = RADIO_TASKS_TXEN_TASKS_TXEN_Trigger << RADIO_TASKS_TXEN_TASKS_TXEN_Pos;
+        // Wait for transmission to end
+        while (NRF_RADIO->EVENTS_END == 0) {}
     }
-    radio_vars.state = RADIO_STATE_TX;
-    while (radio_vars.state != RADIO_STATE_TX) {}
+    radio_vars.state = RADIO_STATE_RX;
 }
 
 void db_radio_rx(void) {
