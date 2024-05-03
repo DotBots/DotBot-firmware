@@ -94,6 +94,8 @@ endif
 
 ifneq (,$(filter nrf52833dk,$(BUILD_TARGET)))
   PROJECTS := $(filter-out 01crypto_%,$(PROJECTS))
+  # Bootloader not supported on nrf52833dk
+  BOOTLOADER :=
 endif
 
 # remove incompatible apps (nrf5340) for nrf52833dk/nrf52840dk build
