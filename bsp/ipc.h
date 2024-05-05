@@ -86,7 +86,7 @@ typedef struct __attribute__((packed)) {
     tdma_client_table_t          table_get;          ///< db_tdma_client_get_table function parameter
     ipc_radio_pdu_t              tx_pdu;             ///< PDU to send
     ipc_radio_pdu_t              rx_pdu;             ///< Received pdu
-    db_tdma_registration_state_t registration_state  ///< db_tdma_client_get_status return value
+    db_tdma_registration_state_t registration_state;  ///< db_tdma_client_get_status return value
 } ipc_tdma_client_data_t;
 
 typedef struct __attribute__((packed)) {

@@ -17,6 +17,7 @@
 
 #include "ipc.h"
 #include "radio.h"
+#include "clock.h"
 
 //=========================== variables ========================================
 

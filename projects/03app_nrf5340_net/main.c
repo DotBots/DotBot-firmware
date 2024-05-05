@@ -117,10 +117,10 @@ int main(void) {
                     db_tdma_client_init(&tdma_client_callback, ipc_shared_data.tdma_client.mode, ipc_shared_data.tdma_client.frequency);
                     break;
                 case DB_IPC_TDMA_CLIENT_SET_TABLE_REQ:
-                    db_tdma_client_set_table(&ipc_shared_data.tdma_client.table_set);
+                    db_tdma_client_set_table((const tdma_client_table_t *)&ipc_shared_data.tdma_client.table_set);
                     break;
                 case DB_IPC_TDMA_CLIENT_GET_TABLE_REQ:
-                    db_tdma_client_get_table(&ipc_shared_data.tdma_client.table_get);
+                    db_tdma_client_get_table((tdma_client_table_t *)&ipc_shared_data.tdma_client.table_get);
                     break;
                 case DB_IPC_TDMA_CLIENT_TX_REQ:
                     db_tdma_client_tx((uint8_t *)ipc_shared_data.tdma_client.tx_pdu.buffer, ipc_shared_data.tdma_client.tx_pdu.length);
