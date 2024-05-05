@@ -17,6 +17,9 @@
 #include "radio.h"
 #include "rng.h"
 #include "gpio.h"
+// Include DRV headers
+#include "tdma_client.h"
+#include "tdma_server.h"
 
 //=========================== variables =========================================
 
@@ -29,6 +32,22 @@ void radio_callback(uint8_t *packet, uint8_t length) {
     mutex_lock();
     ipc_shared_data.radio.rx_pdu.length = length;
     memcpy((void *)ipc_shared_data.radio.rx_pdu.buffer, packet, length);
+    mutex_unlock();
+    _data_received = true;
+}
+
+void tdma_client_callback(uint8_t *packet, uint8_t length) {
+    mutex_lock();
+    ipc_shared_data.tdma_client.rx_pdu.length = length;
+    memcpy((void *)ipc_shared_data.tdma_client.rx_pdu.buffer, packet, length);
+    mutex_unlock();
+    _data_received = true;
+}
+
+void tdma_server_callback(uint8_t *packet, uint8_t length) {
+    mutex_lock();
+    ipc_shared_data.tdma_server.rx_pdu.length = length;
+    memcpy((void *)ipc_shared_data.tdma_server.rx_pdu.buffer, packet, length);
     mutex_unlock();
     _data_received = true;
 }
@@ -59,6 +78,7 @@ int main(void) {
         if (_req_received != DB_IPC_REQ_NONE) {
             ipc_shared_data.net_ack = false;
             switch (_req_received) {
+                // RADIO functions
                 case DB_IPC_RADIO_INIT_REQ:
                     db_radio_init(&radio_callback, ipc_shared_data.radio.mode);
                     break;
@@ -83,11 +103,53 @@ int main(void) {
                 case DB_IPC_RADIO_RSSI_REQ:
                     ipc_shared_data.radio.rssi = db_radio_rssi();
                     break;
+
+                // RNG functions
                 case DB_IPC_RNG_INIT_REQ:
                     db_rng_init();
                     break;
                 case DB_IPC_RNG_READ_REQ:
                     db_rng_read((uint8_t *)&ipc_shared_data.rng.value);
+                    break;
+
+                // TDMA Client functions
+                case DB_IPC_TDMA_CLIENT_INIT_REQ:
+                    db_tdma_client_init(&tdma_client_callback, ipc_shared_data.tdma_client.mode, ipc_shared_data.tdma_client.frequency);
+                    break;
+                case DB_IPC_TDMA_CLIENT_SET_TABLE_REQ:
+                    db_tdma_client_set_table(&ipc_shared_data.tdma_client.table_set);
+                    break;
+                case DB_IPC_TDMA_CLIENT_GET_TABLE_REQ:
+                    db_tdma_client_get_table(&ipc_shared_data.tdma_client.table_get);
+                    break;
+                case DB_IPC_TDMA_CLIENT_TX_REQ:
+                    db_tdma_client_tx((uint8_t *)ipc_shared_data.tdma_client.tx_pdu.buffer, ipc_shared_data.tdma_client.tx_pdu.length);
+                    break;
+                case DB_IPC_TDMA_CLIENT_FLUSH_REQ:
+                    db_tdma_client_flush();
+                    break;
+                case DB_IPC_TDMA_CLIENT_EMPTY_REQ:
+                    db_tdma_client_empty();
+                    break;
+                case DB_IPC_TDMA_CLIENT_STATUS_REQ:
+                    ipc_shared_data.tdma_client.registration_state = db_tdma_client_get_status();
+                    break;
+
+                // TDMA Server functions
+                case DB_IPC_TDMA_SERVER_INIT_REQ:
+                    db_tdma_server_init(&tdma_server_callback, ipc_shared_data.tdma_server.mode, ipc_shared_data.tdma_server.frequency);
+                    break;
+                case DB_IPC_TDMA_SERVER_GET_TABLE_REQ:
+                    ipc_shared_data.tdma_server.table = db_tdma_server_get_table();
+                    break;
+                case DB_IPC_TDMA_SERVER_TX_REQ:
+                    db_tdma_server_tx((uint8_t *)ipc_shared_data.tdma_server.tx_pdu.buffer, ipc_shared_data.tdma_server.tx_pdu.length);
+                    break;
+                case DB_IPC_TDMA_SERVER_FLUSH_REQ:
+                    db_tdma_server_flush();
+                    break;
+                case DB_IPC_TDMA_SERVER_EMPTY_REQ:
+                    db_tdma_server_empty();
                     break;
                 default:
                     break;
