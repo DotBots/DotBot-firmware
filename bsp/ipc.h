@@ -28,17 +28,29 @@
 #define IPC_IRQ_PRIORITY (1)
 
 typedef enum {
-    DB_IPC_REQ_NONE,        ///< Sorry, but nothing
-    DB_IPC_RADIO_INIT_REQ,  ///< Request for radio initialization
-    DB_IPC_RADIO_FREQ_REQ,  ///< Request for radio set frequency
-    DB_IPC_RADIO_CHAN_REQ,  ///< Request for radio set channel
-    DB_IPC_RADIO_ADDR_REQ,  ///< Request for radio set network address
-    DB_IPC_RADIO_RX_REQ,    ///< Request for radio rx
-    DB_IPC_RADIO_DIS_REQ,   ///< Request for radio disable
-    DB_IPC_RADIO_TX_REQ,    ///< Request for radio tx
-    DB_IPC_RADIO_RSSI_REQ,  ///< Request for RSSI
-    DB_IPC_RNG_INIT_REQ,    ///< Request for rng init
-    DB_IPC_RNG_READ_REQ,    ///< Request for rng read
+    DB_IPC_REQ_NONE,                   ///< Sorry, but nothing
+    DB_IPC_RADIO_INIT_REQ,             ///< Request for radio initialization
+    DB_IPC_RADIO_FREQ_REQ,             ///< Request for radio set frequency
+    DB_IPC_RADIO_CHAN_REQ,             ///< Request for radio set channel
+    DB_IPC_RADIO_ADDR_REQ,             ///< Request for radio set network address
+    DB_IPC_RADIO_RX_REQ,               ///< Request for radio rx
+    DB_IPC_RADIO_DIS_REQ,              ///< Request for radio disable
+    DB_IPC_RADIO_TX_REQ,               ///< Request for radio tx
+    DB_IPC_RADIO_RSSI_REQ,             ///< Request for RSSI
+    DB_IPC_RNG_INIT_REQ,               ///< Request for rng init
+    DB_IPC_RNG_READ_REQ,               ///< Request for rng read
+    DB_IPC_TDMA_CLIENT_INIT_REQ,       ///< Request for TDMA client initialization
+    DB_IPC_TDMA_CLIENT_SET_TABLE_REQ,  ///< Request for setting the TDMA client timing table
+    DB_IPC_TDMA_CLIENT_GET_TABLE_REQ,  ///< Request for reading the TDMA client timing table
+    DB_IPC_TDMA_CLIENT_TX_REQ,         ///< Request for a TDMA client TX
+    DB_IPC_TDMA_CLIENT_FLUSH_REQ,      ///< Request for flushing the TDMA client message buffer
+    DB_IPC_TDMA_CLIENT_EMPTY_REQ,      ///< Request for erasing the TDMA client message buffer
+    DB_IPC_TDMA_CLIENT_STATUS_REQ,     ///< Request for reading the TDMA client driver status
+    DB_IPC_TDMA_SERVER_INIT_REQ,       ///< Request for TDMA server initialization
+    DB_IPC_TDMA_SERVER_GET_TABLE_REQ,  ///< Request for reading the TDMA server timing table
+    DB_IPC_TDMA_SERVER_TX_REQ,         ///< Request for a TDMA server TX
+    DB_IPC_TDMA_SERVER_FLUSH_REQ,      ///< Request for flushing the TDMA server message buffer
+    DB_IPC_TDMA_SERVER_EMPTY_REQ,      ///< Request for erasing the TDMA server message buffer
 } ipc_req_t;
 
 typedef enum {
