@@ -17,6 +17,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "radio.h"
+#include "tdma_client.h"
+#include "tdma_server.h"
 #include "timer_hf.h"
 
 #if defined(NRF_APPLICATION)
@@ -78,11 +80,30 @@ typedef struct {
 } ipc_rng_data_t;
 
 typedef struct __attribute__((packed)) {
-    bool             net_ready;  ///< Network core is ready
-    bool             net_ack;    ///< Network core acked the latest request
-    ipc_req_t        req;        ///< IPC network request
-    ipc_radio_data_t radio;      ///< Radio shared data
-    ipc_rng_data_t   rng;        ///< Rng share data
+    db_radio_ble_mode_t mode;       ///< db_radio_init function parameters
+    uint8_t             frequency;  ///< db_set_frequency function parameters
+    tdma_client_table_t table_set;  ///< db_tdma_client_set_table function parameter
+    tdma_client_table_t table_get;  ///< db_tdma_client_get_table function parameter
+    ipc_radio_pdu_t     tx_pdu;     ///< PDU to send
+    ipc_radio_pdu_t     rx_pdu;     ///< Received pdu
+} ipc_tdma_client_data_t;
+
+typedef struct __attribute__((packed)) {
+    db_radio_ble_mode_t mode;       ///< db_radio_init function parameters
+    uint8_t             frequency;  ///< db_set_frequency function parameters
+    tdma_server_table_t table;      ///< db_tdma_server_get_table function parameter
+    ipc_radio_pdu_t     tx_pdu;     ///< PDU to send
+    ipc_radio_pdu_t     rx_pdu;     ///< Received pdu
+} ipc_tdma_server_data_t;
+
+typedef struct __attribute__((packed)) {
+    bool                   net_ready;    ///< Network core is ready
+    bool                   net_ack;      ///< Network core acked the latest request
+    ipc_req_t              req;          ///< IPC network request
+    ipc_radio_data_t       radio;        ///< Radio shared data
+    ipc_rng_data_t         rng;          ///< Rng share data
+    ipc_tdma_client_data_t tdma_client;  ///< TDMA client drv shared data
+    ipc_tdma_server_data_t tdma_server;  ///< TDMA server drv shared data
 } ipc_shared_data_t;
 
 /**
