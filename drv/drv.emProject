@@ -108,7 +108,7 @@
       project_dependencies="00bsp_radio(bsp);00bsp_timer_hf(bsp);00bsp_rng(bsp);00drv_dotbot_protocol(drv)"
       project_directory="tdma_client"
       project_type="Library" />
-    <file file_name="tdma_client.c" />
+    <file file_name="$(TdmaClientImplementationFile)" />
     <file file_name="../tdma_client.h" />
   </project>
   <project Name="00drv_tdma_server">
@@ -117,7 +117,7 @@
       project_dependencies="00bsp_radio(bsp);00bsp_timer_hf(bsp);00drv_dotbot_protocol(drv)"
       project_directory="tdma_server"
       project_type="Library" />
-    <file file_name="tdma_server.c" />
+    <file file_name="$(TdmaServerImplementationFile)" />
     <file file_name="../tdma_server.h" />
   </project>
   <project Name="00drv_move">
