@@ -20,11 +20,11 @@
 
 //=========================== variables ========================================
 
-static radio_cb_t _tdma_client_callback = NULL;
+static tdma_client_cb_t _tdma_client_callback = NULL;
 
 //=========================== public ===========================================
 
-void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t mode, uint8_t radio_freq) {
+void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq) {
     db_hfclk_init();
 
     // Disable all DCDC regulators (use LDO)
@@ -71,7 +71,7 @@ void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t mode, ui
     }
 
     // Store information in the shared data before sending it to the net-core
-    ipc_shared_data.tdma_client.mode      = mode;
+    ipc_shared_data.tdma_client.mode      = radio_mode;
     ipc_shared_data.tdma_client.frequency = radio_freq;
 
     // Initialice TDMA client drv in the net-core
@@ -104,7 +104,7 @@ void db_tdma_client_get_table(tdma_client_table_t *table) {
 
 void db_tdma_client_tx(const uint8_t *packet, uint8_t length) {
     ipc_shared_data.tdma_client.tx_pdu.length = length;
-    memcpy((void *)ipc_shared_data.radio.tx_pdu.buffer, packet, length);
+    memcpy((void *)ipc_shared_data.tdma_client.tx_pdu.buffer, packet, length);
     db_ipc_network_call(DB_IPC_TDMA_CLIENT_TX_REQ);
 }
 
