@@ -36,13 +36,13 @@
 #define TDMA_SERVER_DEFAULT_TX_DURATION_US TDMA_SERVER_TIME_SLOT_DURATION_US      ///< Default duration of the tdma frame, in microseconds.
 
 #define TDMA_SERVER_HF_TIMER_CC      TIMER_HF_CB_CHANS - 2  ///< Which timer channel will be used for the TX state machine.
-#define TDMA_MAX_DELAY_WITHOUT_TX    500000             ///< Max amount of time that can pass without TXing anything
-#define TDMA_RING_BUFFER_SIZE        10                 ///< Amount of TX packets the buffer can contain
-#define TDMA_NEW_CLIENT_BUFFER_SIZE  30                 ///< Amount of clients waiting to register the buffer can contain
-#define RADIO_MESSAGE_MAX_SIZE       255                ///< Size of buffers used for SPI communications
-#define RADIO_TX_RAMP_UP_TIME        140                ///< time it takes the radio to start a transmission
-#define TDMA_TX_DEADTIME_US          100                ///< buffer time between tdma slot to avoid accidentally sen
-#define TDMA_SERVER_CLIENT_NOT_FOUND -1                 ///< The client is not registered in the server's table.
+#define TDMA_MAX_DELAY_WITHOUT_TX    500000                 ///< Max amount of time that can pass without TXing anything
+#define TDMA_RING_BUFFER_SIZE        10                     ///< Amount of TX packets the buffer can contain
+#define TDMA_NEW_CLIENT_BUFFER_SIZE  30                     ///< Amount of clients waiting to register the buffer can contain
+#define RADIO_MESSAGE_MAX_SIZE       255                    ///< Size of buffers used for SPI communications
+#define RADIO_TX_RAMP_UP_TIME        140                    ///< time it takes the radio to start a transmission
+#define TDMA_TX_DEADTIME_US          100                    ///< buffer time between tdma slot to avoid accidentally sen
+#define TDMA_SERVER_CLIENT_NOT_FOUND -1                     ///< The client is not registered in the server's table.
 
 typedef struct {
     uint8_t  buffer[TDMA_RING_BUFFER_SIZE][PAYLOAD_MAX_LENGTH];  ///< arrays of radio messages waiting to be sent
@@ -76,7 +76,14 @@ typedef struct {
 
 //=========================== variables ========================================
 
-static tdma_server_vars_t _tdma_vars = { 0 };
+
+#if defined(NRF5340_XXAA)
+    // Define the local variables in the shared RAM between the App- and Net-cores, so pointers can be directly accessed between
+    // both cores, without crashing
+    static __attribute__((section(".ARM.__at_0x20004000"))) tdma_server_vars_t _tdma_vars = { 0 };
+#else
+    static tdma_server_vars_t _tdma_vars = { 0 };
+#endif
 
 // Transform the ble mode into how many microseconds it takes to send a single byte.
 uint8_t ble_mode_to_byte_time[] = {
@@ -391,7 +398,7 @@ bool _client_rb_tx_queue(new_client_ring_buffer_t *rb, uint16_t max_tx_duration_
             uint16_t tx_time = RADIO_TX_RAMP_UP_TIME + (sizeof(protocol_header_t) + sizeof(protocol_tdma_table_t)) * _tdma_vars.byte_onair_time;
             // If there is time to send the packet, send it
             if (db_timer_hf_now() + tx_time - _tdma_vars.slot_start_ts < max_tx_duration_us) {
-NRF_P1->OUTSET = 1<<10;
+                NRF_P1->OUTSET = 1 << 10;
                 _tx_registration_messages(client);
                 packet_sent_flag = true;
             } else {  // otherwise, put the packet back in the queue and leave
@@ -403,9 +410,8 @@ NRF_P1->OUTSET = 1<<10;
         // Update the last packet timer
         _tdma_vars.last_tx_packet_ts = _tdma_vars.slot_start_ts;
     }
-        NRF_P1->OUTCLR = 1<<10;
+    NRF_P1->OUTCLR = 1 << 10;
     return packet_sent_flag;
-
 }
 
 bool _client_rb_id_exists(new_client_ring_buffer_t *rb, uint64_t client) {
@@ -438,7 +444,7 @@ void _tx_sync_frame(void) {
         .swarm_id    = DB_SWARM_ID,
         .application = TDMA_RADIO_APPLICATION,
         .version     = DB_FIRMWARE_VERSION,
-        .msg_id      = 0x00000000,          // Use a static msg ID to avoid the penalty of calculating the random ID
+        .msg_id      = 0x00000000,  // Use a static msg ID to avoid the penalty of calculating the random ID
         .type        = DB_PROTOCOL_TDMA_SYNC_FRAME,
     };
     memcpy(_tdma_vars.radio_buffer, &header, sizeof(protocol_header_t));
@@ -577,7 +583,7 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
 
     */
 
-    NRF_P1  ->OUTSET = 1<<13;
+    NRF_P1->OUTSET = 1 << 13;
     (void)length;
     uint8_t           *ptk_ptr = packet;
     protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
@@ -619,7 +625,7 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
     if (_tdma_vars.callback) {
         _tdma_vars.callback(packet, length);
     }
-    NRF_P1  ->OUTCLR = 1<<13;
+    NRF_P1->OUTCLR = 1 << 13;
 }
 
 /**
@@ -627,8 +633,8 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
  *
  */
 void timer_tdma_interrupt(void) {
-    
-    NRF_P0  ->OUTSET = 1<<26;
+
+    NRF_P0->OUTSET = 1 << 26;
 
     // Save the timestamp start of the current slot, to ensure accurate computation of the end of the slot
     _tdma_vars.slot_start_ts = db_timer_hf_now();
@@ -648,7 +654,7 @@ void timer_tdma_interrupt(void) {
     // check if this is the start of the super frame to send a sync message.
     if (_tdma_vars.active_slot_idx == 0) {
 
-        NRF_P1  ->OUTSET = 1<<5;
+        NRF_P1->OUTSET = 1 << 5;
 
         // Update last-superframe timestamp
         _tdma_vars.frame_start_ts = _tdma_vars.slot_start_ts;
@@ -675,6 +681,6 @@ void timer_tdma_interrupt(void) {
             _tdma_vars.last_tx_packet_ts = db_timer_hf_now();
         }
     }
-    NRF_P0  ->OUTCLR = 1<<26;
-    NRF_P1  ->OUTCLR = 1<<5;
+    NRF_P0->OUTCLR = 1 << 26;
+    NRF_P1->OUTCLR = 1 << 5;
 }
