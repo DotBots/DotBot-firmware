@@ -18,14 +18,13 @@
 #include "ipc.h"
 #include "radio.h"
 
-
 //=========================== variables ========================================
 
-static radio_cb_t _radio_callback = NULL;
+static radio_cb_t _tdma_client_callback = NULL;
 
 //=========================== public ===========================================
 
-void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
+void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t mode, uint8_t radio_freq) {
     db_hfclk_init();
 
     // Disable all DCDC regulators (use LDO)
@@ -66,46 +65,60 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
     // Start the network core
     release_network_core();
 
+    // Store callback in a local variable
     if (callback) {
-        _radio_callback = callback;
+        _tdma_client_callback = callback;
     }
 
-    ipc_shared_data.radio.mode = mode;
-    db_ipc_network_call(DB_IPC_RADIO_INIT_REQ);
+    // Store information in the shared data before sending it to the net-core
+    ipc_shared_data.tdma_client.mode      = mode;
+    ipc_shared_data.tdma_client.frequency = radio_freq;
+
+    // Initialice TDMA client drv in the net-core
+    db_ipc_network_call(DB_IPC_TDMA_CLIENT_INIT_REQ);
 }
 
-void db_radio_set_frequency(uint8_t freq) {
-    ipc_shared_data.radio.frequency = freq;
-    db_ipc_network_call(DB_IPC_RADIO_FREQ_REQ);
+void db_tdma_client_set_table(const tdma_client_table_t *table) {
+
+    // Copy the set table to the IPC chared data
+    ipc_shared_data.tdma_client.table_set.frame_duration = table->frame_duration;
+    ipc_shared_data.tdma_client.table_set.rx_start       = table->rx_start;
+    ipc_shared_data.tdma_client.table_set.rx_duration    = table->rx_duration;
+    ipc_shared_data.tdma_client.table_set.tx_start       = table->tx_start;
+    ipc_shared_data.tdma_client.table_set.tx_duration    = table->tx_duration;
+    // Request the network core to copy the data.
+    db_ipc_network_call(DB_IPC_TDMA_CLIENT_SET_TABLE_REQ);
 }
 
-void db_radio_set_channel(uint8_t channel) {
-    ipc_shared_data.radio.channel = channel;
-    db_ipc_network_call(DB_IPC_RADIO_CHAN_REQ);
+void db_tdma_client_get_table(tdma_client_table_t *table) {
+
+    // Request the network core to copy the table's data.
+    db_ipc_network_call(DB_IPC_TDMA_CLIENT_GET_TABLE_REQ);
+    // Copy the get table from the IPC chared data
+    table->frame_duration = ipc_shared_data.tdma_client.table_get.frame_duration;
+    table->rx_start       = ipc_shared_data.tdma_client.table_get.rx_start;
+    table->rx_duration    = ipc_shared_data.tdma_client.table_get.rx_duration;
+    table->tx_start       = ipc_shared_data.tdma_client.table_get.tx_start;
+    table->tx_duration    = ipc_shared_data.tdma_client.table_get.tx_duration;
 }
 
-void db_radio_set_network_address(uint32_t addr) {
-    ipc_shared_data.radio.addr = addr;
-    db_ipc_network_call(DB_IPC_RADIO_ADDR_REQ);
+void db_tdma_client_tx(const uint8_t *packet, uint8_t length) {
+    ipc_shared_data.tdma_client.tx_pdu.length = length;
+    memcpy((void *)ipc_shared_data.radio.tx_pdu.buffer, packet, length);
+    db_ipc_network_call(DB_IPC_TDMA_CLIENT_TX_REQ);
 }
 
-void db_radio_tx(const uint8_t *tx_buffer, uint8_t length) {
-    ipc_shared_data.radio.tx_pdu.length = length;
-    memcpy((void *)ipc_shared_data.radio.tx_pdu.buffer, tx_buffer, length);
-    db_ipc_network_call(DB_IPC_RADIO_TX_REQ);
+void db_tdma_client_flush(void) {
+    db_ipc_network_call(DB_IPC_TDMA_CLIENT_FLUSH_REQ);
 }
 
-void db_radio_rx(void) {
-    db_ipc_network_call(DB_IPC_RADIO_RX_REQ);
+void db_tdma_client_empty(void) {
+    db_ipc_network_call(DB_IPC_TDMA_CLIENT_EMPTY_REQ);
 }
 
-int8_t db_radio_rssi(void) {
-    db_ipc_network_call(DB_IPC_RADIO_RSSI_REQ);
-    return ipc_shared_data.radio.rssi;
-}
-
-void db_radio_disable(void) {
-    db_ipc_network_call(DB_IPC_RADIO_DIS_REQ);
+db_tdma_registration_state_t db_tdma_client_get_status(void) {
+    db_ipc_network_call(DB_IPC_TDMA_CLIENT_STATUS_REQ);
+    return ipc_shared_data.tdma_client.registration_state;
 }
 
 //=========================== interrupt handlers ===============================
@@ -113,9 +126,9 @@ void db_radio_disable(void) {
 void IPC_IRQHandler(void) {
     if (NRF_IPC_S->EVENTS_RECEIVE[DB_IPC_CHAN_RADIO_RX]) {
         NRF_IPC_S->EVENTS_RECEIVE[DB_IPC_CHAN_RADIO_RX] = 0;
-        if (_radio_callback) {
+        if (_tdma_client_callback) {
             mutex_lock();
-            _radio_callback((uint8_t *)ipc_shared_data.radio.rx_pdu.buffer, ipc_shared_data.radio.rx_pdu.length);
+            _tdma_client_callback((uint8_t *)ipc_shared_data.tdma_client.rx_pdu.buffer, ipc_shared_data.tdma_client.rx_pdu.length);
             mutex_unlock();
         }
     }
