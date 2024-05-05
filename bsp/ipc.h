@@ -90,11 +90,11 @@ typedef struct __attribute__((packed)) {
 } ipc_tdma_client_data_t;
 
 typedef struct __attribute__((packed)) {
-    db_radio_ble_mode_t mode;       ///< db_radio_init function parameters
-    uint8_t             frequency;  ///< db_set_frequency function parameters
-    tdma_server_table_t table;      ///< db_tdma_server_get_table function parameter
-    ipc_radio_pdu_t     tx_pdu;     ///< PDU to send
-    ipc_radio_pdu_t     rx_pdu;     ///< Received pdu
+    db_radio_ble_mode_t  mode;       ///< db_radio_init function parameters
+    uint8_t              frequency;  ///< db_set_frequency function parameters
+    tdma_server_table_t *table;      ///< db_tdma_server_get_table function return
+    ipc_radio_pdu_t      tx_pdu;     ///< PDU to send
+    ipc_radio_pdu_t      rx_pdu;     ///< Received pdu
 } ipc_tdma_server_data_t;
 
 typedef struct __attribute__((packed)) {
