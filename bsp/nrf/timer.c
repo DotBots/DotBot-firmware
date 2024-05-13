@@ -18,21 +18,13 @@
 
 //=========================== define ===========================================
 
-#if defined(NRF5340_XXAA)
-#if defined(NRF_APPLICATION)
-#define TIMER_RTC (NRF_RTC1_S)  ///< Backend RTC peripheral used by the timer
-#elif defined(NRF_NETWORK)
-#define TIMER_RTC (NRF_RTC1_NS)  ///< Backend RTC peripheral used by the timer
-#endif
-#define TIMER_RTC_IRQ      (RTC1_IRQn)        ///< IRQ corresponding to the RTC used
-#define TIMER_RTC_ISR      (RTC1_IRQHandler)  ///< ISR function handler corresponding to the RTC used
-#define TIMER_RTC_CB_CHANS (RTC1_CC_NUM - 1)  ///< Number of channels that can be used for periodic callbacks
-#else
-#define TIMER_RTC          (NRF_RTC2)         ///< Backend RTC peripheral used by the timer
-#define TIMER_RTC_IRQ      (RTC2_IRQn)        ///< IRQ corresponding to the RTC used
-#define TIMER_RTC_ISR      (RTC2_IRQHandler)  ///< ISR function handler corresponding to the RTC used
-#define TIMER_RTC_CB_CHANS (RTC2_CC_NUM - 1)  ///< Number of channels that can be used for periodic callbacks
-#endif
+#define TIMER_MAX_CHANNELS (4U)
+
+typedef struct {
+    NRF_RTC_Type *p;
+    IRQn_Type     irq;
+    uint8_t       cc_num;
+} timer_conf_t;
 
 typedef struct {
     uint32_t   period_ticks;  ///< Period in ticks between each callback
@@ -41,7 +33,7 @@ typedef struct {
 } timer_callback_t;
 
 typedef struct {
-    timer_callback_t timer_callback[TIMER_RTC_CB_CHANS];  ///< List of timer callback structs
+    timer_callback_t timer_callback[TIMER_MAX_CHANNELS];  ///< List of timer callback structs
     bool             running;                             ///< Whether the delay timer is running
 } timer_vars_t;
 
@@ -51,69 +43,105 @@ static uint32_t _ms_to_ticks(uint32_t ms);
 
 //=========================== variables ========================================
 
-static timer_vars_t _timer_vars;
+static const timer_conf_t _devs[RTC_COUNT] = {
+#if defined(NRF5340_XXAA)
+    {
+#if defined(NRF_APPLICATION)
+        .p = NRF_RTC0_S,
+#else
+        .p = NRF_RTC0_NS,
+#endif
+        .irq    = RTC0_IRQn,
+        .cc_num = RTC0_CC_NUM - 1,
+    },
+    {
+#if defined(NRF_APPLICATION)
+        .p = NRF_RTC1_S,
+#else
+        .p = NRF_RTC1_NS,
+#endif
+        .irq    = RTC1_IRQn,
+        .cc_num = RTC1_CC_NUM - 1,
+    },
+#else
+    {
+        .p      = NRF_RTC0,
+        .irq    = RTC0_IRQn,
+        .cc_num = RTC0_CC_NUM - 1,
+    },
+    {
+        .p      = NRF_RTC1,
+        .irq    = RTC1_IRQn,
+        .cc_num = RTC1_CC_NUM - 1,
+    },
+    {
+        .p      = NRF_RTC2,
+        .irq    = RTC2_IRQn,
+        .cc_num = RTC2_CC_NUM - 1,
+    },
+#endif
+};
+
+static timer_vars_t _timer_vars[RTC_COUNT] = { 0 };
 
 //=========================== public ===========================================
 
-void db_timer_init(void) {
+void db_timer_init(timer_t timer) {
     // No delay is running after initialization
-    _timer_vars.running = false;
+    _timer_vars[timer].running = false;
 
     // Configure and start Low Frequency clock
     db_lfclk_init();
 
     // Configure the RTC
-    TIMER_RTC->TASKS_STOP  = 1;
-    TIMER_RTC->TASKS_CLEAR = 1;
-    TIMER_RTC->PRESCALER   = 0;  // Run RTC at 32768Hz
-    TIMER_RTC->EVTENSET    = (RTC_EVTENSET_COMPARE3_Enabled << RTC_EVTENSET_COMPARE3_Pos);
-    TIMER_RTC->INTENSET    = (RTC_EVTENSET_COMPARE3_Enabled << RTC_EVTENSET_COMPARE3_Pos);
-    NVIC_EnableIRQ(TIMER_RTC_IRQ);
+    _devs[timer].p->TASKS_STOP  = 1;
+    _devs[timer].p->TASKS_CLEAR = 1;
+    _devs[timer].p->PRESCALER   = 0;  // Run RTC at 32768Hz
+    _devs[timer].p->INTENSET    = (1 << (RTC_INTENSET_COMPARE0_Pos + _devs[timer].cc_num));
+    NVIC_EnableIRQ(_devs[timer].irq);
 
     // Start the timer
-    TIMER_RTC->TASKS_START = 1;
+    _devs[timer].p->TASKS_START = 1;
 }
 
-uint32_t db_timer_ticks(void) {
-    return TIMER_RTC->COUNTER;
+uint32_t db_timer_ticks(timer_t timer) {
+    return _devs[timer].p->COUNTER;
 }
 
-void db_timer_set_periodic_ms(uint8_t channel, uint32_t ms, timer_cb_t cb) {
-    assert(channel >= 0 && channel < TIMER_RTC_CB_CHANS);  // Make sure the required channel is correct
-    assert(cb);                                            // Make sure the callback function is valid
+void db_timer_set_periodic_ms(timer_t timer, uint8_t channel, uint32_t ms, timer_cb_t cb) {
+    assert(channel >= 0 && channel < _devs[timer].cc_num);  // Make sure the required channel is correct
+    assert(cb);                                             // Make sure the callback function is valid
 
-    _timer_vars.timer_callback[channel].period_ticks = _ms_to_ticks(ms);
-    _timer_vars.timer_callback[channel].one_shot     = false;
-    _timer_vars.timer_callback[channel].callback     = cb;
-    TIMER_RTC->EVTENSET                              = (1 << (RTC_EVTENSET_COMPARE0_Pos + channel));
-    TIMER_RTC->INTENSET                              = (1 << (RTC_INTENSET_COMPARE0_Pos + channel));
-    TIMER_RTC->CC[channel]                           = TIMER_RTC->COUNTER + _timer_vars.timer_callback[channel].period_ticks;
+    _timer_vars[timer].timer_callback[channel].period_ticks = _ms_to_ticks(ms);
+    _timer_vars[timer].timer_callback[channel].one_shot     = false;
+    _timer_vars[timer].timer_callback[channel].callback     = cb;
+    _devs[timer].p->INTENSET                                = (1 << (RTC_INTENSET_COMPARE0_Pos + channel));
+    _devs[timer].p->CC[channel]                             = _devs[timer].p->COUNTER + _timer_vars[timer].timer_callback[channel].period_ticks;
 }
 
-void db_timer_set_oneshot_ticks(uint8_t channel, uint32_t ticks, timer_cb_t cb) {
-    assert(channel >= 0 && channel < TIMER_RTC_CB_CHANS);  // Make sure the required channel is correct
-    assert(cb);                                            // Make sure the callback function is valid
+void db_timer_set_oneshot_ticks(timer_t timer, uint8_t channel, uint32_t ticks, timer_cb_t cb) {
+    assert(channel >= 0 && channel < _devs[timer].cc_num);  // Make sure the required channel is correct
+    assert(cb);                                             // Make sure the callback function is valid
 
-    _timer_vars.timer_callback[channel].period_ticks = ticks;
-    _timer_vars.timer_callback[channel].one_shot     = true;
-    _timer_vars.timer_callback[channel].callback     = cb;
-    TIMER_RTC->EVTENSET                              = (1 << (RTC_EVTENSET_COMPARE0_Pos + channel));
-    TIMER_RTC->INTENSET                              = (1 << (RTC_INTENSET_COMPARE0_Pos + channel));
-    TIMER_RTC->CC[channel]                           = TIMER_RTC->COUNTER + _timer_vars.timer_callback[channel].period_ticks;
+    _timer_vars[timer].timer_callback[channel].period_ticks = ticks;
+    _timer_vars[timer].timer_callback[channel].one_shot     = true;
+    _timer_vars[timer].timer_callback[channel].callback     = cb;
+    _devs[timer].p->INTENSET                                = (1 << (RTC_INTENSET_COMPARE0_Pos + channel));
+    _devs[timer].p->CC[channel]                             = _devs[timer].p->COUNTER + _timer_vars[timer].timer_callback[channel].period_ticks;
 }
 
-void db_timer_set_oneshot_ms(uint8_t channel, uint32_t ms, timer_cb_t cb) {
-    db_timer_set_oneshot_ticks(channel, _ms_to_ticks(ms), cb);
+void db_timer_set_oneshot_ms(timer_t timer, uint8_t channel, uint32_t ms, timer_cb_t cb) {
+    db_timer_set_oneshot_ticks(timer, channel, _ms_to_ticks(ms), cb);
 }
 
-void db_timer_set_oneshot_s(uint8_t channel, uint32_t s, timer_cb_t cb) {
-    db_timer_set_oneshot_ticks(channel, s * 32768, cb);
+void db_timer_set_oneshot_s(timer_t timer, uint8_t channel, uint32_t s, timer_cb_t cb) {
+    db_timer_set_oneshot_ticks(timer, channel, s * 32768, cb);
 }
 
-void db_timer_delay_ticks(uint32_t ticks) {
-    TIMER_RTC->CC[TIMER_RTC_CB_CHANS] = TIMER_RTC->COUNTER + ticks;
-    _timer_vars.running               = true;
-    while (_timer_vars.running) {
+void db_timer_delay_ticks(timer_t timer, uint32_t ticks) {
+    _devs[timer].p->CC[_devs[timer].cc_num] = _devs[timer].p->COUNTER + ticks;
+    _timer_vars[timer].running              = true;
+    while (_timer_vars[timer].running) {
         // Let's go to sleep
         // See https://devzone.nordicsemi.com/f/nordic-q-a/49010/methods-to-put-the-nrf52-to-sleep-in-a-spinlock-loop
         // for details
@@ -123,12 +151,12 @@ void db_timer_delay_ticks(uint32_t ticks) {
     }
 }
 
-void db_timer_delay_ms(uint32_t ms) {
-    db_timer_delay_ticks(_ms_to_ticks(ms));
+void db_timer_delay_ms(timer_t timer, uint32_t ms) {
+    db_timer_delay_ticks(timer, _ms_to_ticks(ms));
 }
 
-void db_timer_delay_s(uint32_t s) {
-    db_timer_delay_ticks(s * 32768);
+void db_timer_delay_s(timer_t timer, uint32_t s) {
+    db_timer_delay_ticks(timer, s * 32768);
 }
 
 //=========================== private ==========================================
@@ -142,25 +170,38 @@ static uint32_t _ms_to_ticks(uint32_t ms) {
 
 //=========================== interrupt ========================================
 
-void TIMER_RTC_ISR(void) {
-    if (TIMER_RTC->EVENTS_COMPARE[TIMER_RTC_CB_CHANS] == 1) {
-        TIMER_RTC->EVENTS_COMPARE[TIMER_RTC_CB_CHANS] = 0;
-        _timer_vars.running                           = false;
+static void _timer_isr(timer_t timer) {
+    if (_devs[timer].p->EVENTS_COMPARE[_devs[timer].cc_num] == 1) {
+        _devs[timer].p->EVENTS_COMPARE[_devs[timer].cc_num] = 0;
+        _timer_vars[timer].running                          = false;
         __SEV();
     }
 
-    for (uint8_t channel = 0; channel < TIMER_RTC_CB_CHANS; ++channel) {
-        if (TIMER_RTC->EVENTS_COMPARE[channel] == 1) {
-            TIMER_RTC->EVENTS_COMPARE[channel] = 0;
-            if (_timer_vars.timer_callback[channel].one_shot) {
-                TIMER_RTC->EVTENCLR = (1 << (RTC_EVTENCLR_COMPARE0_Pos + channel));
-                TIMER_RTC->INTENCLR = (1 << (RTC_INTENCLR_COMPARE0_Pos + channel));
+    for (uint8_t channel = 0; channel < _devs[timer].cc_num; ++channel) {
+        if (_devs[timer].p->EVENTS_COMPARE[channel] == 1) {
+            _devs[timer].p->EVENTS_COMPARE[channel] = 0;
+            if (_timer_vars[timer].timer_callback[channel].one_shot) {
+                _devs[timer].p->INTENCLR = (1 << (RTC_INTENCLR_COMPARE0_Pos + channel));
             } else {
-                TIMER_RTC->CC[channel] += _timer_vars.timer_callback[channel].period_ticks;
+                _devs[timer].p->CC[channel] += _timer_vars[timer].timer_callback[channel].period_ticks;
             }
-            if (_timer_vars.timer_callback[channel].callback) {
-                _timer_vars.timer_callback[channel].callback();
+            if (_timer_vars[timer].timer_callback[channel].callback) {
+                _timer_vars[timer].timer_callback[channel].callback();
             }
         }
     }
 }
+
+void RTC0_IRQHandler(void) {
+    _timer_isr(0);
+}
+
+void RTC1_IRQHandler(void) {
+    _timer_isr(1);
+}
+
+#if !defined(NRF5340_XXAA)
+void RTC2_IRQHandler(void) {
+    _timer_isr(2);
+}
+#endif

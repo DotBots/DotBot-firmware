@@ -23,6 +23,8 @@
 
 //=========================== defines ==========================================
 
+#define TIMER_DEV (0)
+
 typedef struct {
     db_partitions_table_t table;
     db_ota_cpu_type_t     cpu;
@@ -70,8 +72,8 @@ int main(void) {
 
     db_gpio_init(&db_led1, DB_GPIO_OUT);
     db_gpio_set(&db_led1);
-    db_timer_init();
-    db_timer_set_periodic_ms(0, 100, &_toggle_led);
+    db_timer_init(TIMER_DEV);
+    db_timer_set_periodic_ms(TIMER_DEV, 0, 100, &_toggle_led);
 
     while (1) {
         __WFE();

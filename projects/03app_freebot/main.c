@@ -26,6 +26,7 @@
 
 //=========================== defines ==========================================
 
+#define TIMER_DEV                 (0)
 #define DB_ADVERTIZEMENT_DELAY_MS (500U)   ///< 500ms delay between each advertizement packet sending
 #define DB_TIMEOUT_CHECK_DELAY_MS (200U)   ///< 200ms delay between each timeout delay check
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
@@ -58,8 +59,6 @@ static const gpio_t _freebot_back_motors_pins[] = {
     { .port = DB_MOTOR_BIN4_PORT, .pin = DB_MOTOR_BIN4_PIN },
 };
 
-//=========================== prototypes =======================================
-
 static void _timeout_check(void);
 static void _advertise(void);
 void        _motors_init(void);
@@ -70,7 +69,7 @@ void        _motors_set(int16_t m1_speed, int16_t m2_speed, int16_t m3_speed, in
 static void _radio_callback(uint8_t *pkt, uint8_t len) {
     (void)len;
 
-    _freebot_vars.ts_last_packet_received = db_timer_ticks();
+    _freebot_vars.ts_last_packet_received = db_timer_ticks(TIMER_DEV);
     uint8_t           *ptk_ptr            = pkt;
     protocol_header_t *header             = (protocol_header_t *)ptk_ptr;
     // Check destination address matches
@@ -107,9 +106,6 @@ static void _radio_callback(uint8_t *pkt, uint8_t len) {
 
 //=========================== main =============================================
 
-/**
- *  @brief The program starts executing here.
- */
 int main(void) {
     db_protocol_init();
     db_radio_init(&_radio_callback, DB_RADIO_BLE_1MBit);
@@ -121,9 +117,9 @@ int main(void) {
     _freebot_vars.device_id = db_device_id();
     _freebot_vars.advertize = false;
 
-    db_timer_init();
-    db_timer_set_periodic_ms(0, DB_TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
-    db_timer_set_periodic_ms(1, DB_ADVERTIZEMENT_DELAY_MS, &_advertise);
+    db_timer_init(TIMER_DEV);
+    db_timer_set_periodic_ms(TIMER_DEV, 0, DB_TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
+    db_timer_set_periodic_ms(TIMER_DEV, 1, DB_ADVERTIZEMENT_DELAY_MS, &_advertise);
 
     _motors_init();
 
@@ -144,7 +140,7 @@ int main(void) {
 //=========================== private functions ================================
 
 static void _timeout_check(void) {
-    uint32_t ticks = db_timer_ticks();
+    uint32_t ticks = db_timer_ticks(TIMER_DEV);
     if (ticks > _freebot_vars.ts_last_packet_received + TIMEOUT_CHECK_DELAY_TICKS) {
         _motors_set(0, 0, 0, 0);
     }

@@ -29,6 +29,7 @@
 #define DOTBOT_WHEEL_RADIUS    (20)  //< mm
 #define DOTBOT_RADIUS          (45)  //< mm
 #define QDEC_LEFT              (0)
+#define MOVE_TIMER_DEV         (0)
 
 //=========================== variables ========================================
 
@@ -57,7 +58,7 @@ void db_move_init(void) {
     db_board_init();
     db_motors_init();
 
-    db_timer_init();
+    db_timer_init(MOVE_TIMER_DEV);
 
     db_qdec_init(QDEC_LEFT, &qdec_left, NULL, NULL);
 }
@@ -77,7 +78,7 @@ void db_move_straight(uint16_t distance, int8_t speed) {
         if ((current_distance > (float)distance)) {
             break;
         }
-        db_timer_delay_ms(REFRESH_DELAY_MS);
+        db_timer_delay_ms(MOVE_TIMER_DEV, REFRESH_DELAY_MS);
     }
 
     db_motors_set_speed(0, 0);
@@ -98,7 +99,7 @@ void db_move_rotate(uint16_t angle, int8_t speed) {
             break;
         }
 
-        db_timer_delay_ms(REFRESH_DELAY_MS);
+        db_timer_delay_ms(MOVE_TIMER_DEV, REFRESH_DELAY_MS);
     }
 
     db_motors_set_speed(0, 0);

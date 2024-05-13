@@ -19,22 +19,19 @@
 #include "motors.h"
 #include "timer.h"
 
-//=========================== defines =========================================
+//=========================== defines ==========================================
 
-//=========================== variables =========================================
+#define TIMER_DEV (0)
 
-//=========================== main =========================================
+//=========================== main =============================================
 
-/**
- *  @brief The program starts executing here.
- */
 int main(void) {
 
     // Turn ON the DotBot board regulator
     db_board_init();
 
     // Initialize the timer
-    db_timer_init();
+    db_timer_init(TIMER_DEV);
 
     // Configure Motors
     db_motors_init();
@@ -43,16 +40,13 @@ int main(void) {
         // Move forward
         for (uint8_t speed = 50; speed < 100; speed++) {
             db_motors_set_speed(speed, speed);
-            db_timer_delay_ms(20);
+            db_timer_delay_ms(TIMER_DEV, 20);
         }
 
         // Move backward
         for (uint8_t speed = 50; speed < 100; speed++) {
             db_motors_set_speed(speed * -1, speed * -1);
-            db_timer_delay_ms(20);
+            db_timer_delay_ms(TIMER_DEV, 20);
         }
     }
-
-    // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
-    __NOP();
 }

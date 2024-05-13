@@ -18,9 +18,13 @@
 #include "timer.h"
 #include "lis3mdl.h"
 
+#define TIMER_DEV                (0)
 #define LIS3MDL_READ_INTERVAL_MS (100U)
 
-static const gpio_t mag_drdy = { .port = DB_LIS3MDL_DRDY_PORT, .pin = DB_LIS3MDL_DRDY_PIN };
+static const gpio_t mag_drdy = {
+    .port = DB_LIS3MDL_DRDY_PORT,
+    .pin  = DB_LIS3MDL_DRDY_PIN,
+};
 
 static const lis3mdl_conf_t _lis3mdl_conf = {
     .scl      = &db_scl,
@@ -35,7 +39,7 @@ static const lis3mdl_conf_t _lis3mdl_conf = {
 
 int main(void) {
     db_board_init();
-    db_timer_init();
+    db_timer_init(TIMER_DEV);
     lis3mdl_init(&_lis3mdl_conf);
     puts("X,Y,Z");
     while (1) {
@@ -47,6 +51,6 @@ int main(void) {
         int16_t temperature = 0;
         lis3mdl_read_temperature(&temperature);
         printf("T: %iC\n", temperature);
-        db_timer_delay_ms(LIS3MDL_READ_INTERVAL_MS);
+        db_timer_delay_ms(TIMER_DEV, LIS3MDL_READ_INTERVAL_MS);
     }
 }

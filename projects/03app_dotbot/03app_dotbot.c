@@ -31,6 +31,7 @@
 
 //=========================== defines ==========================================
 
+#define TIMER_DEV                 (0)
 #define DB_LH2_UPDATE_DELAY_MS    (100U)   ///< 100ms delay between each LH2 data refresh
 #define DB_ADVERTIZEMENT_DELAY_MS (500U)   ///< 500ms delay between each advertizement packet sending
 #define DB_TIMEOUT_CHECK_DELAY_MS (200U)   ///< 200ms delay between each timeout delay check
@@ -98,7 +99,7 @@ static void _update_lh2(void);
 static void radio_callback(uint8_t *pkt, uint8_t len) {
     (void)len;
 
-    _dotbot_vars.ts_last_packet_received = db_timer_ticks();
+    _dotbot_vars.ts_last_packet_received = db_timer_ticks(TIMER_DEV);
     uint8_t           *ptk_ptr           = pkt;
     protocol_header_t *header            = (protocol_header_t *)ptk_ptr;
     // Check destination address matches
@@ -166,9 +167,6 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
 
 //=========================== main =============================================
 
-/**
- *  @brief The program starts executing here.
- */
 int main(void) {
     db_board_init();
 #ifdef ENABLE_DOTBOT_LOG_DATA
@@ -194,10 +192,10 @@ int main(void) {
     // Retrieve the device id once at startup
     _dotbot_vars.device_id = db_device_id();
 
-    db_timer_init();
-    db_timer_set_periodic_ms(0, DB_TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
-    db_timer_set_periodic_ms(1, DB_ADVERTIZEMENT_DELAY_MS, &_advertise);
-    db_timer_set_periodic_ms(2, DB_LH2_UPDATE_DELAY_MS, &_update_lh2);
+    db_timer_init(TIMER_DEV);
+    db_timer_set_periodic_ms(TIMER_DEV, 0, DB_TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
+    db_timer_set_periodic_ms(TIMER_DEV, 1, DB_ADVERTIZEMENT_DELAY_MS, &_advertise);
+    db_timer_set_periodic_ms(TIMER_DEV, 2, DB_LH2_UPDATE_DELAY_MS, &_update_lh2);
     db_lh2_init(&_dotbot_vars.lh2, &db_lh2_d, &db_lh2_e);
     db_lh2_start();
 
@@ -338,7 +336,7 @@ static void _compute_angle(const protocol_lh2_location_t *next, const protocol_l
 }
 
 static void _timeout_check(void) {
-    uint32_t ticks = db_timer_ticks();
+    uint32_t ticks = db_timer_ticks(TIMER_DEV);
     if (ticks > _dotbot_vars.ts_last_packet_received + TIMEOUT_CHECK_DELAY_TICKS) {
         db_motors_set_speed(0, 0);
     }

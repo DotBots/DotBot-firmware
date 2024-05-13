@@ -17,36 +17,32 @@
 #include "rgbled.h"
 #include "timer.h"
 
-//=========================== defines =========================================
+//=========================== defines ==========================================
 
-//=========================== variables =========================================
+#define TIMER_DEV 0
 
-//=========================== main =========================================
+//=========================== main =============================================
 
-/**
- *  @brief The program starts executing here.
- */
 int main(void) {
     db_board_init();
-    db_timer_init();
+    db_timer_init(TIMER_DEV);
     db_rgbled_init();
 
     /* Change RGB colors in a loop */
     while (1) {
         db_rgbled_set(255, 0, 0);
-        db_timer_delay_s(2);
+        db_timer_delay_s(TIMER_DEV, 2);
         db_rgbled_set(0, 255, 0);
-        db_timer_delay_s(2);
+        db_timer_delay_s(TIMER_DEV, 2);
         db_rgbled_set(0, 0, 255);
-        db_timer_delay_s(2);
+        db_timer_delay_s(TIMER_DEV, 2);
         db_rgbled_set(255, 255, 0);
-        db_timer_delay_s(2);
+        db_timer_delay_s(TIMER_DEV, 2);
         db_rgbled_set(0, 255, 255);
-        db_timer_delay_s(2);
+        db_timer_delay_s(TIMER_DEV, 2);
         db_rgbled_set(255, 0, 255);
-        db_timer_delay_s(2);
+        db_timer_delay_s(TIMER_DEV, 2);
     }
 
-    // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
-    __NOP();
+    return 0;
 }
