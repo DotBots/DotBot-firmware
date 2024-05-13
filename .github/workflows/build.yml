@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: ["dotbot-v1", "dotbot-v2", "nrf52833dk", "nrf52840dk", "nrf5340dk-app", "nrf5340dk-net", "sailbot-v1", "xgo-v1", "xgo-v2"]
+        target: ["dotbot-v1", "dotbot-v2", "freebot-v1.0", "nrf52833dk", "nrf52840dk", "nrf5340dk-app", "nrf5340dk-net", "sailbot-v1", "xgo-v1", "xgo-v2"]
         config: ["Debug", "Release"]
     steps:
       - name: Checkout repo
@@ -110,6 +110,21 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: artifacts-nrf5340dk-net
+          path: ./artifacts
+      - name: Download Freebot artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-freebot-v1.0
+          path: ./artifacts
+      - name: Download XGO v1 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-xgo-v1
+          path: ./artifacts
+      - name: Download XGO v2 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-xgo-v2
           path: ./artifacts
       - name: Release
         uses: ncipollo/release-action@v1
