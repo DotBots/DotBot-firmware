@@ -77,6 +77,8 @@
 #define LIS3MDL_MASK_INT_SRC_MROI        (0x02)
 #define LIS3MDL_MASK_INT_SRC_INT         (0x01)
 
+#define I2C_DEV (0)
+
 typedef struct {
     const gpio_t *drdy_pin;
 } lis3mdl_vars_t;
@@ -95,24 +97,24 @@ void lis3mdl_init(const lis3mdl_conf_t *conf) {
     db_gpio_init(conf->mag_drdy, DB_GPIO_IN_PD);
 
     // init I2C
-    db_i2c_init(conf->scl, conf->sda);
-    db_i2c_begin();
+    db_i2c_init(I2C_DEV, conf->scl, conf->sda);
+    db_i2c_begin(I2C_DEV);
 
-    db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_WHO_AM_I_REG, &tmp, 1);
+    db_i2c_read_regs(I2C_DEV, LIS3MDL_ADDR, LIS3MDL_WHO_AM_I_REG, &tmp, 1);
     assert(tmp == LIS3MDL_WHO_AM_I_VAL);
 
     // enable temperature sensor, set x/y operation mode and set output data rate
     tmp = LIS3MDL_MASK_REG1_TEMP_EN | conf->xy_mode | conf->odr;
-    db_i2c_write_regs(LIS3MDL_ADDR, LIS3MDL_CTRL_REG1, &conf->scale, 1);
+    db_i2c_write_regs(I2C_DEV, LIS3MDL_ADDR, LIS3MDL_CTRL_REG1, &conf->scale, 1);
     // set scale
-    db_i2c_write_regs(LIS3MDL_ADDR, LIS3MDL_CTRL_REG2, &tmp, 1);
+    db_i2c_write_regs(I2C_DEV, LIS3MDL_ADDR, LIS3MDL_CTRL_REG2, &tmp, 1);
     // set conversion mode
     tmp = conf->z_mode | conf->op_mode;
-    db_i2c_write_regs(LIS3MDL_ADDR, LIS3MDL_CTRL_REG3, &tmp, 1);
+    db_i2c_write_regs(I2C_DEV, LIS3MDL_ADDR, LIS3MDL_CTRL_REG3, &tmp, 1);
     /* set z-axis operative mode */
-    db_i2c_write_regs(LIS3MDL_ADDR, LIS3MDL_CTRL_REG4, &conf->z_mode, 1);
+    db_i2c_write_regs(I2C_DEV, LIS3MDL_ADDR, LIS3MDL_CTRL_REG4, &conf->z_mode, 1);
 
-    db_i2c_end();
+    db_i2c_end(I2C_DEV);
 
     while (!lis3mdl_data_ready()) {}
 }
@@ -124,23 +126,23 @@ bool lis3mdl_data_ready(void) {
 void lis3mdl_read_magnetometer(lis3mdl_data_t *out) {
     uint8_t tmp[2] = { 0 };
 
-    db_i2c_begin();
-    db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_OUTX_L, &tmp, 2);
+    db_i2c_begin(I2C_DEV);
+    db_i2c_read_regs(I2C_DEV, LIS3MDL_ADDR, LIS3MDL_OUTX_L, &tmp, 2);
     out->x = (tmp[1] << 8) | tmp[0];
 
-    db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_OUTY_L, &tmp, 2);
+    db_i2c_read_regs(I2C_DEV, LIS3MDL_ADDR, LIS3MDL_OUTY_L, &tmp, 2);
     out->y = (tmp[1] << 8) | tmp[0];
 
-    db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_OUTZ_L, &tmp, 2);
+    db_i2c_read_regs(I2C_DEV, LIS3MDL_ADDR, LIS3MDL_OUTZ_L, &tmp, 2);
     out->z = (tmp[1] << 8) | tmp[0];
-    db_i2c_end();
+    db_i2c_end(I2C_DEV);
 }
 
 void lis3mdl_read_temperature(int16_t *temperature) {
     uint16_t temp = 0;
-    db_i2c_begin();
-    db_i2c_read_regs(LIS3MDL_ADDR, LIS3MDL_TEMP_OUT_L, &temp, 2);
+    db_i2c_begin(I2C_DEV);
+    db_i2c_read_regs(I2C_DEV, LIS3MDL_ADDR, LIS3MDL_TEMP_OUT_L, &temp, 2);
     temp /= 256;
     *temperature = LIS3MDL_TEMPERATURE_OFFSET + temp;
-    db_i2c_end();
+    db_i2c_end(I2C_DEV);
 }

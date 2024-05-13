@@ -33,12 +33,14 @@
 #define AS5048B_ANGLE_8MSB (0xFE)
 #define AS5048B_ANGLE_6LSB (0xFF)
 
+#define I2C_DEV (0)
+
 //============================== public ========================================
 
 // Initialise I2C communication with rotary encoder
 void as5048b_init(void) {
     // AS5048B doesn't have a WHO_AM_I register
-    db_i2c_init(&db_scl, &db_sda);
+    db_i2c_init(I2C_DEV, &db_scl, &db_sda);
 }
 
 // Reads two 8-bit registers where the 14-bit raw absolute angle is stored
@@ -46,10 +48,10 @@ uint16_t as5048b_i2c_read_raw_angle(void) {
     uint8_t data_registers[2];
 
     // Read registers directly via I2C
-    db_i2c_begin();
-    db_i2c_read_regs(AS5048B_SLAVE_ADDRESS, AS5048B_ANGLE_8MSB, &data_registers[0], 1);
-    db_i2c_read_regs(AS5048B_SLAVE_ADDRESS, AS5048B_ANGLE_6LSB, &data_registers[1], 1);
-    db_i2c_end();
+    db_i2c_begin(I2C_DEV);
+    db_i2c_read_regs(I2C_DEV, AS5048B_SLAVE_ADDRESS, AS5048B_ANGLE_8MSB, &data_registers[0], 1);
+    db_i2c_read_regs(I2C_DEV, AS5048B_SLAVE_ADDRESS, AS5048B_ANGLE_6LSB, &data_registers[1], 1);
+    db_i2c_end(I2C_DEV);
 
     // Combine MSB and LSB to get the 14-bit angle value
     return (uint16_t)(data_registers[0] << 6) | data_registers[1];
