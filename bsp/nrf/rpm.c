@@ -38,6 +38,8 @@
 #define RPM_RIGHT_GPIOTE_CHAN (1)           ///< GPIOTE channel used for right side gpio event
 #define RPM_UPDATE_PERIOD_MS  (50)          ///< Counters update period in ms
 
+#define RPM_TIMER_DEV (0)
+
 /**
  * Helper macro to compute speed in cm/s
  *
@@ -141,8 +143,8 @@ void db_rpm_init(void) {
     NRF_PPI->CHENSET = (1 << RPM_RIGHT_PPI_CHAN) | (1 << RPM_LEFT_PPI_CHAN);
 
     // Configure RTC timer period used to update counters
-    db_timer_init();
-    db_timer_set_periodic_ms(0, RPM_UPDATE_PERIOD_MS, &_update_counters);
+    db_timer_init(RPM_TIMER_DEV);
+    db_timer_set_periodic_ms(RPM_TIMER_DEV, 0, RPM_UPDATE_PERIOD_MS, &_update_counters);
 
     // Start timers used as counters
     RPM_LEFT_TIMER->TASKS_START  = 1;
