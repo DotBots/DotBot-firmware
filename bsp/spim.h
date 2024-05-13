@@ -29,6 +29,8 @@
 #define DB_SPIM_FREQ_16M  (0x0A000000)  ///< 16 MHz
 #define DB_SPIM_FREQ_32M  (0x14000000)  ///< 32 MHz
 
+typedef uint8_t spim_t;  ///< SPIM peripheral index
+
 /// SPIM pin configuration
 typedef struct {
     const gpio_t *mosi;  ///< Master Out Slave In
@@ -47,40 +49,45 @@ typedef enum {
 /**
  * @brief Initialize the SPIM peripheral
  *
- * @param[in] conf      pointer to configuration struct
+ * @param[in]   spim    SPIM reference used
+ * @param[in]   conf    Pointer to configuration struct
  */
-void db_spim_init(const db_spim_conf_t *conf);
+void db_spim_init(spim_t spim, const db_spim_conf_t *conf);
 
 /**
  * @brief Begin transmission on SPIM
  *
+ * @param[in]   spim    SPIM reference used
  * @param[in]   cs      Pointer to the chip select pin
  * @param[in]   mode    SPI mode
  * @param[in]   freq    SPI clock frequency
  */
-void db_spim_begin(const gpio_t *cs, db_spim_mode_t mode, uint32_t freq);
+void db_spim_begin(spim_t spim, const gpio_t *cs, db_spim_mode_t mode, uint32_t freq);
 
 /**
  * @brief End transmission on SPIM
  *
+ * @param[in]   spim    SPIM reference used
  * @param[in]   cs      Pointer to the chip select pin
  */
-void db_spim_end(const gpio_t *cs);
+void db_spim_end(spim_t spim, const gpio_t *cs);
 
 /**
  * @brief Send bytes over SPI
  *
+ * @param[in]   spim    SPIM reference used
  * @param[in]   bytes   Pointer to the input bytes
  * @param[in]   len     Length of the bytes to send
  */
-void db_spim_send(const void *bytes, size_t len);
+void db_spim_send(spim_t spim, const void *bytes, size_t len);
 
 /**
  * @brief Receive bytes over SPI
  *
+ * @param[in]   spim    SPIM reference used
  * @param[in]   bytes   Pointer to the output bytes
  * @param[in]   len     Length of the bytes to receive
  */
-void db_spim_receive(const void *bytes, size_t len);
+void db_spim_receive(spim_t spim, const void *bytes, size_t len);
 
 #endif
