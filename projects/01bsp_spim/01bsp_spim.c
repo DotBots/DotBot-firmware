@@ -22,6 +22,7 @@
 #define SX1276_REG_VERSION      (0x42)
 #define SX1276_VERSION_EXPECTED (0x12)
 
+#define SPIM_DEV       (0)
 #define SPIM_FREQUENCY DB_SPIM_FREQ_4M
 
 //=========================== variables ========================================
@@ -45,23 +46,23 @@ const db_spim_conf_t _spim_conf = {
 };
 
 static void _read_reg(uint8_t reg, uint8_t *value) {
-    db_spim_begin(&_cs_pin, DB_SPIM_MODE_0, SPIM_FREQUENCY);
-    db_spim_send(&reg, 1);
-    db_spim_receive(value, 1);
-    db_spim_end(&_cs_pin);
+    db_spim_begin(SPIM_DEV, &_cs_pin, DB_SPIM_MODE_0, SPIM_FREQUENCY);
+    db_spim_send(SPIM_DEV, &reg, 1);
+    db_spim_receive(SPIM_DEV, value, 1);
+    db_spim_end(SPIM_DEV, &_cs_pin);
 }
 
 static void _write_reg(uint8_t reg, uint8_t value) {
-    db_spim_begin(&_cs_pin, DB_SPIM_MODE_0, SPIM_FREQUENCY);
-    db_spim_send(&reg, 1);
-    db_spim_receive(&value, 1);
-    db_spim_end(&_cs_pin);
+    db_spim_begin(SPIM_DEV, &_cs_pin, DB_SPIM_MODE_0, SPIM_FREQUENCY);
+    db_spim_send(SPIM_DEV, &reg, 1);
+    db_spim_receive(SPIM_DEV, &value, 1);
+    db_spim_end(SPIM_DEV, &_cs_pin);
 }
 
 //=========================== main =============================================
 
 int main(void) {
-    db_spim_init(&_spim_conf);
+    db_spim_init(SPIM_DEV, &_spim_conf);
 
     db_gpio_init(&_cs_pin, DB_GPIO_OUT);
     db_gpio_set(&_cs_pin);
