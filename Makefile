@@ -61,9 +61,13 @@ else ifeq (nrf5340dk-net,$(BUILD_TARGET))
     #
   # Bootloader not supported on nrf5340 network core
   BOOTLOADER :=
-else ifeq (freebot,$(BUILD_TARGET))
-  PROJECTS ?= 03app_freebot
-  ARTIFACT_PROJECTS := 03app_dotbot
+else ifneq (,$(filter freebot-v%,$(BUILD_TARGET)))
+  PROJECTS ?= \
+    03app_freebot \
+    #
+  ARTIFACT_PROJECTS := 03app_freebot
+  # Bootloader not supported on freebot
+  BOOTLOADER :=
 else ifneq (,$(filter xgo%,$(BUILD_TARGET)))
   PROJECTS ?= \
     03app_xgo \
