@@ -63,6 +63,8 @@
 #define N25Q128_COMMAND_ERASE_RESUME    (0x7A)
 #define N25Q128_COMMAND_ERASE_SUSPEND   (0x75)
 
+#define SPIM_DEV (0)
+
 typedef struct {
     gpio_t                   cs;
     n25q128_identification_t id;
@@ -75,17 +77,17 @@ static n25q128_vars_t _n25q128_vars = { 0 };
 //============================== private =======================================
 
 static void _send_command(uint8_t command) {
-    db_spim_begin(&_n25q128_vars.cs, SPIM_MODE, SPIM_FREQUENCY);
-    db_spim_send(&command, sizeof(uint8_t));
-    db_spim_end(&_n25q128_vars.cs);
+    db_spim_begin(SPIM_DEV, &_n25q128_vars.cs, SPIM_MODE, SPIM_FREQUENCY);
+    db_spim_send(SPIM_DEV, &command, sizeof(uint8_t));
+    db_spim_end(SPIM_DEV, &_n25q128_vars.cs);
 }
 
 static void _read_identification(void) {
     uint8_t command = N25Q128_COMMAND_READ_ID;
-    db_spim_begin(&_n25q128_vars.cs, SPIM_MODE, SPIM_FREQUENCY);
-    db_spim_send(&command, 1);
-    db_spim_receive(&_n25q128_vars.id, sizeof(n25q128_identification_t));
-    db_spim_end(&_n25q128_vars.cs);
+    db_spim_begin(SPIM_DEV, &_n25q128_vars.cs, SPIM_MODE, SPIM_FREQUENCY);
+    db_spim_send(SPIM_DEV, &command, 1);
+    db_spim_receive(SPIM_DEV, &_n25q128_vars.id, sizeof(n25q128_identification_t));
+    db_spim_end(SPIM_DEV, &_n25q128_vars.cs);
 }
 
 //============================== public ========================================
@@ -99,7 +101,7 @@ void n25q128_init(const n25q128_conf_t *conf) {
     _n25q128_vars.cs.port = conf->cs->port;
     _n25q128_vars.cs.pin  = conf->cs->pin;
 
-    db_spim_init(&_spim_conf);
+    db_spim_init(SPIM_DEV, &_spim_conf);
 
     db_gpio_init(&_n25q128_vars.cs, DB_GPIO_OUT);
     db_gpio_set(&_n25q128_vars.cs);
@@ -140,10 +142,10 @@ void n25q128_write_disable(void) {
 
 void n25q128_read_status_register(uint8_t *status) {
     uint8_t command = N25Q128_COMMAND_READ_STATUS_REG;
-    db_spim_begin(&_n25q128_vars.cs, SPIM_MODE, SPIM_FREQUENCY);
-    db_spim_send(&command, sizeof(uint8_t));
-    db_spim_receive(status, sizeof(uint8_t));
-    db_spim_end(&_n25q128_vars.cs);
+    db_spim_begin(SPIM_DEV, &_n25q128_vars.cs, SPIM_MODE, SPIM_FREQUENCY);
+    db_spim_send(SPIM_DEV, &command, sizeof(uint8_t));
+    db_spim_receive(SPIM_DEV, status, sizeof(uint8_t));
+    db_spim_end(SPIM_DEV, &_n25q128_vars.cs);
 }
 
 void n25q128_program_page(uint32_t address, uint8_t *in, size_t length) {
@@ -156,10 +158,10 @@ void n25q128_program_page(uint32_t address, uint8_t *in, size_t length) {
     command[2]        = addr_ptr[1];
     command[3]        = addr_ptr[0];
     // memcpy(&command[1], &address, 3);
-    db_spim_begin(&_n25q128_vars.cs, SPIM_MODE, SPIM_FREQUENCY);
-    db_spim_send(&command, 4);
-    db_spim_send(in, length);
-    db_spim_end(&_n25q128_vars.cs);
+    db_spim_begin(SPIM_DEV, &_n25q128_vars.cs, SPIM_MODE, SPIM_FREQUENCY);
+    db_spim_send(SPIM_DEV, &command, 4);
+    db_spim_send(SPIM_DEV, in, length);
+    db_spim_end(SPIM_DEV, &_n25q128_vars.cs);
     uint8_t status = 0;
     do {
         n25q128_read_status_register(&status);
@@ -176,9 +178,9 @@ void n25q128_sector_erase(uint32_t address) {
     command[2]        = addr_ptr[1];
     command[3]        = addr_ptr[0];
     // memcpy(&command[1], &address, 3);
-    db_spim_begin(&_n25q128_vars.cs, SPIM_MODE, SPIM_FREQUENCY);
-    db_spim_send(&command, 4);
-    db_spim_end(&_n25q128_vars.cs);
+    db_spim_begin(SPIM_DEV, &_n25q128_vars.cs, SPIM_MODE, SPIM_FREQUENCY);
+    db_spim_send(SPIM_DEV, &command, 4);
+    db_spim_end(SPIM_DEV, &_n25q128_vars.cs);
     uint8_t status = 0;
     do {
         n25q128_read_status_register(&status);
@@ -202,8 +204,8 @@ void n25q128_read(uint32_t address, uint8_t *out, size_t length) {
     command[1]        = addr_ptr[2];
     command[2]        = addr_ptr[1];
     command[3]        = addr_ptr[0];
-    db_spim_begin(&_n25q128_vars.cs, SPIM_MODE, SPIM_FREQUENCY);
-    db_spim_send(&command, 4);
-    db_spim_receive(out, length);
-    db_spim_end(&_n25q128_vars.cs);
+    db_spim_begin(SPIM_DEV, &_n25q128_vars.cs, SPIM_MODE, SPIM_FREQUENCY);
+    db_spim_send(SPIM_DEV, &command, 4);
+    db_spim_receive(SPIM_DEV, out, length);
+    db_spim_end(SPIM_DEV, &_n25q128_vars.cs);
 }
