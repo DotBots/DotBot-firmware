@@ -15,6 +15,7 @@
 
 //=========================== defines ==========================================
 
+#define TIMER_DEV           (0)
 #define DB_BUFFER_MAX_BYTES (255U)       ///< Max bytes in UART receive buffer
 #define DB_UART_BAUDRATE    (1000000UL)  ///< UART baudrate used by the gateway
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
@@ -119,18 +120,15 @@ static void _update_move_raw_command(protocol_move_raw_command_t *command) {
 
 //=========================== main =============================================
 
-/**
- *  @brief The program starts executing here.
- */
 int main(void) {
     _gw_vars.led1_blink = true;
     // Initialize user feedback LEDs
     db_gpio_init(&db_led1, DB_GPIO_OUT);  // Global status
     db_gpio_set(&db_led1);
-    db_timer_init();
-    db_timer_set_periodic_ms(0, 50, _led1_blink_fast);
-    db_timer_set_periodic_ms(1, 20, _led2_shutdown);
-    db_timer_set_periodic_ms(2, 20, _led3_shutdown);
+    db_timer_init(TIMER_DEV);
+    db_timer_set_periodic_ms(TIMER_DEV, 0, 50, _led1_blink_fast);
+    db_timer_set_periodic_ms(TIMER_DEV, 1, 20, _led2_shutdown);
+    db_timer_set_periodic_ms(TIMER_DEV, 2, 20, _led3_shutdown);
     db_gpio_init(&db_led2, DB_GPIO_OUT);  // Packet received from Radio (e.g from a DotBot)
     db_gpio_set(&db_led2);
     db_gpio_init(&db_led3, DB_GPIO_OUT);  // Packet received from UART (e.g from the computer)
@@ -158,7 +156,7 @@ int main(void) {
     db_gpio_init(&db_btn1, DB_GPIO_IN_PU);
 
     // Initialization done, wait a bit and shutdown status LED
-    db_timer_delay_s(1);
+    db_timer_delay_s(TIMER_DEV, 1);
     db_gpio_set(&db_led1);
     _gw_vars.led1_blink = false;
 
@@ -178,7 +176,7 @@ int main(void) {
             prev_left  = command.left_y;
             prev_right = command.right_y;
 
-            db_timer_delay_ms(50);
+            db_timer_delay_ms(TIMER_DEV, 50);
         }
 
         while (_gw_vars.radio_queue.current != _gw_vars.radio_queue.last) {

@@ -16,18 +16,16 @@
 #include "rpm.h"
 #include "timer.h"
 
-//=========================== defines =========================================
+//=========================== defines ==========================================
 
-//=========================== variables =========================================
+#define TIMER_DEV (0)
 
-//=========================== main =========================================
+//=========================== main =============================================
 
-/**
- *  @brief The program starts executing here.
- */
 int main(void) {
     puts("RPM application");
     db_board_init();
+    db_timer_init(TIMER_DEV);
     db_rpm_init();
 
     while (1) {
@@ -43,9 +41,8 @@ int main(void) {
             (int)values.right.speed,
             values.right.rpm,
             values.right.rps);
-        db_timer_delay_ms(500);
+        db_timer_delay_ms(TIMER_DEV, 500);
     }
 
-    // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
-    __NOP();
+    return 0;
 }

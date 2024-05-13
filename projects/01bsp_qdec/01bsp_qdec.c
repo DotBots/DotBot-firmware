@@ -20,6 +20,7 @@
 
 #define QDEC_LEFT  0
 #define QDEC_RIGHT 1
+#define TIMER_DEV  0
 
 typedef struct {
     bool left_overflow;
@@ -55,7 +56,7 @@ int main(void) {
     db_qdec_init(QDEC_LEFT, &qdec_left, _callback, (void *)&_qdec_vars.left_overflow);
     db_qdec_init(QDEC_RIGHT, &qdec_right, _callback, (void *)&_qdec_vars.right_overflow);
 
-    db_timer_init();
+    db_timer_init(TIMER_DEV);
 
     while (1) {
         if (!_qdec_vars.left_overflow) {
@@ -70,6 +71,6 @@ int main(void) {
             printf("ACC right (overflow): %i\n", db_qdec_read_and_clear(QDEC_RIGHT));
             _qdec_vars.right_overflow = false;
         }
-        db_timer_delay_s(1);
+        db_timer_delay_s(TIMER_DEV, 1);
     }
 }

@@ -36,6 +36,7 @@
 
 //=========================== defines =========================================
 
+#define TIMER_DEV                   (0)
 #define CONTROL_LOOP_PERIOD_MS      (1000)  ///< control loop period
 #define WAYPOINT_DISTANCE_THRESHOLD (10)    ///< in meters
 
@@ -131,7 +132,7 @@ int main(void) {
     servos_set(0, _sailbot_vars.sail_trim);
 
     // Init the timers
-    db_timer_init();
+    db_timer_init(TIMER_DEV);
 
     // Init the wind direction sensor
     as5048b_init();
@@ -141,9 +142,9 @@ int main(void) {
     gps_init(NULL);
 
     // Set timer callbacks
-    db_timer_set_periodic_ms(0, TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
-    db_timer_set_periodic_ms(1, ADVERTISEMENT_PERIOD_MS, &_advertise);
-    db_timer_set_periodic_ms(2, CONTROL_LOOP_PERIOD_MS, &control_loop_callback);
+    db_timer_set_periodic_ms(TIMER_DEV, 0, TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
+    db_timer_set_periodic_ms(TIMER_DEV, 1, ADVERTISEMENT_PERIOD_MS, &_advertise);
+    db_timer_set_periodic_ms(TIMER_DEV, 2, CONTROL_LOOP_PERIOD_MS, &control_loop_callback);
 
     // Wait for radio packets to arrive
     while (1) {
@@ -192,7 +193,7 @@ void radio_callback(uint8_t *packet, uint8_t length) {
     protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
 
     // timestamp the arrival of the packet
-    _sailbot_vars.ts_last_packet_received = db_timer_ticks();
+    _sailbot_vars.ts_last_packet_received = db_timer_ticks(TIMER_DEV);
 
     // Check destination address matches
     if (header->dst != DB_BROADCAST_ADDRESS && header->dst != db_device_id()) {
@@ -373,7 +374,7 @@ static float calculate_error(float heading, float bearing) {
 }
 
 static void _timeout_check(void) {
-    uint32_t ticks = db_timer_ticks();
+    uint32_t ticks = db_timer_ticks(TIMER_DEV);
     if (ticks > _sailbot_vars.ts_last_packet_received + TIMEOUT_CHECK_DELAY_TICKS && _sailbot_vars.ts_last_packet_received > 0) {
         if (_sailbot_vars.autonomous_operation && _sailbot_vars.radio_override) {
             _sailbot_vars.radio_override = false;

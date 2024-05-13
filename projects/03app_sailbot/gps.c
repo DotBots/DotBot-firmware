@@ -20,6 +20,7 @@
 
 //=========================== defines ==========================================
 
+#define TIMER_DEV          (0)
 #define GPS_UART_MAX_BYTES (128U)  ///< max bytes in UART receive buffer, must be greater than 82 bytes for NMEA
 #define UART_SLEEP         1000    ///< delay after calling UART functions, a short delay can result in invalid writing of GPS data after a reset.
 
@@ -233,21 +234,21 @@ void gps_init(gps_rx_cb_t callback) {
 
     // configure UART at 9600 bauds
     db_uart_init(0, &_rx_pin, &_tx_pin, 9600, &uart_callback);
-    db_timer_delay_ms(UART_SLEEP);
+    db_timer_delay_ms(TIMER_DEV, UART_SLEEP);
 
     // command the module to increase the baud rate to 38400
     db_uart_write(0, nmea_cmd_set_baud_rate_115200, 20);
 
     // reinit myself at 38400 bauds
     db_uart_init(0, &_rx_pin, &_tx_pin, 115200, &uart_callback);
-    db_timer_delay_ms(UART_SLEEP);
+    db_timer_delay_ms(TIMER_DEV, UART_SLEEP);
 
     db_uart_write(0, nmea_cmd_set_nmea_output, 51);
-    db_timer_delay_ms(UART_SLEEP);
+    db_timer_delay_ms(TIMER_DEV, UART_SLEEP);
 
     // command to module to use 1hz output data rate
     db_uart_write(0, nmea_cmd_set_1hz_data_rate, 17);
-    db_timer_delay_ms(UART_SLEEP);
+    db_timer_delay_ms(TIMER_DEV, UART_SLEEP);
 
     _gps_vars.callback = callback;
 }
