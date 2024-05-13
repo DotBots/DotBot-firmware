@@ -53,6 +53,8 @@ static const gpio_t mag_int = { .port = DB_LIS2MDL_INT_PORT, .pin = DB_LIS2MDL_I
 // 1 / 6842, where 6842 is sensitivy from the datasheet
 #define LIS2MDL_SENSITIVITY 1.5f
 
+#define I2C_DEV (0)
+
 typedef struct {
     lis2mdl_data_ready_cb_t callback;
     bool                    data_ready;
@@ -80,22 +82,22 @@ void lis2mdl_init(lis2mdl_data_ready_cb_t callback) {
     db_gpio_init_irq(&mag_int, DB_GPIO_IN_PD, DB_GPIO_IRQ_EDGE_RISING, cb_mag_int, NULL);
 
     // init I2C
-    db_i2c_init(&scl, &sda);
-    db_i2c_begin();
-    db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_WHO_AM_I_REG, &who_am_i, 1);
+    db_i2c_init(I2C_DEV, &scl, &sda);
+    db_i2c_begin(I2C_DEV);
+    db_i2c_read_regs(I2C_DEV, LIS2MDL_ADDR, LIS2MDL_WHO_AM_I_REG, &who_am_i, 1);
     assert(who_am_i == LIS2MDL_WHO_AM_I_VAL);
 
     // set continous mode, output data rate at 10 Hz
     tmp = 0x00;
-    db_i2c_write_regs(LIS2MDL_ADDR, LIS2MDL_CFG_REG_A_REG, &tmp, 1);
+    db_i2c_write_regs(I2C_DEV, LIS2MDL_ADDR, LIS2MDL_CFG_REG_A_REG, &tmp, 1);
     // keep default values of REG_B
     tmp = 0x00;
-    db_i2c_write_regs(LIS2MDL_ADDR, LIS2MDL_CFG_REG_B_REG, &tmp, 1);
+    db_i2c_write_regs(I2C_DEV, LIS2MDL_ADDR, LIS2MDL_CFG_REG_B_REG, &tmp, 1);
     // set DRDY_on_PIN bit
     tmp = 0x01;
-    db_i2c_write_regs(LIS2MDL_ADDR, LIS2MDL_CFG_REG_C_REG, &tmp, 1);
+    db_i2c_write_regs(I2C_DEV, LIS2MDL_ADDR, LIS2MDL_CFG_REG_C_REG, &tmp, 1);
 
-    db_i2c_end();
+    db_i2c_end(I2C_DEV);
 
     // trigger dummy read of data
     lis2mdl_i2c_read_magnetometer(&dummy_data);
@@ -105,31 +107,31 @@ void lis2mdl_init(lis2mdl_data_ready_cb_t callback) {
 void lis2mdl_i2c_read_magnetometer(lis2mdl_compass_data_t *out) {
     uint8_t tmp;
 
-    db_i2c_begin();
+    db_i2c_begin(I2C_DEV);
 
     // make sure that data is ready for read
-    db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_STATUS_REG, &tmp, 1);
+    db_i2c_read_regs(I2C_DEV, LIS2MDL_ADDR, LIS2MDL_STATUS_REG, &tmp, 1);
 
     if ((tmp & 0x8) == 0) {
-        db_i2c_end();
+        db_i2c_end(I2C_DEV);
         return;
     }
 
-    db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_OUTX_L_REG, &tmp, 1);
+    db_i2c_read_regs(I2C_DEV, LIS2MDL_ADDR, LIS2MDL_OUTX_L_REG, &tmp, 1);
     out->x = (int16_t)tmp;
-    db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_OUTX_H_REG, &tmp, 1);
+    db_i2c_read_regs(I2C_DEV, LIS2MDL_ADDR, LIS2MDL_OUTX_H_REG, &tmp, 1);
     out->x |= (int16_t)tmp << 8;
 
-    db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_OUTY_L_REG, &tmp, 1);
+    db_i2c_read_regs(I2C_DEV, LIS2MDL_ADDR, LIS2MDL_OUTY_L_REG, &tmp, 1);
     out->y = (int16_t)tmp;
-    db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_OUTY_H_REG, &tmp, 1);
+    db_i2c_read_regs(I2C_DEV, LIS2MDL_ADDR, LIS2MDL_OUTY_H_REG, &tmp, 1);
     out->y |= (int16_t)tmp << 8;
 
-    db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_OUTZ_L_REG, &tmp, 1);
+    db_i2c_read_regs(I2C_DEV, LIS2MDL_ADDR, LIS2MDL_OUTZ_L_REG, &tmp, 1);
     out->z = (int16_t)tmp;
-    db_i2c_read_regs(LIS2MDL_ADDR, LIS2MDL_OUTZ_H_REG, &tmp, 1);
+    db_i2c_read_regs(I2C_DEV, LIS2MDL_ADDR, LIS2MDL_OUTZ_H_REG, &tmp, 1);
     out->z |= (int16_t)tmp << 8;
-    db_i2c_end();
+    db_i2c_end(I2C_DEV);
 
     // compensate for hard-iron offsets
     out->x -= SAILBOT_REV10_OFFSET_X;
