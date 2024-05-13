@@ -177,7 +177,7 @@ void db_timer_hf_delay_s(timer_hf_t timer, uint32_t s) {
 
 //=========================== interrupt ========================================
 
-void _timer_hf_isr(timer_hf_t timer) {
+static void _timer_hf_isr(timer_hf_t timer) {
     if (_devs[timer].p->EVENTS_COMPARE[_devs[timer].cc_num] == 1) {
         _devs[timer].p->EVENTS_COMPARE[_devs[timer].cc_num] = 0;
         _timer_hf_vars[timer].running                       = false;
