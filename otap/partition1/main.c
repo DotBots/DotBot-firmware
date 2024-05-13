@@ -23,6 +23,8 @@
 
 //=========================== defines ==========================================
 
+#define TIMER_DEV (0)
+
 typedef struct {
     db_partitions_table_t table;
     db_ota_cpu_type_t     cpu;
@@ -92,8 +94,8 @@ int main(void) {
 #endif
 
 #ifdef DB_LED2_PIN
-    db_timer_init();
-    db_timer_set_periodic_ms(0, 500, &_toggle_led);
+    db_timer_init(TIMER_DEV);
+    db_timer_set_periodic_ms(TIMER_DEV, 0, 500, &_toggle_led);
 #endif
 
     while (1) {
