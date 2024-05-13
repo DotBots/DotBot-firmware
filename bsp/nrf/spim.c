@@ -10,11 +10,12 @@
  */
 
 #include <assert.h>
-#include <nrf.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <nrf.h>
+#include <nrf_peripherals.h>
 
 #include "clock.h"
 #include "gpio.h"
@@ -22,19 +23,10 @@
 
 //=========================== defines ==========================================
 
-#if defined(NRF5340_XXAA)
-#if defined(NRF_APPLICATION)
-#define DB_SPIM (NRF_SPIM0_S)  ///< SPIM peripheral used
-#elif defined(NRF_NETWORK)
-#define DB_SPIM (NRF_SPIM0_NS)  ///< SPIM peripheral used
-#endif
-#define DB_SPIM_IRQ_HANDLER (SERIAL0_IRQHandler)  ///< SPIM IRQ handler function
-#define DB_SPIM_IRQ         (SERIAL0_IRQn)        ///< SPIM IRQ
-#else
-#define DB_SPIM             (NRF_SPIM0)                                     ///< SPIM peripheral used
-#define DB_SPIM_IRQ_HANDLER (SPIM0_SPIS0_TWIM0_TWIS0_SPI0_TWI0_IRQHandler)  ///< SPIM IRQ handler function
-#define DB_SPIM_IRQ         (SPIM0_SPIS0_TWIM0_TWIS0_SPI0_TWI0_IRQn)        ///< SPIM IRQ
-#endif
+typedef struct {
+    NRF_SPIM_Type *p;
+    IRQn_Type      irq;
+} spim_conf_t;
 
 typedef struct {
     bool running;  ///< whether bytes are being sent/received
@@ -42,12 +34,60 @@ typedef struct {
 
 //=========================== variables ========================================
 
-static spim_vars_t _spim_vars;
+static const spim_conf_t _devs[SPIM_COUNT] = {
+#if defined(NRF5340_XXAA)
+    {
+#if defined(NRF_APPLICATION)
+        .p = NRF_SPIM0_S,
+#else
+        .p = NRF_SPIM0_NS,
+#endif
+        .irq = SERIAL0_IRQn,
+    },
+#if defined(NRF_APPLICATION)
+    {
+        .p   = NRF_SPIM1_S,
+        .irq = SERIAL1_IRQn,
+    },
+    {
+        .p   = NRF_SPIM2_S,
+        .irq = SERIAL2_IRQn,
+    },
+    {
+        .p   = NRF_SPIM3_S,
+        .irq = SERIAL3_IRQn,
+    },
+    {
+        .p   = NRF_SPIM4_S,
+        .irq = SPIM4_IRQn,
+    },
+#endif
+#else
+    {
+        .p   = NRF_SPIM0,
+        .irq = SPIM0_SPIS0_TWIM0_TWIS0_SPI0_TWI0_IRQn,
+    },
+    {
+        .p   = NRF_SPIM1,
+        .irq = SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQn,
+    },
+    {
+        .p   = NRF_SPIM2,
+        .irq = SPIM2_SPIS2_SPI2_IRQn,
+    },
+    {
+        .p   = NRF_SPIM3,
+        .irq = SPIM3_IRQn,
+    },
+#endif
+};
+
+static spim_vars_t _spim_vars[SPIM_COUNT] = { 0 };
 
 //=========================== public ===========================================
 
-void db_spim_init(const db_spim_conf_t *conf) {
-    _spim_vars.running = false;
+void db_spim_init(spim_t spim, const db_spim_conf_t *conf) {
+    _spim_vars[spim].running = false;
 
     db_hfclk_init();
 
@@ -60,67 +100,108 @@ void db_spim_init(const db_spim_conf_t *conf) {
     nrf_port[conf->mosi->port]->PIN_CNF[conf->mosi->pin] |= (GPIO_PIN_CNF_DRIVE_H0H1 << GPIO_PIN_CNF_DRIVE_Pos);
     nrf_port[conf->miso->port]->PIN_CNF[conf->miso->pin] |= (GPIO_PIN_CNF_DRIVE_H0H1 << GPIO_PIN_CNF_DRIVE_Pos);
 
-    DB_SPIM->PSEL.MOSI = (conf->mosi->port << SPIM_PSEL_MOSI_PORT_Pos) |
-                         (conf->mosi->pin << SPIM_PSEL_MOSI_PIN_Pos) |
-                         (SPIM_PSEL_MOSI_CONNECT_Connected << SPIM_PSEL_MOSI_CONNECT_Pos);
-    DB_SPIM->PSEL.SCK = (conf->sck->port << SPIM_PSEL_SCK_PORT_Pos) |
-                        (conf->sck->pin << SPIM_PSEL_SCK_PIN_Pos) |
-                        (SPIM_PSEL_SCK_CONNECT_Connected << SPIM_PSEL_SCK_CONNECT_Pos);
-    DB_SPIM->PSEL.MISO = (conf->miso->port << SPIM_PSEL_MISO_PORT_Pos) |
-                         (conf->miso->pin << SPIM_PSEL_MISO_PIN_Pos) |
-                         (SPIM_PSEL_MISO_CONNECT_Connected << SPIM_PSEL_MISO_CONNECT_Pos);
+    _devs[spim].p->PSEL.MOSI = (conf->mosi->port << SPIM_PSEL_MOSI_PORT_Pos) |
+                               (conf->mosi->pin << SPIM_PSEL_MOSI_PIN_Pos) |
+                               (SPIM_PSEL_MOSI_CONNECT_Connected << SPIM_PSEL_MOSI_CONNECT_Pos);
+    _devs[spim].p->PSEL.SCK = (conf->sck->port << SPIM_PSEL_SCK_PORT_Pos) |
+                              (conf->sck->pin << SPIM_PSEL_SCK_PIN_Pos) |
+                              (SPIM_PSEL_SCK_CONNECT_Connected << SPIM_PSEL_SCK_CONNECT_Pos);
+    _devs[spim].p->PSEL.MISO = (conf->miso->port << SPIM_PSEL_MISO_PORT_Pos) |
+                               (conf->miso->pin << SPIM_PSEL_MISO_PIN_Pos) |
+                               (SPIM_PSEL_MISO_CONNECT_Connected << SPIM_PSEL_MISO_CONNECT_Pos);
 
-    NVIC_EnableIRQ(DB_SPIM_IRQ);
-    NVIC_ClearPendingIRQ(DB_SPIM_IRQ);
+    NVIC_EnableIRQ(_devs[spim].irq);
+    NVIC_ClearPendingIRQ(_devs[spim].irq);
 }
 
-void db_spim_begin(const gpio_t *cs, db_spim_mode_t mode, uint32_t freq) {
-    DB_SPIM->CONFIG    = mode;
-    DB_SPIM->FREQUENCY = freq;
-    DB_SPIM->ENABLE    = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
+void db_spim_begin(spim_t spim, const gpio_t *cs, db_spim_mode_t mode, uint32_t freq) {
+    _devs[spim].p->CONFIG    = mode;
+    _devs[spim].p->FREQUENCY = freq;
+    _devs[spim].p->ENABLE    = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
     db_gpio_clear(cs);
 }
 
-void db_spim_end(const gpio_t *cs) {
+void db_spim_end(spim_t spim, const gpio_t *cs) {
     db_gpio_set(cs);
-    DB_SPIM->ENABLE = SPIM_ENABLE_ENABLE_Disabled << SPIM_ENABLE_ENABLE_Pos;
+    _devs[spim].p->ENABLE = SPIM_ENABLE_ENABLE_Disabled << SPIM_ENABLE_ENABLE_Pos;
 }
 
-static void _start_transfer(void) {
-    _spim_vars.running   = true;
-    DB_SPIM->INTENSET    = SPIM_INTENSET_END_Enabled << SPIM_INTENSET_END_Pos;
-    DB_SPIM->EVENTS_END  = 0;
-    DB_SPIM->TASKS_START = 1;
+static void _start_transfer(spim_t spim) {
+    _spim_vars[spim].running   = true;
+    _devs[spim].p->INTENSET    = SPIM_INTENSET_END_Enabled << SPIM_INTENSET_END_Pos;
+    _devs[spim].p->EVENTS_END  = 0;
+    _devs[spim].p->TASKS_START = 1;
 
-    while (_spim_vars.running) {
+    while (_spim_vars[spim].running) {
         __WFE();
     }
-    DB_SPIM->INTENCLR = SPIM_INTENCLR_END_Enabled << SPIM_INTENCLR_END_Pos;
+    _devs[spim].p->INTENCLR = SPIM_INTENCLR_END_Enabled << SPIM_INTENCLR_END_Pos;
 }
 
-void db_spim_send(const void *bytes, size_t len) {
-    DB_SPIM->TXD.PTR = (uint32_t)bytes;
-    DB_SPIM->RXD.PTR = (uint32_t)NULL;
+void db_spim_send(spim_t spim, const void *bytes, size_t len) {
+    _devs[spim].p->TXD.PTR = (uint32_t)bytes;
+    _devs[spim].p->RXD.PTR = (uint32_t)NULL;
 
-    DB_SPIM->TXD.MAXCNT = len;
-    DB_SPIM->RXD.MAXCNT = 0;
-    _start_transfer();
+    _devs[spim].p->TXD.MAXCNT = len;
+    _devs[spim].p->RXD.MAXCNT = 0;
+    _start_transfer(spim);
 }
 
-void db_spim_receive(const void *bytes, size_t len) {
-    DB_SPIM->TXD.PTR = (uint32_t)NULL;
-    DB_SPIM->RXD.PTR = (uint32_t)bytes;
+void db_spim_receive(spim_t spim, const void *bytes, size_t len) {
+    _devs[spim].p->TXD.PTR = (uint32_t)NULL;
+    _devs[spim].p->RXD.PTR = (uint32_t)bytes;
 
-    DB_SPIM->TXD.MAXCNT = 0;
-    DB_SPIM->RXD.MAXCNT = len;
-    _start_transfer();
+    _devs[spim].p->TXD.MAXCNT = 0;
+    _devs[spim].p->RXD.MAXCNT = len;
+    _start_transfer(spim);
 }
 
 //=========================== interrupt ========================================
 
-void DB_SPIM_IRQ_HANDLER(void) {
-    if (DB_SPIM->EVENTS_END) {
-        DB_SPIM->EVENTS_END = 0;
-        _spim_vars.running  = false;
+void _spim_isr(spim_t spim) {
+    if (_devs[spim].p->EVENTS_END) {
+        _devs[spim].p->EVENTS_END = 0;
+        _spim_vars[spim].running  = false;
     }
 }
+
+#if defined(NRF5340_XXAA)
+void SERIAL0_IRQHandler(void) {
+    _spim_isr(0);
+}
+#if defined(NRF_APPLICATION)
+void SERIAL1_IRQHandler(void) {
+    _spim_isr(1);
+}
+
+void SERIAL2_IRQHandler(void) {
+    _spim_isr(2);
+}
+
+void SERIAL3_IRQHandler(void) {
+    _spim_isr(3);
+}
+
+void SPIM4_IRQHandler(void) {
+    _spim_isr(4);
+}
+#endif
+
+#else
+
+void SPIM0_SPIS0_TWIM0_TWIS0_SPI0_TWI0_IRQHandler(void) {
+    _spim_isr(0);
+}
+
+void SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQHandler(void) {
+    _spim_isr(1);
+}
+
+void SPIM2_SPIS2_SPI2_IRQHandler(void) {
+    _spim_isr(2);
+}
+
+void SPIM3_IRQHandler(void) {
+    _spim_isr(3);
+}
+#endif
