@@ -97,8 +97,7 @@ void db_timer_init(timer_t timer) {
     _devs[timer].p->TASKS_STOP  = 1;
     _devs[timer].p->TASKS_CLEAR = 1;
     _devs[timer].p->PRESCALER   = 0;  // Run RTC at 32768Hz
-    _devs[timer].p->EVTENSET    = (RTC_EVTENSET_COMPARE3_Enabled << RTC_EVTENSET_COMPARE3_Pos);
-    _devs[timer].p->INTENSET    = (RTC_EVTENSET_COMPARE3_Enabled << RTC_EVTENSET_COMPARE3_Pos);
+    _devs[timer].p->INTENSET    = (1 << (RTC_INTENSET_COMPARE0_Pos + _devs[timer].cc_num));
     NVIC_EnableIRQ(_devs[timer].irq);
 
     // Start the timer
@@ -116,7 +115,6 @@ void db_timer_set_periodic_ms(timer_t timer, uint8_t channel, uint32_t ms, timer
     _timer_vars[timer].timer_callback[channel].period_ticks = _ms_to_ticks(ms);
     _timer_vars[timer].timer_callback[channel].one_shot     = false;
     _timer_vars[timer].timer_callback[channel].callback     = cb;
-    _devs[timer].p->EVTENSET                                = (1 << (RTC_EVTENSET_COMPARE0_Pos + channel));
     _devs[timer].p->INTENSET                                = (1 << (RTC_INTENSET_COMPARE0_Pos + channel));
     _devs[timer].p->CC[channel]                             = _devs[timer].p->COUNTER + _timer_vars[timer].timer_callback[channel].period_ticks;
 }
@@ -128,7 +126,6 @@ void db_timer_set_oneshot_ticks(timer_t timer, uint8_t channel, uint32_t ticks, 
     _timer_vars[timer].timer_callback[channel].period_ticks = ticks;
     _timer_vars[timer].timer_callback[channel].one_shot     = true;
     _timer_vars[timer].timer_callback[channel].callback     = cb;
-    _devs[timer].p->EVTENSET                                = (1 << (RTC_EVTENSET_COMPARE0_Pos + channel));
     _devs[timer].p->INTENSET                                = (1 << (RTC_INTENSET_COMPARE0_Pos + channel));
     _devs[timer].p->CC[channel]                             = _devs[timer].p->COUNTER + _timer_vars[timer].timer_callback[channel].period_ticks;
 }
@@ -184,7 +181,6 @@ static void _timer_isr(timer_t timer) {
         if (_devs[timer].p->EVENTS_COMPARE[channel] == 1) {
             _devs[timer].p->EVENTS_COMPARE[channel] = 0;
             if (_timer_vars[timer].timer_callback[channel].one_shot) {
-                _devs[timer].p->EVTENCLR = (1 << (RTC_EVTENCLR_COMPARE0_Pos + channel));
                 _devs[timer].p->INTENCLR = (1 << (RTC_INTENCLR_COMPARE0_Pos + channel));
             } else {
                 _devs[timer].p->CC[channel] += _timer_vars[timer].timer_callback[channel].period_ticks;
