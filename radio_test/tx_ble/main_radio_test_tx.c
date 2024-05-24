@@ -17,6 +17,7 @@
 #include "board_config.h"
 #include "gpio.h"
 #include "radio.h"
+#include "radio_ieee_802154.h"
 #include "timer.h"
 #include "timer_hf.h"
 
@@ -39,14 +40,24 @@ static void _led2_blink(void) {
 
 static void _gpio_trigger(void) {
     db_gpio_clear(&db_gpio_0_8);
-    db_radio_disable();
+    if (RADIO_MODE == 1) {
+        db_radio_disable();
+        return;
+    }
+    db_radio_ieee_802154_disable();
 }
 
 static void _radio_tx(void) {
 
     db_gpio_set(&db_gpio_0_8);
-    db_timer_hf_set_oneshot_us(1, 2000, _gpio_trigger);
-    db_radio_tx(&_payload[0], payload_size * sizeof(uint8_t));
+
+    if (RADIO_MODE == 1) {
+        db_timer_hf_set_oneshot_us(1, 2000, _gpio_trigger);
+        db_radio_tx(&_payload[0], payload_size * sizeof(uint8_t));
+    } else {
+        db_timer_hf_set_oneshot_us(1, 8000, _gpio_trigger);
+        db_radio_ieee_802154_tx(&_payload[0], payload_size * sizeof(uint8_t));
+    }
     _payload[0]++;
     i = 1;
     while (_payload[i - 1] == 0 && i < payload_size) {
@@ -93,12 +104,19 @@ int main(void) {
     db_timer_set_periodic_ms(0, 500, _led2_blink);
 
     db_timer_hf_init();
-    db_timer_hf_set_periodic_us(0, 100000, _radio_tx);
+    db_timer_hf_set_periodic_us(0, 10000, _radio_tx);
 
-    db_radio_init(NULL, DB_RADIO_BLE_1MBit);
-    db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
-    db_radio_set_tx_power(RADIO_TXPOWER_TXPOWER_0dBm);
-    db_radio_disable();
+    if (RADIO_MODE == 1) {
+        db_radio_init(NULL, DB_RADIO_BLE_1MBit);
+        db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
+        db_radio_set_tx_power(POWER);
+        db_radio_disable();
+    } else {
+        db_radio_ieee_802154_init(NULL);
+        db_radio_ieee_802154_set_frequency(8);  // Set the RX frequency to 2408 MHz.
+        db_radio_ieee_802154_set_tx_power(POWER);
+        db_radio_ieee_802154_disable();
+    }
 
     while (1) {
     }

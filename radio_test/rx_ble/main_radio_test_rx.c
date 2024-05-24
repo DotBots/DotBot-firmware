@@ -16,6 +16,7 @@
 #include "uart.h"
 #include "gpio.h"
 #include "board_config.h"
+#include "radio.h"
 #include "radio_ieee_802154.h"
 #include "hdlc.h"
 #include "timer.h"
@@ -52,8 +53,12 @@ static void _radio_callback(uint8_t *packet, uint8_t length, bool crc) {
         _data.payload[i] = packet[i];
     }
     _data.length = length;
-    _data.rssi   = db_radio_ieee_802154_rssi();
-    _data.crc    = crc;
+    if (RADIO_MODE == 1) {
+        _data.rssi = db_radio_rssi();  //  BLE
+    } else {
+        _data.rssi = db_radio_ieee_802154_rssi();  //  IEEE
+    }
+    _data.crc = crc;
 
     hdlc_tx_buffer_size = db_hdlc_encode((uint8_t *)&_data, sizeof(radio_test_data_t), hdlc_tx_buffer);
     db_uart_write(DB_UART_INDEX, hdlc_tx_buffer, hdlc_tx_buffer_size);
@@ -62,11 +67,18 @@ static void _radio_callback(uint8_t *packet, uint8_t length, bool crc) {
 int main(void) {
     db_gpio_init(&db_led1, DB_GPIO_OUT);  // Global status
     db_timer_init();
-    db_timer_set_periodic_ms(0, 2000, _led1_blink);
+    db_timer_set_periodic_ms(0, 500, _led1_blink);
 
-    db_radio_ieee_802154_init(_radio_callback);
-    db_radio_ieee_802154_set_frequency(8);  // Set the RX frequency to 2408 MHz.
-    db_radio_ieee_802154_rx();
+    if (RADIO_MODE == 1) {
+        db_radio_init(_radio_callback, DB_RADIO_BLE_1MBit);
+        db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
+        db_radio_rx();
+
+    } else {
+        db_radio_ieee_802154_init(_radio_callback);
+        db_radio_ieee_802154_set_frequency(8);  // Set the RX frequency to 2408 MHz.
+        db_radio_ieee_802154_rx();
+    }
 
     db_uart_init(DB_UART_INDEX, &db_uart_rx, &db_uart_tx, DB_UART_BAUDRATE, NULL);
 

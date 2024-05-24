@@ -53,137 +53,131 @@ def main():
         file = open(filename_txt, "w")
 
     if int(blocker_choice) != 1:
-        print("You can now enable your blocker")
+        print("Use blocker_rssi to get rssi from blocker")
         get_rssi_blocker = True
 
     try:
-        with serial.Serial(SERIAL_PORT, BAUDRATE, timeout=0.1) as ser:
+        with serial.Serial(SERIAL_PORT, BAUDRATE, timeout=0.01) as ser:
             hdlc_handler = HDLCHandler()
             while 1:
                 data = ser.read()
-
                 if data:
+
                     hdlc_handler.handle_byte(data)
 
                     if hdlc_handler.state == HDLCState.READY:
                         payload = hdlc_handler.payload
-                        lenght_data_tx = int.from_bytes(
-                            payload[-3].to_bytes(1, "little"), "little", signed=True
-                        )
-                        rssi = int.from_bytes(
-                            payload[-2].to_bytes(1, "little"), "little", signed=True
-                        )
-                        crc = bool(payload[-1])
+                        if payload:
+                            lenght_payload_tx = int.from_bytes(
+                                payload[-3].to_bytes(1, "little"), "little", signed=True
+                            )
+                            rssi = int.from_bytes(
+                                payload[-2].to_bytes(1, "little"), "little", signed=True
+                            )
+                            crc = bool(payload[-1])
+                            
+                            # Data received from blocker
+                            if (get_rssi_blocker is True) & (lenght_payload_tx == 10):
+                                print(f"rssi blocker: {rssi}")
+                                sum_rssi_blocker += rssi
+                                received_count_blocker += 1
+                                print(payload[0])
+                                if received_count_blocker == 100:
+                                    input("Change code to BLOCKER")
+                                    get_rssi_blocker = False
 
-                        # Data received from blocker 
-                        if (get_rssi_blocker is True):
-                            print(f"rssi blocker: {rssi}")
-                            sum_rssi_blocker += rssi
-                            received_count_blocker += 1
-                            if received_count_blocker == 100:
-                                get_rssi_blocker = False
-                                input(f"Change the code of the blocker with blocker_{blocker_type(int(blocker_choice)).name }")
-
-                        else:  # Data received
-                            # wait to get RSSI from blocker
-                            if get_rssi_blocker is False:
-                                if int(com_choice) == 1:
-                                    payload_number = payload[:-3]
-                                else:  # avoid LQI that is on the payload
-                                    payload_number = payload[:-5]
-                                    lenght_data_tx -= 2
-
-                                received_count += 1
-
-                                # Save the value for data analysis
-                                if save_payload_value == True:
+                            else:  # Data received
+                                # wait to get RSSI from blocker
+                                if (get_rssi_blocker is False) &  (lenght_payload_tx  !=125 ): 
                                     if int(com_choice) == 1:
-                                        payload_value_wanted = int.from_bytes(
-                                            payload[:-3], "little", signed=True
-                                        )
-                                    else:
-                                        payload_value_wanted = int.from_bytes(
-                                            payload[:-5], "little", signed=True
-                                        )
-                                    save_payload_value = False
+                                        payload_number = payload[:-3]
+                                    else:  # avoid LQI that is on the payload
+                                        payload_number = payload[:-5]
+                                        lenght_payload_tx -= 2
 
-                                else :
-                                    payload_value_wanted +=1
+                                    received_count += 1
 
-                                print("")
-                                print(f"payload bytes (lsb to msb):{payload_number}")
-                                print(
-                                    f"lenght:{lenght_data_tx} rssi: {rssi}, crc: {crc}"
-                                )
-                                if save_data == "y":
-                                    file.write(
-                                        f"payload bytes (lsb to msb):{payload_number}\n"
-                                    )
-                                    file.write(
-                                        f"lenght:{lenght_data_tx} rssi: {rssi}, crc: {crc}"
-                                    )
-
-                                # CRC check
-                                if crc is False:
-                                    crc_count += 1
-                                    if save_payload_value == False:
-                                        crc_for_plot += 1
-
+                                    # Save the value for data analysis
+                                    if save_payload_value == True:
                                         if int(com_choice) == 1:
-                                            # check which bit are wrong
-                                            bit_to_bit_compare = bin(
-                                                abs(
-                                                    (
-                                                        int.from_bytes(
-                                                            payload[:-3],
-                                                            "little",
-                                                            signed=True,
-                                                        )
-                                                    )
-                                                    ^ (payload_value_wanted)
-                                                )
-                                            )[2:]
-                                            print(
-                                                f"Value wanted : {payload_value_wanted.to_bytes(100,'little')}"
+                                            payload_value_wanted = int.from_bytes(
+                                                payload[:-3], "little", signed=True
                                             )
                                         else:
-                                            # check which bit are wrong
-                                            bit_to_bit_compare = bin(
-                                                abs(
-                                                    (
-                                                        int.from_bytes(
-                                                            payload[:-5],
-                                                            "little",
-                                                            signed=True,
-                                                        )
-                                                    )
-                                                    ^ (payload_value_wanted)
-                                                )
-                                            )[2:]
-                                            print(
-                                                f"Value wanted : {payload_value_wanted.to_bytes(98,'little')}"
+                                            payload_value_wanted = int.from_bytes(
+                                                payload[:-5], "little", signed=True
                                             )
+                                        save_payload_value = False
 
-                                        print(
-                                            f"Bit to bit xor compare (MSB to LSB) : {bit_to_bit_compare}"
-                                        )
-                                        for i in range(len(bit_to_bit_compare)):
-                                            bit_to_bit_error[i] += int(
-                                                bit_to_bit_compare[-i - 1]
-                                            )
+                                    else:
+                                        payload_value_wanted += 1
 
-                                else:
+                                    print("")
+                                    print(
+                                        f"payload bytes (lsb to msb):{payload_number}"
+                                    )
+                                    print(
+                                        f"lenght:{lenght_payload_tx} rssi: {rssi}, crc: {crc}"
+                                    )
+
                                     sum_rssi += rssi
+
+                                    # CRC check
+                                    if crc is False:
+                                        crc_count += 1
+                                        if save_payload_value == False:
+                                            crc_for_plot += 1
+
+                                            if int(com_choice) == 1:
+                                                # check which bit are wrong
+                                                bit_to_bit_compare = bin(
+                                                    abs(
+                                                        (
+                                                            int.from_bytes(
+                                                                payload[:-3],
+                                                                "little",
+                                                                signed=True,
+                                                            )
+                                                        )
+                                                        ^ (payload_value_wanted)
+                                                    )
+                                                )[2:]
+                                                print(
+                                                    f"Value wanted : {payload_value_wanted.to_bytes(100,'little')}"
+                                                )
+                                            else:
+                                                # check which bit are wrong
+                                                bit_to_bit_compare = bin(
+                                                    abs(
+                                                        (
+                                                            int.from_bytes(
+                                                                payload[:-5],
+                                                                "little",
+                                                                signed=True,
+                                                            )
+                                                        )
+                                                        ^ (payload_value_wanted)
+                                                    )
+                                                )[2:]
+                                                print(
+                                                    f"Value wanted : {payload_value_wanted.to_bytes(98,'little')}"
+                                                )
+
+                                            print(
+                                                f"Bit to bit xor compare (MSB to LSB) : {bit_to_bit_compare}"
+                                            )
+                                            for i in range(len(bit_to_bit_compare)):
+                                                bit_to_bit_error[i] += int(
+                                                    bit_to_bit_compare[-i - 1]
+                                                )
 
                 else:  # Data miss
                     # wait to get RSSI from blocker if their is one
-                    if ( get_rssi_blocker is False) : 
-                        save_payload_value = True 
+                    if get_rssi_blocker is False:
+                        if save_payload_value == False:
+                            payload_value_wanted += 1
                         print("Packet miss")
-                        if save_data == "y":
-                            file.write("Packet miss\n")
                         miss_count += 1
-                        
 
     except (serial.SerialException, serial.SerialTimeoutException) as exc:
         print(exc)
@@ -196,18 +190,18 @@ def main():
             f"Received {received_count} packets with {crc_count} having an invalid CRC and {miss_count} packets are missing"
         )
         if save_data == "y":
-            file.write(f"Communication used {blocker_type(int(com_choice)+2).name}")
+            file.write(f"Communication used {blocker_type(int(com_choice)+2).name}\n")
             file.write(
-                f"Received {received_count} packets with {crc_count} having an invalid CRC and {miss_count} packets are missing"
+                f"Received {received_count} packets with {crc_count} having an invalid CRC and {miss_count} packets are missing\n"
             )
 
         if (sum_rssi != 0) & (received_count != 0):
             print(
-                f"The mean RSSI of the valid packets is {sum_rssi/(received_count-crc_count)} dBm"
+                f"The mean RSSI of the valid packets is {sum_rssi/(received_count)} dBm"
             )
             if save_data == "y":
                 file.write(
-                    f"The mean RSSI of the valid packets is {sum_rssi/(received_count-crc_count)} dBm"
+                    f"The mean RSSI of the valid packets is {sum_rssi/(received_count)} dBm\n"
                 )
 
         if int(blocker_choice) != 1:
@@ -216,7 +210,7 @@ def main():
             )
             if save_data == "y":
                 file.write(
-                    f"The Blocker used is {blocker_type(int(blocker_choice)).name} with a RSSI of {sum_rssi_blocker/received_count_blocker} dBm"
+                    f"The Blocker used is {blocker_type(int(blocker_choice)).name} with a RSSI of {sum_rssi_blocker/received_count_blocker} dBm\n"
                 )
 
         if crc_for_plot > 0:

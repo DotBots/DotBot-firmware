@@ -1,10 +1,10 @@
 <!DOCTYPE CrossStudio_Project_File>
 <solution Name="Radio test" target="8" version="2">
-  <project Name="blocker_ble">
+  <project Name="blocker_rssi_802154">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00bsp_radio(bsp);00bsp_timer_hf(bsp)"
-      project_directory="blocker"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer_hf(bsp);00bsp_radio_ieee_802154(bsp)"
+      project_directory="blocker_rssi_802154"
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(DeviceCommonHeaderFile)" />
@@ -29,7 +29,11 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="main_radio_test_blocker_ble.c" />
+      <file file_name="../tx_802154/conf.h" />
+      <file file_name="main.c" />
+      <file file_name="../blocker_rssi_ble/main_radio_test_blocker_rssi.c">
+        <configuration Name="Debug" build_exclude_from_build="Yes" />
+      </file>
     </folder>
     <folder Name="System Files">
       <file file_name="$(DeviceCommonVectorsFile)" />
@@ -39,11 +43,54 @@
       <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
-  <project Name="blocker_ieee_802154">
+  <project Name="blocker_rssi_ble">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer_hf(bsp);00bsp_radio(bsp)"
+      project_directory="blocker_rssi_ble"
+      project_type="Executable" />
+    <folder Name="Device Files">
+      <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceSystemFile)">
+        <configuration
+          Name="Common"
+          default_code_section=".init"
+          default_const_section=".init_rodata" />
+      </file>
+    </folder>
+    <folder Name="Script Files">
+      <file file_name="$(DeviceLinkerScript)">
+        <configuration Name="Common" file_type="Linker Script" />
+      </file>
+      <file file_name="$(DeviceMemoryMap)">
+        <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
+      </file>
+    </folder>
+    <folder Name="Source Files">
+      <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
+      <file file_name="../tx_ble/conf.h" />
+      <file file_name="main.c" />
+      <file file_name="main_radio_test_blocker_rssi.c">
+        <configuration Name="Debug" build_exclude_from_build="Yes" />
+      </file>
+    </folder>
+    <folder Name="System Files">
+      <file file_name="$(DeviceCommonVectorsFile)" />
+      <file file_name="$(DeviceVectorsFile)">
+        <configuration Name="Common" file_type="Assembly" />
+      </file>
+      <file file_name="$(SeggerThumbStartup)" />
+    </folder>
+  </project>
+  <project Name="blocker_sync_802154">
     <configuration
       Name="Common"
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00bsp_timer_hf(bsp);00bsp_radio_ieee_802154(bsp)"
-      project_directory="blocker"
+      project_directory="blocker_sync_802154"
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(DeviceCommonHeaderFile)" />
@@ -68,7 +115,11 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="main_radio_test_blocker_ieee_802154.c" />
+      <file file_name="conf.h" />
+      <file file_name="main.c" />
+      <file file_name="../blocker_sync_ble/main_radio_test_blocker_sync.c">
+        <configuration Name="Debug" build_exclude_from_build="Yes" />
+      </file>
     </folder>
     <folder Name="System Files">
       <file file_name="$(DeviceCommonVectorsFile)" />
@@ -78,11 +129,11 @@
       <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
-  <project Name="blocker_tone">
+  <project Name="blocker_sync_ble">
     <configuration
       Name="Common"
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00bsp_radio(bsp);00bsp_timer_hf(bsp)"
-      project_directory="blocker"
+      project_directory="blocker_sync_ble"
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(DeviceCommonHeaderFile)" />
@@ -107,7 +158,11 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="main_radio_test_blocker_tone.c" />
+      <file file_name="conf.h" />
+      <file file_name="main.c" />
+      <file file_name="main_radio_test_blocker_sync.c">
+        <configuration Name="Debug" build_exclude_from_build="Yes" />
+      </file>
     </folder>
     <folder Name="System Files">
       <file file_name="$(DeviceCommonVectorsFile)" />
@@ -117,11 +172,11 @@
       <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
-  <project Name="blocker_tone_constant">
+  <project Name="blocker_sync_tone">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_dotbot_board(bsp);00bsp_radio(bsp)"
-      project_directory="blocker"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00bsp_radio(bsp);00bsp_timer_hf(bsp)"
+      project_directory="blocker_sync_tone"
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(DeviceCommonHeaderFile)" />
@@ -146,7 +201,183 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="main_radio_test_blocker_tone_constant.c" />
+      <file file_name="conf.h" />
+      <file file_name="main.c" />
+      <file file_name="../blocker_sync_ble/main_radio_test_blocker_sync.c">
+        <configuration Name="Debug" build_exclude_from_build="Yes" />
+      </file>
+    </folder>
+    <folder Name="System Files">
+      <file file_name="$(DeviceCommonVectorsFile)" />
+      <file file_name="$(DeviceVectorsFile)">
+        <configuration Name="Common" file_type="Assembly" />
+      </file>
+      <file file_name="$(SeggerThumbStartup)" />
+    </folder>
+  </project>
+  <project Name="blocker_unsync_802154">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer_hf(bsp);00bsp_radio_ieee_802154(bsp)"
+      project_directory="blocker_unsync_802154"
+      project_type="Executable" />
+    <folder Name="Device Files">
+      <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceSystemFile)">
+        <configuration
+          Name="Common"
+          default_code_section=".init"
+          default_const_section=".init_rodata" />
+      </file>
+    </folder>
+    <folder Name="Script Files">
+      <file file_name="$(DeviceLinkerScript)">
+        <configuration Name="Common" file_type="Linker Script" />
+      </file>
+      <file file_name="$(DeviceMemoryMap)">
+        <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
+      </file>
+    </folder>
+    <folder Name="Source Files">
+      <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
+      <file file_name="conf.h" />
+      <file file_name="main.c" />
+      <file file_name="../blocker_unsync_ble/main_radio_test_blocker_unsync.c">
+        <configuration Name="Debug" build_exclude_from_build="Yes" />
+      </file>
+    </folder>
+    <folder Name="System Files">
+      <file file_name="$(DeviceCommonVectorsFile)" />
+      <file file_name="$(DeviceVectorsFile)">
+        <configuration Name="Common" file_type="Assembly" />
+      </file>
+      <file file_name="$(SeggerThumbStartup)" />
+    </folder>
+  </project>
+  <project Name="blocker_unsync_ble">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer_hf(bsp);00bsp_radio(bsp)"
+      project_directory="blocker_unsync_ble"
+      project_type="Executable" />
+    <folder Name="Device Files">
+      <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceSystemFile)">
+        <configuration
+          Name="Common"
+          default_code_section=".init"
+          default_const_section=".init_rodata" />
+      </file>
+    </folder>
+    <folder Name="Script Files">
+      <file file_name="$(DeviceLinkerScript)">
+        <configuration Name="Common" file_type="Linker Script" />
+      </file>
+      <file file_name="$(DeviceMemoryMap)">
+        <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
+      </file>
+    </folder>
+    <folder Name="Source Files">
+      <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
+      <file file_name="conf.h" />
+      <file file_name="main.c" />
+      <file file_name="main_radio_test_blocker_unsync.c">
+        <configuration Name="Debug" build_exclude_from_build="Yes" />
+      </file>
+    </folder>
+    <folder Name="System Files">
+      <file file_name="$(DeviceCommonVectorsFile)" />
+      <file file_name="$(DeviceVectorsFile)">
+        <configuration Name="Common" file_type="Assembly" />
+      </file>
+      <file file_name="$(SeggerThumbStartup)" />
+    </folder>
+  </project>
+  <project Name="blocker_unsync_tone">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer_hf(bsp);00bsp_radio(bsp)"
+      project_directory="blocker_unsync_tone"
+      project_type="Executable" />
+    <folder Name="Device Files">
+      <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceSystemFile)">
+        <configuration
+          Name="Common"
+          default_code_section=".init"
+          default_const_section=".init_rodata" />
+      </file>
+    </folder>
+    <folder Name="Script Files">
+      <file file_name="$(DeviceLinkerScript)">
+        <configuration Name="Common" file_type="Linker Script" />
+      </file>
+      <file file_name="$(DeviceMemoryMap)">
+        <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
+      </file>
+    </folder>
+    <folder Name="Source Files">
+      <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
+      <file file_name="conf.h" />
+      <file file_name="main.c" />
+      <file file_name="../blocker_unsync_ble/main_radio_test_blocker_unsync.c">
+        <configuration Name="Debug" build_exclude_from_build="Yes" />
+      </file>
+    </folder>
+    <folder Name="System Files">
+      <file file_name="$(DeviceCommonVectorsFile)" />
+      <file file_name="$(DeviceVectorsFile)">
+        <configuration Name="Common" file_type="Assembly" />
+      </file>
+      <file file_name="$(SeggerThumbStartup)" />
+    </folder>
+  </project>
+  <project Name="rx_802154">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00bsp_uart(bsp);00drv_dotbot_hdlc(drv);00bsp_radio_ieee_802154(bsp)"
+      project_directory="rx_802154"
+      project_type="Executable" />
+    <folder Name="Device Files">
+      <file file_name="$(DeviceCommonHeaderFile)" />
+      <file file_name="$(DeviceHeaderFile)" />
+      <file file_name="$(DeviceSystemFile)">
+        <configuration
+          Name="Common"
+          default_code_section=".init"
+          default_const_section=".init_rodata" />
+      </file>
+    </folder>
+    <folder Name="Script Files">
+      <file file_name="$(DeviceLinkerScript)">
+        <configuration Name="Common" file_type="Linker Script" />
+      </file>
+      <file file_name="$(DeviceMemoryMap)">
+        <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="../../nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
+      </file>
+    </folder>
+    <folder Name="Source Files">
+      <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
+      <file file_name="conf.h" />
+      <file file_name="main.c" />
+      <file file_name="../rx_ble/main_radio_test_rx.c">
+        <configuration Name="Debug" build_exclude_from_build="Yes" />
+      </file>
     </folder>
     <folder Name="System Files">
       <file file_name="$(DeviceCommonVectorsFile)" />
@@ -160,7 +391,7 @@
     <configuration
       Name="Common"
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00bsp_uart(bsp);00drv_dotbot_hdlc(drv);00bsp_radio(bsp)"
-      project_directory="rx"
+      project_directory="rx_ble"
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(DeviceCommonHeaderFile)" />
@@ -185,7 +416,11 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="main_radio_test_rx_ble.c" />
+      <file file_name="conf.h" />
+      <file file_name="main.c" />
+      <file file_name="main_radio_test_rx.c">
+        <configuration Name="Debug" build_exclude_from_build="Yes" />
+      </file>
     </folder>
     <folder Name="System Files">
       <file file_name="$(DeviceCommonVectorsFile)" />
@@ -195,11 +430,11 @@
       <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
-  <project Name="rx_ieee_802154">
+  <project Name="tx_802154">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00bsp_uart(bsp);00drv_dotbot_hdlc(drv);00bsp_radio_ieee_802154(bsp)"
-      project_directory="rx"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00bsp_timer_hf(bsp);00bsp_radio_ieee_802154(bsp)"
+      project_directory="tx_802154"
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(DeviceCommonHeaderFile)" />
@@ -224,7 +459,11 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="main_radio_rx_ieee_802154.c" />
+      <file file_name="conf.h" />
+      <file file_name="main.c" />
+      <file file_name="../tx_ble/main_radio_test_tx.c">
+        <configuration Name="Debug" build_exclude_from_build="Yes" />
+      </file>
     </folder>
     <folder Name="System Files">
       <file file_name="$(DeviceCommonVectorsFile)" />
@@ -238,7 +477,7 @@
     <configuration
       Name="Common"
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00bsp_radio(bsp);00bsp_timer_hf(bsp)"
-      project_directory="tx"
+      project_directory="tx_ble"
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(DeviceCommonHeaderFile)" />
@@ -263,46 +502,11 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="main_radio_test_tx_ble.c" />
-    </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
+      <file file_name="conf.h" />
+      <file file_name="main.c" />
+      <file file_name="main_radio_test_tx.c">
+        <configuration Name="Debug" build_exclude_from_build="Yes" />
       </file>
-      <file file_name="$(SeggerThumbStartup)" />
-    </folder>
-  </project>
-  <project Name="tx_ieee_802154">
-    <configuration
-      Name="Common"
-      project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00bsp_timer_hf(bsp);00bsp_radio_ieee_802154(bsp)"
-      project_directory="tx"
-      project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
-        <configuration Name="Common" file_type="Memory Map" />
-      </file>
-      <file file_name="../../nRF/Scripts/nRF_Target.js">
-        <configuration Name="Common" file_type="Reset Script" />
-      </file>
-    </folder>
-    <folder Name="Source Files">
-      <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="main_radio_test_tx_ieee_802154.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="$(DeviceCommonVectorsFile)" />
