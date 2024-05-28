@@ -78,8 +78,8 @@ int main(void) {
     _dotbot_vars.device_id = db_device_id();
 
     // Setup up timer interrupts
-    db_timer_hf_init();
-    db_timer_hf_set_periodic_us(1, DB_ADVERTIZEMENT_DELAY_US, &_advertise);
+    db_timer_hf_init(0);
+    db_timer_hf_set_periodic_us(0, 1, DB_ADVERTIZEMENT_DELAY_US, &_advertise);
     db_lh2_init(&_dotbot_vars.lh2, &db_lh2_d, &db_lh2_e);
     db_lh2_start();
 
@@ -95,7 +95,7 @@ int main(void) {
                 if (_dotbot_vars.lh2.data_ready[sweep][basestation] == DB_LH2_PROCESSED_DATA_AVAILABLE) {
 
                     db_gpio_clear(&_r_led_pin);
-                    db_timer_hf_set_oneshot_us(0, 3000, &_turn_off_led);
+                    db_timer_hf_set_oneshot_us(0, 0, 3000, &_turn_off_led);
 
                     // Prepare the radio buffer
                     db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, LH2_mini_mote, DB_PROTOCOL_LH2_PROCESSED_DATA);
@@ -104,7 +104,7 @@ int main(void) {
                     protocol_lh2_processed_packet_t lh2_packet;
                     lh2_packet.selected_polynomial = _dotbot_vars.lh2.locations[sweep][basestation].selected_polynomial;
                     lh2_packet.lfsr_location       = _dotbot_vars.lh2.locations[sweep][basestation].lfsr_location;
-                    lh2_packet.delay_us            = db_timer_hf_now() - _dotbot_vars.lh2.timestamps[sweep][basestation];
+                    lh2_packet.delay_us            = db_timer_hf_now(0) - _dotbot_vars.lh2.timestamps[sweep][basestation];
 
                     // Add the LH2 sweep
                     memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t), &lh2_packet, sizeof(protocol_lh2_processed_packet_t));
@@ -118,8 +118,8 @@ int main(void) {
                     _dotbot_vars.lh2.data_ready[sweep][basestation] = DB_LH2_NO_NEW_DATA;
 
                     // busy loop - hf_delay_us hangs if I use it here
-                    uint32_t busy_loop = db_timer_hf_now() + 500;
-                    while (db_timer_hf_now() < busy_loop)
+                    uint32_t busy_loop = db_timer_hf_now(0) + 500;
+                    while (db_timer_hf_now(0) < busy_loop)
                         ;
                 }
             }
