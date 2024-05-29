@@ -186,10 +186,10 @@ void db_upgate_handle_message(const uint8_t *message) {
             printf("Verifying ed25519 signature: ");
             const uint8_t *hash = upgate_start->hash;
             if (!crypto_ed25519_verify(upgate_start->signature, DB_UPGATE_SIGNATURE_LENGTH, (const uint8_t *)upgate_start, sizeof(db_upgate_start_notification_t) - DB_UPGATE_SIGNATURE_LENGTH, public_key)) {
-                puts("Failed!");
+                printf("Failed!\n");
                 break;
             }
-            puts("Success!");
+            printf("Success!\n");
             memcpy(_upgate_vars.hash, hash, DB_UPGATE_SHA256_LENGTH);
             crypto_sha256_init();
 #endif
