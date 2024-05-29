@@ -24,5 +24,6 @@ _api/drv_ota
 _api/drv_pid
 _api/drv_protocol
 _api/drv_rgbled_pwm
+_api/drv_upgate
 _api/drv_uzlib
 ```
