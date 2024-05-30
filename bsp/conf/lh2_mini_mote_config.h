@@ -96,7 +96,7 @@
 #define DB_MOTOR_BIN1_PORT 0
 #define DB_MOTOR_BIN1_PIN  3
 #define DB_MOTOR_BIN2_PORT 1
-#define DB_MOTOR_BIN2_PIN  6 // not connected pin. just used to get the code to compile. 
+#define DB_MOTOR_BIN2_PIN  6  // not connected pin. just used to get the code to compile.
 /** @} */
 
 /**
