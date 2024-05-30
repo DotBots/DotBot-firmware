@@ -33,11 +33,11 @@
 #define DB_BUFFER_MAX_BYTES       (255U)     ///< Max bytes in UART receive buffer
 
 typedef struct {
-    uint32_t                 ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
-    db_lh2_t                 lh2;                                ///< LH2 device descriptor
-    uint8_t                  radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
-    bool                     advertize;                          ///< Whether an advertize packet should be sent
-    uint64_t                 device_id;                          ///< Device ID of the DotBot
+    uint32_t ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
+    db_lh2_t lh2;                                ///< LH2 device descriptor
+    uint8_t  radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
+    bool     advertize;                          ///< Whether an advertize packet should be sent
+    uint64_t device_id;                          ///< Device ID of the DotBot
 } dotbot_vars_t;
 
 //=========================== variables ========================================
@@ -97,7 +97,7 @@ int main(void) {
                     protocol_lh2_processed_packet_t lh2_packet;
                     lh2_packet.selected_polynomial = _dotbot_vars.lh2.locations[sweep][basestation].selected_polynomial;
                     lh2_packet.lfsr_location       = _dotbot_vars.lh2.locations[sweep][basestation].lfsr_location;
-                    lh2_packet.timestamp_us            = _dotbot_vars.lh2.timestamps[sweep][basestation];
+                    lh2_packet.timestamp_us        = _dotbot_vars.lh2.timestamps[sweep][basestation];
 
                     // Add the LH2 sweep
                     memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t), &lh2_packet, sizeof(protocol_lh2_processed_packet_t));

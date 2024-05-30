@@ -107,10 +107,10 @@ typedef struct __attribute__((packed)) {
 } protocol_gps_waypoints_t;
 
 /// LH2 process data compressed for sending over radio.
-typedef struct  __attribute__((packed)) {
+typedef struct __attribute__((packed)) {
     uint8_t  selected_polynomial;  ///< selected poly is the polyomial # (between 0 and 31) that the demodulation code thinks the demodulated bits are a part of, initialize to error state
     uint32_t lfsr_location;        ///< LFSR location is the position in a given polynomial's LFSR that the decoded data is, initialize to error state
-    uint32_t timestamp_us;             ///< How many microseconds passed since the sample was taken
+    uint32_t timestamp_us;         ///< How many microseconds passed since the sample was taken
 } protocol_lh2_processed_packet_t;
 
 //=========================== public ===========================================
