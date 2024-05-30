@@ -1,15 +1,14 @@
 /**
  * @file
- * @defgroup project_dotbot    DotBot application
+ * @defgroup project_lh2_mini_mote    LH2-minimote application
  * @ingroup projects
- * @brief This is the radio-controlled DotBot app
+ * @brief This is the radio-controlled LH2 mini mote app
  *
- * The remote control can be either a keyboard, a joystick or buttons on the gateway
- * itself
+ * Control the RGB LED of the minimote, and receive the LH2 packets
  *
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- * @copyright Inria, 2022
+ * @copyright Inria, 2024
  */
 
 #include <nrf.h>
@@ -23,10 +22,8 @@
 #include "device.h"
 #include "lh2.h"
 #include "protocol.h"
-#include "motors.h"
 #include "radio.h"
 #include "rgbled_pwm.h"
-#include "log_flash.h"
 #include "timer_hf.h"
 
 //=========================== defines ==========================================
@@ -41,7 +38,6 @@ typedef struct {
     uint8_t                  radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
     bool                     advertize;                          ///< Whether an advertize packet should be sent
     uint64_t                 device_id;                          ///< Device ID of the DotBot
-    db_log_dotbot_data_t     log_data;
 } dotbot_vars_t;
 
 //=========================== variables ========================================
@@ -62,9 +58,6 @@ static void radio_callback(uint8_t *pkt, uint8_t len);
  */
 int main(void) {
     db_board_init();
-#ifdef ENABLE_DOTBOT_LOG_DATA
-    db_log_flash_init(LOG_DATA_DOTBOT);
-#endif
     db_protocol_init();
     db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);
     db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
@@ -104,7 +97,7 @@ int main(void) {
                     protocol_lh2_processed_packet_t lh2_packet;
                     lh2_packet.selected_polynomial = _dotbot_vars.lh2.locations[sweep][basestation].selected_polynomial;
                     lh2_packet.lfsr_location       = _dotbot_vars.lh2.locations[sweep][basestation].lfsr_location;
-                    lh2_packet.delay_us            = db_timer_hf_now(0) - _dotbot_vars.lh2.timestamps[sweep][basestation];
+                    lh2_packet.timestamp_us            = _dotbot_vars.lh2.timestamps[sweep][basestation];
 
                     // Add the LH2 sweep
                     memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t), &lh2_packet, sizeof(protocol_lh2_processed_packet_t));
