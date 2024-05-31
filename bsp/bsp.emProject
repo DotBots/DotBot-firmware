@@ -109,6 +109,15 @@
     <file file_name="nrf/qdec.c" />
     <file file_name="qdec.h" />
   </project>
+  <project Name="00bsp_qspi">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_gpio(bsp);00bsp_clock(bsp)"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf/qspi.c" />
+    <file file_name="qspi.h" />
+  </project>
   <project Name="00bsp_radio">
     <configuration
       Name="Common"

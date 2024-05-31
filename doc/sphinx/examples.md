@@ -22,6 +22,7 @@ _examples/01bsp_lighthouse
 _examples/01bsp_motors
 _examples/01bsp_nvmc
 _examples/01bsp_qdec
+_examples/01bsp_qspi
 _examples/01bsp_radio_txrx_lr
 _examples/01bsp_radio_txrx
 _examples/01bsp_rgbled
