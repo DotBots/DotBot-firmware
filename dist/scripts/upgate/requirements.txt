@@ -1,0 +1,4 @@
+click==8.1.7
+cryptography==42.0.7
+tqdm==4.66.1
+pydotbot
