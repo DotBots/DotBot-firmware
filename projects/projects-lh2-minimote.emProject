@@ -42,7 +42,7 @@
   <project Name="03app_lh2_mini_mote_test">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_lh2(bsp);00bsp_dotbot_motors(bsp);00bsp_timer(bsp);00drv_dotbot_hdlc(drv);00drv_dotbot_protocol(drv);00bsp_radio(bsp);00drv_log_flash(drv);00drv_rgbled_pwm(drv)"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_lh2(bsp);00bsp_dotbot_motors(bsp);00bsp_timer(bsp);00drv_dotbot_hdlc(drv);00drv_dotbot_protocol(drv);00bsp_radio(bsp);00drv_log_flash(drv);00drv_rgbled_pwm(drv);00drv_ism330(drv)"
       project_directory="03app_lh2_mini_mote_test"
       project_type="Executable" />
     <folder Name="Device Files">
