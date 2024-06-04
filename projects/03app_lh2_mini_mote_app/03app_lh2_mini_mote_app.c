@@ -109,7 +109,6 @@ int main(void) {
 
                     // Mark the data as already sent
                     _dotbot_vars.lh2.data_ready[sweep][basestation] = DB_LH2_NO_NEW_DATA;
-
                 }
             }
         }
