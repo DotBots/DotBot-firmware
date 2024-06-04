@@ -35,6 +35,7 @@
 
 #define DB_LH2_UPDATE_DELAY_US    (100000U)  ///< 100ms delay between each LH2 data refresh
 #define DB_ADVERTIZEMENT_DELAY_US (500000U)  ///< 500ms delay between each advertizement packet sending
+#define IMU_COLOR_DELAY_US        (100000U)  ///< 100ms delay between each IMU color update
 #define DB_BUFFER_MAX_BYTES       (255U)     ///< Max bytes in UART receive buffer
 
 typedef enum {
@@ -49,10 +50,10 @@ typedef struct {
     db_lh2_t    lh2;                                ///< LH2 device descriptor
     uint8_t     radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
     bool        advertize;                          ///< Whether an advertize packet should be sent
+    bool        update_color_flag;                  ///< Flag - Time to read the IMU and update the color of the LED
     uint64_t    device_id;                          ///< Device ID of the DotBot
     led_color_t color;                              ///< current color of the RBG defined by the IMU
 } dotbot_vars_t;
-
 
 //=========================== variables ========================================
 
@@ -68,6 +69,7 @@ static void _previous_led_color(void);
 static void radio_callback(uint8_t *pkt, uint8_t len);
 static void _imu_to_rgb(void);
 static void _set_rgb_led(void);
+static void _update_color(void);
 
 //=========================== main =============================================
 
@@ -92,6 +94,7 @@ int main(void) {
     // Setup up timer interrupts
     db_timer_hf_init(0);
     db_timer_hf_set_periodic_us(0, 1, DB_ADVERTIZEMENT_DELAY_US, &_advertise);
+    db_timer_hf_set_periodic_us(0, 2, IMU_COLOR_DELAY_US, &_update_color);
     db_lh2_init(&_dotbot_vars.lh2, &db_lh2_d, &db_lh2_e);
     db_lh2_start();
 
@@ -134,13 +137,12 @@ int main(void) {
             }
         }
 
-        // busy loop - hf_delay_us hangs if I use it here
-        uint32_t busy_loop = db_timer_hf_now(0) + 100;
-        while (db_timer_hf_now(0) < busy_loop) {}
-
-        // Check the IMU and change the color of the RBG LED
-        _imu_to_rgb();
-        _set_rgb_led();
+        if (_dotbot_vars.update_color_flag) {
+            // Check the IMU and change the color of the RBG LED
+            _imu_to_rgb();
+            _set_rgb_led();
+            _dotbot_vars.update_color_flag = false;
+        }
 
         if (_dotbot_vars.advertize) {
             db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_ADVERTISEMENT);
@@ -156,6 +158,10 @@ int main(void) {
 
 static void _advertise(void) {
     _dotbot_vars.advertize = true;
+}
+
+static void _update_color(void) {
+    _dotbot_vars.update_color_flag = true;
 }
 
 static void _previous_led_color(void) {
@@ -227,7 +233,7 @@ static void _set_rgb_led(void) {
 static void radio_callback(uint8_t *pkt, uint8_t len) {
     (void)len;
 
-    _dotbot_vars.ts_last_packet_received = db_timer_ticks();
+    _dotbot_vars.ts_last_packet_received = db_timer_ticks(0);
     uint8_t           *ptk_ptr           = pkt;
     protocol_header_t *header            = (protocol_header_t *)ptk_ptr;
     // Check destination address matches
