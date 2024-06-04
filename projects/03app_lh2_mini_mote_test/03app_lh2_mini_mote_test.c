@@ -136,8 +136,7 @@ int main(void) {
 
         // busy loop - hf_delay_us hangs if I use it here
         uint32_t busy_loop = db_timer_hf_now(0) + 100;
-        while (db_timer_hf_now(0) < busy_loop)
-            ;
+        while (db_timer_hf_now(0) < busy_loop) {}
 
         // Check the IMU and change the color of the RBG LED
         _imu_to_rgb();
