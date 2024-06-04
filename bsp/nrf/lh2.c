@@ -783,6 +783,14 @@ void _update_lfsr_checkpoints(uint8_t polynomial, uint32_t bits, uint32_t count)
  */
 uint8_t _select_sweep(db_lh2_t *lh2, uint8_t polynomial, uint32_t timestamp);
 
+/**
+ * @brief checks an SPI capture for signs of Qualysis Mocap pulses interference.
+ *        returns true if interference is found, returns false otherwise
+ *
+ * @param[in] arr: pointer to the array with the SPI capture to check
+ * @return True if interference is found, False otherwise
+ */
+bool _check_mocap_interference(uint8_t *arr);
 //=========================== public ===========================================
 
 void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
@@ -865,6 +873,14 @@ void db_lh2_process_raw_data(db_lh2_t *lh2) {
     if (!_get_from_spi_ring_buffer(&_lh2_vars.data, temp_spi_bits, &temp_timestamp)) {
         return;
     }
+
+// Check if Qualysis Mocap data is interfering with the SPI capture
+#if defined(LH2_MOCAP_FILTER)
+    if (_check_mocap_interference(temp_spi_bits)) {
+        return;  // if a qualysis pulse caused a false spi trigger, leave the function.
+    }
+#endif
+
     // perform the demodulation + poly search on the received packets
     // convert the SPI reading to bits via zero-crossing counter demodulation and differential/biphasic manchester decoding
     uint64_t temp_bits_sweep = _demodulate_light(temp_spi_bits);
@@ -1380,6 +1396,10 @@ uint8_t _determine_polynomial(uint64_t chipsH1, int8_t *start_val) {
     uint64_t bits_to_compare                      = 0;
     int32_t  threshold                            = POLYNOMIAL_BIT_ERROR_INITIAL_THRESHOLD;
 
+#if defined(LH2_MOCAP_FILTER)
+    threshold = 0;
+#endif
+
     // try polynomial vs. first buffer bits
     // this search takes 17-bit sequences and runs them forwards through the polynomial LFSRs.
     // if the remaining detected bits fit well with the chosen 17-bit sequence and a given polynomial, it is treated as "correct"
@@ -1788,6 +1808,25 @@ uint8_t _select_sweep(db_lh2_t *lh2, uint8_t polynomial, uint32_t timestamp) {
     }
 
     return selected_sweep;
+}
+
+bool _check_mocap_interference(uint8_t *arr) {
+
+    // Qualysis Mocap cameras pulse IR light modulated with a regular square wave at 1Mhz.
+    // At the 32Mhz speed we sample the SPI, that corresponds to an alternating 0xFF,0xFF,0xFF,0x00,0x00,0x00 pattern
+
+    // Check only the bottom half of the array, that should be enough to catch an error.
+    for (int i = 0; i < SPI_BUFFER_SIZE / 2; i++) {
+        // Check for 3 consecutive 0xFF
+        if (arr[i] == 0xFF && arr[i + 1] == 0xFF && arr[i + 2] == 0xFF) {
+            return true;  // Error for 3 consecutive 0xFF
+        }
+        // Check for 3 consecutive 0x00
+        if (arr[i] == 0x00 && arr[i + 1] == 0x00 && arr[i + 2] == 0x00) {
+            return true;  // Error for 3 consecutive 0x00
+        }
+    }
+    return false;  // No error found
 }
 
 //=========================== interrupts =======================================
