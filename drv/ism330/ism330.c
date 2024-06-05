@@ -19,14 +19,20 @@
 #include "i2c.h"
 #include "ism330.h"
 #include "math.h"
+#include "timer.h"
 
 //=========================== defines ==========================================
 
 #define I2C_DEV (0)
+#define TIMER_DEV 1
 
 //=========================== public functions =================================
 
 void db_ism330_init(const gpio_t *sda, const gpio_t *scl) {
+
+    // Init timer and wait to give the IMU time to power-up
+    db_timer_init(TIMER_DEV);
+    db_timer_delay_ms(TIMER_DEV, 10);
 
     // Initialize I2C
     db_i2c_init(I2C_DEV, scl, sda);
