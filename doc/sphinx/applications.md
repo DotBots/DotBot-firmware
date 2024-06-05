@@ -17,4 +17,6 @@ _projects/03app_log_dump
 _projects/03app_nrf5340_app
 _projects/03app_nrf5340_net
 _projects/03app_xgo
+_projects/03app_lh2_mini_mote_app
+_projects/03app_lh2_mini_mote_test
 ```

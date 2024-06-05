@@ -1,8 +1,8 @@
 /**
  * @file
- * @defgroup project_lh2_mini_mote    LH2-minimote test app
+ * @defgroup project_lh2_mini_mote_test LH2-minimote test app
  * @ingroup projects
- * @brief This is the radio-controlled LH2 mini mote app
+ * @brief This is the LH2 mini mote testing application
  *
  * Test every functionality of the minimote, to check it works.
  * IMU orientation changes the color of the RGB led
