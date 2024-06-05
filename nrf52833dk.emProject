@@ -68,4 +68,5 @@
   <import file_name="otap/otap.emProject" />
   <import file_name="upgate/upgate.emProject" />
   <import file_name="projects/projects-xgo.emProject" />
+  <import file_name="projects/projects-lh2-minimote.emProject" />
 </solution>
