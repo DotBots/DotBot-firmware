@@ -26,8 +26,8 @@ int main(void) {
     db_board_init();
     // Init the timer
     db_timer_hf_init(0);
-    db_timer_hf_delay_ms(0, 500);   // Wait for the IMU to power-up
-    //Init the  IMU
+    db_timer_hf_delay_ms(0, 500);  // Wait for the IMU to power-up
+    // Init the  IMU
     db_ism330_init(&db_sda, &db_scl);
 
     // read accelerometer and gyroscope data in a loop
