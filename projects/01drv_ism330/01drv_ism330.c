@@ -24,10 +24,11 @@ static ism330_gyro_data_t gyro_data;
 int main(void) {
 
     db_board_init();
-    db_ism330_init(&db_sda, &db_scl);
+    // Init the timer
     db_timer_hf_init(0);
+    // Init the  IMU
+    db_ism330_init(&db_sda, &db_scl);
 
-    db_timer_hf_delay_ms(0, 500);
     // read accelerometer and gyroscope data in a loop
     while (1) {
         // Read Accelerometer data

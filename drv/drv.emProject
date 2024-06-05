@@ -43,7 +43,7 @@
   <project Name="00drv_ism330">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_i2c(bsp)"
+      project_dependencies="00bsp_i2c(bsp);00bsp_timer(bsp)"
       project_directory="ism330"
       project_type="Library" />
     <file file_name="ism330.c" />
