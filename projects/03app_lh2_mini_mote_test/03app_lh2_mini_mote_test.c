@@ -78,7 +78,6 @@ static void _update_color(void);
  */
 int main(void) {
     db_board_init();
-    db_ism330_init(&db_sda, &db_scl);
     db_protocol_init();
     db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);
     db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
@@ -95,6 +94,12 @@ int main(void) {
     db_timer_hf_init(0);
     db_timer_hf_set_periodic_us(0, 1, DB_ADVERTIZEMENT_DELAY_US, &_advertise);
     db_timer_hf_set_periodic_us(0, 2, IMU_COLOR_DELAY_US, &_update_color);
+
+    // Init the IMU
+    db_timer_hf_delay_ms(0, 500);  // give the IMU some time to power-up before writing to it
+    db_ism330_init(&db_sda, &db_scl);
+
+    // Init the LH2
     db_lh2_init(&_dotbot_vars.lh2, &db_lh2_d, &db_lh2_e);
     db_lh2_start();
 
