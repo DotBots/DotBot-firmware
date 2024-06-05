@@ -17,7 +17,7 @@
 
 //=========================== defines ==========================================
 
-#define DB_FIRMWARE_VERSION  (8)                   ///< Version of the firmware
+#define DB_FIRMWARE_VERSION  (9)                   ///< Version of the firmware
 #define DB_SWARM_ID          (0x0000)              ///< Default swarm ID
 #define DB_BROADCAST_ADDRESS 0xffffffffffffffffUL  ///< Broadcast address
 #define DB_GATEWAY_ADDRESS   0x0000000000000000UL  ///< Gateway address
@@ -25,26 +25,28 @@
 
 /// Command type
 typedef enum {
-    DB_PROTOCOL_CMD_MOVE_RAW   = 0,   ///< Move raw command type
-    DB_PROTOCOL_CMD_RGB_LED    = 1,   ///< RGB LED command type
-    DB_PROTOCOL_LH2_RAW_DATA   = 2,   ///< Lighthouse 2 raw data
-    DB_PROTOCOL_LH2_LOCATION   = 3,   ///< Lighthouse processed locations
-    DB_PROTOCOL_ADVERTISEMENT  = 4,   ///< DotBot advertisements
-    DB_PROTOCOL_GPS_LOCATION   = 5,   ///< GPS data from SailBot
-    DB_PROTOCOL_DOTBOT_DATA    = 6,   ///< DotBot specific data (for now location and direction)
-    DB_PROTOCOL_CONTROL_MODE   = 7,   ///< Robot remote control mode (automatic or manual)
-    DB_PROTOCOL_LH2_WAYPOINTS  = 8,   ///< List of LH2 waypoints to follow
-    DB_PROTOCOL_GPS_WAYPOINTS  = 9,   ///< List of GPS waypoints to follow
-    DB_PROTOCOL_SAILBOT_DATA   = 10,  ///< SailBot specific data (for now GPS and direction)
-    DB_PROTOCOL_CMD_XGO_ACTION = 11,  ///< XGO action command
+    DB_PROTOCOL_CMD_MOVE_RAW       = 0,   ///< Move raw command type
+    DB_PROTOCOL_CMD_RGB_LED        = 1,   ///< RGB LED command type
+    DB_PROTOCOL_LH2_RAW_DATA       = 2,   ///< Lighthouse 2 raw data
+    DB_PROTOCOL_LH2_LOCATION       = 3,   ///< Lighthouse processed locations
+    DB_PROTOCOL_ADVERTISEMENT      = 4,   ///< DotBot advertisements
+    DB_PROTOCOL_GPS_LOCATION       = 5,   ///< GPS data from SailBot
+    DB_PROTOCOL_DOTBOT_DATA        = 6,   ///< DotBot specific data (for now location and direction)
+    DB_PROTOCOL_CONTROL_MODE       = 7,   ///< Robot remote control mode (automatic or manual)
+    DB_PROTOCOL_LH2_WAYPOINTS      = 8,   ///< List of LH2 waypoints to follow
+    DB_PROTOCOL_GPS_WAYPOINTS      = 9,   ///< List of GPS waypoints to follow
+    DB_PROTOCOL_SAILBOT_DATA       = 10,  ///< SailBot specific data (for now GPS and direction)
+    DB_PROTOCOL_CMD_XGO_ACTION     = 11,  ///< XGO action command
+    DB_PROTOCOL_LH2_PROCESSED_DATA = 12,  ///< Lighthouse 2 data processed at the DotBot
 } command_type_t;
 
 /// Application type
 typedef enum {
-    DotBot  = 0,  ///< DotBot application
-    SailBot = 1,  ///< SailBot application
-    FreeBot = 2,  ///< FreeBot application
-    XGO     = 3,  ///< XGO application
+    DotBot        = 0,  ///< DotBot application
+    SailBot       = 1,  ///< SailBot application
+    FreeBot       = 2,  ///< FreeBot application
+    XGO           = 3,  ///< XGO application
+    LH2_mini_mote = 4,  ///< LH2 mini mote application
 } application_type_t;
 
 /// Control mode
@@ -103,6 +105,13 @@ typedef struct __attribute__((packed)) {
     uint8_t                   length;                         ///< Number of waypoints
     protocol_gps_coordinate_t coordinates[DB_MAX_WAYPOINTS];  ///< Array containing a list of GPS coordinates
 } protocol_gps_waypoints_t;
+
+/// LH2 process data compressed for sending over radio.
+typedef struct __attribute__((packed)) {
+    uint8_t  selected_polynomial;  ///< selected poly is the polyomial # (between 0 and 31) that the demodulation code thinks the demodulated bits are a part of, initialize to error state
+    uint32_t lfsr_location;        ///< LFSR location is the position in a given polynomial's LFSR that the decoded data is, initialize to error state
+    uint32_t timestamp_us;         ///< How many microseconds passed since the sample was taken
+} protocol_lh2_processed_packet_t;
 
 //=========================== public ===========================================
 

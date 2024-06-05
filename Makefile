@@ -39,6 +39,8 @@ ifeq (nrf5340dk-app,$(BUILD_TARGET))
     03app_log_dump \
     03app_nrf5340_app \
     03app_sailbot \
+    03app_lh2_mini_mote_app \
+    03app_lh2_mini_mote_test \
     #
 else ifeq (nrf5340dk-net,$(BUILD_TARGET))
   PROJECTS ?= \
@@ -84,18 +86,26 @@ endif
 
 # remove incompatible apps (nrf5340, sailbot gateway) for dotbot (v1, v2) builds
 ifneq (,$(filter dotbot-v1,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 01bsp_qdec 01bsp_qspi 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_nrf5340_% 03app_freebot 03app_xgo,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 01bsp_qspi 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_nrf5340_% 03app_freebot 03app_lh2_mini_mote% 03app_xgo,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
 endif
 
 ifneq (,$(filter dotbot-v2,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_xgo 03app_nrf5340_net 03app_freebot,$(PROJECTS))
+  PROJECTS := $(filter-out 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_xgo 03app_nrf5340_net 03app_freebot 03app_lh2_mini_mote%,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
+endif
+
+# remove incompatible apps (nrf5340, sailbot, gateway, dotbot) for lh2-mini-mote builds
+ifneq (,$(filter lh2-mini-mote,$(BUILD_TARGET)))
+  PROJECTS := $(filter-out 01bsp_qdec 01bsp_motors 01bsp_qspi 01bsp_rpm 01drv_lis2mdl 01drv_lis3mdl 01drv_lsm6ds 01drv_imu 01drv_move 01drv_pid 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_dotbot 03app_sailbot 03app_nrf5340_% 03app_freebot 03app_xgo,$(PROJECTS))
+  ARTIFACT_PROJECTS := 03app_lh2_mini_mote_app
+  # Bootloader not supported on lh2-mini-mote
+  BOOTLOADER :=
 endif
 
 # remove incompatible apps (nrf5340, dotbot, gateway) for sailbot-v1 build
 ifeq (sailbot-v1,$(BUILD_TARGET))
-  PROJECTS := $(filter-out 01bsp_qdec 01bsp_qspi 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_dotbot 03app_nrf5340_% 03app_freebot 03app_xgo,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 01bsp_qspi 01drv_lis3mdl 01drv_move 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_dotbot 03app_nrf5340_% 03app_freebot 03app_lh2_mini_mote% 03app_xgo,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_sailbot
 endif
 
