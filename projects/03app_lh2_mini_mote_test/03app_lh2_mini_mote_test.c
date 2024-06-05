@@ -233,7 +233,7 @@ static void _set_rgb_led(void) {
 static void radio_callback(uint8_t *pkt, uint8_t len) {
     (void)len;
 
-    _dotbot_vars.ts_last_packet_received = db_timer_ticks(0);
+    _dotbot_vars.ts_last_packet_received = db_timer_hf_now(0);
     uint8_t           *ptk_ptr           = pkt;
     protocol_header_t *header            = (protocol_header_t *)ptk_ptr;
     // Check destination address matches
