@@ -94,10 +94,10 @@ int main(void) {
         db_radio_init(_radio_callback, DB_RADIO_BLE_1MBit);
         db_radio_set_frequency(RX_FREQUENCY);  // Set the RX frequency to 2408 MHz.
         db_radio_rx();
-        //NRF_RADIO->SHORTS   = (RADIO_SHORTS_ADDRESS_RSSISTART_Disabled << RADIO_SHORTS_ADDRESS_RSSISTART_Pos) ; 
-
-
-
+        NRF_RADIO->SHORTS   = (RADIO_SHORTS_READY_START_Enabled << RADIO_SHORTS_READY_START_Pos) |             
+                              (RADIO_SHORTS_END_DISABLE_Enabled << RADIO_SHORTS_END_DISABLE_Pos) |             
+                              (RADIO_SHORTS_DISABLED_RSSISTOP_Enabled << RADIO_SHORTS_DISABLED_RSSISTOP_Pos)| 
+                              (RADIO_SHORTS_DISABLED_RXEN_Enabled << RADIO_SHORTS_DISABLED_RXEN_Pos);
     } else {
         db_radio_ieee_802154_init(_radio_callback);
         db_radio_ieee_802154_set_frequency(RX_FREQUENCY);  // Set the RX frequency to 2408 MHz.
