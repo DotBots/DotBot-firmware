@@ -37,7 +37,7 @@ int main(void) {
     if (RADIO_MODE == 1) {  // BLE
         db_radio_init(NULL, DB_RADIO_BLE_1MBit);
         db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
-        db_radio_set_tx_power(RADIO_TXPOWER_TXPOWER_0dBm);
+        db_radio_set_tx_power(POWER);
 
         for (i = 0; i < 500; i++) {
 
@@ -48,8 +48,8 @@ int main(void) {
         }
     } else {  // 802.15.4
         db_radio_ieee_802154_init(NULL);
-        db_radio_ieee_802154_set_frequency(8);  // Set the RX frequency to 2408 MHz.
-        db_radio_ieee_802154_set_tx_power(RADIO_TXPOWER_TXPOWER_0dBm);
+        db_radio_ieee_802154_set_frequency(RSSI_FREQUENCY);  // Set the RX frequency to 2408 MHz.
+        db_radio_ieee_802154_set_tx_power(POWER);
 
         for (i = 0; i < 500; i++) {
 

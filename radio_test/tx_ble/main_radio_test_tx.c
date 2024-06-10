@@ -25,13 +25,13 @@
 #define RADIO_TXPOWER_TXPOWER_0dBm 0
 #endif
 
-#define payload_size 100
+#define PAYLOAD_SIZE 100
 
 static const gpio_t db_gpio_0_8 = { .port = 0, .pin = 8 };  // P0.08
 #if !(defined(NRF5340_XXAA))
 static const gpio_t db_gpio_0_6 = { .port = 0, .pin = 6 };  // P0.06
 #endif
-static uint8_t _payload[payload_size] = { 0 };
+static uint8_t _payload[PAYLOAD_SIZE] = { 0 };
 static uint8_t i;
 
 static void _led2_blink(void) {
@@ -53,14 +53,14 @@ static void _radio_tx(void) {
 
     if (RADIO_MODE == 1) {
         db_timer_hf_set_oneshot_us(1, 2000, _gpio_trigger);
-        db_radio_tx(&_payload[0], payload_size * sizeof(uint8_t));
+        db_radio_tx(&_payload[0], PAYLOAD_SIZE * sizeof(uint8_t));
     } else {
-        db_timer_hf_set_oneshot_us(1, 8000, _gpio_trigger);
-        db_radio_ieee_802154_tx(&_payload[0], payload_size * sizeof(uint8_t));
+        db_timer_hf_set_oneshot_us(1, 6000, _gpio_trigger);
+        db_radio_ieee_802154_tx(&_payload[0], PAYLOAD_SIZE * sizeof(uint8_t));
     }
     _payload[0]++;
     i = 1;
-    while (_payload[i - 1] == 0 && i < payload_size) {
+    while (_payload[i - 1] == 0 && i < PAYLOAD_SIZE) {
         _payload[i++]++;
     }
 }
@@ -108,12 +108,12 @@ int main(void) {
 
     if (RADIO_MODE == 1) {
         db_radio_init(NULL, DB_RADIO_BLE_1MBit);
-        db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
+        db_radio_set_frequency(TX_FREQUENCY);  // Set the RX frequency to 2408 MHz.
         db_radio_set_tx_power(POWER);
         db_radio_disable();
     } else {
         db_radio_ieee_802154_init(NULL);
-        db_radio_ieee_802154_set_frequency(8);  // Set the RX frequency to 2408 MHz.
+        db_radio_ieee_802154_set_frequency(TX_FREQUENCY);  // Set the RX frequency to 2408 MHz.
         db_radio_ieee_802154_set_tx_power(POWER);
         db_radio_ieee_802154_disable();
     }

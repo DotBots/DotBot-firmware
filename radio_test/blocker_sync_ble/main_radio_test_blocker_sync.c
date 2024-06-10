@@ -26,7 +26,7 @@
 #endif
 
 #if !(defined(NRF5340_XXAA))
-static const gpio_t db_gpio_0_8 = { .port = 0, .pin = 8 };  // P0.08
+static const gpio_t db_gpio_0_8 = { .port = 0, .pin = 6 };  // P0.08
 #endif
 static const gpio_t db_gpio_0_7            = { .port = 0, .pin = 7 };  // P0.07
 static uint8_t      _payload[PAYLOAD_SIZE] = { 0 };
@@ -51,13 +51,14 @@ static void _enable_radio(void) {
         return;
     }
 
-    for (i = 0; i < PAYLOAD_SIZE; i++) {
-        _payload[i] = (rand() % 255);
-    }
+    
     if (RADIO_MODE == 1) {  // BLE
         db_radio_tx(&_payload[0], PAYLOAD_SIZE * sizeof(uint8_t));
     } else {  // 802.15.4
         db_radio_ieee_802154_tx(&_payload[0], PAYLOAD_SIZE * sizeof(uint8_t));
+    }
+    for (i = 0; i < PAYLOAD_SIZE; i++) {
+        _payload[i] = (rand() % 255);
     }
 }
 
@@ -68,12 +69,17 @@ static void _gpio_callback(void *ctx) {
 }
 
 int main(void) {
+
+db_gpio_init_irq(&db_gpio_0_7, DB_GPIO_IN, DB_GPIO_IRQ_EDGE_RISING, _gpio_callback, NULL);  // can receive GPIO IRq from Tx and begin to block 
+
 #if !(defined(NRF5340_XXAA))
-    // Debug radio Blocker visualisation
-    uint32_t event_tx_ready    = (uint32_t)&NRF_RADIO->EVENTS_TXREADY;
-    uint32_t event_tx_disabled = (uint32_t)&NRF_RADIO->EVENTS_DISABLED;
-    uint32_t task_gpiote_set   = (uint32_t)&NRF_GPIOTE->TASKS_SET[1];
-    uint32_t task_gpiote_clr   = (uint32_t)&NRF_GPIOTE->TASKS_CLR[1];
+    // Debug radio tx visualisation
+    uint32_t event_tx_ready   = (uint32_t)&NRF_RADIO->EVENTS_TXREADY;
+    uint32_t event_tx_end     = (uint32_t)&NRF_RADIO->EVENTS_END;
+    uint32_t event_tx_adress  = (uint32_t)&NRF_RADIO->EVENTS_ADDRESS;
+    uint32_t event_tx_payload = (uint32_t)&NRF_RADIO->EVENTS_PAYLOAD;
+    uint32_t task_gpiote_set  = (uint32_t)&NRF_GPIOTE->TASKS_SET[1];
+    uint32_t task_gpiote_clr  = (uint32_t)&NRF_GPIOTE->TASKS_CLR[1];
 
     NRF_GPIOTE->CONFIG[1] = (GPIOTE_CONFIG_MODE_Task << GPIOTE_CONFIG_MODE_Pos) |
                             (db_gpio_0_8.pin << GPIOTE_CONFIG_PSEL_Pos) |
@@ -81,13 +87,19 @@ int main(void) {
                             (GPIOTE_CONFIG_POLARITY_None << GPIOTE_CONFIG_POLARITY_Pos) |
                             (GPIOTE_CONFIG_OUTINIT_Low << GPIOTE_CONFIG_OUTINIT_Pos);
 
-    NRF_PPI->CHEN = 1 << 0 | 1 << 1;
+    NRF_PPI->CHEN = 1 << 0 | 1 << 1 | 1 << 2 | 1 << 3;  // en CH[0] to CH[3]
 
     NRF_PPI->CH[0].EEP = event_tx_ready;
     NRF_PPI->CH[0].TEP = task_gpiote_set;
 
-    NRF_PPI->CH[1].EEP = event_tx_disabled;
+    NRF_PPI->CH[1].EEP = event_tx_adress;
     NRF_PPI->CH[1].TEP = task_gpiote_clr;
+
+    NRF_PPI->CH[2].EEP = event_tx_payload;
+    NRF_PPI->CH[2].TEP = task_gpiote_set;
+
+    NRF_PPI->CH[3].EEP = event_tx_end;
+    NRF_PPI->CH[3].TEP = task_gpiote_clr;
 #endif
 
     // Init timer ,radio and gpio
@@ -99,17 +111,17 @@ int main(void) {
 
     if ((RADIO_MODE == 1) || (RADIO_MODE == 3)) {  // BLE and TONE
         db_radio_init(NULL, DB_RADIO_BLE_1MBit);
-        db_radio_set_frequency(FREQUENCY);  // Set the RX frequency to 2408 MHz.
+        db_radio_set_frequency(BLOCKER_FREQUENCY);  // Set the RX frequency to 2408 MHz.
         db_radio_set_tx_power(POWER);
 
     } else {  // 802.15.4
         db_radio_ieee_802154_init(NULL);
-        db_radio_ieee_802154_set_frequency(FREQUENCY);  // Set the RX frequency to 2408 MHz.
+        db_radio_ieee_802154_set_frequency(BLOCKER_FREQUENCY);  // Set the RX frequency to 2408 MHz.
         db_radio_ieee_802154_set_tx_power(POWER);
     }
     // srand( time( NULL ) );
 
-    db_gpio_init_irq(&db_gpio_0_7, DB_GPIO_IN, DB_GPIO_IRQ_EDGE_RISING, _gpio_callback, NULL);  // can receive GPIO IRq from Tx and begin to block
+
 
     while (1) {}
 }

@@ -1,10 +1,10 @@
 #include <nrf.h>
 
 #define RADIO_MODE 3
-#define FREQUENCY 8
+#define BLOCKER_FREQUENCY 8
 
-#define START_DELAY  150  // 150 to block BLE / 200 to block 802.15.4
-#define END_DELAY  1800   // 1800 to block BLE / 4000 to block 802.15.4
+#define START_DELAY  80 
+#define END_DELAY  5000   
 
 #define PAYLOAD_SIZE 1  // Not use
 

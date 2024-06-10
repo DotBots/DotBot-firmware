@@ -20,6 +20,7 @@
 #include "radio_ieee_802154.h"
 #include "hdlc.h"
 #include "timer.h"
+#include "timer_hf.h"
 
 #define DB_BUFFER_MAX_BYTES (255U)       ///< Max bytes in UART receive buffer
 #define DB_UART_BAUDRATE    (1000000UL)  ///< UART baudrate used by the gateway
@@ -29,10 +30,11 @@
 #define DB_UART_INDEX (0)  ///< Index of UART peripheral to use
 #endif
 
-#define payload_size 100
+#define PAYLOAD_SIZE 100
+#define TIMER_HF          (NRF_TIMER4)         ///< Backend TIMER peripheral used by the timer
 
 typedef struct __attribute__((packed)) {
-    uint8_t payload[payload_size];
+    uint8_t payload[PAYLOAD_SIZE];
     int8_t  length;
     int8_t  rssi;
     bool    crc;
@@ -49,7 +51,7 @@ static void _led1_blink(void) {
 
 static void _radio_callback(uint8_t *packet, uint8_t length, bool crc) {
 
-    for (i = 0; i < payload_size; i++) {
+    for (i = 0; i < PAYLOAD_SIZE; i++) {
         _data.payload[i] = packet[i];
     }
     _data.length = length;
@@ -70,13 +72,35 @@ int main(void) {
     db_timer_set_periodic_ms(0, 500, _led1_blink);
 
     if (RADIO_MODE == 1) {
+        db_timer_hf_init();
+        TIMER_HF->INTENSET                               = (1 << (TIMER_INTENSET_COMPARE0_Pos + 0));   
+        TIMER_HF->CC[0] = 20;
+
+
+        uint32_t event_tx_adress  = (uint32_t)&NRF_RADIO->EVENTS_ADDRESS;
+        uint32_t event_timer_end = (uint32_t)&TIMER_HF->EVENTS_COMPARE[0];
+        uint32_t task_timer_restart  = (uint32_t)&TIMER_HF->TASKS_CLEAR;
+        uint32_t task_RSSISTART  = (uint32_t)&NRF_RADIO->TASKS_RSSISTART;
+
+
+        NRF_PPI->CHEN = 1 << 0 | 1 << 1 ;   // en CH[0] to CH[1]
+
+        NRF_PPI->CH[0].EEP = event_tx_adress;
+        NRF_PPI->CH[0].TEP = task_timer_restart;
+
+        NRF_PPI->CH[1].EEP = event_timer_end;
+        NRF_PPI->CH[1].TEP = task_RSSISTART;
+
         db_radio_init(_radio_callback, DB_RADIO_BLE_1MBit);
-        db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
+        db_radio_set_frequency(RX_FREQUENCY);  // Set the RX frequency to 2408 MHz.
         db_radio_rx();
+        //NRF_RADIO->SHORTS   = (RADIO_SHORTS_ADDRESS_RSSISTART_Disabled << RADIO_SHORTS_ADDRESS_RSSISTART_Pos) ; 
+
+
 
     } else {
         db_radio_ieee_802154_init(_radio_callback);
-        db_radio_ieee_802154_set_frequency(8);  // Set the RX frequency to 2408 MHz.
+        db_radio_ieee_802154_set_frequency(RX_FREQUENCY);  // Set the RX frequency to 2408 MHz.
         db_radio_ieee_802154_rx();
     }
 

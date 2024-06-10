@@ -9,6 +9,6 @@
 * @copyright Inria, 2024
 */
 
-#include "../tx_ble/conf.h"
+#include "conf.h"
 
 #include "../blocker_rssi_ble/main_radio_test_blocker_rssi.c"

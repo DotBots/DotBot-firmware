@@ -29,7 +29,7 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="../tx_802154/conf.h" />
+      <file file_name="conf.h" />
       <file file_name="main.c" />
       <file file_name="../blocker_rssi_ble/main_radio_test_blocker_rssi.c">
         <configuration Name="Debug" build_exclude_from_build="Yes" />
@@ -72,7 +72,7 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="../tx_ble/conf.h" />
+      <file file_name="conf.h" />
       <file file_name="main.c" />
       <file file_name="main_radio_test_blocker_rssi.c">
         <configuration Name="Debug" build_exclude_from_build="Yes" />
@@ -390,7 +390,7 @@
   <project Name="rx_ble">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00bsp_uart(bsp);00drv_dotbot_hdlc(drv);00bsp_radio(bsp)"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00bsp_uart(bsp);00drv_dotbot_hdlc(drv);00bsp_radio(bsp);00bsp_timer_hf(bsp)"
       project_directory="rx_ble"
       project_type="Executable" />
     <folder Name="Device Files">
