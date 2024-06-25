@@ -2,4 +2,4 @@ click==8.1.7
 cryptography==42.0.7
 lz4==4.3.3
 tqdm==4.66.1
-pydotbot
+pydotbot==0.19.4
