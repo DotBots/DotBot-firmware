@@ -158,7 +158,7 @@
   <project Name="01bsp_motors">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_motors(bsp);00bsp_timer(bsp)"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00drv_dotbot_motors(drv)"
       project_directory="01bsp_motors"
       project_type="Executable" />
     <folder Name="Device Files">
@@ -1069,7 +1069,7 @@
   <project Name="01drv_pid">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_motors(bsp);00bsp_dotbot_rpm(bsp);00bsp_timer_hf(bsp);00drv_pid(drv)"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_rpm(bsp);00bsp_timer_hf(bsp);00drv_pid(drv);00drv_dotbot_motors(drv)"
       project_directory="01drv_pid"
       project_type="Executable" />
     <folder Name="Device Files">
