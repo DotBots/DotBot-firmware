@@ -15,7 +15,6 @@ ifeq (nrf5340dk-app,$(BUILD_TARGET))
     01bsp_gpio \
     01bsp_i2c \
     01bsp_lighthouse \
-    01bsp_motors \
     01bsp_nvmc \
     01bsp_qdec \
     01bsp_qspi \
@@ -30,6 +29,7 @@ ifeq (nrf5340dk-app,$(BUILD_TARGET))
     01drv_lis2mdl \
     01drv_lis3mdl \
     01drv_lz4 \
+    01drv_motors \
     01drv_move \
     01drv_pid \
     01drv_uzlib \
@@ -47,7 +47,6 @@ else ifeq (nrf5340dk-net,$(BUILD_TARGET))
     01bsp_device \
     01bsp_gpio \
     01bsp_i2c \
-    01bsp_motors \
     01bsp_nvmc \
     01bsp_radio_txrx \
     01bsp_radio_txrx_lr \
@@ -58,6 +57,7 @@ else ifeq (nrf5340dk-net,$(BUILD_TARGET))
     01bsp_timer_hf \
     01bsp_uart \
     01drv_lis2mdl \
+    01drv_motors \
     01drv_pid \
     03app_dotbot_gateway \
     03app_dotbot_gateway_lr \
@@ -97,7 +97,7 @@ endif
 
 # remove incompatible apps (nrf5340, sailbot, gateway, dotbot) for lh2-mini-mote builds
 ifneq (,$(filter lh2-mini-mote,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 01bsp_qdec 01bsp_motors 01bsp_qspi 01bsp_rpm 01drv_lis2mdl 01drv_lis3mdl 01drv_lsm6ds 01drv_imu 01drv_move 01drv_pid 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_dotbot 03app_sailbot 03app_nrf5340_% 03app_freebot 03app_xgo,$(PROJECTS))
+  PROJECTS := $(filter-out 01bsp_qdec 01bsp_qspi 01bsp_rpm 01drv_imu 01drv_lis2mdl 01drv_lis3mdl 01drv_lsm6ds 01drv_motors 01drv_move 01drv_pid 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_dotbot 03app_sailbot 03app_nrf5340_% 03app_freebot 03app_xgo,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_lh2_mini_mote_app
   # Bootloader not supported on lh2-mini-mote
   BOOTLOADER :=
