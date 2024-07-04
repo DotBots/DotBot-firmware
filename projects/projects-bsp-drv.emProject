@@ -358,11 +358,11 @@
       <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
-  <project Name="01bsp_rgbled">
+  <project Name="01drv_rgbled">
     <configuration
       Name="Common"
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00drv_rgbled(drv)"
-      project_directory="01bsp_rgbled"
+      project_directory="01drv_rgbled"
       project_type="Executable" />
     <folder Name="Device Files">
       <file file_name="$(DeviceCommonHeaderFile)" />
@@ -387,7 +387,7 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="01bsp_rgbled.c" />
+      <file file_name="main.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="$(DeviceCommonVectorsFile)" />
