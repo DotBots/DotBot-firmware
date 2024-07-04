@@ -400,7 +400,7 @@
   <project Name="01bsp_rgbled">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_rgbled(bsp);00bsp_timer(bsp)"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00drv_rgbled(drv)"
       project_directory="01bsp_rgbled"
       project_type="Executable" />
     <folder Name="Device Files">

@@ -137,6 +137,15 @@
     <file file_name="pid/pid.c" />
     <file file_name="pid.h" />
   </project>
+  <project Name="00drv_rgbled">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_gpio(bsp)"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="rgbled/rgbled.c" />
+    <file file_name="rgbled.h" />
+  </project>
   <project Name="00drv_rgbled_pwm">
     <configuration
       Name="Common"
