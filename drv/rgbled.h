@@ -2,8 +2,8 @@
 #define __RGBLED_H
 
 /**
- * @defgroup    bsp_rgbled      RGB LED driver
- * @ingroup     bsp
+ * @defgroup    drv_rgbled      RGB LED driver
+ * @ingroup     drv
  * @brief       Control the rgbled driver (through SPI)
  *
  * @{

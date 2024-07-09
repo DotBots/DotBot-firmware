@@ -31,24 +31,6 @@
     <file file_name="nrf/$(Lh2ImplementationFile)" />
     <file file_name="lh2.h" />
   </project>
-  <project Name="00bsp_dotbot_motors">
-    <configuration
-      Name="Common"
-      project_dependencies="00bsp_pwm"
-      project_directory="."
-      project_type="Library" />
-    <file file_name="nrf/motors.c" />
-    <file file_name="motors.h" />
-  </project>
-  <project Name="00bsp_dotbot_rgbled">
-    <configuration
-      Name="Common"
-      project_dependencies="00bsp_gpio(bsp)"
-      project_directory="."
-      project_type="Library" />
-    <file file_name="nrf/rgbled.c" />
-    <file file_name="rgbled.h" />
-  </project>
   <project Name="00bsp_dotbot_rpm">
     <configuration
       Name="Common"
