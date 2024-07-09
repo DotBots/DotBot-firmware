@@ -16,14 +16,12 @@ _api/bsp_gpio
 _api/bsp_i2c
 _api/bsp_ipc
 _api/bsp_lh2
-_api/bsp_motors
 _api/bsp_nvmc
 _api/bsp_partition
 _api/bsp_pwm
 _api/bsp_qdec
 _api/bsp_qspi
 _api/bsp_radio
-_api/bsp_rgbled
 _api/bsp_rng
 _api/bsp_rpm
 _api/bsp_saadc

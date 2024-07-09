@@ -2,8 +2,8 @@
 #define __MOTORS_H
 
 /**
- * @defgroup    bsp_motors  Motors driver
- * @ingroup     bsp
+ * @defgroup    drv_motors  Motors driver
+ * @ingroup     drv
  * @brief       Control the DC motors
  *
  * @{
