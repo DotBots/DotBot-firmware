@@ -161,4 +161,12 @@
     <file file_name="nrf/uart.c" />
     <file file_name="uart.h" />
   </project>
+  <project Name="00bsp_wdt">
+    <configuration
+      Name="Common"
+      project_directory="."
+      project_type="Library" />
+    <file file_name="nrf/wdt.c" />
+    <file file_name="wdt.h" />
+  </project>
 </solution>
