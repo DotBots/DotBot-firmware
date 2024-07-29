@@ -25,6 +25,7 @@ ifeq (nrf5340dk-app,$(BUILD_TARGET))
     01bsp_timer \
     01bsp_timer_hf \
     01bsp_uart \
+    01bsp_wdt \
     01drv_lis2mdl \
     01drv_lis3mdl \
     01drv_lz4 \
@@ -55,6 +56,7 @@ else ifeq (nrf5340dk-net,$(BUILD_TARGET))
     01bsp_timer \
     01bsp_timer_hf \
     01bsp_uart \
+    01bsp_wdt \
     01drv_lis2mdl \
     01drv_motors \
     01drv_pid \
