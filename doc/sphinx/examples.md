@@ -31,6 +31,7 @@ _examples/01bsp_spim
 _examples/01bsp_timer
 _examples/01bsp_timer_hf
 _examples/01bsp_uart
+_examples/01bsp_wdt
 ```
 
 Libraries examples

@@ -29,4 +29,5 @@ _api/bsp_spim
 _api/bsp_timer
 _api/bsp_timer_hf
 _api/bsp_uart
+_api/bsp_wdt
 ```
