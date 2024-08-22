@@ -24,9 +24,21 @@ static void _wdt_cb(void *ctx) {
 
 int main(void) {
     printf("Starting watchdog timer\n");
+#if defined(BOARD_NRF5340DK) && (NRF_APPLICATION)
+    db_gpio_init(&db_led2, DB_GPIO_OUT);
+    db_gpio_set(&db_led2);
+    uint32_t resetreas     = NRF_RESET_S->RESETREAS;
+    NRF_RESET_S->RESETREAS = NRF_RESET_S->RESETREAS;
+    if (resetreas & RESET_RESETREAS_DOG0_Detected << RESET_RESETREAS_DOG0_Pos) {
+        db_gpio_clear(&db_led2);
+    }
+#endif
 
     db_timer_hf_init(0);
     db_timer_hf_delay_s(0, 1);
+#if defined(BOARD_NRF5340DK) && (NRF_APPLICATION)
+    db_gpio_set(&db_led2);
+#endif
     db_gpio_init(&db_led1, DB_GPIO_OUT);
     db_wdt_init(2, _wdt_cb, NULL);
     db_wdt_start();
