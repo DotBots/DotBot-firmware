@@ -19,6 +19,7 @@
 #include "ipc.h"
 #include "radio.h"
 #include "timer_hf.h"
+#include "tz.h"
 
 //=========================== variables ========================================
 
@@ -35,26 +36,17 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
     NRF_REGULATORS_S->VREGH.DCDCEN     = (REGULATORS_VREGH_DCDCEN_DCDCEN_Disabled << REGULATORS_VREGH_DCDCEN_DCDCEN_Pos);
 
     // RADIO (address at 0x41008000 => periph ID is 8)
-    NRF_SPU_S->PERIPHID[8].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
-                                   SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
-                                   SPU_PERIPHID_PERM_DMA_NoSeparateAttribute << SPU_PERIPHID_PERM_DMA_Pos |
-                                   SPU_PERIPHID_PERM_PRESENT_IsPresent << SPU_PERIPHID_PERM_PRESENT_Pos |
-                                   SPU_PERIPHID_PERM_DMASEC_NonSecure << SPU_PERIPHID_PERM_DMASEC_Pos);
+    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_RADIO);
+    db_tz_enable_network_periph_dma(NRF_NETWORK_PERIPH_ID_RADIO);
 
     // IPC (address at 0x41012000 => periph ID is 18)
-    NRF_SPU_S->PERIPHID[18].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
-                                    SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
-                                    SPU_PERIPHID_PERM_PRESENT_IsPresent << SPU_PERIPHID_PERM_PRESENT_Pos);
+    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_IPC);
 
     // APPMUTEX (address at 0x41030000 => periph ID is 48)
-    NRF_SPU_S->PERIPHID[48].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
-                                    SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
-                                    SPU_PERIPHID_PERM_PRESENT_IsPresent << SPU_PERIPHID_PERM_PRESENT_Pos);
+    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_APPMUTEX);
 
     // Define RAMREGION 2 (0x20004000 to 0x20005FFF, e.g 8KiB) as non secure. It's used to share data between cores
-    NRF_SPU_S->RAMREGION[2].PERM = (SPU_RAMREGION_PERM_READ_Enable << SPU_RAMREGION_PERM_READ_Pos |
-                                    SPU_RAMREGION_PERM_WRITE_Enable << SPU_RAMREGION_PERM_WRITE_Pos |
-                                    SPU_RAMREGION_PERM_SECATTR_Non_Secure << SPU_RAMREGION_PERM_SECATTR_Pos);
+    db_configure_ram_non_secure(2, 1);
 
     NRF_IPC_S->INTENSET                          = 1 << DB_IPC_CHAN_RADIO_RX;
     NRF_IPC_S->SEND_CNF[DB_IPC_CHAN_REQ]         = 1 << DB_IPC_CHAN_REQ;

@@ -14,26 +14,24 @@
 
 #include "ipc.h"
 #include "rng.h"
+#include "tz.h"
 
 //========================== functions =========================================
 
 //=========================== public ===========================================
 
 void db_rng_init(void) {
+    // RNG (address at 0x41009000 => periph ID is 9)
+    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_RNG);
+
     // IPC (address at 0x41012000 => periph ID is 18)
-    NRF_SPU_S->PERIPHID[18].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
-                                    SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
-                                    SPU_PERIPHID_PERM_PRESENT_IsPresent << SPU_PERIPHID_PERM_PRESENT_Pos);
+    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_IPC);
 
     // APPMUTEX (address at 0x41030000 => periph ID is 48)
-    NRF_SPU_S->PERIPHID[48].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
-                                    SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
-                                    SPU_PERIPHID_PERM_PRESENT_IsPresent << SPU_PERIPHID_PERM_PRESENT_Pos);
+    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_APPMUTEX);
 
     // Define RAMREGION 2 (0x20004000 to 0x20005FFF, e.g 8KiB) as non secure. It's used to share data between cores
-    NRF_SPU_S->RAMREGION[2].PERM = (SPU_RAMREGION_PERM_READ_Enable << SPU_RAMREGION_PERM_READ_Pos |
-                                    SPU_RAMREGION_PERM_WRITE_Enable << SPU_RAMREGION_PERM_WRITE_Pos |
-                                    SPU_RAMREGION_PERM_SECATTR_Non_Secure << SPU_RAMREGION_PERM_SECATTR_Pos);
+    db_configure_ram_non_secure(2, 1);
 
     NRF_IPC_S->SEND_CNF[DB_IPC_CHAN_REQ] = 1 << DB_IPC_CHAN_REQ;
 
