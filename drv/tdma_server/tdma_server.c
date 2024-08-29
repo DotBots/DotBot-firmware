@@ -35,7 +35,7 @@
 #define TDMA_SERVER_DEFAULT_TX_START_US    0                                      ///< Default duration of the tdma frame, in microseconds.
 #define TDMA_SERVER_DEFAULT_TX_DURATION_US TDMA_SERVER_TIME_SLOT_DURATION_US      ///< Default duration of the tdma frame, in microseconds.
 
-#define TDMA_SERVER_HF_TIMER_CC      TIMER_HF_CB_CHANS - 2  ///< Which timer channel will be used for the TX state machine.
+#define TDMA_SERVER_HF_TIMER_CC      TIMER2_CC_NUM - 2  ///< Which timer channel will be used for the TX state machine.
 #define TDMA_MAX_DELAY_WITHOUT_TX    500000                 ///< Max amount of time that can pass without TXing anything
 #define TDMA_RING_BUFFER_SIZE        10                     ///< Amount of TX packets the buffer can contain
 #define TDMA_NEW_CLIENT_BUFFER_SIZE  30                     ///< Amount of clients waiting to register the buffer can contain
@@ -43,6 +43,8 @@
 #define RADIO_TX_RAMP_UP_TIME        140                    ///< time it takes the radio to start a transmission
 #define TDMA_TX_DEADTIME_US          100                    ///< buffer time between tdma slot to avoid accidentally sen
 #define TDMA_SERVER_CLIENT_NOT_FOUND -1                     ///< The client is not registered in the server's table.
+
+#define TDMA_SERVER_TIMER_HF 2
 
 typedef struct {
     uint8_t  buffer[TDMA_RING_BUFFER_SIZE][PAYLOAD_MAX_LENGTH];  ///< arrays of radio messages waiting to be sent
@@ -204,7 +206,7 @@ void _server_register_new_client(tdma_server_table_t *tdma_table, uint64_t clien
 void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq) {
 
     // Initialize high frequency clock
-    db_timer_hf_init();
+    db_timer_hf_init(TDMA_SERVER_TIMER_HF);
 
     // Initialize the ring buffer of outbound messages
     _message_rb_init(&_tdma_vars.tx_ring_buffer);
@@ -238,9 +240,9 @@ void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mo
     _tdma_vars.active_slot_idx = 0;
 
     // Configure the Timers
-    _tdma_vars.last_tx_packet_ts = db_timer_hf_now();                                                                                                  // start the counter saving when was the last packet sent.
+    _tdma_vars.last_tx_packet_ts = db_timer_hf_now(TDMA_SERVER_TIMER_HF);                                                                                                  // start the counter saving when was the last packet sent.
     _tdma_vars.frame_start_ts    = _tdma_vars.last_tx_packet_ts;                                                                                       // start the counter saving when was the last packet sent.
-    db_timer_hf_set_periodic_us(TDMA_SERVER_HF_TIMER_CC, _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].tx_duration, &timer_tdma_interrupt);  // start advertising behaviour
+    db_timer_hf_set_periodic_us(TDMA_SERVER_TIMER_HF, TDMA_SERVER_HF_TIMER_CC, _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].tx_duration, &timer_tdma_interrupt);  // start advertising behaviour
 }
 
 void db_tdma_server_get_table_info(uint32_t *frame_duration_us, uint16_t * num_clients, uint16_t * table_index) {
@@ -330,7 +332,7 @@ bool _message_rb_tx_queue(tdma_ring_buffer_t *rb, uint16_t max_tx_duration_us) {
             // Compute if there is still time to send the packet [in microseconds]
             uint16_t tx_time = RADIO_TX_RAMP_UP_TIME + length * _tdma_vars.byte_onair_time;
             // If there is time to send the packet, send it
-            if (db_timer_hf_now() + tx_time - _tdma_vars.slot_start_ts < max_tx_duration_us) {
+            if (db_timer_hf_now(TDMA_SERVER_TIMER_HF) + tx_time - _tdma_vars.slot_start_ts < max_tx_duration_us) {
 
                 db_radio_tx(packet, length);
                 packet_sent_flag = true;
@@ -398,7 +400,7 @@ bool _client_rb_tx_queue(new_client_ring_buffer_t *rb, uint16_t max_tx_duration_
             // Compute if there is still time to send the packet [in microseconds]
             uint16_t tx_time = RADIO_TX_RAMP_UP_TIME + (sizeof(protocol_header_t) + sizeof(protocol_tdma_table_t)) * _tdma_vars.byte_onair_time;
             // If there is time to send the packet, send it
-            if (db_timer_hf_now() + tx_time - _tdma_vars.slot_start_ts < max_tx_duration_us) {
+            if (db_timer_hf_now(TDMA_SERVER_TIMER_HF) + tx_time - _tdma_vars.slot_start_ts < max_tx_duration_us) {
                 NRF_P1->OUTSET = 1 << 10;
                 _tx_registration_messages(client);
                 packet_sent_flag = true;
@@ -477,7 +479,7 @@ void _tx_registration_messages(uint64_t client) {
     db_protocol_header_to_buffer(_tdma_vars.radio_buffer, client, TDMA_RADIO_APPLICATION, DB_PROTOCOL_TDMA_UPDATE_TABLE);
 
     // Compute the time before the next frame. (as close as possible to the TX as you can, so that it's more accurate)
-    table.next_period_start = table.frame_period - (db_timer_hf_now() - _tdma_vars.frame_start_ts);
+    table.next_period_start = table.frame_period - (db_timer_hf_now(TDMA_SERVER_TIMER_HF) - _tdma_vars.frame_start_ts);
 
     // Fill the rest of the message.
     memcpy(_tdma_vars.radio_buffer + sizeof(protocol_header_t), &table, sizeof(protocol_tdma_table_t));
@@ -638,7 +640,7 @@ void timer_tdma_interrupt(void) {
     NRF_P0->OUTSET = 1 << 26;
 
     // Save the timestamp start of the current slot, to ensure accurate computation of the end of the slot
-    _tdma_vars.slot_start_ts = db_timer_hf_now();
+    _tdma_vars.slot_start_ts = db_timer_hf_now(TDMA_SERVER_TIMER_HF);
 
     // If there are not enough clients, make sure the the minimum frame time is respected, even if is just filled with empty slots.
     uint8_t last_slot;
@@ -670,16 +672,16 @@ void timer_tdma_interrupt(void) {
     if (_tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].client == _tdma_vars.device_id) {
 
         // Send registration messages. + Out of slot messages. (Use AT MOST, helf of the available slot time.)
-        uint32_t remaining_slot_time_us = _tdma_vars.slot_start_ts + _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].tx_duration - db_timer_hf_now();
+        uint32_t remaining_slot_time_us = _tdma_vars.slot_start_ts + _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].tx_duration - db_timer_hf_now(TDMA_SERVER_TIMER_HF);
         packet_sent                     = _client_rb_tx_queue(&_tdma_vars.new_clients_rb, remaining_slot_time_us / 2 - TDMA_TX_DEADTIME_US);
 
         // send messages if available. time_available (slot_start + slot_duration - current_time)
-        remaining_slot_time_us = _tdma_vars.slot_start_ts + _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].tx_duration - db_timer_hf_now();
+        remaining_slot_time_us = _tdma_vars.slot_start_ts + _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].tx_duration - db_timer_hf_now(TDMA_SERVER_TIMER_HF);
         packet_sent            = _message_rb_tx_queue(&_tdma_vars.tx_ring_buffer, remaining_slot_time_us - TDMA_TX_DEADTIME_US);
 
         // mark last time you sent anything
         if (packet_sent) {
-            _tdma_vars.last_tx_packet_ts = db_timer_hf_now();
+            _tdma_vars.last_tx_packet_ts = db_timer_hf_now(TDMA_SERVER_TIMER_HF);
         }
     }
     NRF_P0->OUTCLR = 1 << 26;

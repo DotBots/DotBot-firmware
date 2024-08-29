@@ -45,7 +45,7 @@ static void radio_callback(uint8_t *packet, uint8_t length);
 int main(void) {
     // Initialize the board core features (voltage regulator)
     db_board_init();
-    db_timer_init();
+    db_timer_init(0);
     NRF_P0->DIRSET = 1 << 26;
     NRF_P1->DIRSET = 1 << 13;
     NRF_P1->DIRSET = 1 << 10;
@@ -83,7 +83,7 @@ int main(void) {
         db_tdma_server_tx((uint8_t *)packet_tx, length);
 
         // Wait a bit before sending another message
-        db_timer_delay_ms(DELAY_MS);
+        db_timer_delay_ms(0, DELAY_MS);
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
