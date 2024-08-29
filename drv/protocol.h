@@ -38,8 +38,8 @@ typedef enum {
     DB_PROTOCOL_SAILBOT_DATA       = 10,  ///< SailBot specific data (for now GPS and direction)
     DB_PROTOCOL_CMD_XGO_ACTION     = 11,  ///< XGO action command
     DB_PROTOCOL_LH2_PROCESSED_DATA = 12,  ///< Lighthouse 2 data processed at the DotBot
-    DB_PROTOCOL_TDMA_UPDATE_TABLE = 11,  ///< Receive new timings for the TDMA table
-    DB_PROTOCOL_TDMA_SYNC_FRAME   = 12,  ///< Sent by the gateway at the begining of a TDMA frame, if there is nothing else to send.
+    DB_PROTOCOL_TDMA_UPDATE_TABLE  = 14,  ///< Receive new timings for the TDMA table
+    DB_PROTOCOL_TDMA_SYNC_FRAME    = 15,  ///< Sent by the gateway at the begining of a TDMA frame, if there is nothing else to send.
 } command_type_t;
 
 /// Application type
@@ -127,7 +127,7 @@ typedef struct __attribute__((packed)) {
 
 ///< DotBot protocol sync messages marks the start of a TDMA frame [all units are in microseconds]
 typedef struct __attribute__((packed)) {
-    uint32_t frame_period;       ///< duration of a full TDMA frame
+    uint32_t frame_period;  ///< duration of a full TDMA frame
 } protocol_sync_frame_t;
 
 //=========================== public ===========================================
