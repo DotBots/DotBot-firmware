@@ -76,14 +76,7 @@ typedef struct {
 
 //=========================== variables ========================================
 
-
-#if defined(NRF5340_XXAA)
-    // Define the local variables in the shared RAM between the App- and Net-cores, so pointers can be directly accessed between
-    // both cores, without crashing
-    static __attribute__((section(".ARM.__at_0x20004000"))) tdma_server_vars_t _tdma_vars = { 0 };
-#else
-    static tdma_server_vars_t _tdma_vars = { 0 };
-#endif
+static tdma_server_vars_t _tdma_vars = { 0 };
 
 // Transform the ble mode into how many microseconds it takes to send a single byte.
 uint8_t ble_mode_to_byte_time[] = {
@@ -250,9 +243,17 @@ void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mo
     db_timer_hf_set_periodic_us(TDMA_SERVER_HF_TIMER_CC, _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].tx_duration, &timer_tdma_interrupt);  // start advertising behaviour
 }
 
-tdma_server_table_t *db_tdma_server_get_table(void) {
+void db_tdma_server_get_table_info(uint32_t *frame_duration_us, uint16_t * num_clients, uint16_t * table_index) {
 
-    return &_tdma_vars.tdma_table;
+    *frame_duration_us = _tdma_vars.tdma_table.frame_duration_us;
+    *num_clients = _tdma_vars.tdma_table.num_clients;
+    *table_index = _tdma_vars.tdma_table.table_index;
+
+}
+
+tdma_table_entry_t db_tdma_server_get_client_info(uint8_t client_id) {
+
+    return _tdma_vars.tdma_table.table[client_id];
 }
 
 void db_tdma_server_tx(const uint8_t *packet, uint8_t length) {

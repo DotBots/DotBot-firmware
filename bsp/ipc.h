@@ -49,7 +49,8 @@ typedef enum {
     DB_IPC_TDMA_CLIENT_EMPTY_REQ,      ///< Request for erasing the TDMA client message buffer
     DB_IPC_TDMA_CLIENT_STATUS_REQ,     ///< Request for reading the TDMA client driver status
     DB_IPC_TDMA_SERVER_INIT_REQ,       ///< Request for TDMA server initialization
-    DB_IPC_TDMA_SERVER_GET_TABLE_REQ,  ///< Request for reading the TDMA server timing table
+    DB_IPC_TDMA_SERVER_GET_TABLE_REQ,  ///< Request for reading the TDMA server timing table general info
+    DB_IPC_TDMA_SERVER_GET_CLIENT_REQ,  ///< Request for reading the info about a specific client
     DB_IPC_TDMA_SERVER_TX_REQ,         ///< Request for a TDMA server TX
     DB_IPC_TDMA_SERVER_FLUSH_REQ,      ///< Request for flushing the TDMA server message buffer
     DB_IPC_TDMA_SERVER_EMPTY_REQ,      ///< Request for erasing the TDMA server message buffer
@@ -80,21 +81,25 @@ typedef struct {
 } ipc_rng_data_t;
 
 typedef struct __attribute__((packed)) {
-    db_radio_ble_mode_t          mode;               ///< db_radio_init function parameters
-    uint8_t                      frequency;          ///< db_set_frequency function parameters
-    tdma_client_table_t          table_set;          ///< db_tdma_client_set_table function parameter
-    tdma_client_table_t          table_get;          ///< db_tdma_client_get_table function parameter
-    ipc_radio_pdu_t              tx_pdu;             ///< PDU to send
-    ipc_radio_pdu_t              rx_pdu;             ///< Received pdu
+    db_radio_ble_mode_t          mode;                ///< db_radio_init function parameters
+    uint8_t                      frequency;           ///< db_set_frequency function parameters
+    tdma_client_table_t          table_set;           ///< db_tdma_client_set_table function parameter
+    tdma_client_table_t          table_get;           ///< db_tdma_client_get_table function parameter
+    ipc_radio_pdu_t              tx_pdu;              ///< PDU to send
+    ipc_radio_pdu_t              rx_pdu;              ///< Received pdu
     db_tdma_registration_state_t registration_state;  ///< db_tdma_client_get_status return value
 } ipc_tdma_client_data_t;
 
 typedef struct __attribute__((packed)) {
-    db_radio_ble_mode_t  mode;       ///< db_radio_init function parameters
-    uint8_t              frequency;  ///< db_set_frequency function parameters
-    tdma_server_table_t *table;      ///< db_tdma_server_get_table function return
-    ipc_radio_pdu_t      tx_pdu;     ///< PDU to send
-    ipc_radio_pdu_t      rx_pdu;     ///< Received pdu
+    db_radio_ble_mode_t mode;               ///< db_radio_init function parameters
+    uint8_t             frequency;          ///< db_set_frequency function parameters
+    uint32_t            frame_duration_us;  ///< db_tdma_server_get_table_info function parameter
+    uint16_t            num_clients;        ///< db_tdma_server_get_table_info function parameter
+    uint16_t            table_index;        ///< db_tdma_server_get_table_info function parameter
+    uint8_t             client_id;          ///< db_tdma_server_get_client_info function parameter
+    tdma_table_entry_t  client_entry;       ///< db_tdma_server_get_client_info function parameter
+    ipc_radio_pdu_t     tx_pdu;             ///< PDU to send
+    ipc_radio_pdu_t     rx_pdu;             ///< Received pdu
 } ipc_tdma_server_data_t;
 
 typedef struct __attribute__((packed)) {

@@ -79,17 +79,27 @@ void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mo
     db_ipc_network_call(DB_IPC_TDMA_SERVER_INIT_REQ);
 }
 
-tdma_server_table_t *db_tdma_server_get_table(void) {
-    
-    // Temp variable to receive the shared data 
-    tdma_server_table_t *table;
+void db_tdma_server_get_table_info(uint32_t *frame_duration_us, uint16_t *num_clients, uint16_t *table_index) {
 
     // Request the network core to copy the table's data.
     db_ipc_network_call(DB_IPC_TDMA_SERVER_GET_TABLE_REQ);
-    // Copy the get table from the IPC chared data
-    table = ipc_shared_data.tdma_server.table;
-    return table;
 
+    // Copy the variables over
+    *frame_duration_us = ipc_shared_data.tdma_server.frame_duration_us;
+    *num_clients       = ipc_shared_data.tdma_server.num_clients;
+    *table_index       = ipc_shared_data.tdma_server.table_index;
+}
+
+tdma_table_entry_t db_tdma_server_get_client_info(uint8_t client_id) {
+
+    // Request a specific client
+    ipc_shared_data.tdma_server.client_id = client_id;
+
+    // Request the network core to copy the table's data.
+    db_ipc_network_call(DB_IPC_TDMA_SERVER_GET_CLIENT_REQ);
+
+    // Copy the variables over
+    return ipc_shared_data.tdma_server.client_entry;
 }
 
 void db_tdma_server_tx(const uint8_t *packet, uint8_t length) {

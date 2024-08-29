@@ -291,7 +291,7 @@ bool _message_rb_tx_queue(uint16_t max_tx_duration_us) {
             uint16_t tx_time = RADIO_TX_RAMP_UP_TIME + length * _tdma_client_vars.byte_onair_time;
             // If there is time to send the packet, send it
             if (db_timer_hf_now() + tx_time - start_tx_slot < max_tx_duration_us) {
-            
+
                 // disable the radio, before sending.
                 db_radio_disable();
                 db_radio_tx(packet, length);
@@ -415,9 +415,9 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
 
                 // Protect against receiving garbage
                 if (frame_period > 0 && frame_period < 500000) {
-                _tdma_client_vars.tdma_client_table.frame_duration = frame_period;
-                // Also update the RX_duration, becaus ewe are working on ALWAYS_ON mode
-                _tdma_client_vars.tdma_client_table.rx_duration = frame_period;
+                    _tdma_client_vars.tdma_client_table.frame_duration = frame_period;
+                    // Also update the RX_duration, becaus ewe are working on ALWAYS_ON mode
+                    _tdma_client_vars.tdma_client_table.rx_duration = frame_period;
                 }
 
                 // Also update the RX_duration, becaus ewe are working on ALWAYS_ON mode
@@ -511,5 +511,4 @@ void timer_rx_interrupt(void) {
             db_radio_disable();
         }
     }
-
 }

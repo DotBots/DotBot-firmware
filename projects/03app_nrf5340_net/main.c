@@ -26,6 +26,11 @@
 static bool      _data_received = false;
 static ipc_req_t _req_received  = DB_IPC_REQ_NONE;
 
+// TDMA server variables
+uint32_t frame_duration_us;
+uint16_t num_clients;
+uint16_t table_index;
+
 //=========================== functions =========================================
 
 void radio_callback(uint8_t *packet, uint8_t length) {
@@ -140,7 +145,13 @@ int main(void) {
                     db_tdma_server_init(&tdma_server_callback, ipc_shared_data.tdma_server.mode, ipc_shared_data.tdma_server.frequency);
                     break;
                 case DB_IPC_TDMA_SERVER_GET_TABLE_REQ:
-                    ipc_shared_data.tdma_server.table = db_tdma_server_get_table();
+                    db_tdma_server_get_table_info(&frame_duration_us, &num_clients, &table_index);
+                    ipc_shared_data.tdma_server.frame_duration_us = frame_duration_us;
+                    ipc_shared_data.tdma_server.num_clients = num_clients;
+                    ipc_shared_data.tdma_server.table_index = table_index;
+                    break;
+                case DB_IPC_TDMA_SERVER_GET_CLIENT_REQ:
+                    ipc_shared_data.tdma_server.client_entry = db_tdma_server_get_client_info(ipc_shared_data.tdma_server.client_id);
                     break;
                 case DB_IPC_TDMA_SERVER_TX_REQ:
                     db_tdma_server_tx((uint8_t *)ipc_shared_data.tdma_server.tx_pdu.buffer, ipc_shared_data.tdma_server.tx_pdu.length);

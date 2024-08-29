@@ -32,7 +32,7 @@
 //=========================== variables ========================================
 
 /// Data type to store the info about a single TDMA Client
-typedef struct __attribute__((packed)) {
+typedef struct {
     uint64_t client;       ///< ID of the client registered to in this time slot
     uint32_t rx_start;     ///< Time between the start of the frame and when the gateway starts transmitting
     uint32_t rx_duration;  ///< Duration the gateway will transmit messages
@@ -41,7 +41,7 @@ typedef struct __attribute__((packed)) {
 } tdma_table_entry_t;
 
 /// Data type to store the TDMA table
-typedef struct __attribute__((packed)) {
+typedef struct {
     uint32_t           frame_duration_us;               ///< Duration of the entire TDMA frame [microseconds]
     uint16_t           num_clients;                     ///< Number of clients currently connected to the tdma server
     uint16_t           table_index;                     ///< index of the last entry in the tdma table, includes slots taken by the gateway
@@ -66,11 +66,21 @@ typedef void (*tdma_server_cb_t)(uint8_t *packet, uint8_t length);  ///< Functio
 void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq);
 
 /**
- * @brief Get the current TDMA table
+ * @brief Get general info about the current TDMA table
  *
- * @return Pointer to the current table of TDMA clients
+ * @param[out] frame_duration_us  pointer to the frame duration
+ * @param[out] num_clients        pointer to the number of clients
+ * @param[out] table_index        pointer to the last index of the TDMA table
  */
-tdma_server_table_t *db_tdma_server_get_table(void);
+void db_tdma_server_get_table_info(uint32_t *frame_duration_us, uint16_t *num_clients, uint16_t *table_index);
+
+/**
+ * @brief Get information about one client
+ *
+ * @return table_entry copy of the table entry of a single client
+ * @param[in]  client_id   first client_id to copy
+ */
+tdma_table_entry_t db_tdma_server_get_client_info(uint8_t client_id);
 
 /**
  * @brief Queues a single packet to send through the Radio
