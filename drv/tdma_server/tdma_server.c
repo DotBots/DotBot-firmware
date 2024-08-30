@@ -191,7 +191,7 @@ void _tx_registration_messages(uint64_t client);
  * @param[in]   client      id of the client to search in the table.
  * @return table slot index of the client, or -1 if client is not found.
  */
-uint8_t _server_find_client(tdma_server_table_t *tdma_table, uint64_t client);
+int16_t _server_find_client(tdma_server_table_t *tdma_table, uint64_t client);
 
 /**
  * @brief register a new client into the table.
@@ -258,7 +258,6 @@ void db_tdma_server_get_client_info(tdma_table_entry_t *client, uint8_t client_i
     // Copy and return one entry of the TDMA entry
     memcpy(client, &_tdma_vars.tdma_table.table[client_id], sizeof(tdma_table_entry_t));
 
-    return _tdma_vars.tdma_table.table[client_id];
 }
 
 void db_tdma_server_tx(const uint8_t *packet, uint8_t length) {
@@ -462,13 +461,13 @@ void _tx_sync_frame(void) {
 }
 
 void _tx_registration_messages(uint64_t client) {
-    // Send the sync packet to a particular client.
+    // Send the sync packet + tdma_slot parameters  to a particular client.
 
     // Create the TDMA table we will send
     protocol_tdma_table_t table = { 0 };
 
     // Get the info of the client we are sending too.
-    uint8_t slot = _server_find_client(&_tdma_vars.tdma_table, client);
+    int16_t slot = _server_find_client(&_tdma_vars.tdma_table, client);
 
     // global frame data
     table.frame_period = _tdma_vars.tdma_table.frame_duration_us;
@@ -493,14 +492,14 @@ void _tx_registration_messages(uint64_t client) {
     db_radio_tx(_tdma_vars.radio_buffer, length);
 }
 
-uint8_t _server_find_client(tdma_server_table_t *tdma_table, uint64_t client) {
+int16_t _server_find_client(tdma_server_table_t *tdma_table, uint64_t client) {
 
     for (size_t i = 0; i <= tdma_table->table_index; i++) {
         if (tdma_table->table[i].client == client) {
             return i;
         }
     }
-    return false;
+    return TDMA_SERVER_CLIENT_NOT_FOUND;
 }
 
 void _server_register_new_client(tdma_server_table_t *tdma_table, uint64_t client) {
@@ -599,13 +598,15 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
         return;
     }
 
+    // Check that you're not registering
+
     // Check version is supported
     if (header->version != DB_FIRMWARE_VERSION) {
         return;
     }
 
     // Handle unregistered DotBot
-    if (!_server_find_client(&_tdma_vars.tdma_table, header->src)) {
+    if (_server_find_client(&_tdma_vars.tdma_table, header->src) == TDMA_SERVER_CLIENT_NOT_FOUND) {
 
         // register new client to the table
         _server_register_new_client(&_tdma_vars.tdma_table, header->src);
