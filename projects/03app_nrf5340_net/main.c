@@ -30,6 +30,7 @@ static ipc_req_t _req_received  = DB_IPC_REQ_NONE;
 uint32_t frame_duration_us;
 uint16_t num_clients;
 uint16_t table_index;
+tdma_table_entry_t   client;
 
 //=========================== functions =========================================
 
@@ -151,7 +152,7 @@ int main(void) {
                     ipc_shared_data.tdma_server.table_index = table_index;
                     break;
                 case DB_IPC_TDMA_SERVER_GET_CLIENT_REQ:
-                    ipc_shared_data.tdma_server.client_entry = db_tdma_server_get_client_info(ipc_shared_data.tdma_server.client_id);
+                    db_tdma_server_get_client_info((tdma_table_entry_t *)&ipc_shared_data.tdma_server.client_entry, ipc_shared_data.tdma_server.client_id);
                     break;
                 case DB_IPC_TDMA_SERVER_TX_REQ:
                     db_tdma_server_tx((uint8_t *)ipc_shared_data.tdma_server.tx_pdu.buffer, ipc_shared_data.tdma_server.tx_pdu.length);
@@ -167,6 +168,7 @@ int main(void) {
             }
             ipc_shared_data.net_ack = true;
             _req_received           = DB_IPC_REQ_NONE;
+            __NOP();
         }
     };
 }

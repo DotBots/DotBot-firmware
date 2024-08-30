@@ -19,7 +19,9 @@
 #include "timer_hf.h"
 #include "protocol.h"
 #include "device.h"
-
+#if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
+#include "ipc.h"
+#endif
 //=========================== defines ==========================================
 
 #if defined(BOARD_SAILBOT_V1)
@@ -220,7 +222,11 @@ void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mo
     db_radio_rx();                                     // start receving packets
 
     // Retrieve the device ID.
+    #if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
+    _tdma_vars.device_id = ipc_shared_data.tdma_server.device_id;
+    #else
     _tdma_vars.device_id = db_device_id();
+    #endif
 
     // Save the user callback to use in our interruption
     _tdma_vars.callback = callback;
@@ -403,7 +409,7 @@ bool _client_rb_tx_queue(new_client_ring_buffer_t *rb, uint16_t max_tx_duration_
             uint16_t tx_time = RADIO_TX_RAMP_UP_TIME + (sizeof(protocol_header_t) + sizeof(protocol_tdma_table_t)) * _tdma_vars.byte_onair_time;
             // If there is time to send the packet, send it
             if (db_timer_hf_now(TDMA_SERVER_TIMER_HF) + tx_time - _tdma_vars.slot_start_ts < max_tx_duration_us) {
-                NRF_P1->OUTSET = 1 << 10;
+                // NRF_P1->OUTSET = 1 << 10;
                 _tx_registration_messages(client);
                 packet_sent_flag = true;
             } else {  // otherwise, put the packet back in the queue and leave
@@ -415,7 +421,7 @@ bool _client_rb_tx_queue(new_client_ring_buffer_t *rb, uint16_t max_tx_duration_
         // Update the last packet timer
         _tdma_vars.last_tx_packet_ts = _tdma_vars.slot_start_ts;
     }
-    NRF_P1->OUTCLR = 1 << 10;
+    // NRF_P1->OUTCLR = 1 << 10;
     return packet_sent_flag;
 }
 
@@ -588,7 +594,7 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
 
     */
 
-    NRF_P1->OUTSET = 1 << 13;
+    // NRF_P1->OUTSET = 1 << 13;
     (void)length;
     uint8_t           *ptk_ptr = packet;
     protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
@@ -632,7 +638,7 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
     if (_tdma_vars.callback) {
         _tdma_vars.callback(packet, length);
     }
-    NRF_P1->OUTCLR = 1 << 13;
+    // NRF_P1->OUTCLR = 1 << 13;
 }
 
 /**
@@ -641,7 +647,7 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
  */
 void timer_tdma_interrupt(void) {
 
-    NRF_P0->OUTSET = 1 << 26;
+    // NRF_P0->OUTSET = 1 << 26;
 
     // Save the timestamp start of the current slot, to ensure accurate computation of the end of the slot
     _tdma_vars.slot_start_ts = db_timer_hf_now(TDMA_SERVER_TIMER_HF);
@@ -661,7 +667,7 @@ void timer_tdma_interrupt(void) {
     // check if this is the start of the super frame to send a sync message.
     if (_tdma_vars.active_slot_idx == 0) {
 
-        NRF_P1->OUTSET = 1 << 5;
+        // NRF_P1->OUTSET = 1 << 5;
 
         // Update last-superframe timestamp
         _tdma_vars.frame_start_ts = _tdma_vars.slot_start_ts;
@@ -688,6 +694,6 @@ void timer_tdma_interrupt(void) {
             _tdma_vars.last_tx_packet_ts = db_timer_hf_now(TDMA_SERVER_TIMER_HF);
         }
     }
-    NRF_P0->OUTCLR = 1 << 26;
-    NRF_P1->OUTCLR = 1 << 5;
+    // NRF_P0->OUTCLR = 1 << 26;
+    // NRF_P1->OUTCLR = 1 << 5;
 }

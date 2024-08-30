@@ -45,6 +45,15 @@ int main(void) {
     // Initialize the board core features (voltage regulator)
     db_board_init();
     db_timer_init(0);
+
+    NRF_P0->DIRSET = 1 << 28;
+    NRF_P0->OUTSET = 1 << 28;
+    NRF_P0->DIRSET = 1 << 29;
+    NRF_P0->OUTSET = 1 << 29;
+    NRF_P0->DIRSET = 1 << 30;
+    NRF_P0->OUTSET = 1 << 30;
+    
+
     NRF_P0->DIRSET = 1 << 26;
     NRF_P1->DIRSET = 1 << 13;
     NRF_P1->DIRSET = 1 << 10;
@@ -55,12 +64,11 @@ int main(void) {
 
 
     while (1) {
-
         db_tdma_server_get_table_info(&frame_duration_us, &num_clients, &table_index);
         for (size_t i = 0; i < 12; i++) {
             db_tdma_server_get_client_info(&clients[i], i);
         }
-
+        NRF_P0->OUTCLR = 1 << 30;
         // Print current status
         printf("[*] Frame duration = {%d}\n", frame_duration_us);
         printf("[*] Num. of Clients = {%d}\n", num_clients);
@@ -78,11 +86,12 @@ int main(void) {
 
         // Send an advertisement message
         db_protocol_header_to_buffer(packet_tx, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_ADVERTISEMENT);
-        size_t length = sizeof(protocol_header_t);
-        db_tdma_server_tx((uint8_t *)packet_tx, length);
+        //size_t length = sizeof(protocol_header_t);
+        //db_tdma_server_tx((uint8_t *)packet_tx, length);
 
         // Wait a bit before sending another message
         db_timer_delay_ms(0, DELAY_MS);
+
     }
 
     // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.

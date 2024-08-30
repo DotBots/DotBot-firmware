@@ -18,6 +18,9 @@
 #include "ipc.h"
 #include "radio.h"
 #include "clock.h"
+#include "tz.h"
+#include "timer.h"
+#include "device.h"
 
 //=========================== variables ========================================
 
@@ -34,26 +37,17 @@ void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mo
     NRF_REGULATORS_S->VREGH.DCDCEN     = (REGULATORS_VREGH_DCDCEN_DCDCEN_Disabled << REGULATORS_VREGH_DCDCEN_DCDCEN_Pos);
 
     // RADIO (address at 0x41008000 => periph ID is 8)
-    NRF_SPU_S->PERIPHID[8].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
-                                   SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
-                                   SPU_PERIPHID_PERM_DMA_NoSeparateAttribute << SPU_PERIPHID_PERM_DMA_Pos |
-                                   SPU_PERIPHID_PERM_PRESENT_IsPresent << SPU_PERIPHID_PERM_PRESENT_Pos |
-                                   SPU_PERIPHID_PERM_DMASEC_NonSecure << SPU_PERIPHID_PERM_DMASEC_Pos);
+    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_RADIO);
+    db_tz_enable_network_periph_dma(NRF_NETWORK_PERIPH_ID_RADIO);
 
     // IPC (address at 0x41012000 => periph ID is 18)
-    NRF_SPU_S->PERIPHID[18].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
-                                    SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
-                                    SPU_PERIPHID_PERM_PRESENT_IsPresent << SPU_PERIPHID_PERM_PRESENT_Pos);
+    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_IPC);
 
     // APPMUTEX (address at 0x41030000 => periph ID is 48)
-    NRF_SPU_S->PERIPHID[48].PERM = (SPU_PERIPHID_PERM_SECUREMAPPING_UserSelectable << SPU_PERIPHID_PERM_SECUREMAPPING_Pos |
-                                    SPU_PERIPHID_PERM_SECATTR_NonSecure << SPU_PERIPHID_PERM_SECATTR_Pos |
-                                    SPU_PERIPHID_PERM_PRESENT_IsPresent << SPU_PERIPHID_PERM_PRESENT_Pos);
+    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_APPMUTEX);
 
     // Define RAMREGION 2 (0x20004000 to 0x20005FFF, e.g 8KiB) as non secure. It's used to share data between cores
-    NRF_SPU_S->RAMREGION[2].PERM = (SPU_RAMREGION_PERM_READ_Enable << SPU_RAMREGION_PERM_READ_Pos |
-                                    SPU_RAMREGION_PERM_WRITE_Enable << SPU_RAMREGION_PERM_WRITE_Pos |
-                                    SPU_RAMREGION_PERM_SECATTR_Non_Secure << SPU_RAMREGION_PERM_SECATTR_Pos);
+    db_configure_ram_non_secure(2, 1);
 
     NRF_IPC_S->INTENSET                          = 1 << DB_IPC_CHAN_RADIO_RX;
     NRF_IPC_S->SEND_CNF[DB_IPC_CHAN_REQ]         = 1 << DB_IPC_CHAN_REQ;
@@ -70,10 +64,15 @@ void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mo
     if (callback) {
         _tdma_server_callback = callback;
     }
-
+    db_timer_init(0);
+    NRF_P0->OUTCLR = 1 << 28;
+    db_timer_delay_ms(0, 5000);
+    NRF_P0->OUTCLR = 1 << 29;
     // Store information in the shared data before sending it to the net-core
     ipc_shared_data.tdma_server.mode      = radio_mode;
     ipc_shared_data.tdma_server.frequency = radio_freq;
+    // Also store the Device ID, the netcore has no direct access to it
+    ipc_shared_data.tdma_server.device_id = db_device_id();
 
     // Initialice TDMA client drv in the net-core
     db_ipc_network_call(DB_IPC_TDMA_SERVER_INIT_REQ);
@@ -90,7 +89,7 @@ void db_tdma_server_get_table_info(uint32_t *frame_duration_us, uint16_t *num_cl
     *table_index       = ipc_shared_data.tdma_server.table_index;
 }
 
-tdma_table_entry_t db_tdma_server_get_client_info(uint8_t client_id) {
+void db_tdma_server_get_client_info(tdma_table_entry_t *client, uint8_t client_id) {
 
     // Request a specific client
     ipc_shared_data.tdma_server.client_id = client_id;
@@ -98,8 +97,12 @@ tdma_table_entry_t db_tdma_server_get_client_info(uint8_t client_id) {
     // Request the network core to copy the table's data.
     db_ipc_network_call(DB_IPC_TDMA_SERVER_GET_CLIENT_REQ);
 
-    // Copy the variables over
-    return ipc_shared_data.tdma_server.client_entry;
+    // Copy and return one entry of the TDMA entry (one by one because memcpy doesnt like that ipc_shared_data is volatile)
+    client->client  = ipc_shared_data.tdma_server.client_entry.client;
+    client->rx_duration = ipc_shared_data.tdma_server.client_entry.rx_duration;
+    client->rx_start    = ipc_shared_data.tdma_server.client_entry.rx_start;
+    client->tx_duration = ipc_shared_data.tdma_server.client_entry.tx_duration;
+    client->tx_start    = ipc_shared_data.tdma_server.client_entry.tx_start;
 }
 
 void db_tdma_server_tx(const uint8_t *packet, uint8_t length) {

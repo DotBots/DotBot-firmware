@@ -80,7 +80,7 @@ typedef struct {
     uint8_t value;  ///< Byte containing the random value read
 } ipc_rng_data_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct {
     db_radio_ble_mode_t          mode;                ///< db_radio_init function parameters
     uint8_t                      frequency;           ///< db_set_frequency function parameters
     tdma_client_table_t          table_set;           ///< db_tdma_client_set_table function parameter
@@ -90,7 +90,7 @@ typedef struct __attribute__((packed)) {
     db_tdma_registration_state_t registration_state;  ///< db_tdma_client_get_status return value
 } ipc_tdma_client_data_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct {
     db_radio_ble_mode_t mode;               ///< db_radio_init function parameters
     uint8_t             frequency;          ///< db_set_frequency function parameters
     uint32_t            frame_duration_us;  ///< db_tdma_server_get_table_info function parameter
@@ -98,11 +98,12 @@ typedef struct __attribute__((packed)) {
     uint16_t            table_index;        ///< db_tdma_server_get_table_info function parameter
     uint8_t             client_id;          ///< db_tdma_server_get_client_info function parameter
     tdma_table_entry_t  client_entry;       ///< db_tdma_server_get_client_info function parameter
+    uint64_t            device_id;          ///< Device ID of the nRF, fetched by the App core, and sent to the Net core through here.
     ipc_radio_pdu_t     tx_pdu;             ///< PDU to send
     ipc_radio_pdu_t     rx_pdu;             ///< Received pdu
 } ipc_tdma_server_data_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct {
     bool                   net_ready;    ///< Network core is ready
     bool                   net_ack;      ///< Network core acked the latest request
     ipc_req_t              req;          ///< IPC network request
