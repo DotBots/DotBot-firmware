@@ -253,7 +253,10 @@ void db_tdma_server_get_table_info(uint32_t *frame_duration_us, uint16_t * num_c
 
 }
 
-tdma_table_entry_t db_tdma_server_get_client_info(uint8_t client_id) {
+void db_tdma_server_get_client_info(tdma_table_entry_t *client, uint8_t client_id) {
+
+    // Copy and return one entry of the TDMA entry
+    memcpy(client, &_tdma_vars.tdma_table.table[client_id], sizeof(tdma_table_entry_t));
 
     return _tdma_vars.tdma_table.table[client_id];
 }

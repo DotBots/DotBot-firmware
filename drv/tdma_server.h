@@ -77,10 +77,10 @@ void db_tdma_server_get_table_info(uint32_t *frame_duration_us, uint16_t *num_cl
 /**
  * @brief Get information about one client
  *
- * @return table_entry copy of the table entry of a single client
- * @param[in]  client_id   first client_id to copy
+ * @param[in]   client_id  first client_id to copy
+ * @param[out]  client     copy of the table entry of a single client
  */
-tdma_table_entry_t db_tdma_server_get_client_info(uint8_t client_id);
+void db_tdma_server_get_client_info(tdma_table_entry_t *client, uint8_t client_id);
 
 /**
  * @brief Queues a single packet to send through the Radio
