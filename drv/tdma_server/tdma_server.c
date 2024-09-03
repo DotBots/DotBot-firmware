@@ -37,7 +37,7 @@
 #define TDMA_SERVER_DEFAULT_TX_START_US    0                                      ///< Default duration of the tdma frame, in microseconds.
 #define TDMA_SERVER_DEFAULT_TX_DURATION_US TDMA_SERVER_TIME_SLOT_DURATION_US      ///< Default duration of the tdma frame, in microseconds.
 
-#define TDMA_SERVER_HF_TIMER_CC      TIMER2_CC_NUM - 2  ///< Which timer channel will be used for the TX state machine.
+#define TDMA_SERVER_HF_TIMER_CC      0  ///< Which timer channel will be used for the TX state machine.
 #define TDMA_MAX_DELAY_WITHOUT_TX    500000                 ///< Max amount of time that can pass without TXing anything
 #define TDMA_RING_BUFFER_SIZE        10                     ///< Amount of TX packets the buffer can contain
 #define TDMA_NEW_CLIENT_BUFFER_SIZE  30                     ///< Amount of clients waiting to register the buffer can contain
