@@ -21,6 +21,9 @@
 #include "timer_hf.h"
 #include "protocol.h"
 #include "device.h"
+#if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
+#include "ipc.h"
+#endif
 
 //=========================== defines ==========================================
 
@@ -161,10 +164,15 @@ void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mo
     db_rng_init();
 
     // Retrieve the device ID.
+    #if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
+    _tdma_client_vars.device_id = ipc_shared_data.tdma_client.device_id;
+    #else
     _tdma_client_vars.device_id = db_device_id();
+    #endif
 
     // Save the user callback to use in our interruption
     _tdma_client_vars.callback = callback;
+
 
     // Save the on-air byte time
     _tdma_client_vars.byte_onair_time = ble_mode_to_byte_time[radio_mode];
@@ -350,7 +358,7 @@ uint32_t _get_random_delay_us(void) {
  *
  */
 static void tdma_client_callback(uint8_t *packet, uint8_t length) {
-    NRF_P1->OUTSET = 1 << 10;
+    // NRF_P1->OUTSET = 1 << 10;
     (void)length;
     uint8_t           *ptk_ptr = packet;
     protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
@@ -439,7 +447,7 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
             }
         }
     }
-    NRF_P1->OUTCLR = 1 << 10;
+    // NRF_P1->OUTCLR = 1 << 10;
 }
 
 /**
@@ -448,7 +456,7 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
  */
 void timer_tx_interrupt(void) {
 
-    NRF_P0->OUTSET   = 1 << 26;
+    // NRF_P0->OUTSET   = 1 << 26;
     bool packet_sent = false;
 
     // Check the state of the device.
@@ -480,7 +488,7 @@ void timer_tx_interrupt(void) {
         // Save the timestamp of the last packet
         _tdma_client_vars.last_tx_packet_timestamp = db_timer_hf_now(TDMA_CLIENT_TIMER_HF);
     }
-    NRF_P0->OUTCLR = 1 << 26;
+    // NRF_P0->OUTCLR = 1 << 26;
 }
 
 /**

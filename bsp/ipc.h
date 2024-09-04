@@ -85,6 +85,7 @@ typedef struct {
     uint8_t                      frequency;           ///< db_set_frequency function parameters
     tdma_client_table_t          table_set;           ///< db_tdma_client_set_table function parameter
     tdma_client_table_t          table_get;           ///< db_tdma_client_get_table function parameter
+    uint64_t            device_id;                    ///< Device ID of the nRF, fetched by the App core, and sent to the Net core through here.
     ipc_radio_pdu_t              tx_pdu;              ///< PDU to send
     ipc_radio_pdu_t              rx_pdu;              ///< Received pdu
     db_tdma_registration_state_t registration_state;  ///< db_tdma_client_get_status return value
