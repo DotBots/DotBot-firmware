@@ -20,7 +20,7 @@
 
 //=========================== defines ==========================================
 
-#define DELAY_MS   (500)                 // Wait between each send
+#define DELAY_MS   (1000)                 // Wait between each send
 #define RADIO_FREQ (28)                  // Set the frequency to 2412 MHz
 #define RADIO_MODE (DB_RADIO_BLE_1MBit)  // Use BLE 1Mbit/s
 
@@ -86,8 +86,8 @@ int main(void) {
 
         // Send an advertisement message
         db_protocol_header_to_buffer(packet_tx, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_ADVERTISEMENT);
-        //size_t length = sizeof(protocol_header_t);
-        //db_tdma_server_tx((uint8_t *)packet_tx, length);
+        size_t length = sizeof(protocol_header_t);
+        db_tdma_server_tx((uint8_t *)packet_tx, length);
 
         // Wait a bit before sending another message
         db_timer_delay_ms(0, DELAY_MS);
