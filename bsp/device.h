@@ -40,7 +40,7 @@ static inline uint64_t db_device_addr(void) {
  */
 static inline uint64_t db_device_id(void) {
 #if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
-    return 0;
+    return ((uint64_t)NRF_FICR_NS->INFO.DEVICEID[1]) << 32 | (uint64_t)NRF_FICR_NS->INFO.DEVICEID[0];
 #elif defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
     return ((uint64_t)NRF_FICR_S->INFO.DEVICEID[1]) << 32 | (uint64_t)NRF_FICR_S->INFO.DEVICEID[0];
 #else
