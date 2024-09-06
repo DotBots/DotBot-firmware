@@ -21,7 +21,7 @@
 
 //=========================== defines ==========================================
 
-#define DELAY_MS   (300)                 // Wait 100ms between each send
+#define DELAY_MS   (500)                 // Wait 100ms between each send
 #define RADIO_FREQ (28)                  // Set the frequency to 2412 MHz
 #define RADIO_MODE (DB_RADIO_BLE_1MBit)  // Use BLE 1Mbit/s
 
