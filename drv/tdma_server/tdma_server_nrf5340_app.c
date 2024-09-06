@@ -71,8 +71,6 @@ void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mo
     // Store information in the shared data before sending it to the net-core
     ipc_shared_data.tdma_server.mode      = radio_mode;
     ipc_shared_data.tdma_server.frequency = radio_freq;
-    // Also store the Device ID, the netcore has no direct access to it
-    ipc_shared_data.tdma_server.device_id = db_device_id();
 
     // Initialice TDMA client drv in the net-core
     db_ipc_network_call(DB_IPC_TDMA_SERVER_INIT_REQ);

@@ -164,11 +164,7 @@ void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mo
     db_rng_init();
 
     // Retrieve the device ID.
-    #if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
-    _tdma_client_vars.device_id = ipc_shared_data.tdma_client.device_id;
-    #else
     _tdma_client_vars.device_id = db_device_id();
-    #endif
 
     // Save the user callback to use in our interruption
     _tdma_client_vars.callback = callback;
