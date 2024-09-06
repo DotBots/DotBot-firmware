@@ -38,8 +38,8 @@
 #define TDMA_CLIENT_DEFAULT_RX_DURATION    TDMA_CLIENT_DEFAULT_FRAME_DURATION  ///< Default duration of the tdma frame, in microseconds.
 #define TDMA_CLIENT_DEFAULT_TX_START       10000                               ///< Default duration of the tdma frame, in microseconds.
 #define TDMA_CLIENT_DEFAULT_TX_DURATION    5000                                ///< Default duration of the tdma frame, in microseconds.
-#define TDMA_CLIENT_HF_TIMER_CC_TX         TIMER2_CC_NUM - 2               ///< Which timer channel will be used for the TX state machine.
-#define TDMA_CLIENT_HF_TIMER_CC_RX         TIMER2_CC_NUM - 3               ///< Which timer channel will be used for the RX state machine.
+#define TDMA_CLIENT_HF_TIMER_CC_TX         0               ///< Which timer channel will be used for the TX state machine.
+#define TDMA_CLIENT_HF_TIMER_CC_RX         1               ///< Which timer channel will be used for the RX state machine.
 #define TDMA_CLIENT_MAX_DELAY_WITHOUT_TX   500000                              ///< Max amount of time that can pass without TXing anything
 #define TDMA_CLIENT_RING_BUFFER_SIZE       10                                  ///< Amount of TX packets the buffer can contain
 #define RADIO_MESSAGE_MAX_SIZE             255                                 ///< Size of buffers used for SPI communications
