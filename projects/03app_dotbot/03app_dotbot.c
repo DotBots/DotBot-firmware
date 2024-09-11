@@ -28,9 +28,11 @@
 #include "rgbled_pwm.h"
 #include "timer.h"
 #include "log_flash.h"
+#include "tdma_client.h"
 
 //=========================== defines ==========================================
 
+#define DB_RADIO_FREQ             (28)
 #define TIMER_DEV                 (0)
 #define DB_LH2_UPDATE_DELAY_MS    (100U)   ///< 100ms delay between each LH2 data refresh
 #define DB_ADVERTIZEMENT_DELAY_MS (500U)   ///< 500ms delay between each advertizement packet sending
@@ -177,9 +179,10 @@ int main(void) {
     db_rgbled_pwm_init(&rgbled_pwm_conf);
 #endif
     db_motors_init();
-    db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);
-    db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
-    db_radio_rx();              // Start receiving packets.
+    db_tdma_client_init(&radio_callback, DB_RADIO_BLE_1MBit, DB_RADIO_FREQ);
+    // db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);
+    // db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
+    // db_radio_rx();              // Start receiving packets.
 
     // Set an invalid heading since the value is unknown on startup.
     // Control loop is stopped and advertize packets are sent
@@ -223,8 +226,9 @@ int main(void) {
                 size_t length = sizeof(protocol_header_t) + sizeof(int16_t) + sizeof(db_lh2_raw_data_t) * LH2_SWEEP_COUNT;
 
                 // Send the radio packet
-                db_radio_disable();
-                db_radio_tx(_dotbot_vars.radio_buffer, length);
+                // db_radio_disable();
+                // db_radio_tx(_dotbot_vars.radio_buffer, length);
+                db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
 
                 db_lh2_start();
             } else {
@@ -242,8 +246,9 @@ int main(void) {
         if (_dotbot_vars.advertize && need_advertize) {
             db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_ADVERTISEMENT);
             size_t length = sizeof(protocol_header_t);
-            db_radio_disable();
-            db_radio_tx(_dotbot_vars.radio_buffer, length);
+            // db_radio_disable();
+            // db_radio_tx(_dotbot_vars.radio_buffer, length);
+            db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
             _dotbot_vars.advertize = false;
         }
     }

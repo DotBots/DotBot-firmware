@@ -12,10 +12,13 @@
 #include "radio.h"
 #include "timer.h"
 #include "uart.h"
+#include "tdma_server.h"
+// Conf file
+#include "conf.h"
 
 //=========================== defines ==========================================
 
-#define TIMER_DEV           (2)
+#define TIMER_DEV           (1)
 #define DB_BUFFER_MAX_BYTES (255U)       ///< Max bytes in UART receive buffer
 #define DB_UART_BAUDRATE    (1000000UL)  ///< UART baudrate used by the gateway
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
@@ -24,6 +27,7 @@
 #define DB_UART_INDEX (0)  ///< Index of UART peripheral to use
 #endif
 #define DB_RADIO_QUEUE_SIZE (8U)                             ///< Size of the radio queue (must by a power of 2)
+#define DB_RADIO_FREQ (28)                  // Set the frequency to 2412 MHz
 #define DB_UART_QUEUE_SIZE  ((DB_BUFFER_MAX_BYTES + 1) * 2)  ///< Size of the UART queue size (must by a power of 2)
 
 typedef struct {
@@ -138,8 +142,9 @@ int main(void) {
     db_protocol_init();
 
     // Configure Radio as transmitter
-    db_radio_init(&_radio_callback, DOTBOT_GW_RADIO_MODE);  // All RX packets received are forwarded in an HDLC frame over UART
-    db_radio_set_frequency(8);                              // Set the radio frequency to 2408 MHz.
+    db_tdma_server_init(&_radio_callback, DOTBOT_GW_RADIO_MODE, DB_RADIO_FREQ);
+    // db_radio_init(&_radio_callback, DOTBOT_GW_RADIO_MODE);  // All RX packets received are forwarded in an HDLC frame over UART
+    // db_radio_set_frequency(8);                              // Set the radio frequency to 2408 MHz.
     // Initialize the gateway context
     _gw_vars.buttons             = 0x0000;
     _gw_vars.radio_queue.current = 0;
@@ -147,7 +152,7 @@ int main(void) {
     _gw_vars.handshake_done      = false;
     db_uart_init(DB_UART_INDEX, &db_uart_rx, &db_uart_tx, DB_UART_BAUDRATE, &_uart_callback);
 
-    db_radio_rx();
+    // db_radio_rx();
 
     // Initialize buttons used to broadcast move raw values to DotBots
     db_gpio_init(&db_btn2, DB_GPIO_IN_PU);
@@ -169,9 +174,11 @@ int main(void) {
 
         bool send_command = (command.left_y != 0) || (command.right_y != 0) || (command.left_y == 0 && command.left_y != prev_left) || (command.right_y == 0 && command.right_y != prev_right);
         if (send_command) {
+
             db_protocol_cmd_move_raw_to_buffer(_gw_vars.radio_tx_buffer, DB_BROADCAST_ADDRESS, DotBot, &command);
-            db_radio_disable();
-            db_radio_tx(_gw_vars.radio_tx_buffer, sizeof(protocol_header_t) + sizeof(protocol_move_raw_command_t));
+            // db_radio_disable();
+            db_tdma_server_tx(_gw_vars.radio_tx_buffer, sizeof(protocol_header_t) + sizeof(protocol_move_raw_command_t));
+            // db_radio_tx(_gw_vars.radio_tx_buffer, sizeof(protocol_header_t) + sizeof(protocol_move_raw_command_t));
 
             prev_left  = command.left_y;
             prev_right = command.right_y;
@@ -198,8 +205,9 @@ int main(void) {
                 {
                     size_t msg_len = db_hdlc_decode(&_gw_vars.hdlc_rx_buffer[0]);
                     if (msg_len) {
-                        db_radio_disable();
-                        db_radio_tx(&_gw_vars.hdlc_rx_buffer[0], msg_len);
+                        // db_radio_disable();
+                        // db_radio_tx(&_gw_vars.hdlc_rx_buffer[0], msg_len);
+                        db_tdma_server_tx(&_gw_vars.hdlc_rx_buffer[0], msg_len);
                     }
                 } break;
                 default:

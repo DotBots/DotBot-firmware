@@ -3,7 +3,7 @@
   <project Name="03app_dotbot_gateway">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_radio(bsp);00bsp_dotbot_board(bsp);00bsp_uart(bsp);00bsp_timer(bsp);00bsp_uart(bsp);00drv_dotbot_hdlc(drv);00drv_dotbot_protocol(drv);00bsp_gpio(bsp)"
+      project_dependencies="00bsp_radio(bsp);00bsp_dotbot_board(bsp);00bsp_uart(bsp);00bsp_timer(bsp);00bsp_uart(bsp);00drv_dotbot_hdlc(drv);00drv_dotbot_protocol(drv);00bsp_gpio(bsp);00drv_tdma_server(drv)"
       project_directory="03app_dotbot_gateway"
       project_type="Executable" />
     <folder Name="Device Files">
