@@ -95,14 +95,14 @@ uint8_t ble_mode_to_byte_time[] = {
 static void tdma_server_callback(uint8_t *packet, uint8_t length);
 
 ///< TDMA timer Interrupts
-void timer_tdma_interrupt(void);
+static void timer_tdma_interrupt(void);
 
 /**
  * @brief Initialize the ring buffer for spi captures
  *
  * @param[in]   rb  pointer to ring buffer structure
  */
-void _message_rb_init(tdma_ring_buffer_t *rb);
+static void _message_rb_init(tdma_ring_buffer_t *rb);
 
 /**
  * @brief add one element to the ring buffer for tdma captures
@@ -111,7 +111,7 @@ void _message_rb_init(tdma_ring_buffer_t *rb);
  * @param[in]   data        pointer to the data array to save in the ring buffer
  * @param[in]   packet_length   length of the packet to send trough the radio
  */
-void _message_rb_add(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t packet_length);
+static void _message_rb_add(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t packet_length);
 
 /**
  * @brief retreive the oldest element from the ring buffer for tdma captures
@@ -120,7 +120,7 @@ void _message_rb_add(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], u
  * @param[out]   data        pointer to the array where the ring buffer data will be saved
  * @param[out]   packet_length   length of the packet to send trough the radio
  */
-bool _message_rb_get(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t *packet_length);
+static bool _message_rb_get(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t *packet_length);
 
 /**
  * @brief Sends all the queued messages that can be sent in during the TX timeslot
@@ -129,14 +129,14 @@ bool _message_rb_get(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], u
  * @param[in]    max_tx_duration_us     max time available to send messages.
  * @return                              true is a packet was sent, false if no packet was sent.
  */
-bool _message_rb_tx_queue(tdma_ring_buffer_t *rb, uint16_t max_tx_duration_us);
+static bool _message_rb_tx_queue(tdma_ring_buffer_t *rb, uint16_t max_tx_duration_us);
 
 /**
  * @brief Initialize the ring buffer for clients waiting to register.
  *
  * @param[in]   rb  pointer to ring buffer structure
  */
-void _client_rb_init(new_client_ring_buffer_t *rb);
+static void _client_rb_init(new_client_ring_buffer_t *rb);
 
 /**
  * @brief add one element to the ring buffer for tdma captures
@@ -144,7 +144,7 @@ void _client_rb_init(new_client_ring_buffer_t *rb);
  * @param[in]   rb          pointer to ring buffer structure
  * @param[in]   new_client  id of the client waiting to register.
  */
-void _client_rb_add(new_client_ring_buffer_t *rb, uint64_t new_client);
+static void _client_rb_add(new_client_ring_buffer_t *rb, uint64_t new_client);
 
 /**
  * @brief retreive the oldest element from the ring buffer for tdma captures
@@ -153,7 +153,7 @@ void _client_rb_add(new_client_ring_buffer_t *rb, uint64_t new_client);
  * @param[out]   new_client  pointer to the variable where the new client ID will be saved.
  * @return                   true if ID was successfully copied, false buffer is empty.
  */
-bool _client_rb_get(new_client_ring_buffer_t *rb, uint64_t *new_client);
+static bool _client_rb_get(new_client_ring_buffer_t *rb, uint64_t *new_client);
 
 /**
  * @brief Sends all the queued messages that can be sent in during the TX timeslot
@@ -162,7 +162,7 @@ bool _client_rb_get(new_client_ring_buffer_t *rb, uint64_t *new_client);
  * @param[in]    max_tx_duration_us  max time available to send messages.
  * @return                           true is a packet was sent, false if no packet was sent.
  */
-bool _client_rb_tx_queue(new_client_ring_buffer_t *rb, uint16_t max_tx_duration_us);
+static bool _client_rb_tx_queue(new_client_ring_buffer_t *rb, uint16_t max_tx_duration_us);
 
 /**
  * @brief searches if a client id already has a reminder message queued up
@@ -171,20 +171,20 @@ bool _client_rb_tx_queue(new_client_ring_buffer_t *rb, uint16_t max_tx_duration_
  * @param[out]   client      ID client to search.
  * @return                   true if ID was found, false otherwise.
  */
-bool _client_rb_id_exists(new_client_ring_buffer_t *rb, uint64_t client);
+static bool _client_rb_id_exists(new_client_ring_buffer_t *rb, uint64_t client);
 
 /**
  * @brief Send a message to synchronize the client's and the server's clock
  *
  */
-void _tx_sync_frame(void);
+static void _tx_sync_frame(void);
 
 /**
  * @brief respond to all clients requesting a registration,
  *        or correct those that stray away from their slot
  *
  */
-void _tx_registration_messages(uint64_t client);
+static void _tx_registration_messages(uint64_t client);
 
 /**
  * @brief find the slot in which a client is registered
@@ -193,7 +193,7 @@ void _tx_registration_messages(uint64_t client);
  * @param[in]   client      id of the client to search in the table.
  * @return table slot index of the client, or -1 if client is not found.
  */
-int16_t _server_find_client(tdma_server_table_t *tdma_table, uint64_t client);
+static int16_t _server_find_client(tdma_server_table_t *tdma_table, uint64_t client);
 
 /**
  * @brief register a new client into the table.
@@ -201,7 +201,7 @@ int16_t _server_find_client(tdma_server_table_t *tdma_table, uint64_t client);
  * @param[in]   tdma_table  pointer to the tdma table to search
  * @param[in]   client      id of the client to register.
  */
-void _server_register_new_client(tdma_server_table_t *tdma_table, uint64_t client);
+static void _server_register_new_client(tdma_server_table_t *tdma_table, uint64_t client);
 
 //=========================== public ===========================================
 
@@ -281,13 +281,13 @@ void db_tdma_server_empty(void) {
 
 //=========================== private ==========================================
 
-void _message_rb_init(tdma_ring_buffer_t *rb) {
+static void _message_rb_init(tdma_ring_buffer_t *rb) {
     rb->writeIndex = 0;
     rb->readIndex  = 0;
     rb->count      = 0;
 }
 
-void _message_rb_add(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t packet_length) {
+static void _message_rb_add(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t packet_length) {
 
     memcpy(rb->buffer[rb->writeIndex], data, PAYLOAD_MAX_LENGTH);
     rb->packet_length[rb->writeIndex] = packet_length;
@@ -301,7 +301,7 @@ void _message_rb_add(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], u
     }
 }
 
-bool _message_rb_get(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t *packet_length) {
+static bool _message_rb_get(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t *packet_length) {
     if (rb->count <= 0) {
         // Buffer is empty
         return false;
@@ -315,7 +315,7 @@ bool _message_rb_get(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], u
     return true;
 }
 
-bool _message_rb_tx_queue(tdma_ring_buffer_t *rb, uint16_t max_tx_duration_us) {
+static bool _message_rb_tx_queue(tdma_ring_buffer_t *rb, uint16_t max_tx_duration_us) {
 
     // initialize variables
     uint8_t length = 0;
@@ -352,13 +352,13 @@ bool _message_rb_tx_queue(tdma_ring_buffer_t *rb, uint16_t max_tx_duration_us) {
     return packet_sent_flag;
 }
 
-void _client_rb_init(new_client_ring_buffer_t *rb) {
+static void _client_rb_init(new_client_ring_buffer_t *rb) {
     rb->writeIndex = 0;
     rb->readIndex  = 0;
     rb->count      = 0;
 }
 
-void _client_rb_add(new_client_ring_buffer_t *rb, uint64_t new_client) {
+static void _client_rb_add(new_client_ring_buffer_t *rb, uint64_t new_client) {
 
     rb->buffer[rb->writeIndex] = new_client;
     rb->writeIndex             = (rb->writeIndex + 1) % TDMA_NEW_CLIENT_BUFFER_SIZE;
@@ -371,7 +371,7 @@ void _client_rb_add(new_client_ring_buffer_t *rb, uint64_t new_client) {
     }
 }
 
-bool _client_rb_get(new_client_ring_buffer_t *rb, uint64_t *new_client) {
+static bool _client_rb_get(new_client_ring_buffer_t *rb, uint64_t *new_client) {
     if (rb->count <= 0) {
         // Buffer is empty
         return false;
@@ -384,7 +384,7 @@ bool _client_rb_get(new_client_ring_buffer_t *rb, uint64_t *new_client) {
     return true;
 }
 
-bool _client_rb_tx_queue(new_client_ring_buffer_t *rb, uint16_t max_tx_duration_us) {
+static bool _client_rb_tx_queue(new_client_ring_buffer_t *rb, uint16_t max_tx_duration_us) {
 
     // initialize variables
     uint64_t client           = 0;
@@ -421,7 +421,7 @@ bool _client_rb_tx_queue(new_client_ring_buffer_t *rb, uint16_t max_tx_duration_
     return packet_sent_flag;
 }
 
-bool _client_rb_id_exists(new_client_ring_buffer_t *rb, uint64_t client) {
+static bool _client_rb_id_exists(new_client_ring_buffer_t *rb, uint64_t client) {
 
     // get the raw pointer for the ring buffer.
     // check all valid values
@@ -440,7 +440,7 @@ bool _client_rb_id_exists(new_client_ring_buffer_t *rb, uint64_t client) {
     return false;
 }
 
-void _tx_sync_frame(void) {
+static void _tx_sync_frame(void) {
     // This message signals the start of a TDMA frame
     // Prepare packet
     protocol_sync_frame_t frame = { _tdma_vars.tdma_table.frame_duration_us };
@@ -462,7 +462,7 @@ void _tx_sync_frame(void) {
     db_radio_tx(_tdma_vars.radio_buffer, length);
 }
 
-void _tx_registration_messages(uint64_t client) {
+static void _tx_registration_messages(uint64_t client) {
     // Send the sync packet + tdma_slot parameters  to a particular client.
 
     // Create the TDMA table we will send
@@ -494,7 +494,7 @@ void _tx_registration_messages(uint64_t client) {
     db_radio_tx(_tdma_vars.radio_buffer, length);
 }
 
-int16_t _server_find_client(tdma_server_table_t *tdma_table, uint64_t client) {
+static int16_t _server_find_client(tdma_server_table_t *tdma_table, uint64_t client) {
 
     for (size_t i = 0; i <= tdma_table->table_index; i++) {
         if (tdma_table->table[i].client == client) {
@@ -504,7 +504,7 @@ int16_t _server_find_client(tdma_server_table_t *tdma_table, uint64_t client) {
     return TDMA_SERVER_CLIENT_NOT_FOUND;
 }
 
-void _server_register_new_client(tdma_server_table_t *tdma_table, uint64_t client) {
+static void _server_register_new_client(tdma_server_table_t *tdma_table, uint64_t client) {
 
     // Check if the next slot should go to the gateway
     //  YES: Assign next+1 slot to the new client
@@ -646,7 +646,7 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
  * @brief Interruption handler for the TX state machine timer
  *
  */
-void timer_tdma_interrupt(void) {
+static void timer_tdma_interrupt(void) {
 
     // NRF_P0->OUTSET = 1 << 26;
 

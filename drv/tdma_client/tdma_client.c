@@ -83,8 +83,8 @@ uint8_t ble_mode_to_byte_time[] = {
 static void tdma_client_callback(uint8_t *packet, uint8_t length);
 
 ///< TDMA timer Interrupts
-void timer_tx_interrupt(void);
-void timer_rx_interrupt(void);
+static void timer_tx_interrupt(void);
+static void timer_rx_interrupt(void);
 
 /**
  * @brief Updates the RX and TX timings for the TDMA table.
@@ -92,14 +92,14 @@ void timer_rx_interrupt(void);
  *
  * @param[in] table       New table of TDMA timings
  */
-void _protocol_tdma_set_table(const protocol_tdma_table_t *table);
+static void _protocol_tdma_set_table(const protocol_tdma_table_t *table);
 
 /**
  * @brief Initialize the ring buffer for spi captures
  *
  * @param[in]   rb  pointer to ring buffer structure
  */
-void _message_rb_init(tdma_client_ring_buffer_t *rb);
+static void _message_rb_init(tdma_client_ring_buffer_t *rb);
 
 /**
  * @brief add one element to the ring buffer for tdma captures
@@ -108,7 +108,7 @@ void _message_rb_init(tdma_client_ring_buffer_t *rb);
  * @param[in]   data        pointer to the data array to save in the ring buffer
  * @param[in]   packet_length   length of the packet to send trough the radio
  */
-void _message_rb_add(tdma_client_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t packet_length);
+static void _message_rb_add(tdma_client_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t packet_length);
 
 /**
  * @brief retreive the oldest element from the ring buffer for tdma captures
@@ -117,33 +117,33 @@ void _message_rb_add(tdma_client_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LEN
  * @param[out]   data        pointer to the array where the ring buffer data will be saved
  * @param[out]   packet_length   length of the packet to send trough the radio
  */
-bool _message_rb_get(tdma_client_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t *packet_length);
+static bool _message_rb_get(tdma_client_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t *packet_length);
 
 /**
  * @brief Sends all the queued messages that can be sent in during the TX timeslot
  *
  * @param[out]   packet_sent   true is a packet was sent, false if no packet was sent.
  */
-bool _message_rb_tx_queue(uint16_t max_tx_duration_us);
+static bool _message_rb_tx_queue(uint16_t max_tx_duration_us);
 
 /**
  * @brief sends a keep_alive packet to the gateway
  *
  */
-void _tx_keep_alive_message(void);
+static void _tx_keep_alive_message(void);
 
 /**
  * @brief register with the gatway to request a TDMA slot
  *
  */
-void _tx_tdma_register_message(void);
+static void _tx_tdma_register_message(void);
 
 /**
  * @brief get a random delay between 100ms and 228ms in microseconds
  *        to change how often the dotbot advertises itself
  *
  */
-uint32_t _get_random_delay_us(void);
+static uint32_t _get_random_delay_us(void);
 
 //=========================== public ===========================================
 
@@ -231,7 +231,7 @@ db_tdma_registration_state_t db_tdma_client_get_status(void) {
 }
 //=========================== private ==========================================
 
-void _protocol_tdma_set_table(const protocol_tdma_table_t *table) {
+static void _protocol_tdma_set_table(const protocol_tdma_table_t *table) {
 
     _tdma_client_vars.tdma_client_table.frame_duration = table->frame_period;
     _tdma_client_vars.tdma_client_table.rx_start       = table->rx_start;
@@ -240,13 +240,13 @@ void _protocol_tdma_set_table(const protocol_tdma_table_t *table) {
     _tdma_client_vars.tdma_client_table.tx_duration    = table->tx_duration;
 }
 
-void _message_rb_init(tdma_client_ring_buffer_t *rb) {
+static void _message_rb_init(tdma_client_ring_buffer_t *rb) {
     rb->writeIndex = 0;
     rb->readIndex  = 0;
     rb->count      = 0;
 }
 
-void _message_rb_add(tdma_client_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t packet_length) {
+static void _message_rb_add(tdma_client_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t packet_length) {
 
     memcpy(rb->buffer[rb->writeIndex], data, PAYLOAD_MAX_LENGTH);
     rb->packet_length[rb->writeIndex] = packet_length;
@@ -260,7 +260,7 @@ void _message_rb_add(tdma_client_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LEN
     }
 }
 
-bool _message_rb_get(tdma_client_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t *packet_length) {
+static bool _message_rb_get(tdma_client_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t *packet_length) {
     if (rb->count <= 0) {
         // Buffer is empty
         return false;
@@ -274,7 +274,7 @@ bool _message_rb_get(tdma_client_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LEN
     return true;
 }
 
-bool _message_rb_tx_queue(uint16_t max_tx_duration_us) {
+static bool _message_rb_tx_queue(uint16_t max_tx_duration_us) {
 
     // initialize variables
     uint32_t start_tx_slot = db_timer_hf_now(TDMA_CLIENT_TIMER_HF);
@@ -319,7 +319,7 @@ bool _message_rb_tx_queue(uint16_t max_tx_duration_us) {
     return packet_sent_flag;
 }
 
-void _tx_keep_alive_message(void) {
+static void _tx_keep_alive_message(void) {
 
     db_protocol_header_to_buffer(_tdma_client_vars.radio_buffer, DB_BROADCAST_ADDRESS, TDMA_CLIENT_RADIO_APPLICATION, DB_PROTOCOL_ADVERTISEMENT);
     size_t length = sizeof(protocol_header_t);
@@ -327,7 +327,7 @@ void _tx_keep_alive_message(void) {
     db_radio_tx(_tdma_client_vars.radio_buffer, length);
 }
 
-void _tx_tdma_register_message(void) {
+static void _tx_tdma_register_message(void) {
 
     db_protocol_header_to_buffer(_tdma_client_vars.radio_buffer, DB_BROADCAST_ADDRESS, TDMA_CLIENT_RADIO_APPLICATION, DB_PROTOCOL_ADVERTISEMENT);
     size_t length = sizeof(protocol_header_t);
@@ -335,7 +335,7 @@ void _tx_tdma_register_message(void) {
     db_radio_tx(_tdma_client_vars.radio_buffer, length);
 }
 
-uint32_t _get_random_delay_us(void) {
+static uint32_t _get_random_delay_us(void) {
 
     // Change how often the message gets sent, between 100 and 228 ms.
     uint8_t random_value;
@@ -455,7 +455,7 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
  * @brief Interruption handler for the TX state machine timer
  *
  */
-void timer_tx_interrupt(void) {
+static void timer_tx_interrupt(void) {
 
     // NRF_P0->OUTSET   = 1 << 26;
     bool packet_sent = false;
@@ -496,7 +496,7 @@ void timer_tx_interrupt(void) {
  * @brief Interruption handler for the RX state machine timer
  *
  */
-void timer_rx_interrupt(void) {
+static void timer_rx_interrupt(void) {
 
     // If the duration of the RX timer is equal to the frame duration
     // just leave the radio ON permanently
