@@ -35,10 +35,8 @@
 #define DB_RADIO_FREQ             (28)
 #define TIMER_DEV                 (0)
 #define DB_LH2_UPDATE_DELAY_MS    (100U)   ///< 100ms delay between each LH2 data refresh
-#define DB_ADVERTIZEMENT_DELAY_MS (500U)   ///< 500ms delay between each advertizement packet sending
 #define DB_TIMEOUT_CHECK_DELAY_MS (200U)   ///< 200ms delay between each timeout delay check
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
-#define DB_LH2_COUNTER_MASK       (0x07)   ///< Maximum number of lh2 iterations without value received
 #define DB_BUFFER_MAX_BYTES       (255U)   ///< Max bytes in UART receive buffer
 #define DB_DIRECTION_THRESHOLD    (0.01)   ///< Threshold to update the direction
 #define DB_DIRECTION_INVALID      (-1000)  ///< Invalid angle e.g out of [0, 360] range
@@ -66,9 +64,7 @@ typedef struct {
     uint32_t                 waypoints_threshold;                ///< Distance to target waypoint threshold
     uint8_t                  next_waypoint_idx;                  ///< Index of next waypoint to reach
     bool                     update_control_loop;                ///< Whether the control loop need an update
-    bool                     advertize;                          ///< Whether an advertize packet should be sent
     bool                     update_lh2;                         ///< Whether LH2 data must be processed
-    uint8_t                  lh2_update_counter;                 ///< Counter used to track when lh2 data were received and to determine if an advertizement packet is needed
     uint64_t                 device_id;                          ///< Device ID of the DotBot
     db_log_dotbot_data_t     log_data;
 } dotbot_vars_t;
@@ -91,7 +87,6 @@ static const db_rgbled_pwm_conf_t rgbled_pwm_conf = {
 //=========================== prototypes =======================================
 
 static void _timeout_check(void);
-static void _advertise(void);
 static void _compute_angle(const protocol_lh2_location_t *next, const protocol_lh2_location_t *origin, int16_t *angle);
 static void _update_control_loop(void);
 static void _update_lh2(void);
@@ -180,32 +175,25 @@ int main(void) {
 #endif
     db_motors_init();
     db_tdma_client_init(&radio_callback, DB_RADIO_BLE_1MBit, DB_RADIO_FREQ);
-    // db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);
-    // db_radio_set_frequency(8);  // Set the RX frequency to 2408 MHz.
-    // db_radio_rx();              // Start receiving packets.
 
     // Set an invalid heading since the value is unknown on startup.
-    // Control loop is stopped and advertize packets are sent
+    // Control loop is stopped
     _dotbot_vars.direction           = DB_DIRECTION_INVALID;
     _dotbot_vars.update_control_loop = false;
-    _dotbot_vars.advertize           = false;
     _dotbot_vars.update_lh2          = false;
-    _dotbot_vars.lh2_update_counter  = 0;
 
     // Retrieve the device id once at startup
     _dotbot_vars.device_id = db_device_id();
 
     db_timer_init(TIMER_DEV);
     db_timer_set_periodic_ms(TIMER_DEV, 0, DB_TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
-    db_timer_set_periodic_ms(TIMER_DEV, 1, DB_ADVERTIZEMENT_DELAY_MS, &_advertise);
-    db_timer_set_periodic_ms(TIMER_DEV, 2, DB_LH2_UPDATE_DELAY_MS, &_update_lh2);
+    db_timer_set_periodic_ms(TIMER_DEV, 1, DB_LH2_UPDATE_DELAY_MS, &_update_lh2);
     db_lh2_init(&_dotbot_vars.lh2, &db_lh2_d, &db_lh2_e);
     db_lh2_start();
 
     while (1) {
         __WFE();
 
-        bool need_advertize = false;
         // Process available lighthouse data
         db_lh2_process_location(&_dotbot_vars.lh2);
 
@@ -226,14 +214,9 @@ int main(void) {
                 size_t length = sizeof(protocol_header_t) + sizeof(int16_t) + sizeof(db_lh2_raw_data_t) * LH2_SWEEP_COUNT;
 
                 // Send the radio packet
-                // db_radio_disable();
-                // db_radio_tx(_dotbot_vars.radio_buffer, length);
                 db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
 
                 db_lh2_start();
-            } else {
-                _dotbot_vars.lh2_update_counter = (_dotbot_vars.lh2_update_counter + 1) & DB_LH2_COUNTER_MASK;
-                need_advertize                  = (_dotbot_vars.lh2_update_counter == DB_LH2_COUNTER_MASK);
             }
             _dotbot_vars.update_lh2 = false;
         }
@@ -241,15 +224,6 @@ int main(void) {
         if (_dotbot_vars.update_control_loop) {
             _update_control_loop();
             _dotbot_vars.update_control_loop = false;
-        }
-
-        if (_dotbot_vars.advertize && need_advertize) {
-            db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_ADVERTISEMENT);
-            size_t length = sizeof(protocol_header_t);
-            // db_radio_disable();
-            // db_radio_tx(_dotbot_vars.radio_buffer, length);
-            db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
-            _dotbot_vars.advertize = false;
         }
     }
 }
@@ -345,10 +319,6 @@ static void _timeout_check(void) {
     if (ticks > _dotbot_vars.ts_last_packet_received + TIMEOUT_CHECK_DELAY_TICKS) {
         db_motors_set_speed(0, 0);
     }
-}
-
-static void _advertise(void) {
-    _dotbot_vars.advertize = true;
 }
 
 static void _update_lh2(void) {
