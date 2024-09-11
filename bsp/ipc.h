@@ -137,7 +137,15 @@ static inline void db_ipc_network_call(ipc_req_t req) {
         ipc_shared_data.req                    = req;
         NRF_IPC_S->TASKS_SEND[DB_IPC_CHAN_REQ] = 1;
     }
-    while (!ipc_shared_data.net_ack) {}
+    while (!ipc_shared_data.net_ack) {
+      if (ipc_shared_data.req == DB_IPC_REQ_NONE){
+        // Something went wrong and, the net-core deleted the request without fullfilling it.
+        // Re-send it
+        ipc_shared_data.req                    = req;
+        NRF_IPC_S->TASKS_SEND[DB_IPC_CHAN_REQ] = 1;
+      }
+          
+    }
     ipc_shared_data.net_ack = false;
 };
 
