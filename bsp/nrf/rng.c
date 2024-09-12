@@ -32,8 +32,8 @@ void db_rng_init(void) {
 }
 
 void db_rng_read(uint8_t *value) {
-    NRF_RNG->TASKS_START = 1;
+    NRF_RNG->EVENTS_VALRDY = 0;  // This line needs to be here to avoid a deadlock if main calls this function, gets interrupted, and the ISR calls it again.
+    NRF_RNG->TASKS_START   = 1;
     while (NRF_RNG->EVENTS_VALRDY == 0) {};
-    *value                 = (uint8_t)NRF_RNG->VALUE;
-    NRF_RNG->EVENTS_VALRDY = 0;
+    *value = (uint8_t)NRF_RNG->VALUE;
 }
