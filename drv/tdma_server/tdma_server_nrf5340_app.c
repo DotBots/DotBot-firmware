@@ -96,7 +96,7 @@ void db_tdma_server_get_client_info(tdma_table_entry_t *client, uint8_t client_i
     db_ipc_network_call(DB_IPC_TDMA_SERVER_GET_CLIENT_REQ);
 
     // Copy and return one entry of the TDMA entry (one by one because memcpy doesnt like that ipc_shared_data is volatile)
-    client->client  = ipc_shared_data.tdma_server.client_entry.client;
+    client->client      = ipc_shared_data.tdma_server.client_entry.client;
     client->rx_duration = ipc_shared_data.tdma_server.client_entry.rx_duration;
     client->rx_start    = ipc_shared_data.tdma_server.client_entry.rx_start;
     client->tx_duration = ipc_shared_data.tdma_server.client_entry.tx_duration;
