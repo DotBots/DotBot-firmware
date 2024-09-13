@@ -47,7 +47,11 @@
 #define LH2_MAX_DATA_VALID_TIME_US             2000000                                                        //< Data older than this is considered outdate and should be erased (in microseconds)
 #define LH2_SWEEP_PERIOD_US                    20000                                                          ///< time, in microseconds, between two full rotations of the LH2 motor
 #define LH2_SWEEP_PERIOD_THRESHOLD_US          1000                                                           ///< How close a LH2 pulse must arrive relative to LH2_SWEEP_PERIOD_US, to be considered the same type of sweep (first sweep or second second). (in microseconds)
+#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
 #define LH2_TIMER_DEV                          2                                                              ///< Timer device used for LH2
+#else
+#define LH2_TIMER_DEV                          3                                                              ///< Timer device used for LH2
+#endif
 
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
 #define NRF_SPIM         NRF_SPIM4_S
