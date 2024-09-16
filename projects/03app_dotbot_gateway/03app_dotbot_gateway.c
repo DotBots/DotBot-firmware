@@ -13,8 +13,6 @@
 #include "timer.h"
 #include "uart.h"
 #include "tdma_server.h"
-// Conf file
-#include "conf.h"
 
 //=========================== defines ==========================================
 
