@@ -1,14 +1,13 @@
 /**
  * @file
- * @ingroup bsp_radio
  *
- * @defgroup    drv_tdma      TDMA client radio driver
+ * @defgroup    drv_tdma_client      TDMA client radio driver
  * @ingroup     drv
  * @brief       Driver for Time-Division-Multiple-Access fot the DotBot radio
  *
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  *
- * @copyright Inria, 2022
+ * @copyright Inria, 2024
  */
 #include <nrf.h>
 #include <stdint.h>
