@@ -2,7 +2,7 @@
  * @file
  * @ingroup drv_tdma_server
  *
- * @brief  nrf5340-app-specific definition of the "tdma_server" drv module.
+ * @brief  nrf5340-app-specific implementation of the "tdma_server" drv module.
  *
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  *

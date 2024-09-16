@@ -2,7 +2,9 @@
  * @file
  * @ingroup bsp_radio
  *
- * @brief  nRF52833-specific definition of the "radio" bsp module.
+ * @defgroup    drv_tdma      TDMA client radio driver
+ * @ingroup     drv
+ * @brief       Driver for Time-Division-Multiple-Access fot the DotBot radio
  *
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  *

@@ -1,8 +1,9 @@
 /**
  * @file
- * @ingroup bsp_radio
- *
- * @brief  nRF52833-specific definition of the "radio" bsp module.
+ * 
+ * @defgroup    drv_tdma      TDMA server radio driver
+ * @ingroup     drv
+ * @brief       Driver for Time-Division-Multiple-Access for the Gateway radio
  *
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  *
