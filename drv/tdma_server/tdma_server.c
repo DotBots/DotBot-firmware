@@ -181,7 +181,7 @@ static void _tx_sync_frame(void);
 
 /**
  * @brief Send the sync packet + tdma_slot parameters  to a particular client.
- * 
+ *
  * @param[in] client    MAC ID of the client to register
  *
  */
