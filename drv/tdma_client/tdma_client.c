@@ -1,7 +1,7 @@
 /**
  * @file
  * @ingroup     drv_tdma_client
- * 
+ *
  * @brief       Driver for Time-Division-Multiple-Access fot the DotBot radio
  *
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
