@@ -122,7 +122,8 @@ static bool _message_rb_get(tdma_client_ring_buffer_t *rb, uint8_t data[PAYLOAD_
 /**
  * @brief Sends all the queued messages that can be sent in during the TX timeslot
  *
- * @param[out]   packet_sent   true is a packet was sent, false if no packet was sent.
+ * @param[in]    max_tx_duration_us     Time available to send messages, in microseconds
+ * @return  true is a packet was sent, false if no packet was sent.
  */
 static bool _message_rb_tx_queue(uint16_t max_tx_duration_us);
 
@@ -351,6 +352,8 @@ static uint32_t _get_random_delay_us(void) {
  * it will catch any TDMA related packet and update the timing table.
  * All other types of packets are passed directly into the user-defined call-back
  *
+ * @param[in]   packet    pointer to the data array with the data packet
+ * @param[in]   length    length of the packet received trough the radio
  */
 static void tdma_client_callback(uint8_t *packet, uint8_t length) {
     (void)length;

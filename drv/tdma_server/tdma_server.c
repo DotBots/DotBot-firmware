@@ -125,7 +125,7 @@ static bool _message_rb_get(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LEN
 /**
  * @brief Sends all the queued messages that can be sent in during the TX timeslot
  *
- * @param[in]    rb                  pointer to ring buffer structure
+ * @param[in]    rb                     pointer to ring buffer structure
  * @param[in]    max_tx_duration_us     max time available to send messages.
  * @return                              true is a packet was sent, false if no packet was sent.
  */
@@ -180,8 +180,9 @@ static bool _client_rb_id_exists(new_client_ring_buffer_t *rb, uint64_t client);
 static void _tx_sync_frame(void);
 
 /**
- * @brief respond to all clients requesting a registration,
- *        or correct those that stray away from their slot
+ * @brief Send the sync packet + tdma_slot parameters  to a particular client.
+ * 
+ * @param[in] client    MAC ID of the client to register
  *
  */
 static void _tx_registration_messages(uint64_t client);
@@ -568,6 +569,8 @@ static void _server_register_new_client(tdma_server_table_t *tdma_table, uint64_
  * it will catch any TDMA related packet and update the timing table.
  * All other types of packets are passed directly into the user-defined call-back
  *
+ * @param[in]   packet    pointer to the data array with the data packet
+ * @param[in]   length    length of the packet received trough the radio
  */
 static void tdma_server_callback(uint8_t *packet, uint8_t length) {
 
