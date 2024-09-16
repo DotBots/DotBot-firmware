@@ -27,10 +27,10 @@ static bool      _data_received = false;
 static ipc_req_t _req_received  = DB_IPC_REQ_NONE;
 
 // TDMA server variables
-uint32_t frame_duration_us;
-uint16_t num_clients;
-uint16_t table_index;
-tdma_table_entry_t   client;
+uint32_t           frame_duration_us;
+uint16_t           num_clients;
+uint16_t           table_index;
+tdma_table_entry_t client;
 
 //=========================== functions =========================================
 
@@ -148,8 +148,8 @@ int main(void) {
                 case DB_IPC_TDMA_SERVER_GET_TABLE_REQ:
                     db_tdma_server_get_table_info(&frame_duration_us, &num_clients, &table_index);
                     ipc_shared_data.tdma_server.frame_duration_us = frame_duration_us;
-                    ipc_shared_data.tdma_server.num_clients = num_clients;
-                    ipc_shared_data.tdma_server.table_index = table_index;
+                    ipc_shared_data.tdma_server.num_clients       = num_clients;
+                    ipc_shared_data.tdma_server.table_index       = table_index;
                     break;
                 case DB_IPC_TDMA_SERVER_GET_CLIENT_REQ:
                     db_tdma_server_get_client_info((tdma_table_entry_t *)&ipc_shared_data.tdma_server.client_entry, ipc_shared_data.tdma_server.client_id);
@@ -168,7 +168,7 @@ int main(void) {
             }
             ipc_shared_data.net_ack = true;
             _req_received           = DB_IPC_REQ_NONE;
-            ipc_shared_data.req     = DB_IPC_REQ_NONE; // used in the app-core ipc.h to check that the request was properly fullfilled.
+            ipc_shared_data.req     = DB_IPC_REQ_NONE;  // used in the app-core ipc.h to check that the request was properly fullfilled.
             __NOP();
         }
     };

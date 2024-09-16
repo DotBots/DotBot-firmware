@@ -18,7 +18,6 @@
 #include "protocol.h"
 #include "tdma_client.h"
 
-
 //=========================== defines ==========================================
 
 #define DELAY_MS   (500)                 // Wait 100ms between each send
@@ -82,7 +81,7 @@ int main(void) {
 //=========================== Callbacks ===============================
 
 static void radio_callback(uint8_t *packet, uint8_t length) {
-    if (packet[0] == length){
-      __NOP();
+    if (packet[0] == length) {
+        __NOP();
     }
 }
