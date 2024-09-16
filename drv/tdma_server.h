@@ -2,7 +2,7 @@
 #define __TDMA_SERVER_H
 
 /**
- * @defgroup    drv_tdma      TDMA server radio driver
+ * @defgroup    drv_tdma_server      TDMA server radio driver
  * @ingroup     drv
  * @brief       Driver for Time-Division-Multiple-Access for the Gateway radio
  *

@@ -1,8 +1,7 @@
 /**
  * @file
+ * @ingroup     drv_tdma_server
  *
- * @defgroup    drv_tdma_server      TDMA server radio driver
- * @ingroup     drv
  * @brief       Driver for Time-Division-Multiple-Access for the Gateway radio
  *
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>

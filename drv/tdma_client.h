@@ -2,7 +2,7 @@
 #define __TDMA_CLIENT_H
 
 /**
- * @defgroup    drv_tdma      TDMA client radio driver
+ * @defgroup    drv_tdma_client      TDMA client radio driver
  * @ingroup     drv
  * @brief       Driver for Time-Division-Multiple-Access fot the DotBot radio
  *
