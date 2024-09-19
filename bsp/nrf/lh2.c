@@ -68,8 +68,8 @@
 typedef struct {
     uint8_t  buffer[LH2_BUFFER_SIZE][SPI_BUFFER_SIZE];  ///< arrays of bits for local storage, contents of SPI transfer are copied into this
     uint32_t timestamps[LH2_BUFFER_SIZE];               ///< arrays of timestamps of when different SPI transfers happened
-    uint8_t  writeIndex;                                // Index for next write
-    uint8_t  readIndex;                                 // Index for next read
+    uint8_t  write_index;                                // Index for next write
+    uint8_t  read_index;                                 // Index for next read
     uint8_t  count;                                     // Number of arrays in buffer
 } lh2_ring_buffer_t;
 
@@ -1668,15 +1668,15 @@ void _spi_setup(const gpio_t *gpio_d) {
 
 void _add_to_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t *data, uint32_t timestamp) {
 
-    memcpy(cb->buffer[cb->writeIndex], data, SPI_BUFFER_SIZE);
-    cb->timestamps[cb->writeIndex] = timestamp;
-    cb->writeIndex                 = (cb->writeIndex + 1) % LH2_BUFFER_SIZE;
+    memcpy(cb->buffer[cb->write_index], data, SPI_BUFFER_SIZE);
+    cb->timestamps[cb->write_index] = timestamp;
+    cb->write_index                 = (cb->write_index + 1) % LH2_BUFFER_SIZE;
 
     if (cb->count < LH2_BUFFER_SIZE) {
         cb->count++;
     } else {
-        // Overwrite oldest data, adjust readIndex
-        cb->readIndex = (cb->readIndex + 1) % LH2_BUFFER_SIZE;
+        // Overwrite oldest data, adjust read_index
+        cb->read_index = (cb->read_index + 1) % LH2_BUFFER_SIZE;
     }
 }
 
@@ -1686,9 +1686,9 @@ bool _get_from_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t *data, uint32_t *t
         return false;
     }
 
-    memcpy(data, cb->buffer[cb->readIndex], SPI_BUFFER_SIZE);
-    *timestamp    = cb->timestamps[cb->readIndex];
-    cb->readIndex = (cb->readIndex + 1) % LH2_BUFFER_SIZE;
+    memcpy(data, cb->buffer[cb->read_index], SPI_BUFFER_SIZE);
+    *timestamp    = cb->timestamps[cb->read_index];
+    cb->read_index = (cb->read_index + 1) % LH2_BUFFER_SIZE;
     cb->count--;
 
     return true;

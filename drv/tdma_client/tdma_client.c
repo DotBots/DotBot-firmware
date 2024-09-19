@@ -49,8 +49,8 @@
 typedef struct {
     uint8_t  buffer[TDMA_CLIENT_RING_BUFFER_SIZE][DB_RADIO_PAYLOAD_MAX_LENGTH];  ///< arrays of radio messages waiting to be sent
     uint32_t packet_length[TDMA_CLIENT_RING_BUFFER_SIZE];                        ///< arrays of the length of the packets in the buffer
-    uint8_t  writeIndex;                                                         ///< Index for next write
-    uint8_t  readIndex;                                                          ///< Index for next read
+    uint8_t  write_index;                                                         ///< Index for next write
+    uint8_t  read_index;                                                          ///< Index for next read
     uint8_t  count;                                                              ///< Number of arrays in buffer
 } tdma_client_ring_buffer_t;
 
@@ -241,22 +241,22 @@ static void _protocol_tdma_set_table(const protocol_tdma_table_t *table) {
 }
 
 static void _message_rb_init(tdma_client_ring_buffer_t *rb) {
-    rb->writeIndex = 0;
-    rb->readIndex  = 0;
+    rb->write_index = 0;
+    rb->read_index  = 0;
     rb->count      = 0;
 }
 
 static void _message_rb_add(tdma_client_ring_buffer_t *rb, uint8_t data[DB_RADIO_PAYLOAD_MAX_LENGTH], uint8_t packet_length) {
 
-    memcpy(rb->buffer[rb->writeIndex], data, DB_RADIO_PAYLOAD_MAX_LENGTH);
-    rb->packet_length[rb->writeIndex] = packet_length;
-    rb->writeIndex                    = (rb->writeIndex + 1) % TDMA_CLIENT_RING_BUFFER_SIZE;
+    memcpy(rb->buffer[rb->write_index], data, DB_RADIO_PAYLOAD_MAX_LENGTH);
+    rb->packet_length[rb->write_index] = packet_length;
+    rb->write_index                    = (rb->write_index + 1) % TDMA_CLIENT_RING_BUFFER_SIZE;
 
     if (rb->count < TDMA_CLIENT_RING_BUFFER_SIZE) {
         rb->count++;
     } else {
-        // Overwrite oldest data, adjust readIndex
-        rb->readIndex = (rb->readIndex + 1) % TDMA_CLIENT_RING_BUFFER_SIZE;
+        // Overwrite oldest data, adjust read_index
+        rb->read_index = (rb->read_index + 1) % TDMA_CLIENT_RING_BUFFER_SIZE;
     }
 }
 
@@ -266,9 +266,9 @@ static bool _message_rb_get(tdma_client_ring_buffer_t *rb, uint8_t data[DB_RADIO
         return false;
     }
 
-    memcpy(data, rb->buffer[rb->readIndex], DB_RADIO_PAYLOAD_MAX_LENGTH);
-    *packet_length = rb->packet_length[rb->readIndex];
-    rb->readIndex  = (rb->readIndex + 1) % TDMA_CLIENT_RING_BUFFER_SIZE;
+    memcpy(data, rb->buffer[rb->read_index], DB_RADIO_PAYLOAD_MAX_LENGTH);
+    *packet_length = rb->packet_length[rb->read_index];
+    rb->read_index  = (rb->read_index + 1) % TDMA_CLIENT_RING_BUFFER_SIZE;
     rb->count--;
 
     return true;
