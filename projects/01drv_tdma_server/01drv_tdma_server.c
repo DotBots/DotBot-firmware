@@ -26,11 +26,11 @@
 
 //=========================== variables ========================================
 
-static uint8_t     packet_tx[300] = { 0 };
-tdma_table_entry_t clients[12]    = { 0 };
-uint32_t           frame_duration_us;
-uint16_t           num_clients;
-uint16_t           table_index;
+static uint8_t            packet_tx[300] = { 0 };
+static tdma_table_entry_t clients[12]    = { 0 };
+static uint32_t           frame_duration_us;
+static uint16_t           num_clients;
+static uint16_t           table_index;
 
 //========================== prototypes ========================================
 

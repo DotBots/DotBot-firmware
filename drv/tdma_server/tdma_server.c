@@ -83,7 +83,7 @@ typedef struct {
 static tdma_server_vars_t _tdma_vars = { 0 };
 
 // Transform the ble mode into how many microseconds it takes to send a single byte.
-uint8_t ble_mode_to_byte_time[] = {
+static const uint8_t ble_mode_to_byte_time[] = {
     8,   // DB_RADIO_BLE_1MBit
     4,   // DB_RADIO_BLE_2MBit
     64,  // DB_RADIO_BLE_LR125Kbit
@@ -317,9 +317,9 @@ static bool _message_rb_get(tdma_ring_buffer_t *rb, uint8_t data[DB_RADIO_PAYLOA
 static bool _message_rb_tx_queue(tdma_ring_buffer_t *rb, uint16_t max_tx_duration_us) {
 
     // initialize variables
-    uint8_t length = 0;
-    uint8_t packet[DB_RADIO_PAYLOAD_MAX_LENGTH];
-    bool    packet_sent_flag = false;  ///< flag to keep track if a packet get sent during this function call
+    uint8_t length                              = 0;
+    uint8_t packet[DB_RADIO_PAYLOAD_MAX_LENGTH] = { 0 };
+    bool    packet_sent_flag                    = false;  ///< flag to keep track if a packet get sent during this function call
 
     // check if there is something to send
     if (rb->count > 0) {
