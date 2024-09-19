@@ -354,7 +354,7 @@ static uint32_t _get_random_delay_us(void) {
  * @param[in]   length    length of the packet received trough the radio
  */
 static void tdma_client_callback(uint8_t *packet, uint8_t length) {
-    (void)length;
+
     uint8_t           *ptk_ptr = packet;
     protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
 

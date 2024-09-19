@@ -588,7 +588,6 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
 
     */
 
-    (void)length;
     uint8_t           *ptk_ptr = packet;
     protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
 
