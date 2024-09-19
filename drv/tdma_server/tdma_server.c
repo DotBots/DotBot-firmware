@@ -439,9 +439,9 @@ static bool _client_rb_id_exists(new_client_ring_buffer_t *rb, uint64_t client) 
 
 static void _tx_sync_frame(void) {
     // This message signals the start of a TDMA frame
-    // Prepare packet
+    // Prepare packet payload
     protocol_sync_frame_t frame = { _tdma_vars.tdma_table.frame_duration_us };
-    // Prepare packet, don't use the helper function, it takes too long to calculate the random message ID
+    // Prepare packet header, don't use the helper function, it takes too long to calculate the random message ID
     protocol_header_t header = {
         .dst         = DB_BROADCAST_ADDRESS,
         .src         = _tdma_vars.device_id,
@@ -452,9 +452,8 @@ static void _tx_sync_frame(void) {
         .type        = DB_PROTOCOL_TDMA_SYNC_FRAME,
     };
     memcpy(_tdma_vars.radio_buffer, &header, sizeof(protocol_header_t));
-    // db_protocol_header_to_buffer(_tdma_vars.radio_buffer, DB_BROADCAST_ADDRESS, TDMA_RADIO_APPLICATION, DB_PROTOCOL_TDMA_SYNC_FRAME);
     memcpy(_tdma_vars.radio_buffer + sizeof(protocol_header_t), &frame, sizeof(protocol_sync_frame_t));
-    size_t length = sizeof(protocol_header_t);
+    size_t length = sizeof(protocol_header_t) + sizeof(protocol_sync_frame_t);
     db_radio_disable();
     db_radio_tx(_tdma_vars.radio_buffer, length);
 }
