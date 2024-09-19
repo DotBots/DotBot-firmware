@@ -68,13 +68,13 @@ void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mo
     ipc_shared_data.tdma_client.mode      = radio_mode;
     ipc_shared_data.tdma_client.frequency = radio_freq;
 
-    // Initialice TDMA client drv in the net-core
+    // Initialize TDMA client drv in the net-core
     db_ipc_network_call(DB_IPC_TDMA_CLIENT_INIT_REQ);
 }
 
 void db_tdma_client_set_table(const tdma_client_table_t *table) {
 
-    // Copy the set table to the IPC chared data
+    // Copy the set table to the IPC shared data
     ipc_shared_data.tdma_client.table_set.frame_duration = table->frame_duration;
     ipc_shared_data.tdma_client.table_set.rx_start       = table->rx_start;
     ipc_shared_data.tdma_client.table_set.rx_duration    = table->rx_duration;
@@ -88,7 +88,7 @@ void db_tdma_client_get_table(tdma_client_table_t *table) {
 
     // Request the network core to copy the table's data.
     db_ipc_network_call(DB_IPC_TDMA_CLIENT_GET_TABLE_REQ);
-    // Copy the get table from the IPC chared data
+    // Copy the get table from the IPC shared data
     table->frame_duration = ipc_shared_data.tdma_client.table_get.frame_duration;
     table->rx_start       = ipc_shared_data.tdma_client.table_get.rx_start;
     table->rx_duration    = ipc_shared_data.tdma_client.table_get.rx_duration;

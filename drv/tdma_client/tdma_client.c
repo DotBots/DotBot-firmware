@@ -48,10 +48,10 @@
 
 typedef struct {
     uint8_t  buffer[TDMA_CLIENT_RING_BUFFER_SIZE][DB_RADIO_PAYLOAD_MAX_LENGTH];  ///< arrays of radio messages waiting to be sent
-    uint32_t packet_length[TDMA_CLIENT_RING_BUFFER_SIZE];               ///< arrays of the lenght of the packets in the buffer
-    uint8_t  writeIndex;                                                ///< Index for next write
-    uint8_t  readIndex;                                                 ///< Index for next read
-    uint8_t  count;                                                     ///< Number of arrays in buffer
+    uint32_t packet_length[TDMA_CLIENT_RING_BUFFER_SIZE];                        ///< arrays of the length of the packets in the buffer
+    uint8_t  writeIndex;                                                         ///< Index for next write
+    uint8_t  readIndex;                                                          ///< Index for next read
+    uint8_t  count;                                                              ///< Number of arrays in buffer
 } tdma_client_ring_buffer_t;
 
 typedef struct {
@@ -88,7 +88,7 @@ static void timer_rx_interrupt(void);
 
 /**
  * @brief Updates the RX and TX timings for the TDMA table.
- *        DIrectly from an DB_PROTOCOL_TDMA_UPDATE_TABLE packet.
+ *        Directly from an DB_PROTOCOL_TDMA_UPDATE_TABLE packet.
  *
  * @param[in] table       New table of TDMA timings
  */
@@ -111,7 +111,7 @@ static void _message_rb_init(tdma_client_ring_buffer_t *rb);
 static void _message_rb_add(tdma_client_ring_buffer_t *rb, uint8_t data[DB_RADIO_PAYLOAD_MAX_LENGTH], uint8_t packet_length);
 
 /**
- * @brief retreive the oldest element from the ring buffer for tdma captures
+ * @brief retrieve the oldest element from the ring buffer for tdma captures
  *
  * @param[in]    rb          pointer to ring buffer structure
  * @param[out]   data        pointer to the array where the ring buffer data will be saved
@@ -134,7 +134,7 @@ static bool _message_rb_tx_queue(uint16_t max_tx_duration_us);
 static void _tx_keep_alive_message(void);
 
 /**
- * @brief register with the gatway to request a TDMA slot
+ * @brief register with the gateway to request a TDMA slot
  *
  */
 static void _tx_tdma_register_message(void);
@@ -376,7 +376,7 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
     }
 
     // THe application type needs to be checked inside the application itself.
-    // We don't know it apriori
+    // We don't know it a priori
 
     // check and process the TDMA packets
     switch (header->type) {
@@ -431,7 +431,7 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
                     _tdma_client_vars.tdma_client_table.rx_duration = frame_period;
                 }
 
-                // Also update the RX_duration, becaus ewe are working on ALWAYS_ON mode
+                // Also update the RX_duration, because we are working on ALWAYS_ON mode
 
                 // update the state machine
                 _tdma_client_vars.rx_flag = DB_TDMA_CLIENT_RX_ON;

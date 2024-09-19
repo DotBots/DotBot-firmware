@@ -32,10 +32,10 @@
 
 #define TDMA_SERVER_DEFAULT_FRAME_DURATION_US 20000  ///< Default duration of the tdma frame, in microseconds.
 
-#define TDMA_SERVER_DEFAULT_RX_START_US    0                                      ///< start of the , in microseconds.
-#define TDMA_SERVER_DEFAULT_RX_DURATION_US TDMA_SERVER_DEFAULT_FRAME_DURATION_US  ///< Default duration of the tdma frame, in microseconds.
-#define TDMA_SERVER_DEFAULT_TX_START_US    0                                      ///< Default duration of the tdma frame, in microseconds.
-#define TDMA_SERVER_DEFAULT_TX_DURATION_US TDMA_SERVER_TIME_SLOT_DURATION_US      ///< Default duration of the tdma frame, in microseconds.
+#define TDMA_SERVER_DEFAULT_RX_START_US    0                                      ///< Start of RX slot, in microseconds.
+#define TDMA_SERVER_DEFAULT_RX_DURATION_US TDMA_SERVER_DEFAULT_FRAME_DURATION_US  ///< Duration of RX slot, in microseconds.
+#define TDMA_SERVER_DEFAULT_TX_START_US    0                                      ///< Start of TX slot, in microseconds.
+#define TDMA_SERVER_DEFAULT_TX_DURATION_US TDMA_SERVER_TIME_SLOT_DURATION_US      ///< Duration of TX slot, in microseconds.
 
 #define TDMA_SERVER_HF_TIMER_CC      0       ///< Which timer channel will be used for the TX state machine.
 #define TDMA_MAX_DELAY_WITHOUT_TX    500000  ///< Max amount of time that can pass without TXing anything
@@ -50,10 +50,10 @@
 
 typedef struct {
     uint8_t  buffer[TDMA_RING_BUFFER_SIZE][DB_RADIO_PAYLOAD_MAX_LENGTH];  ///< arrays of radio messages waiting to be sent
-    uint32_t packet_length[TDMA_RING_BUFFER_SIZE];               ///< arrays of the lenght of the packets in the buffer
-    uint8_t  writeIndex;                                         ///< Index for next write
-    uint8_t  readIndex;                                          ///< Index for next read
-    uint8_t  count;                                              ///< Number of arrays in buffer
+    uint32_t packet_length[TDMA_RING_BUFFER_SIZE];                        ///< arrays of the length of the packets in the buffer
+    uint8_t  writeIndex;                                                  ///< Index for next write
+    uint8_t  readIndex;                                                   ///< Index for next read
+    uint8_t  count;                                                       ///< Number of arrays in buffer
 } tdma_ring_buffer_t;
 
 typedef struct {
@@ -114,7 +114,7 @@ static void _message_rb_init(tdma_ring_buffer_t *rb);
 static void _message_rb_add(tdma_ring_buffer_t *rb, uint8_t data[DB_RADIO_PAYLOAD_MAX_LENGTH], uint8_t packet_length);
 
 /**
- * @brief retreive the oldest element from the ring buffer for tdma captures
+ * @brief retrieve the oldest element from the ring buffer for tdma captures
  *
  * @param[in]    rb          pointer to ring buffer structure
  * @param[out]   data        pointer to the array where the ring buffer data will be saved
@@ -147,7 +147,7 @@ static void _client_rb_init(new_client_ring_buffer_t *rb);
 static void _client_rb_add(new_client_ring_buffer_t *rb, uint64_t new_client);
 
 /**
- * @brief retreive the oldest element from the ring buffer for tdma captures
+ * @brief retrieve the oldest element from the ring buffer for tdma captures
  *
  * @param[in]    rb          pointer to ring buffer structure
  * @param[out]   new_client  pointer to the variable where the new client ID will be saved.
@@ -180,7 +180,7 @@ static bool _client_rb_id_exists(new_client_ring_buffer_t *rb, uint64_t client);
 static void _tx_sync_frame(void);
 
 /**
- * @brief Send the sync packet + tdma_slot parameters  to a particular client.
+ * @brief Send the sync packet + tdma_slot parameters to a particular client.
  *
  * @param[in] client    MAC ID of the client to register
  *
@@ -220,7 +220,7 @@ void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mo
     // Initialize Radio
     db_radio_init(&tdma_server_callback, radio_mode);  // set the radio callback to our tdma catch function
     db_radio_set_frequency(radio_freq);                // Pass through the rest of the arguments
-    db_radio_rx();                                     // start receving packets
+    db_radio_rx();                                     // start receiving packets
 
     // Retrieve the device ID.
     _tdma_vars.device_id = db_device_id();
@@ -476,7 +476,7 @@ static void _tx_registration_messages(uint64_t client) {
     table.tx_duration = _tdma_vars.tdma_table.table[slot].tx_duration;
     table.tx_start    = _tdma_vars.tdma_table.table[slot].tx_start;
 
-    // Start filling out the Message header
+    // Start filling out the message header
     db_protocol_header_to_buffer(_tdma_vars.radio_buffer, client, TDMA_RADIO_APPLICATION, DB_PROTOCOL_TDMA_UPDATE_TABLE);
 
     // Compute the time before the next frame. (as close as possible to the TX as you can, so that it's more accurate)
@@ -517,7 +517,7 @@ static void _server_register_new_client(tdma_server_table_t *tdma_table, uint64_
 
         // first slot belongs to the gateway.
         tdma_table->table_index += 1;
-        uint8_t idx = tdma_table->table_index;  // use a shorter variable to make  the code more understandable
+        uint8_t idx = tdma_table->table_index;  // use a shorter variable to make the code more understandable
 
         tdma_table->table[idx].client      = _tdma_vars.device_id;
         tdma_table->table[idx].rx_start    = TDMA_SERVER_DEFAULT_RX_START_US;
@@ -527,7 +527,7 @@ static void _server_register_new_client(tdma_server_table_t *tdma_table, uint64_
 
         // second slot belongs to the client.
         tdma_table->table_index += 1;
-        idx = tdma_table->table_index;  // use a shorter variable to make  the code more understandable
+        idx = tdma_table->table_index;  // use a shorter variable to make the code more understandable
 
         tdma_table->table[idx].client      = client;
         tdma_table->table[idx].rx_start    = TDMA_SERVER_DEFAULT_RX_START_US;
@@ -539,7 +539,7 @@ static void _server_register_new_client(tdma_server_table_t *tdma_table, uint64_
     } else {
         // first slot belongs to the client.
         tdma_table->table_index += 1;
-        uint8_t idx = tdma_table->table_index;  // use a shorter variable to make  the code more understandable
+        uint8_t idx = tdma_table->table_index;  // use a shorter variable to make the code more understandable
 
         // Compute the new frame duration knowing that we will add one new slots to the table (client)
         uint32_t frame_duration = (idx + 1) * TDMA_SERVER_DEFAULT_TX_DURATION_US;
@@ -675,7 +675,7 @@ static void timer_tdma_interrupt(void) {
     // Check that it's your timeslot
     if (_tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].client == _tdma_vars.device_id) {
 
-        // Send registration messages. + Out of slot messages. (Use AT MOST, helf of the available slot time.)
+        // Send registration messages. + Out of slot messages. (Use AT MOST, half of the available slot time.)
         uint32_t remaining_slot_time_us = _tdma_vars.slot_start_ts + _tdma_vars.tdma_table.table[_tdma_vars.active_slot_idx].tx_duration - db_timer_hf_now(TDMA_SERVER_TIMER_HF);
         packet_sent                     = _client_rb_tx_queue(&_tdma_vars.new_clients_rb, remaining_slot_time_us / 2 - TDMA_TX_DEADTIME_US);
 

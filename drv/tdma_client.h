@@ -52,7 +52,7 @@ typedef void (*tdma_client_cb_t)(uint8_t *packet, uint8_t length);  ///< Functio
  * @brief Initializes the TDMA scheme
  *
  * Starts advertising registration packets, set a default tdma table
- * and innits the radio
+ * and inits the radio
  *
  * @param[in] callback      pointer to a function that will be called each time a packet is received.
  * @param[in] radio_mode    BLE mode used by the radio (1MBit, 2MBit, LR125KBit, LR500Kbit)
