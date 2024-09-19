@@ -261,7 +261,7 @@ static void _message_rb_add(tdma_client_ring_buffer_t *rb, uint8_t data[DB_RADIO
 }
 
 static bool _message_rb_get(tdma_client_ring_buffer_t *rb, uint8_t data[DB_RADIO_PAYLOAD_MAX_LENGTH], uint8_t *packet_length) {
-    if (rb->count <= 0) {
+    if (rb->count == 0) {
         // Buffer is empty
         return false;
     }

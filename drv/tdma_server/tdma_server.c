@@ -301,7 +301,7 @@ static void _message_rb_add(tdma_ring_buffer_t *rb, uint8_t data[DB_RADIO_PAYLOA
 }
 
 static bool _message_rb_get(tdma_ring_buffer_t *rb, uint8_t data[DB_RADIO_PAYLOAD_MAX_LENGTH], uint8_t *packet_length) {
-    if (rb->count <= 0) {
+    if (rb->count == 0) {
         // Buffer is empty
         return false;
     }
@@ -371,7 +371,7 @@ static void _client_rb_add(new_client_ring_buffer_t *rb, uint64_t new_client) {
 }
 
 static bool _client_rb_get(new_client_ring_buffer_t *rb, uint64_t *new_client) {
-    if (rb->count <= 0) {
+    if (rb->count == 0) {
         // Buffer is empty
         return false;
     }
@@ -423,7 +423,7 @@ static bool _client_rb_id_exists(new_client_ring_buffer_t *rb, uint64_t client) 
     // get the raw pointer for the ring buffer.
     // check all valid values
 
-    if (rb->count <= 0) {
+    if (rb->count == 0) {
         // Buffer is empty
         return false;
     }
