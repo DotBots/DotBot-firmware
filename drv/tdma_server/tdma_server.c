@@ -49,7 +49,7 @@
 #define TDMA_SERVER_TIMER_HF 2
 
 typedef struct {
-    uint8_t  buffer[TDMA_RING_BUFFER_SIZE][PAYLOAD_MAX_LENGTH];  ///< arrays of radio messages waiting to be sent
+    uint8_t  buffer[TDMA_RING_BUFFER_SIZE][DB_RADIO_PAYLOAD_MAX_LENGTH];  ///< arrays of radio messages waiting to be sent
     uint32_t packet_length[TDMA_RING_BUFFER_SIZE];               ///< arrays of the lenght of the packets in the buffer
     uint8_t  writeIndex;                                         ///< Index for next write
     uint8_t  readIndex;                                          ///< Index for next read
@@ -111,7 +111,7 @@ static void _message_rb_init(tdma_ring_buffer_t *rb);
  * @param[in]   data        pointer to the data array to save in the ring buffer
  * @param[in]   packet_length   length of the packet to send trough the radio
  */
-static void _message_rb_add(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t packet_length);
+static void _message_rb_add(tdma_ring_buffer_t *rb, uint8_t data[DB_RADIO_PAYLOAD_MAX_LENGTH], uint8_t packet_length);
 
 /**
  * @brief retreive the oldest element from the ring buffer for tdma captures
@@ -120,7 +120,7 @@ static void _message_rb_add(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LEN
  * @param[out]   data        pointer to the array where the ring buffer data will be saved
  * @param[out]   packet_length   length of the packet to send trough the radio
  */
-static bool _message_rb_get(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t *packet_length);
+static bool _message_rb_get(tdma_ring_buffer_t *rb, uint8_t data[DB_RADIO_PAYLOAD_MAX_LENGTH], uint8_t *packet_length);
 
 /**
  * @brief Sends all the queued messages that can be sent in during the TX timeslot
@@ -286,9 +286,9 @@ static void _message_rb_init(tdma_ring_buffer_t *rb) {
     rb->count      = 0;
 }
 
-static void _message_rb_add(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t packet_length) {
+static void _message_rb_add(tdma_ring_buffer_t *rb, uint8_t data[DB_RADIO_PAYLOAD_MAX_LENGTH], uint8_t packet_length) {
 
-    memcpy(rb->buffer[rb->writeIndex], data, PAYLOAD_MAX_LENGTH);
+    memcpy(rb->buffer[rb->writeIndex], data, DB_RADIO_PAYLOAD_MAX_LENGTH);
     rb->packet_length[rb->writeIndex] = packet_length;
     rb->writeIndex                    = (rb->writeIndex + 1) % TDMA_RING_BUFFER_SIZE;
 
@@ -300,13 +300,13 @@ static void _message_rb_add(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LEN
     }
 }
 
-static bool _message_rb_get(tdma_ring_buffer_t *rb, uint8_t data[PAYLOAD_MAX_LENGTH], uint8_t *packet_length) {
+static bool _message_rb_get(tdma_ring_buffer_t *rb, uint8_t data[DB_RADIO_PAYLOAD_MAX_LENGTH], uint8_t *packet_length) {
     if (rb->count <= 0) {
         // Buffer is empty
         return false;
     }
 
-    memcpy(data, rb->buffer[rb->readIndex], PAYLOAD_MAX_LENGTH);
+    memcpy(data, rb->buffer[rb->readIndex], DB_RADIO_PAYLOAD_MAX_LENGTH);
     *packet_length = rb->packet_length[rb->readIndex];
     rb->readIndex  = (rb->readIndex + 1) % TDMA_RING_BUFFER_SIZE;
     rb->count--;
@@ -318,7 +318,7 @@ static bool _message_rb_tx_queue(tdma_ring_buffer_t *rb, uint16_t max_tx_duratio
 
     // initialize variables
     uint8_t length = 0;
-    uint8_t packet[PAYLOAD_MAX_LENGTH];
+    uint8_t packet[DB_RADIO_PAYLOAD_MAX_LENGTH];
     bool    packet_sent_flag = false;  ///< flag to keep track if a packet get sent during this function call
 
     // check if there is something to send
