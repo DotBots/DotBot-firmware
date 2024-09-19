@@ -21,16 +21,20 @@
 #include "tdma_client.h"
 #include "tdma_server.h"
 
+//=========================== defines ==========================================
+typedef struct {
+    bool      _data_received;
+    ipc_req_t _req_received;
+    // TDMA server variables
+    uint32_t           frame_duration_us;
+    uint16_t           num_clients;
+    uint16_t           table_index;
+    tdma_table_entry_t client;
+} nrf53_net_vars_t;
+
 //=========================== variables =========================================
 
-static bool      _data_received = false;
-static ipc_req_t _req_received  = DB_IPC_REQ_NONE;
-
-// TDMA server variables
-uint32_t           frame_duration_us;
-uint16_t           num_clients;
-uint16_t           table_index;
-tdma_table_entry_t client;
+static nrf53_net_vars_t _nrf53_net_vars = { 0 };
 
 //=========================== functions =========================================
 
@@ -39,7 +43,7 @@ void radio_callback(uint8_t *packet, uint8_t length) {
     ipc_shared_data.radio.rx_pdu.length = length;
     memcpy((void *)ipc_shared_data.radio.rx_pdu.buffer, packet, length);
     mutex_unlock();
-    _data_received = true;
+    _nrf53_net_vars._data_received = true;
 }
 
 void tdma_client_callback(uint8_t *packet, uint8_t length) {
@@ -47,7 +51,7 @@ void tdma_client_callback(uint8_t *packet, uint8_t length) {
     ipc_shared_data.tdma_client.rx_pdu.length = length;
     memcpy((void *)ipc_shared_data.tdma_client.rx_pdu.buffer, packet, length);
     mutex_unlock();
-    _data_received = true;
+    _nrf53_net_vars._data_received = true;
 }
 
 void tdma_server_callback(uint8_t *packet, uint8_t length) {
@@ -55,12 +59,16 @@ void tdma_server_callback(uint8_t *packet, uint8_t length) {
     ipc_shared_data.tdma_server.rx_pdu.length = length;
     memcpy((void *)ipc_shared_data.tdma_server.rx_pdu.buffer, packet, length);
     mutex_unlock();
-    _data_received = true;
+    _nrf53_net_vars._data_received = true;
 }
 
 //=========================== main ==============================================
 
 int main(void) {
+
+    // Initialize local variables
+    _nrf53_net_vars._data_received = false;
+    _nrf53_net_vars._req_received  = DB_IPC_REQ_NONE;
 
     // Configure constant latency mode for better performances
     NRF_POWER_NS->TASKS_CONSTLAT = 1;
@@ -77,13 +85,13 @@ int main(void) {
 
     while (1) {
         __WFE();
-        if (_data_received) {
-            _data_received                               = false;
+        if (_nrf53_net_vars._data_received) {
+            _nrf53_net_vars._data_received               = false;
             NRF_IPC_NS->TASKS_SEND[DB_IPC_CHAN_RADIO_RX] = 1;
         }
-        if (_req_received != DB_IPC_REQ_NONE) {
+        if (_nrf53_net_vars._req_received != DB_IPC_REQ_NONE) {
             ipc_shared_data.net_ack = false;
-            switch (_req_received) {
+            switch (_nrf53_net_vars._req_received) {
                 // RADIO functions
                 case DB_IPC_RADIO_INIT_REQ:
                     db_radio_init(&radio_callback, ipc_shared_data.radio.mode);
@@ -146,10 +154,10 @@ int main(void) {
                     db_tdma_server_init(&tdma_server_callback, ipc_shared_data.tdma_server.mode, ipc_shared_data.tdma_server.frequency);
                     break;
                 case DB_IPC_TDMA_SERVER_GET_TABLE_REQ:
-                    db_tdma_server_get_table_info(&frame_duration_us, &num_clients, &table_index);
-                    ipc_shared_data.tdma_server.frame_duration_us = frame_duration_us;
-                    ipc_shared_data.tdma_server.num_clients       = num_clients;
-                    ipc_shared_data.tdma_server.table_index       = table_index;
+                    db_tdma_server_get_table_info(&_nrf53_net_vars.frame_duration_us, &_nrf53_net_vars.num_clients, &_nrf53_net_vars.table_index);
+                    ipc_shared_data.tdma_server.frame_duration_us = _nrf53_net_vars.frame_duration_us;
+                    ipc_shared_data.tdma_server.num_clients       = _nrf53_net_vars.num_clients;
+                    ipc_shared_data.tdma_server.table_index       = _nrf53_net_vars.table_index;
                     break;
                 case DB_IPC_TDMA_SERVER_GET_CLIENT_REQ:
                     db_tdma_server_get_client_info((tdma_table_entry_t *)&ipc_shared_data.tdma_server.client_entry, ipc_shared_data.tdma_server.client_id);
@@ -166,9 +174,9 @@ int main(void) {
                 default:
                     break;
             }
-            ipc_shared_data.net_ack = true;
-            _req_received           = DB_IPC_REQ_NONE;
-            ipc_shared_data.req     = DB_IPC_REQ_NONE;  // used in the app-core ipc.h to check that the request was properly fullfilled.
+            ipc_shared_data.net_ack       = true;
+            _nrf53_net_vars._req_received = DB_IPC_REQ_NONE;
+            ipc_shared_data.req           = DB_IPC_REQ_NONE;  // used in the app-core ipc.h to check that the request was properly fullfilled.
             __NOP();
         }
     };
@@ -177,6 +185,6 @@ int main(void) {
 void IPC_IRQHandler(void) {
     if (NRF_IPC_NS->EVENTS_RECEIVE[DB_IPC_CHAN_REQ]) {
         NRF_IPC_NS->EVENTS_RECEIVE[DB_IPC_CHAN_REQ] = 0;
-        _req_received                               = ipc_shared_data.req;
+        _nrf53_net_vars._req_received               = ipc_shared_data.req;
     }
 }
