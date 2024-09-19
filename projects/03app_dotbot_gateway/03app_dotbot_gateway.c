@@ -25,7 +25,7 @@
 #define DB_UART_INDEX (0)  ///< Index of UART peripheral to use
 #endif
 #define DB_RADIO_QUEUE_SIZE (8U)                             ///< Size of the radio queue (must by a power of 2)
-#define DB_RADIO_FREQ       (28)                             // Set the frequency to 2412 MHz
+#define DB_RADIO_FREQ       (8U)                             //< Set the frequency to 2408 MHz
 #define DB_UART_QUEUE_SIZE  ((DB_BUFFER_MAX_BYTES + 1) * 2)  ///< Size of the UART queue size (must by a power of 2)
 
 typedef struct {

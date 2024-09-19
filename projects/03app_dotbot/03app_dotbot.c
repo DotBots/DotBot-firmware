@@ -32,7 +32,7 @@
 
 //=========================== defines ==========================================
 
-#define DB_RADIO_FREQ             (28)
+#define DB_RADIO_FREQ             (8U)  //< Set the frequency to 2408 MHz
 #define TIMER_DEV                 (0)
 #define DB_LH2_UPDATE_DELAY_MS    (100U)   ///< 100ms delay between each LH2 data refresh
 #define DB_TIMEOUT_CHECK_DELAY_MS (200U)   ///< 200ms delay between each timeout delay check
