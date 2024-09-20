@@ -5,37 +5,22 @@
       Name="Common"
       project_directory="01bsp_device"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="main.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01bsp_gpio">
@@ -44,37 +29,22 @@
       project_dependencies="00bsp_gpio(bsp)"
       project_directory="01bsp_gpio"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01bsp_gpio.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01bsp_i2c">
@@ -83,37 +53,22 @@
       project_dependencies="00bsp_i2c(bsp);00bsp_dotbot_board(bsp);00bsp_timer_hf(bsp)"
       project_directory="01bsp_i2c"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01bsp_i2c.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01bsp_lighthouse">
@@ -122,37 +77,22 @@
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_lh2(bsp)"
       project_directory="01bsp_lighthouse"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01bsp_lighthouse.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01bsp_nvmc">
@@ -161,37 +101,22 @@
       project_dependencies="00bsp_nvmc(bsp)"
       project_directory="01bsp_nvmc"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01bsp_nvmc.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01bsp_qdec">
@@ -200,37 +125,22 @@
       project_dependencies="00bsp_qdec(bsp);00bsp_timer(bsp)"
       project_directory="01bsp_qdec"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01bsp_qdec.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01bsp_qspi">
@@ -239,37 +149,22 @@
       project_dependencies="00bsp_qspi(bsp)"
       project_directory="01bsp_qspi"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="main.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01bsp_radio_txrx">
@@ -278,28 +173,16 @@
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_radio(bsp);00bsp_gpio(bsp);00bsp_timer_hf(bsp)"
       project_directory="01bsp_radio_txrx"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01bsp_radio_txrx.c">
         <configuration Name="Common" build_exclude_from_build="Yes" />
@@ -307,12 +190,9 @@
       <file file_name="conf.h" />
       <file file_name="main.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01bsp_radio_txrx_ieee802154">
@@ -364,28 +244,16 @@
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_radio(bsp);00bsp_gpio(bsp);00bsp_timer_hf(bsp)"
       project_directory="01bsp_radio_txrx_lr"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="../01bsp_radio_txrx/01bsp_radio_txrx.c">
         <configuration Name="Common" build_exclude_from_build="Yes" />
@@ -393,12 +261,9 @@
       <file file_name="conf.h" />
       <file file_name="main.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01bsp_rng">
@@ -407,37 +272,22 @@
       project_dependencies="00bsp_rng(bsp);00bsp_timer_hf(bsp)"
       project_directory="01bsp_rng"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01bsp_rng.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01bsp_rpm">
@@ -446,37 +296,22 @@
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_rpm(bsp);00bsp_timer(bsp)"
       project_directory="01bsp_rpm"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01bsp_rpm.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01bsp_saadc">
@@ -485,37 +320,22 @@
       project_dependencies="00bsp_saadc(bsp);00bsp_timer_hf(bsp)"
       project_directory="01bsp_saadc"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01bsp_saadc.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01bsp_spim">
@@ -524,37 +344,22 @@
       project_dependencies="00bsp_spim(bsp)"
       project_directory="01bsp_spim"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01bsp_spim.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01bsp_timer">
@@ -563,37 +368,22 @@
       project_dependencies="00bsp_timer(bsp);00bsp_gpio(bsp)"
       project_directory="01bsp_timer"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01bsp_timer.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01bsp_timer_hf">
@@ -602,37 +392,22 @@
       project_dependencies="00bsp_timer_hf(bsp);00bsp_gpio(bsp)"
       project_directory="01bsp_timer_hf"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01bsp_timer_hf.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01bsp_uart">
@@ -641,37 +416,22 @@
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_uart(bsp)"
       project_directory="01bsp_uart"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01bsp_uart.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01bsp_wdt">
@@ -680,40 +440,25 @@
       project_dependencies="00bsp_wdt(bsp);00bsp_gpio(bsp);00bsp_timer_hf(bsp)"
       project_directory="01bsp_wdt"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="main.c">
         <configuration Name="Common" build_exclude_from_build="Yes" />
       </file>
       <file file_name="main.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01drv_as5048b">
@@ -722,38 +467,22 @@
       project_dependencies="00drv_as5048b(drv);00bsp_timer_hf(bsp)"
       project_directory="01drv_as5048b"
       project_type="Executable" />
-    <configuration Name="Debug" linker_printf_fp_enabled="Float" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01drv_as5048b.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01drv_imu">
@@ -762,38 +491,22 @@
       project_dependencies="00drv_imu(drv)"
       project_directory="01drv_imu"
       project_type="Executable" />
-    <configuration Name="Debug" linker_printf_fp_enabled="Float" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01drv_imu.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01drv_ism330">
@@ -802,37 +515,22 @@
       project_dependencies="00drv_ism330(drv);00bsp_dotbot_board(bsp);00bsp_timer_hf(bsp)"
       project_directory="01drv_ism330"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01drv_ism330.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01drv_lis2mdl">
@@ -841,38 +539,22 @@
       project_dependencies="00drv_lis2mdl(drv)"
       project_directory="01drv_lis2mdl"
       project_type="Executable" />
-    <configuration Name="Debug" linker_printf_fp_enabled="Float" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01drv_lis2mdl.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01drv_lis3mdl">
@@ -881,38 +563,22 @@
       project_dependencies="00bsp_timer(bsp);00drv_lis3mdl(drv);00bsp_dotbot_board(bsp)"
       project_directory="01drv_lis3mdl"
       project_type="Executable" />
-    <configuration Name="Debug" linker_printf_fp_enabled="Float" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="main.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01drv_lsm6ds">
@@ -921,38 +587,22 @@
       project_dependencies="00drv_lsm6ds(drv)"
       project_directory="01drv_lsm6ds"
       project_type="Executable" />
-    <configuration Name="Debug" linker_printf_fp_enabled="Float" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01drv_lsm6ds.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01drv_lz4">
@@ -961,38 +611,23 @@
       project_dependencies="00drv_lz4(drv)"
       project_directory="01drv_lz4"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="compressed.h" />
       <file file_name="main.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01drv_motors">
@@ -1001,37 +636,22 @@
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00drv_motors(drv)"
       project_directory="01drv_motors"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="main.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01drv_move">
@@ -1040,37 +660,22 @@
       project_dependencies="00bsp_timer(bsp);00drv_move(drv)"
       project_directory="01drv_move"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01drv_move.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01drv_n25q128">
@@ -1079,37 +684,22 @@
       project_dependencies="00drv_n25q128(drv)"
       project_directory="01drv_n25q128"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="main.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01drv_pid">
@@ -1118,37 +708,22 @@
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_rpm(bsp);00bsp_timer_hf(bsp);00drv_pid(drv);00drv_motors(drv)"
       project_directory="01drv_pid"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01drv_pid.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01drv_rgbled">
@@ -1157,37 +732,22 @@
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00drv_rgbled(drv)"
       project_directory="01drv_rgbled"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="main.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01drv_rgbled_pwm">
@@ -1196,37 +756,22 @@
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00drv_rgbled_pwm(drv)"
       project_directory="01drv_rgbled_pwm"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="01drv_rgbled_pwm.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01drv_uzlib">
@@ -1235,38 +780,23 @@
       project_dependencies="00drv_uzlib(drv)"
       project_directory="01drv_uzlib"
       project_type="Executable" />
-    <folder Name="Device Files">
-      <file file_name="$(DeviceCommonHeaderFile)" />
-      <file file_name="$(DeviceHeaderFile)" />
-      <file file_name="$(DeviceSystemFile)">
-        <configuration
-          Name="Common"
-          default_code_section=".init"
-          default_const_section=".init_rodata" />
-      </file>
-    </folder>
-    <folder Name="Script Files">
-      <file file_name="$(DeviceLinkerScript)">
-        <configuration Name="Common" file_type="Linker Script" />
-      </file>
-      <file file_name="$(DeviceMemoryMap)">
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
         <configuration Name="Common" file_type="Reset Script" />
       </file>
     </folder>
-    <folder Name="Source Files">
+    <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="compressed.h" />
       <file file_name="main.c" />
     </folder>
-    <folder Name="System Files">
-      <file file_name="$(DeviceCommonVectorsFile)" />
-      <file file_name="$(DeviceVectorsFile)">
-        <configuration Name="Common" file_type="Assembly" />
-      </file>
-      <file file_name="$(SeggerThumbStartup)" />
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
   <project Name="01drv_tdma_client">

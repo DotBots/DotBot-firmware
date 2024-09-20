@@ -32,11 +32,13 @@ typedef struct {
     tdma_table_entry_t client;
 } nrf53_net_vars_t;
 
-//=========================== variables =========================================
+//=========================== variables ========================================
+
+volatile __attribute__((section(".shared_data"))) ipc_shared_data_t ipc_shared_data;
 
 static nrf53_net_vars_t _nrf53_net_vars = { 0 };
 
-//=========================== functions =========================================
+//=========================== functions ========================================
 
 void radio_callback(uint8_t *packet, uint8_t length) {
     mutex_lock();
@@ -62,7 +64,7 @@ void tdma_server_callback(uint8_t *packet, uint8_t length) {
     _nrf53_net_vars._data_received = true;
 }
 
-//=========================== main ==============================================
+//=========================== main =============================================
 
 int main(void) {
 

@@ -171,11 +171,11 @@ static void _twim_isr(i2c_t i2c) {
 }
 
 #if defined(NRF5340_XXAA)
-void SERIAL0_IRQHandler(void) {
+__attribute__((weak)) void SERIAL0_IRQHandler(void) {
     _twim_isr(0);
 }
 
-void SERIAL1_IRQHandler(void) {
+__attribute__((weak)) void SERIAL1_IRQHandler(void) {
     _twim_isr(1);
 }
 #else

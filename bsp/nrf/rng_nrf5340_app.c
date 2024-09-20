@@ -16,7 +16,9 @@
 #include "rng.h"
 #include "tz.h"
 
-//========================== functions =========================================
+//========================== variables =========================================
+
+extern volatile __attribute__((section(".shared_data"))) ipc_shared_data_t ipc_shared_data;
 
 //=========================== public ===========================================
 
