@@ -49,7 +49,7 @@
     linker_printf_fmt_level="int"
     linker_printf_fp_enabled="Float"
     linker_section_placement_file="$(ProjectDir)/../../nRF/Setup/nRF52833_xxAA_flash_placement.xml"
-    macros="BuildTarget=dotbot-v1;Lh2ImplementationFile=lh2.c;PwmImplementationFile=pwm.c;RadioImplementationFile=radio.c;TdmaClientImplementationFile=tdma_client.c;TdmaServerImplementationFile=tdma_server.c;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
+    macros="BuildTarget=dotbot-v1;PwmImplementationFile=pwm.c;TdmaClientImplementationFile=tdma_client.c;TdmaServerImplementationFile=tdma_server.c;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52833_xxAA;Placement=Flash"
     project_type="Executable"
     target_reset_script="Reset();"
     target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
