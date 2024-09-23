@@ -114,7 +114,7 @@
       Name="Common"
       project_directory="."
       project_type="Library" />
-    <file file_name="nrf/$(RngImplementationFile)" />
+    <file file_name="nrf/rng.c" />
     <file file_name="rng.h" />
   </project>
   <project Name="00bsp_saadc">
