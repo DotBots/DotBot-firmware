@@ -32,18 +32,6 @@ extern volatile __attribute__((section(".shared_data"))) ipc_shared_data_t ipc_s
 void db_radio_init(radio_cb_t callback, db_radio_mode_t mode) {
     db_hfclk_init();
 
-    // Disable all DCDC regulators (use LDO)
-    NRF_REGULATORS_S->VREGRADIO.DCDCEN = (REGULATORS_VREGRADIO_DCDCEN_DCDCEN_Disabled << REGULATORS_VREGRADIO_DCDCEN_DCDCEN_Pos);
-    NRF_REGULATORS_S->VREGMAIN.DCDCEN  = (REGULATORS_VREGMAIN_DCDCEN_DCDCEN_Disabled << REGULATORS_VREGMAIN_DCDCEN_DCDCEN_Pos);
-    NRF_REGULATORS_S->VREGH.DCDCEN     = (REGULATORS_VREGH_DCDCEN_DCDCEN_Disabled << REGULATORS_VREGH_DCDCEN_DCDCEN_Pos);
-
-    // RADIO (address at 0x41008000 => periph ID is 8)
-    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_RADIO);
-    db_tz_enable_network_periph_dma(NRF_NETWORK_PERIPH_ID_RADIO);
-
-    // IPC (address at 0x41012000 => periph ID is 18)
-    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_IPC);
-
     // APPMUTEX (address at 0x41030000 => periph ID is 48)
     db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_APPMUTEX);
 
