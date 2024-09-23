@@ -101,7 +101,6 @@ void release_network_core(void) {
         ipc_shared_data.net_ready = false;
     }
 
-    NRF_POWER_S->TASKS_CONSTLAT   = 1;
     NRF_RESET_S->NETWORK.FORCEOFF = (RESET_NETWORK_FORCEOFF_FORCEOFF_Release << RESET_NETWORK_FORCEOFF_FORCEOFF_Pos);
 
     while (!ipc_shared_data.net_ready) {}

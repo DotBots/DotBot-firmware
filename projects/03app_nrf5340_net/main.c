@@ -72,9 +72,6 @@ int main(void) {
     _nrf53_net_vars._data_received = false;
     _nrf53_net_vars._req_received  = DB_IPC_REQ_NONE;
 
-    // Configure constant latency mode for better performances
-    NRF_POWER_NS->TASKS_CONSTLAT = 1;
-
     NRF_IPC_NS->INTENSET                       = 1 << DB_IPC_CHAN_REQ;
     NRF_IPC_NS->SEND_CNF[DB_IPC_CHAN_RADIO_RX] = 1 << DB_IPC_CHAN_RADIO_RX;
     NRF_IPC_NS->RECEIVE_CNF[DB_IPC_CHAN_REQ]   = 1 << DB_IPC_CHAN_REQ;
