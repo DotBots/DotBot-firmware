@@ -49,7 +49,7 @@
     linker_printf_fp_enabled="Float"
     linker_printf_width_precision_supported="Yes"
     linker_section_placement_file="$(ProjectDir)/../../nRF/Setup/nRF5340_xxAA_Network_flash_placement.xml"
-    macros="BuildTarget=nrf5340dk-net;PwmImplementationFile=pwm_nrf5340_net.c;TdmaClientImplementationFile=tdma_client.c;TdmaServerImplementationFile=tdma_server.c;DeviceFamily=nRF;Target=nRF5340_xxAA_Network;Placement=Flash"
+    macros="BuildTarget=nrf5340dk-net;TdmaClientImplementationFile=tdma_client.c;TdmaServerImplementationFile=tdma_server.c;DeviceFamily=nRF;Target=nRF5340_xxAA_Network;Placement=Flash"
     project_type="Executable"
     target_reset_script="Reset();"
     target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
