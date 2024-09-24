@@ -41,19 +41,35 @@ typedef struct {
 static const uart_conf_t _devs[UARTE_COUNT] = {
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
     {
-        .p   = NRF_UARTE0_S,
+#if defined(NRF_TRUSTZONE_NONSECURE)
+        .p = NRF_UARTE0_NS,
+#else
+        .p = NRF_UARTE0_S,
+#endif
         .irq = SERIAL0_IRQn,
     },
     {
-        .p   = NRF_UARTE1_S,
+#if defined(NRF_TRUSTZONE_NONSECURE)
+        .p = NRF_UARTE1_NS,
+#else
+        .p = NRF_UARTE1_S,
+#endif
         .irq = SERIAL1_IRQn,
     },
     {
-        .p   = NRF_UARTE2_S,
+#if defined(NRF_TRUSTZONE_NONSECURE)
+        .p = NRF_UARTE2_NS,
+#else
+        .p = NRF_UARTE2_S,
+#endif
         .irq = SERIAL2_IRQn,
     },
     {
-        .p   = NRF_UARTE3_S,
+#if defined(NRF_TRUSTZONE_NONSECURE)
+        .p = NRF_UARTE3_NS,
+#else
+        .p = NRF_UARTE3_S,
+#endif
         .irq = SERIAL3_IRQn,
     },
 #elif defined(NRF5340_XXAA) && defined(NRF_NETWORK)
