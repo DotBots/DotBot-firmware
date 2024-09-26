@@ -26,8 +26,13 @@ typedef struct {
 
 static qdec_vars_t    _qdec_vars[QDEC_COUNT];
 static NRF_QDEC_Type *_qdec_devs[QDEC_COUNT] = {
+#if defined(NRF_TRUSTZONE_NONSECURE)
+    NRF_QDEC0_NS,
+    NRF_QDEC1_NS
+#else
     NRF_QDEC0_S,
     NRF_QDEC1_S
+#endif
 };
 
 //=========================== public ===========================================

@@ -16,46 +16,6 @@
 
 int main(void) {
 
-    // On nrf53 configure constant latency mode for better performances
-    NRF_POWER_S->TASKS_CONSTLAT = 1;
-
-    db_hfclk_init();
-    db_lfclk_init();
-
-    // Mark peripherals required by the network as non secure
-
-    // VREQCTRL (address at 0x41004000 => periph ID is 4)
-    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_VREQCTRL);
-
-    // POWER (address at 0x41005000 => periph ID is 5)
-    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_CLOCK_POWER_RESET);
-
-    // RADIO (address at 0x41008000 => periph ID is 8)
-    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_RADIO);
-    db_tz_enable_network_periph_dma(NRF_NETWORK_PERIPH_ID_RADIO);
-
-    // RNG (address at 0x41009000 => periph ID is 9)
-    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_RNG);
-
-    // TIMER0 (address at 0x4100C000 => periph ID is 12)
-    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_TIMER0);
-
-    // UARTE0/TWIM0/SPIM0 (address at 0x41013000 => periph ID is 19)
-    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_SPIM0_SPIS0_TWIM0_TWIS0_UARTE0);
-    db_tz_enable_network_periph_dma(NRF_NETWORK_PERIPH_ID_SPIM0_SPIS0_TWIM0_TWIS0_UARTE0);
-
-    // RTC1 (address at 0x41016000 => periph ID is 22)
-    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_RTC1);
-
-    // TIMER1 (address at 0x41018000 => periph ID is 24)
-    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_TIMER1);
-
-    // TIMER2 (address at 0x41019000 => periph ID is 25)
-    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_TIMER2);
-
-    // WDT (address at 0x4100B000 => periph ID is 11)
-    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_WDT0);
-
     // Define FLASHREGION 62-63 as non secure (half of the network core flash)
     db_configure_flash_non_secure(62, 2);
 

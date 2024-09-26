@@ -15,7 +15,11 @@
 
 #if defined(NRF5340_XXAA)
 #if defined(NRF_APPLICATION)
-#define NRF_WDT        NRF_WDT0_S
+#if defined(NRF_TRUSTZONE_NONSECURE)
+#define NRF_WDT NRF_WDT0_NS
+#else
+#define NRF_WDT NRF_WDT0_S
+#endif
 #define WDT_IRQn       WDT0_IRQn
 #define WDT_IRQHandler WDT0_IRQHandler
 #elif defined(NRF_NETWORK)

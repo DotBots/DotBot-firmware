@@ -19,15 +19,17 @@
 
 //=========================== defines ==========================================
 
-#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+#if defined(NRF5340_XXAA)
+#if defined(NRF_NETWORK) || defined(NRF_TRUSTZONE_NONSECURE)
+#define NRF_TIMER0 NRF_TIMER0_NS
+#define NRF_TIMER1 NRF_TIMER1_NS
+#define NRF_PPI    NRF_DPPIC_NS
+#elif defined(NRF_APPLICATION)
 #define NRF_GPIOTE NRF_GPIOTE0_S
 #define NRF_TIMER0 NRF_TIMER0_S
 #define NRF_TIMER1 NRF_TIMER1_S
 #define NRF_PPI    NRF_DPPIC_S
-#elif defined(NRF5340_XXAA) && defined(NRF_NETWORK)
-#define NRF_TIMER0 NRF_TIMER0_NS
-#define NRF_TIMER1 NRF_TIMER1_NS
-#define NRF_PPI    NRF_DPPIC_NS
+#endif
 #endif
 
 #define RPM_LEFT_TIMER        (NRF_TIMER0)  ///< Timer peripheral used to count left cycles
