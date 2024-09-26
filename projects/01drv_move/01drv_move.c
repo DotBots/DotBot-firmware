@@ -11,10 +11,19 @@
 #include <stdint.h>
 #include <nrf.h>
 #include "move.h"
+#include "timer.h"
+#include "gpio.h"
+#include "board_config.h"
 
 //=========================== main =============================================
 
+void reload_wdt0(void);
+
 int main(void) {
+    db_timer_init(1);
+    db_timer_set_periodic_ms(1, 0, 500, &reload_wdt0);
+
+    db_gpio_init(&db_led1, DB_GPIO_OUT);
 
     db_move_init();
     db_move_straight(200, 60);
@@ -24,8 +33,10 @@ int main(void) {
     db_move_straight(200, 60);
     db_move_rotate(90, 60);
     db_move_straight(200, 60);
+    db_move_rotate(90, 60);
 
     while (1) {
-        __WFE();
+        db_gpio_toggle(&db_led1);
+        db_timer_delay_ms(1, 250);
     }
 }

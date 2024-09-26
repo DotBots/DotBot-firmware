@@ -620,6 +620,7 @@
       Name="Common"
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00drv_motors(drv)"
       project_directory="01drv_motors"
+      linker_additional_files="$(ProjectDir)/cmse_implib$(LIB)"
       project_type="Executable" />
     <folder Name="Setup">
       <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
@@ -644,6 +645,7 @@
       Name="Common"
       project_dependencies="00bsp_timer(bsp);00drv_move(drv)"
       project_directory="01drv_move"
+      linker_additional_files="$(ProjectDir)/cmse_implib$(LIB)"
       project_type="Executable" />
     <folder Name="Setup">
       <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
