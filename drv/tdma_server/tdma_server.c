@@ -45,15 +45,15 @@
 typedef struct {
     uint8_t  buffer[TDMA_RING_BUFFER_SIZE][DB_RADIO_PAYLOAD_MAX_LENGTH];  ///< arrays of radio messages waiting to be sent
     uint32_t packet_length[TDMA_RING_BUFFER_SIZE];                        ///< arrays of the length of the packets in the buffer
-    uint8_t  write_index;                                                  ///< Index for next write
-    uint8_t  read_index;                                                   ///< Index for next read
+    uint8_t  write_index;                                                 ///< Index for next write
+    uint8_t  read_index;                                                  ///< Index for next read
     uint8_t  count;                                                       ///< Number of arrays in buffer
 } tdma_ring_buffer_t;
 
 typedef struct {
     uint64_t buffer[TDMA_NEW_CLIENT_BUFFER_SIZE];  ///< arrays of client IDs waiting to register
-    uint8_t  write_index;                           ///< Index for next write
-    uint8_t  read_index;                            ///< Index for next read
+    uint8_t  write_index;                          ///< Index for next write
+    uint8_t  read_index;                           ///< Index for next read
     uint8_t  count;                                ///< Number of clients in the buffer
 } new_client_ring_buffer_t;
 
@@ -281,7 +281,7 @@ void db_tdma_server_empty(void) {
 static void _message_rb_init(tdma_ring_buffer_t *rb) {
     rb->write_index = 0;
     rb->read_index  = 0;
-    rb->count      = 0;
+    rb->count       = 0;
 }
 
 static void _message_rb_add(tdma_ring_buffer_t *rb, uint8_t data[DB_RADIO_PAYLOAD_MAX_LENGTH], uint8_t packet_length) {
@@ -306,7 +306,7 @@ static bool _message_rb_get(tdma_ring_buffer_t *rb, uint8_t data[DB_RADIO_PAYLOA
 
     memcpy(data, rb->buffer[rb->read_index], DB_RADIO_PAYLOAD_MAX_LENGTH);
     *packet_length = rb->packet_length[rb->read_index];
-    rb->read_index  = (rb->read_index + 1) % TDMA_RING_BUFFER_SIZE;
+    rb->read_index = (rb->read_index + 1) % TDMA_RING_BUFFER_SIZE;
     rb->count--;
 
     return true;
@@ -319,39 +319,42 @@ static bool _message_rb_tx_queue(tdma_ring_buffer_t *rb, uint16_t max_tx_duratio
     uint8_t packet[DB_RADIO_PAYLOAD_MAX_LENGTH] = { 0 };
     bool    packet_sent_flag                    = false;  ///< flag to keep track if a packet get sent during this function call
 
-    // check if there is something to send
-    if (rb->count > 0) {
-        // and send messages until queue is empty
-        while (rb->count > 0) {
-            // retrieve the oldest packet from the queue
-            bool error = _message_rb_get(rb, packet, &length);
-            if (!error) {
-                break;
-            }
-            // Compute if there is still time to send the packet [in microseconds]
-            uint16_t tx_time = RADIO_TX_RAMP_UP_TIME + length * _tdma_vars.byte_onair_time;
-            // If there is time to send the packet, send it
-            if (db_timer_hf_now(TDMA_SERVER_TIMER_HF) + tx_time - _tdma_vars.slot_start_ts < max_tx_duration_us) {
-                // switch off RX, and send message.
-                db_radio_disable();
-                db_radio_tx(packet, length);
-                packet_sent_flag = true;
-            } else {  // otherwise, put the packet back in the queue and leave
-
-                _message_rb_add(rb, packet, length);
-                break;
-            }
-        }
-        // Update the last packet timer
-        _tdma_vars.last_tx_packet_ts = _tdma_vars.slot_start_ts;
+    // Return if there is nothing to send
+    if (rb->count == 0) {
+        return false;
     }
+
+    // Otherwise, send messages until queue is empty
+    while (rb->count > 0) {
+        // retrieve the oldest packet from the queue
+        bool error = _message_rb_get(rb, packet, &length);
+        if (!error) {
+            break;
+        }
+        // Compute if there is still time to send the packet [in microseconds]
+        uint16_t tx_time = RADIO_TX_RAMP_UP_TIME + length * _tdma_vars.byte_onair_time;
+        // If there is time to send the packet, send it
+        if (db_timer_hf_now(TDMA_SERVER_TIMER_HF) + tx_time - _tdma_vars.slot_start_ts < max_tx_duration_us) {
+            // switch off RX, and send message.
+            db_radio_disable();
+            db_radio_tx(packet, length);
+            packet_sent_flag = true;
+        } else {  // otherwise, put the packet back in the queue and leave
+
+            _message_rb_add(rb, packet, length);
+            break;
+        }
+    }
+    // Update the last packet timer
+    _tdma_vars.last_tx_packet_ts = _tdma_vars.slot_start_ts;
+
     return packet_sent_flag;
 }
 
 static void _client_rb_init(new_client_ring_buffer_t *rb) {
     rb->write_index = 0;
     rb->read_index  = 0;
-    rb->count      = 0;
+    rb->count       = 0;
 }
 
 static void _client_rb_add(new_client_ring_buffer_t *rb, uint64_t new_client) {
@@ -373,7 +376,7 @@ static bool _client_rb_get(new_client_ring_buffer_t *rb, uint64_t *new_client) {
         return false;
     }
 
-    *new_client   = rb->buffer[rb->read_index];
+    *new_client    = rb->buffer[rb->read_index];
     rb->read_index = (rb->read_index + 1) % TDMA_NEW_CLIENT_BUFFER_SIZE;
     rb->count--;
 
