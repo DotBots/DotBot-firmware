@@ -42,8 +42,8 @@
 #define RADIO_STATE_BUSY 0x04
 
 typedef struct __attribute__((packed)) {
-    uint8_t header;                       ///< PDU header (depends on the type of PDU - advertising physical channel or Data physical channel)
-    uint8_t length;                       ///< Length of the payload + MIC (if any)
+    uint8_t header;                                ///< PDU header (depends on the type of PDU - advertising physical channel or Data physical channel)
+    uint8_t length;                                ///< Length of the payload + MIC (if any)
     uint8_t payload[DB_RADIO_PAYLOAD_MAX_LENGTH];  ///< Payload + MIC (if any)
 } ble_radio_pdu_t;
 

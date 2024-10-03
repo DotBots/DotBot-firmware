@@ -68,8 +68,8 @@
 typedef struct {
     uint8_t  buffer[LH2_BUFFER_SIZE][SPI_BUFFER_SIZE];  ///< arrays of bits for local storage, contents of SPI transfer are copied into this
     uint32_t timestamps[LH2_BUFFER_SIZE];               ///< arrays of timestamps of when different SPI transfers happened
-    uint8_t  write_index;                                // Index for next write
-    uint8_t  read_index;                                 // Index for next read
+    uint8_t  write_index;                               // Index for next write
+    uint8_t  read_index;                                // Index for next read
     uint8_t  count;                                     // Number of arrays in buffer
 } lh2_ring_buffer_t;
 
@@ -1687,7 +1687,7 @@ bool _get_from_spi_ring_buffer(lh2_ring_buffer_t *cb, uint8_t *data, uint32_t *t
     }
 
     memcpy(data, cb->buffer[cb->read_index], SPI_BUFFER_SIZE);
-    *timestamp    = cb->timestamps[cb->read_index];
+    *timestamp     = cb->timestamps[cb->read_index];
     cb->read_index = (cb->read_index + 1) % LH2_BUFFER_SIZE;
     cb->count--;
 
