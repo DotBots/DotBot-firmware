@@ -281,12 +281,12 @@ static bool _message_rb_tx_queue(uint16_t max_tx_duration_us) {
     uint8_t  packet[DB_RADIO_PAYLOAD_MAX_LENGTH] = { 0 };
     bool     packet_sent_flag                    = false;  ///< flag to keep track if a packet get sent during this function call
 
-    // check if there is something to send
+    // Return if there is nothing to send
     if (_tdma_client_vars.tx_ring_buffer.count == 0) {
-        return packet_sent_flag;
+        return false;
     }
 
-    // and send messages until queue is empty
+    // Otherwise, send messages until queue is empty
     while (_tdma_client_vars.tx_ring_buffer.count > 0) {
         // retrieve the oldest packet from the queue
         bool error = _message_rb_get(&_tdma_client_vars.tx_ring_buffer, packet, &length);
