@@ -19,6 +19,7 @@
 #include "radio.h"
 #include "tdma_client.h"
 #include "tdma_server.h"
+#include "protocol.h"
 #include "timer_hf.h"
 
 #if defined(NRF_APPLICATION)
@@ -82,6 +83,7 @@ typedef struct {
 
 typedef struct {
     db_radio_ble_mode_t          mode;                ///< db_radio_init function parameters
+    application_type_t           default_radio_app;   ///< db_radio_init function parameters
     uint8_t                      frequency;           ///< db_set_frequency function parameters
     tdma_client_table_t          table_set;           ///< db_tdma_client_set_table function parameter
     tdma_client_table_t          table_get;           ///< db_tdma_client_get_table function parameter
@@ -92,6 +94,7 @@ typedef struct {
 
 typedef struct {
     db_radio_ble_mode_t mode;               ///< db_radio_init function parameters
+    application_type_t  default_radio_app;  ///< db_radio_init function parameters
     uint8_t             frequency;          ///< db_set_frequency function parameters
     uint32_t            frame_duration_us;  ///< db_tdma_server_get_table_info function parameter
     uint16_t            num_clients;        ///< db_tdma_server_get_table_info function parameter

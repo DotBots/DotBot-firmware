@@ -27,12 +27,6 @@
 
 //=========================== defines ==========================================
 
-#if defined(BOARD_SAILBOT_V1)
-#define TDMA_CLIENT_RADIO_APPLICATION SailBot
-#else
-#define TDMA_CLIENT_RADIO_APPLICATION DotBot
-#endif
-
 #define TDMA_CLIENT_DEFAULT_FRAME_DURATION 500000                              ///< Default duration of the tdma frame, in microseconds.
 #define TDMA_CLIENT_DEFAULT_RX_START       0                                   ///< start of the , in microseconds.
 #define TDMA_CLIENT_DEFAULT_RX_DURATION    TDMA_CLIENT_DEFAULT_FRAME_DURATION  ///< Default duration of the tdma frame, in microseconds.
@@ -64,6 +58,8 @@ typedef struct {
     tdma_client_ring_buffer_t    tx_ring_buffer;                        ///< ring buffer to queue the outgoing packets
     uint8_t                      byte_onair_time;                       ///< How many microseconds it takes to send a byte of data
     uint8_t                      radio_buffer[RADIO_MESSAGE_MAX_SIZE];  ///< Internal buffer that contains the command to send (from buttons)
+    application_type_t           default_radio_app;                     ///< Which application to use for registration and sync messages
+
 } tdma_client_vars_t;
 
 //=========================== variables ========================================
@@ -148,7 +144,7 @@ static uint32_t _get_random_delay_us(void);
 
 //=========================== public ===========================================
 
-void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq) {
+void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq, application_type_t default_radio_app) {
 
     // Initialize high frequency clock
     db_timer_hf_init(TDMA_CLIENT_TIMER_HF);
@@ -172,6 +168,9 @@ void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mo
 
     // Save the on-air byte time
     _tdma_client_vars.byte_onair_time = ble_mode_to_byte_time[radio_mode];
+
+    // Save default radio application
+    _tdma_client_vars.default_radio_app = default_radio_app;
 
     // Set the default time table
     _tdma_client_vars.tdma_client_table.frame_duration = TDMA_CLIENT_DEFAULT_FRAME_DURATION;
@@ -322,14 +321,14 @@ static bool _message_rb_tx_queue(uint16_t max_tx_duration_us) {
 
 static void _tx_keep_alive_message(void) {
 
-    db_protocol_header_to_buffer(_tdma_client_vars.radio_buffer, DB_BROADCAST_ADDRESS, TDMA_CLIENT_RADIO_APPLICATION, DB_PROTOCOL_ADVERTISEMENT);
+    db_protocol_header_to_buffer(_tdma_client_vars.radio_buffer, DB_BROADCAST_ADDRESS, _tdma_client_vars.default_radio_app, DB_PROTOCOL_ADVERTISEMENT);
     db_radio_disable();
     db_radio_tx(_tdma_client_vars.radio_buffer, sizeof(protocol_header_t));
 }
 
 static void _tx_tdma_register_message(void) {
 
-    db_protocol_header_to_buffer(_tdma_client_vars.radio_buffer, DB_BROADCAST_ADDRESS, TDMA_CLIENT_RADIO_APPLICATION, DB_PROTOCOL_ADVERTISEMENT);
+    db_protocol_header_to_buffer(_tdma_client_vars.radio_buffer, DB_BROADCAST_ADDRESS, _tdma_client_vars.default_radio_app, DB_PROTOCOL_ADVERTISEMENT);
     db_radio_disable();
     db_radio_tx(_tdma_client_vars.radio_buffer, sizeof(protocol_header_t));
 }

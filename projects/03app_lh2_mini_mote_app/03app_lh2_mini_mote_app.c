@@ -31,15 +31,16 @@
 //=========================== defines ==========================================
 
 #define TIMER_DEV              (0)
-#define DB_RADIO_FREQ          (28)
-#define DB_LH2_UPDATE_DELAY_US (100000U)  ///< 100ms delay between each LH2 data refresh
-#define DB_BUFFER_MAX_BYTES    (255U)     ///< Max bytes in UART receive buffer
+#define DB_RADIO_FREQ          (28)             //< Set the frequency to 2408 MHz
+#define RADIO_APP              (LH2_mini_mote)  // LH2 mini mote Radio App
+#define DB_LH2_UPDATE_DELAY_US (100000U)        ///< 100ms delay between each LH2 data refresh
+#define DB_BUFFER_MAX_BYTES    (255U)           ///< Max bytes in UART receive buffer
 
 typedef struct {
     uint32_t ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
     db_lh2_t lh2;                                ///< LH2 device descriptor
     uint8_t  radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
-    uint64_t device_id;                          ///< Device ID of the DotBot
+    uint64_t device_id;                          ///< Device ID of the LH2 mini mote
 } dotbot_vars_t;
 
 //=========================== variables ========================================
@@ -60,7 +61,7 @@ static void radio_callback(uint8_t *pkt, uint8_t len);
 int main(void) {
     db_board_init();
     db_protocol_init();
-    db_tdma_client_init(&radio_callback, DB_RADIO_BLE_1MBit, DB_RADIO_FREQ);
+    db_tdma_client_init(&radio_callback, DB_RADIO_BLE_1MBit, DB_RADIO_FREQ, RADIO_APP);
 
     // Retrieve the device id once at startup
     _dotbot_vars.device_id = db_device_id();

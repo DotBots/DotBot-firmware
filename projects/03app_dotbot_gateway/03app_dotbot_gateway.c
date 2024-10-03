@@ -27,6 +27,7 @@
 #define DB_RADIO_QUEUE_SIZE (8U)                             ///< Size of the radio queue (must by a power of 2)
 #define DB_RADIO_FREQ       (8U)                             //< Set the frequency to 2408 MHz
 #define DB_UART_QUEUE_SIZE  ((DB_BUFFER_MAX_BYTES + 1) * 2)  ///< Size of the UART queue size (must by a power of 2)
+#define RADIO_APP           (DotBot)                         // DotBot Radio App
 
 typedef struct {
     uint8_t length;                       ///< Length of the radio packet
@@ -140,7 +141,7 @@ int main(void) {
     db_protocol_init();
 
     // Configure Radio as transmitter
-    db_tdma_server_init(&_radio_callback, DOTBOT_GW_RADIO_MODE, DB_RADIO_FREQ);
+    db_tdma_server_init(&_radio_callback, DOTBOT_GW_RADIO_MODE, DB_RADIO_FREQ, RADIO_APP);
     // Initialize the gateway context
     _gw_vars.buttons             = 0x0000;
     _gw_vars.radio_queue.current = 0;

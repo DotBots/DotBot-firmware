@@ -24,12 +24,6 @@
 #endif
 //=========================== defines ==========================================
 
-#if defined(BOARD_SAILBOT_V1)
-#define TDMA_RADIO_APPLICATION SailBot
-#else
-#define TDMA_RADIO_APPLICATION DotBot
-#endif
-
 #define TDMA_SERVER_DEFAULT_FRAME_DURATION_US 20000  ///< Default duration of the tdma frame, in microseconds.
 
 #define TDMA_SERVER_DEFAULT_RX_START_US    0                                      ///< Start of RX slot, in microseconds.
@@ -74,6 +68,7 @@ typedef struct {
     uint64_t            device_id;                             ///< Device ID of the DotBot
     tdma_ring_buffer_t  tx_ring_buffer;                        ///< ring buffer to queue the outgoing packets
     uint8_t             radio_buffer[RADIO_MESSAGE_MAX_SIZE];  ///< Internal buffer that contains the command to send (from buttons)
+    application_type_t  default_radio_app;                     ///< Which application to use for registration and sync messages
 
     new_client_ring_buffer_t new_clients_rb;  //
 } tdma_server_vars_t;
@@ -206,7 +201,7 @@ static void _server_register_new_client(tdma_server_table_t *tdma_table, uint64_
 
 //=========================== public ===========================================
 
-void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq) {
+void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq, application_type_t default_radio_app) {
 
     // Initialize high frequency clock
     db_timer_hf_init(TDMA_SERVER_TIMER_HF);
@@ -224,6 +219,9 @@ void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mo
 
     // Retrieve the device ID.
     _tdma_vars.device_id = db_device_id();
+
+    // Save default radio application
+    _tdma_vars.default_radio_app = default_radio_app;
 
     // Save the user callback to use in our interruption
     _tdma_vars.callback = callback;
@@ -443,7 +441,7 @@ static void _tx_sync_frame(void) {
         .dst         = DB_BROADCAST_ADDRESS,
         .src         = _tdma_vars.device_id,
         .swarm_id    = DB_SWARM_ID,
-        .application = TDMA_RADIO_APPLICATION,
+        .application = _tdma_vars.default_radio_app,
         .version     = DB_FIRMWARE_VERSION,
         .msg_id      = 0x00000000,  // Use a static msg ID to avoid the penalty of calculating the random ID
         .type        = DB_PROTOCOL_TDMA_SYNC_FRAME,
@@ -473,7 +471,7 @@ static void _tx_registration_messages(uint64_t client) {
     table.tx_start    = _tdma_vars.tdma_table.table[slot].tx_start;
 
     // Start filling out the message header
-    db_protocol_header_to_buffer(_tdma_vars.radio_buffer, client, TDMA_RADIO_APPLICATION, DB_PROTOCOL_TDMA_UPDATE_TABLE);
+    db_protocol_header_to_buffer(_tdma_vars.radio_buffer, client, _tdma_vars.default_radio_app, DB_PROTOCOL_TDMA_UPDATE_TABLE);
 
     // Compute the time before the next frame. (as close as possible to the TX as you can, so that it's more accurate)
     table.next_period_start = table.frame_period - (db_timer_hf_now(TDMA_SERVER_TIMER_HF) - _tdma_vars.frame_start_ts);

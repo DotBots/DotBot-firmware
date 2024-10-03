@@ -32,7 +32,8 @@
 
 //=========================== defines ==========================================
 
-#define DB_RADIO_FREQ             (8U)  //< Set the frequency to 2408 MHz
+#define DB_RADIO_FREQ             (8U)      //< Set the frequency to 2408 MHz
+#define RADIO_APP                 (DotBot)  // DotBot Radio App
 #define TIMER_DEV                 (0)
 #define DB_LH2_UPDATE_DELAY_MS    (100U)   ///< 100ms delay between each LH2 data refresh
 #define DB_TIMEOUT_CHECK_DELAY_MS (200U)   ///< 200ms delay between each timeout delay check
@@ -174,7 +175,7 @@ int main(void) {
     db_rgbled_pwm_init(&rgbled_pwm_conf);
 #endif
     db_motors_init();
-    db_tdma_client_init(&radio_callback, DB_RADIO_BLE_1MBit, DB_RADIO_FREQ);
+    db_tdma_client_init(&radio_callback, DB_RADIO_BLE_1MBit, DB_RADIO_FREQ, RADIO_APP);
 
     // Set an invalid heading since the value is unknown on startup.
     // Control loop is stopped

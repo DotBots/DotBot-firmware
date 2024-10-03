@@ -23,6 +23,7 @@
 #define DELAY_MS   (1000)                // Wait between each send
 #define RADIO_FREQ (28)                  // Set the frequency to 2412 MHz
 #define RADIO_MODE (DB_RADIO_BLE_1MBit)  // Use BLE 1Mbit/s
+#define RADIO_APP  (DotBot)              // DotBot Radio App
 
 //=========================== variables ========================================
 
@@ -47,7 +48,7 @@ int main(void) {
     db_timer_init(0);
 
     // Initialize the TDMA server
-    db_tdma_server_init(&radio_callback, RADIO_MODE, RADIO_FREQ);
+    db_tdma_server_init(&radio_callback, RADIO_MODE, RADIO_FREQ, RADIO_APP);
 
     while (1) {
         db_tdma_server_get_table_info(&frame_duration_us, &num_clients, &table_index);

@@ -28,7 +28,7 @@ static tdma_server_cb_t _tdma_server_callback = NULL;
 
 //=========================== public ===========================================
 
-void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq) {
+void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq, application_type_t default_radio_app) {
     db_hfclk_init();
 
     // Disable all DCDC regulators (use LDO)
@@ -66,8 +66,9 @@ void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mo
     }
 
     // Store information in the shared data before sending it to the net-core
-    ipc_shared_data.tdma_server.mode      = radio_mode;
-    ipc_shared_data.tdma_server.frequency = radio_freq;
+    ipc_shared_data.tdma_server.mode              = radio_mode;
+    ipc_shared_data.tdma_server.frequency         = radio_freq;
+    ipc_shared_data.tdma_server.default_radio_app = default_radio_app;
 
     // Initialize TDMA client drv in the net-core
     db_ipc_network_call(DB_IPC_TDMA_SERVER_INIT_REQ);
