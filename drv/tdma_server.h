@@ -18,6 +18,7 @@
 #include <nrf.h>
 #include "gpio.h"
 #include "radio.h"
+#include "protocol.h"
 
 //=========================== defines ==========================================
 
