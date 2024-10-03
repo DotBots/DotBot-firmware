@@ -29,19 +29,6 @@ static tdma_server_cb_t _tdma_server_callback = NULL;
 //=========================== public ===========================================
 
 void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq, application_type_t default_radio_app) {
-    db_hfclk_init();
-
-    // Disable all DCDC regulators (use LDO)
-    NRF_REGULATORS_S->VREGRADIO.DCDCEN = (REGULATORS_VREGRADIO_DCDCEN_DCDCEN_Disabled << REGULATORS_VREGRADIO_DCDCEN_DCDCEN_Pos);
-    NRF_REGULATORS_S->VREGMAIN.DCDCEN  = (REGULATORS_VREGMAIN_DCDCEN_DCDCEN_Disabled << REGULATORS_VREGMAIN_DCDCEN_DCDCEN_Pos);
-    NRF_REGULATORS_S->VREGH.DCDCEN     = (REGULATORS_VREGH_DCDCEN_DCDCEN_Disabled << REGULATORS_VREGH_DCDCEN_DCDCEN_Pos);
-
-    // RADIO (address at 0x41008000 => periph ID is 8)
-    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_RADIO);
-    db_tz_enable_network_periph_dma(NRF_NETWORK_PERIPH_ID_RADIO);
-
-    // IPC (address at 0x41012000 => periph ID is 18)
-    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_IPC);
 
     // APPMUTEX (address at 0x41030000 => periph ID is 48)
     db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_APPMUTEX);
