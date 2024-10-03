@@ -78,9 +78,6 @@ int main(void) {
         // Wait a bit before sending another message
         db_timer_delay_ms(0, DELAY_MS);
     }
-
-    // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
-    __NOP();
 }
 
 //=========================== Callbacks ===============================
