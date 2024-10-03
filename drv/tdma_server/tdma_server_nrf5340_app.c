@@ -64,10 +64,7 @@ void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mo
     if (callback) {
         _tdma_server_callback = callback;
     }
-    db_timer_init(0);
-    NRF_P0->OUTCLR = 1 << 28;
-    db_timer_delay_ms(0, 5000);
-    NRF_P0->OUTCLR = 1 << 29;
+
     // Store information in the shared data before sending it to the net-core
     ipc_shared_data.tdma_server.mode      = radio_mode;
     ipc_shared_data.tdma_server.frequency = radio_freq;
