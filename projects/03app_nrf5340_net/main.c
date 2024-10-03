@@ -176,7 +176,7 @@ int main(void) {
             }
             ipc_shared_data.net_ack       = true;
             _nrf53_net_vars._req_received = DB_IPC_REQ_NONE;
-            ipc_shared_data.req           = DB_IPC_REQ_NONE;  // used in the app-core ipc.h to check that the request was properly fullfilled.
+            ipc_shared_data.req           = DB_IPC_REQ_NONE;  // used in the app-core ipc.h to check that the request was properly fulfilled.
             __NOP();
         }
     };

@@ -154,8 +154,8 @@ void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mo
 
     // Initialize Radio
     db_radio_init(&tdma_client_callback, radio_mode);  // set the radio callback to our tdma catch function
-    db_radio_set_frequency(radio_freq);                // Pass through the rest of the arguments
-    db_radio_rx();                                     // start receving packets
+    db_radio_set_frequency(radio_freq);                // pass through the rest of the arguments
+    db_radio_rx();                                     // start receiving packets
 
     // Start the random number generator
     db_rng_init();
@@ -348,7 +348,7 @@ static uint32_t _get_random_delay_us(void) {
  *
  * This function will be called each time a radio packet is received.
  * it will catch any TDMA related packet and update the timing table.
- * All other types of packets are passed directly into the user-defined call-back
+ * All other types of packets are passed directly into the user-defined callback
  *
  * @param[in]   packet    pointer to the data array with the data packet
  * @param[in]   length    length of the packet received trough the radio
@@ -373,7 +373,7 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
         return;
     }
 
-    // THe application type needs to be checked inside the application itself.
+    // The application type needs to be checked inside the application itself.
     // We don't know it a priori
 
     // check and process the TDMA packets
@@ -425,7 +425,7 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
                 // Protect against receiving garbage
                 if (frame_period > 0 && frame_period < 500000) {
                     _tdma_client_vars.tdma_client_table.frame_duration = frame_period;
-                    // Also update the RX_duration, becaus ewe are working on ALWAYS_ON mode
+                    // Also update the RX_duration, because we are working on ALWAYS_ON mode
                     _tdma_client_vars.tdma_client_table.rx_duration = frame_period;
                 }
 

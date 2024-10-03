@@ -85,7 +85,7 @@ void db_tdma_client_get_table(tdma_client_table_t *table);
 void db_tdma_client_tx(const uint8_t *packet, uint8_t length);
 
 /**
- * @brief Ignore TDMA table and send all pending packets inmediatly
+ * @brief Ignore TDMA table and send all pending packets immediately
  *
  */
 void db_tdma_client_flush(void);
