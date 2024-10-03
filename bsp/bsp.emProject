@@ -28,7 +28,7 @@
       project_dependencies="00bsp_timer_hf"
       project_directory="."
       project_type="Library" />
-    <file file_name="nrf/$(Lh2ImplementationFile)" />
+    <file file_name="nrf/lh2.c" />
     <file file_name="lh2.h" />
   </project>
   <project Name="00bsp_dotbot_rpm">
@@ -79,7 +79,7 @@
       project_dependencies="00bsp_gpio"
       project_directory="."
       project_type="Library" />
-    <file file_name="nrf/$(PwmImplementationFile)" />
+    <file file_name="nrf/pwm.c" />
     <file file_name="pwm.h" />
   </project>
   <project Name="00bsp_qdec">
@@ -106,7 +106,7 @@
       project_dependencies="00bsp_clock"
       project_directory="."
       project_type="Library" />
-    <file file_name="nrf/$(RadioImplementationFile)" />
+    <file file_name="nrf/radio.c" />
     <file file_name="radio.h" />
   </project>
   <project Name="00bsp_rng">
@@ -114,7 +114,7 @@
       Name="Common"
       project_directory="."
       project_type="Library" />
-    <file file_name="nrf/$(RngImplementationFile)" />
+    <file file_name="nrf/rng.c" />
     <file file_name="rng.h" />
   </project>
   <project Name="00bsp_saadc">
