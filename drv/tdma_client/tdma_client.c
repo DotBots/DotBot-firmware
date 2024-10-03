@@ -500,22 +500,20 @@ static void timer_rx_interrupt(void) {
 
     if (_tdma_client_vars.tdma_client_table.rx_duration == _tdma_client_vars.tdma_client_table.frame_duration) {
         db_radio_rx();
-
         return;
+    }
 
-    } else {
-        // Check if we just came from an idle period or an rx period
-        if (_tdma_client_vars.rx_flag == DB_TDMA_CLIENT_RX_WAIT) {
-            // Set the next interruption
-            db_timer_hf_set_oneshot_us(TDMA_CLIENT_TIMER_HF, TDMA_CLIENT_HF_TIMER_CC_RX, _tdma_client_vars.tdma_client_table.rx_duration, &timer_rx_interrupt);
-            // turn the radio ON
-            db_radio_rx();
-        } else if (_tdma_client_vars.rx_flag == DB_TDMA_CLIENT_RX_ON) {
-            // Set the next interruption
-            uint32_t delay = _tdma_client_vars.tdma_client_table.frame_duration - _tdma_client_vars.tdma_client_table.rx_duration;
-            db_timer_hf_set_oneshot_us(TDMA_CLIENT_TIMER_HF, TDMA_CLIENT_HF_TIMER_CC_RX, delay, &timer_rx_interrupt);
-            // turn the radio OFF
-            db_radio_disable();
-        }
+    // Check if we just came from an idle period or an rx period
+    if (_tdma_client_vars.rx_flag == DB_TDMA_CLIENT_RX_WAIT) {
+        // Set the next interruption
+        db_timer_hf_set_oneshot_us(TDMA_CLIENT_TIMER_HF, TDMA_CLIENT_HF_TIMER_CC_RX, _tdma_client_vars.tdma_client_table.rx_duration, &timer_rx_interrupt);
+        // turn the radio ON
+        db_radio_rx();
+    } else if (_tdma_client_vars.rx_flag == DB_TDMA_CLIENT_RX_ON) {
+        // Set the next interruption
+        uint32_t delay = _tdma_client_vars.tdma_client_table.frame_duration - _tdma_client_vars.tdma_client_table.rx_duration;
+        db_timer_hf_set_oneshot_us(TDMA_CLIENT_TIMER_HF, TDMA_CLIENT_HF_TIMER_CC_RX, delay, &timer_rx_interrupt);
+        // turn the radio OFF
+        db_radio_disable();
     }
 }
