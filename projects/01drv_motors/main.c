@@ -21,8 +21,6 @@
 
 //=========================== defines ==========================================
 
-void reload_wdt0(void);
-
 #define TIMER_DEV (0)
 
 //=========================== main =============================================
@@ -34,9 +32,6 @@ int main(void) {
 
     // Initialize the timer
     db_timer_init(TIMER_DEV);
-
-    db_timer_init(1);
-    db_timer_set_periodic_ms(1, 0, 500, &reload_wdt0);
 
     // Configure Motors
     db_motors_init();
