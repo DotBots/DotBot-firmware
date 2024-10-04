@@ -122,7 +122,7 @@ static bool _message_rb_get(tdma_ring_buffer_t *rb, uint8_t data[DB_RADIO_PAYLOA
  *
  * @param[in]    rb                     pointer to ring buffer structure
  * @param[in]    max_tx_duration_us     max time available to send messages.
- * @return                              true is a packet was sent, false if no packet was sent.
+ * @return                              true if a packet was sent, false if no packet was sent.
  */
 static bool _message_rb_tx_queue(tdma_ring_buffer_t *rb, uint16_t max_tx_duration_us);
 
@@ -146,7 +146,7 @@ static void _client_rb_add(new_client_ring_buffer_t *rb, uint64_t new_client);
  *
  * @param[in]    rb          pointer to ring buffer structure
  * @param[out]   new_client  pointer to the variable where the new client ID will be saved.
- * @return                   true if ID was successfully copied, false buffer is empty.
+ * @return                   true if ID was successfully copied, false if buffer is empty.
  */
 static bool _client_rb_get(new_client_ring_buffer_t *rb, uint64_t *new_client);
 
@@ -155,7 +155,7 @@ static bool _client_rb_get(new_client_ring_buffer_t *rb, uint64_t *new_client);
  *
  * @param[in]    rb                  pointer to ring buffer structure
  * @param[in]    max_tx_duration_us  max time available to send messages.
- * @return                           true is a packet was sent, false if no packet was sent.
+ * @return                           true if a packet was sent, false if no packet was sent.
  */
 static bool _client_rb_tx_queue(new_client_ring_buffer_t *rb, uint16_t max_tx_duration_us);
 
@@ -457,7 +457,7 @@ static void _tx_sync_frame(void) {
 }
 
 static void _tx_registration_messages(uint64_t client) {
-    // Send the sync packet + tdma_slot parameters  to a particular client.
+    // Send the sync packet + tdma_slot parameters to a particular client.
 
     // Create the TDMA table we will send
     protocol_tdma_table_t table = { 0 };
@@ -644,7 +644,7 @@ static void timer_tdma_interrupt(void) {
     // Save the timestamp start of the current slot, to ensure accurate computation of the end of the slot
     _tdma_vars.slot_start_ts = db_timer_hf_now(TDMA_SERVER_TIMER_HF);
 
-    // If there are not enough clients, make sure the the minimum frame time is respected, even if is just filled with empty slots.
+    // If there are not enough clients, make sure that the minimum frame time is respected, even if is just filled with empty slots.
     uint8_t last_slot;
     if (_tdma_vars.tdma_table.frame_duration_us > TDMA_SERVER_DEFAULT_FRAME_DURATION_US) {
         // enough clients, wrap around the end of the list

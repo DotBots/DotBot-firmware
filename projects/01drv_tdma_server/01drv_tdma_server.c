@@ -20,10 +20,10 @@
 
 //=========================== defines ==========================================
 
-#define DELAY_MS   (1000)                // Wait between each send
-#define RADIO_FREQ (28)                  // Set the frequency to 2412 MHz
-#define RADIO_MODE (DB_RADIO_BLE_1MBit)  // Use BLE 1Mbit/s
-#define RADIO_APP  (DotBot)              // DotBot Radio App
+#define DELAY_MS   (1000)                ///< Wait between each send
+#define RADIO_FREQ (28)                  ///< Set the frequency to 2412 MHz
+#define RADIO_MODE (DB_RADIO_BLE_1MBit)  ///< Use BLE 1Mbit/s
+#define RADIO_APP  (DotBot)              ///< DotBot Radio App
 
 //=========================== variables ========================================
 
