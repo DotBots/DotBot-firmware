@@ -81,7 +81,7 @@ typedef struct {
     uint8_t value;  ///< Byte containing the random value read
 } ipc_rng_data_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct {
     db_radio_ble_mode_t          mode;                ///< db_radio_init function parameters
     application_type_t           default_radio_app;   ///< db_radio_init function parameters
     uint8_t                      frequency;           ///< db_set_frequency function parameters
@@ -92,7 +92,7 @@ typedef struct __attribute__((packed)) {
     db_tdma_registration_state_t registration_state;  ///< db_tdma_client_get_status return value
 } ipc_tdma_client_data_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct {
     db_radio_ble_mode_t mode;               ///< db_radio_init function parameters
     application_type_t  default_radio_app;  ///< db_radio_init function parameters
     uint8_t             frequency;          ///< db_set_frequency function parameters
