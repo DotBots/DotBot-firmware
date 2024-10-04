@@ -363,11 +363,6 @@ static void tdma_client_callback(uint8_t *packet, uint8_t length) {
         return;
     }
 
-    // Ignore messages that you sent yourself
-    if (header->src == _tdma_client_vars.device_id) {
-        return;
-    }
-
     // Check version is supported
     if (header->version != DB_FIRMWARE_VERSION) {
         return;
