@@ -28,7 +28,7 @@
     build_output_file_name="$(OutDir)/$(ProjectName)-$(BuildTarget)$(EXE)"
     build_treat_warnings_as_errors="Yes"
     c_additional_options="-Wno-strict-prototypes"
-    c_preprocessor_definitions="ARM_MATH_ARMV8MML;NRF5340_XXAA;NRF_APPLICATION;__NRF_FAMILY;CONFIG_NFCT_PINS_AS_GPIOS;FLASH_PLACEMENT=1;BOARD_DOTBOT_V2;OTA_USE_CRYPTO;NRF_TRUSTZONE_NONSECURE;USE_SWARMIT"
+    c_preprocessor_definitions="ARM_MATH_ARMV8MML;NRF5340_XXAA;NRF_APPLICATION;__NRF_FAMILY;CONFIG_NFCT_PINS_AS_GPIOS;FLASH_PLACEMENT=1;BOARD_DOTBOT_V2;OTA_USE_CRYPTO"
     c_user_include_directories="$(SolutionDir)/../bsp;$(SolutionDir)/../crypto;$(SolutionDir)/../drv;$(PackagesDir)/nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
     clang_machine_outliner="Yes"
     compiler_color_diagnostics="Yes"
