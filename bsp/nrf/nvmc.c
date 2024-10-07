@@ -19,10 +19,12 @@
 
 //=========================== defines =========================================
 
-#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
-#define NRF_NVMC NRF_NVMC_S
-#elif defined(NRF5340_XXAA) && defined(NRF_NETWORK)
+#if defined(NRF5340_XXAA)
+#if defined(NRF_NETWORK) || defined(NRF_TRUSTZONE_NONSECURE)
 #define NRF_NVMC NRF_NVMC_NS
+#elif defined(NRF_APPLICATION)
+#define NRF_NVMC NRF_NVMC_S
+#endif
 #endif
 
 //=========================== public ==========================================

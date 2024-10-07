@@ -43,16 +43,20 @@ void _wait_for_transfer(i2c_t i2c);
 static const i2c_conf_t _devs[TWIM_COUNT] = {
 #if defined(NRF5340_XXAA)
     {
-#if defined(NRF_APPLICATION)
-        .p = NRF_TWIM0_S,
-#else
+#if defined(NRF_NETWORK) || defined(NRF_TRUSTZONE_NONSECURE)
         .p = NRF_TWIM0_NS,
+#else
+        .p = NRF_TWIM0_S,
 #endif
         .irq = SERIAL0_IRQn,
     },
 #if defined(NRF_APPLICATION)
     {
-        .p   = NRF_TWIM1_S,
+#if defined(NRF_TRUSTZONE_NONSECURE)
+        .p = NRF_TWIM1_NS,
+#else
+        .p = NRF_TWIM1_S,
+#endif
         .irq = SERIAL1_IRQn,
     },
 #endif
@@ -171,11 +175,11 @@ static void _twim_isr(i2c_t i2c) {
 }
 
 #if defined(NRF5340_XXAA)
-void SERIAL0_IRQHandler(void) {
+__attribute__((weak)) void SERIAL0_IRQHandler(void) {
     _twim_isr(0);
 }
 
-void SERIAL1_IRQHandler(void) {
+__attribute__((weak)) void SERIAL1_IRQHandler(void) {
     _twim_isr(1);
 }
 #else

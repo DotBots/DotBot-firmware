@@ -23,10 +23,10 @@
 //=========================== defines ==========================================
 
 #if defined(NRF5340_XXAA)
-#if defined(NRF_APPLICATION)
-#define DB_QSPI (NRF_QSPI_S)  ///< QSPI peripheral used
-#elif defined(NRF_NETWORK)
+#if defined(NRF_TRUSTZONE_NONSECURE)
 #define DB_QSPI (NRF_QSPI_NS)  ///< QSPI peripheral used
+#else
+#define DB_QSPI (NRF_QSPI_S)  ///< QSPI peripheral used
 #endif
 #else
 #define DB_QSPI (NRF_QSPI)  ///< QSPI peripheral

@@ -42,7 +42,7 @@ typedef struct {
 static const timer_hf_conf_t _devs[TIMER_COUNT] = {
 #if defined(NRF5340_XXAA)
     {
-#if defined(NRF_NETWORK)
+#if defined(NRF_NETWORK) || defined(NRF_TRUSTZONE_NONSECURE)
         .p = NRF_TIMER0_NS,
 #else
         .p = NRF_TIMER0_S,
@@ -51,7 +51,7 @@ static const timer_hf_conf_t _devs[TIMER_COUNT] = {
         .cc_num = TIMER0_CC_NUM - 1,
     },
     {
-#if defined(NRF_NETWORK)
+#if defined(NRF_NETWORK) || defined(NRF_TRUSTZONE_NONSECURE)
         .p = NRF_TIMER1_NS,
 #else
         .p = NRF_TIMER1_S,
@@ -60,7 +60,7 @@ static const timer_hf_conf_t _devs[TIMER_COUNT] = {
         .cc_num = TIMER1_CC_NUM - 1,
     },
     {
-#if defined(NRF_NETWORK)
+#if defined(NRF_NETWORK) || defined(NRF_TRUSTZONE_NONSECURE)
         .p = NRF_TIMER2_NS,
 #else
         .p = NRF_TIMER2_S,
@@ -105,8 +105,10 @@ void db_timer_hf_init(timer_hf_t timer) {
     // No delay is running after initialization
     _timer_hf_vars[timer].running = false;
 
+#if !defined(USE_SWARMIT)
     // Configure and start High Frequency clock
     db_hfclk_init();
+#endif
 
     // Configure the timer
     _devs[timer].p->TASKS_CLEAR = 1;

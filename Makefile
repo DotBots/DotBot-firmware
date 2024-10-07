@@ -8,6 +8,7 @@ BUILD_CONFIG ?= Debug
 BUILD_TARGET ?= dotbot-v1
 PROJECT_FILE ?= $(BUILD_TARGET).emProject
 BOOTLOADER ?= bootloader
+SWARMIT_APPS ?=
 
 ifeq (nrf5340dk-app,$(BUILD_TARGET))
   PROJECTS ?= \
@@ -95,6 +96,7 @@ endif
 ifneq (,$(filter dotbot-v2,$(BUILD_TARGET)))
   PROJECTS := $(filter-out 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_xgo 03app_nrf5340_net 03app_freebot 03app_lh2_mini_mote%,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
+  SWARMIT_APPS := $(addprefix swarmit_, motors move rgbled timer)
 endif
 
 # remove incompatible apps (nrf5340, sailbot, gateway, dotbot) for lh2-mini-mote builds
@@ -149,7 +151,7 @@ ARTIFACTS = $(ARTIFACT_ELF) $(ARTIFACT_HEX)
 
 .PHONY: $(PROJECTS) $(ARTIFACT_PROJECTS) artifacts docker docker-release format check-format
 
-all: $(PROJECTS) $(OTAP_APPS) $(BOOTLOADER)
+all: $(PROJECTS) $(OTAP_APPS) $(BOOTLOADER) $(SWARMIT_APPS)
 
 $(PROJECTS):
 	@echo "\e[1mBuilding project $@\e[0m"
@@ -164,6 +166,11 @@ $(OTAP_APPS):
 $(BOOTLOADER):
 	@echo "\e[1mBuilding bootloader application $@\e[0m"
 	"$(SEGGER_DIR)/bin/emBuild" otap/$(BUILD_TARGET)-bootloader.emProject -project $@ -config Release $(PACKAGES_DIR_OPT) -rebuild -verbose
+	@echo "\e[1mDone\e[0m\n"
+
+$(SWARMIT_APPS):
+	@echo "\e[1mBuilding $@ application\e[0m"
+	"$(SEGGER_DIR)/bin/emBuild" swarmit/swarmit.emProject -project $@ -config $(BUILD_CONFIG) $(PACKAGES_DIR_OPT) -rebuild -verbose
 	@echo "\e[1mDone\e[0m\n"
 
 list-projects:

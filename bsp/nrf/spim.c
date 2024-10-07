@@ -37,28 +37,44 @@ typedef struct {
 static const spim_conf_t _devs[SPIM_COUNT] = {
 #if defined(NRF5340_XXAA)
     {
-#if defined(NRF_APPLICATION)
-        .p = NRF_SPIM0_S,
-#else
+#if defined(NRF_NETWORK) || defined(NRF_TRUSTZONE_NONSECURE)
         .p = NRF_SPIM0_NS,
+#else
+        .p = NRF_SPIM0_S,
 #endif
         .irq = SERIAL0_IRQn,
     },
 #if defined(NRF_APPLICATION)
     {
-        .p   = NRF_SPIM1_S,
+#if defined(NRF_TRUSTZONE_NONSECURE)
+        .p = NRF_SPIM1_NS,
+#else
+        .p = NRF_SPIM1_S,
+#endif
         .irq = SERIAL1_IRQn,
     },
     {
-        .p   = NRF_SPIM2_S,
+#if defined(NRF_TRUSTZONE_NONSECURE)
+        .p = NRF_SPIM2_NS,
+#else
+        .p = NRF_SPIM2_S,
+#endif
         .irq = SERIAL2_IRQn,
     },
     {
-        .p   = NRF_SPIM3_S,
+#if defined(NRF_TRUSTZONE_NONSECURE)
+        .p = NRF_SPIM3_NS,
+#else
+        .p = NRF_SPIM3_S,
+#endif
         .irq = SERIAL3_IRQn,
     },
     {
-        .p   = NRF_SPIM4_S,
+#if defined(NRF_TRUSTZONE_NONSECURE)
+        .p = NRF_SPIM4_NS,
+#else
+        .p = NRF_SPIM4_S,
+#endif
         .irq = SPIM4_IRQn,
     },
 #endif

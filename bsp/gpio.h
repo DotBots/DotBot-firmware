@@ -18,16 +18,24 @@
 
 //=========================== defines ==========================================
 
-#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+#if defined(NRF5340_XXAA)
+#if defined(NRF_NETWORK)
+#define NRF_P0     NRF_P0_NS
+#define NRF_P1     NRF_P1_NS
+#define NRF_GPIOTE NRF_GPIOTE_NS
+#elif defined(NRF_APPLICATION) && defined(NRF_TRUSTZONE_NONSECURE)
+#define NRF_P0            NRF_P0_NS
+#define NRF_P1            NRF_P1_NS
+#define NRF_GPIOTE        NRF_GPIOTE1_NS
+#define GPIOTE_IRQn       GPIOTE1_IRQn
+#define GPIOTE_IRQHandler GPIOTE1_IRQHandler
+#elif defined(NRF_APPLICATION)
 #define NRF_P0            NRF_P0_S
 #define NRF_P1            NRF_P1_S
 #define NRF_GPIOTE        NRF_GPIOTE0_S
 #define GPIOTE_IRQn       GPIOTE0_IRQn
 #define GPIOTE_IRQHandler GPIOTE0_IRQHandler
-#elif defined(NRF5340_XXAA) && defined(NRF_NETWORK)
-#define NRF_P0     NRF_P0_NS
-#define NRF_P1     NRF_P1_NS
-#define NRF_GPIOTE NRF_GPIOTE_NS
+#endif
 #endif
 
 /**

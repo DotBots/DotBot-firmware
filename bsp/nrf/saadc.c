@@ -18,10 +18,10 @@
 //=========================== defines ==========================================
 
 #if defined(NRF5340_XXAA)
-#if defined(NRF_APPLICATION)
-#define NRF_SAADC NRF_SAADC_S
-#else
+#if defined(NRF_TRUSTZONE_NONSECURE)
 #define NRF_SAADC NRF_SAADC_NS
+#else
+#define NRF_SAADC NRF_SAADC_S
 #endif
 #endif
 

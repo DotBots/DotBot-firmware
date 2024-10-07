@@ -18,12 +18,14 @@
 #include "rng.h"
 #include "gpio.h"
 
-//=========================== variables =========================================
+//=========================== variables ========================================
+
+volatile __attribute__((section(".shared_data"))) ipc_shared_data_t ipc_shared_data;
 
 static bool      _data_received = false;
 static ipc_req_t _req_received  = DB_IPC_REQ_NONE;
 
-//=========================== functions =========================================
+//=========================== functions ========================================
 
 void radio_callback(uint8_t *packet, uint8_t length) {
     mutex_lock();
@@ -33,12 +35,9 @@ void radio_callback(uint8_t *packet, uint8_t length) {
     _data_received = true;
 }
 
-//=========================== main ==============================================
+//=========================== main =============================================
 
 int main(void) {
-
-    // Configure constant latency mode for better performances
-    NRF_POWER_NS->TASKS_CONSTLAT = 1;
 
     NRF_IPC_NS->INTENSET                       = 1 << DB_IPC_CHAN_REQ;
     NRF_IPC_NS->SEND_CNF[DB_IPC_CHAN_RADIO_RX] = 1 << DB_IPC_CHAN_RADIO_RX;
