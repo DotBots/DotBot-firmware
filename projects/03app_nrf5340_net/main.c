@@ -160,7 +160,14 @@ int main(void) {
                     ipc_shared_data.tdma_server.table_index       = _nrf53_net_vars.table_index;
                     break;
                 case DB_IPC_TDMA_SERVER_GET_CLIENT_REQ:
-                    db_tdma_server_get_client_info((tdma_table_entry_t *)&ipc_shared_data.tdma_server.client_entry, ipc_shared_data.tdma_server.client_id);
+                    // Copy the client info to an intermediate variable 
+                    db_tdma_server_get_client_info((tdma_table_entry_t *)&_nrf53_net_vars.client, ipc_shared_data.tdma_server.client_id);
+                    // Copy the intermediate variable to the ipc shared variable
+                    ipc_shared_data.tdma_server.client_entry.client      = _nrf53_net_vars.client.client;
+                    ipc_shared_data.tdma_server.client_entry.rx_duration = _nrf53_net_vars.client.rx_duration;
+                    ipc_shared_data.tdma_server.client_entry.rx_start    = _nrf53_net_vars.client.rx_start;
+                    ipc_shared_data.tdma_server.client_entry.tx_duration = _nrf53_net_vars.client.tx_duration;
+                    ipc_shared_data.tdma_server.client_entry.tx_start    = _nrf53_net_vars.client.tx_start;
                     break;
                 case DB_IPC_TDMA_SERVER_TX_REQ:
                     db_tdma_server_tx((uint8_t *)ipc_shared_data.tdma_server.tx_pdu.buffer, ipc_shared_data.tdma_server.tx_pdu.length);
