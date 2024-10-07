@@ -594,6 +594,11 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
         return;
     }
 
+    // Ignore messages that you sent yourself
+    if (header->src == _tdma_vars.device_id) {
+        return;
+    }
+
     // Check version is supported
     if (header->version != DB_FIRMWARE_VERSION) {
         return;
@@ -620,6 +625,11 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
                 _client_rb_add(&_tdma_vars.new_clients_rb, header->src);
             }
         }
+    }
+
+    // Consume TDMA-only messages, don't let it go up to the application.
+    if (header->type == DB_PROTOCOL_TDMA_KEEP_ALIVE) {
+        return;
     }
 
     // Pipe the message to the user

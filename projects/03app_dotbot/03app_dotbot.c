@@ -36,6 +36,7 @@
 #define RADIO_APP                 (DotBot)  ///< DotBot Radio App
 #define TIMER_DEV                 (0)
 #define DB_LH2_UPDATE_DELAY_MS    (100U)   ///< 100ms delay between each LH2 data refresh
+#define DB_ADVERTIZEMENT_DELAY_MS (500U)   ///< 500ms delay between each advertizement packet sending
 #define DB_TIMEOUT_CHECK_DELAY_MS (200U)   ///< 200ms delay between each timeout delay check
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
 #define DB_BUFFER_MAX_BYTES       (255U)   ///< Max bytes in UART receive buffer
@@ -65,6 +66,7 @@ typedef struct {
     uint32_t                 waypoints_threshold;                ///< Distance to target waypoint threshold
     uint8_t                  next_waypoint_idx;                  ///< Index of next waypoint to reach
     bool                     update_control_loop;                ///< Whether the control loop need an update
+    bool                     advertize;                          ///< Whether an advertize packet should be sent
     bool                     update_lh2;                         ///< Whether LH2 data must be processed
     uint64_t                 device_id;                          ///< Device ID of the DotBot
     db_log_dotbot_data_t     log_data;
@@ -88,6 +90,7 @@ static const db_rgbled_pwm_conf_t rgbled_pwm_conf = {
 //=========================== prototypes =======================================
 
 static void _timeout_check(void);
+static void _advertise(void);
 static void _compute_angle(const protocol_lh2_location_t *next, const protocol_lh2_location_t *origin, int16_t *angle);
 static void _update_control_loop(void);
 static void _update_lh2(void);
@@ -181,6 +184,7 @@ int main(void) {
     // Control loop is stopped
     _dotbot_vars.direction           = DB_DIRECTION_INVALID;
     _dotbot_vars.update_control_loop = false;
+    _dotbot_vars.advertize           = false;
     _dotbot_vars.update_lh2          = false;
 
     // Retrieve the device id once at startup
@@ -189,6 +193,7 @@ int main(void) {
     db_timer_init(TIMER_DEV);
     db_timer_set_periodic_ms(TIMER_DEV, 0, DB_TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
     db_timer_set_periodic_ms(TIMER_DEV, 1, DB_LH2_UPDATE_DELAY_MS, &_update_lh2);
+    db_timer_set_periodic_ms(TIMER_DEV, 2, DB_ADVERTIZEMENT_DELAY_MS, &_advertise);
     db_lh2_init(&_dotbot_vars.lh2, &db_lh2_d, &db_lh2_e);
     db_lh2_start();
 
@@ -225,6 +230,13 @@ int main(void) {
         if (_dotbot_vars.update_control_loop) {
             _update_control_loop();
             _dotbot_vars.update_control_loop = false;
+        }
+
+        if (_dotbot_vars.advertize) {
+            db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_ADVERTISEMENT);
+            size_t length = sizeof(protocol_header_t);
+            db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
+            _dotbot_vars.advertize = false;
         }
     }
 }
@@ -324,4 +336,8 @@ static void _timeout_check(void) {
 
 static void _update_lh2(void) {
     _dotbot_vars.update_lh2 = true;
+}
+
+static void _advertise(void) {
+    _dotbot_vars.advertize = true;
 }

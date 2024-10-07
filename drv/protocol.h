@@ -39,7 +39,8 @@ typedef enum {
     DB_PROTOCOL_CMD_XGO_ACTION     = 11,  ///< XGO action command
     DB_PROTOCOL_LH2_PROCESSED_DATA = 12,  ///< Lighthouse 2 data processed at the DotBot
     DB_PROTOCOL_TDMA_UPDATE_TABLE  = 13,  ///< Receive new timings for the TDMA table
-    DB_PROTOCOL_TDMA_SYNC_FRAME    = 14,  ///< Sent by the gateway at the beginning of a TDMA frame, if there is nothing else to send.
+    DB_PROTOCOL_TDMA_SYNC_FRAME    = 14,  ///< Sent by the gateway at the beginning of a TDMA frame.
+    DB_PROTOCOL_TDMA_KEEP_ALIVE    = 15,  ///< Sent by the client if there is nothing else to send.
 } command_type_t;
 
 /// Application type

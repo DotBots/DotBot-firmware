@@ -321,14 +321,14 @@ static bool _message_rb_tx_queue(uint16_t max_tx_duration_us) {
 
 static void _tx_keep_alive_message(void) {
 
-    db_protocol_header_to_buffer(_tdma_client_vars.radio_buffer, DB_BROADCAST_ADDRESS, _tdma_client_vars.default_radio_app, DB_PROTOCOL_ADVERTISEMENT);
+    db_protocol_header_to_buffer(_tdma_client_vars.radio_buffer, DB_BROADCAST_ADDRESS, _tdma_client_vars.default_radio_app, DB_PROTOCOL_TDMA_KEEP_ALIVE);
     db_radio_disable();
     db_radio_tx(_tdma_client_vars.radio_buffer, sizeof(protocol_header_t));
 }
 
 static void _tx_tdma_register_message(void) {
 
-    db_protocol_header_to_buffer(_tdma_client_vars.radio_buffer, DB_BROADCAST_ADDRESS, _tdma_client_vars.default_radio_app, DB_PROTOCOL_ADVERTISEMENT);
+    db_protocol_header_to_buffer(_tdma_client_vars.radio_buffer, DB_BROADCAST_ADDRESS, _tdma_client_vars.default_radio_app, DB_PROTOCOL_TDMA_KEEP_ALIVE);
     db_radio_disable();
     db_radio_tx(_tdma_client_vars.radio_buffer, sizeof(protocol_header_t));
 }
