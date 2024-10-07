@@ -160,7 +160,7 @@ int main(void) {
                     ipc_shared_data.tdma_server.table_index       = _nrf53_net_vars.table_index;
                     break;
                 case DB_IPC_TDMA_SERVER_GET_CLIENT_REQ:
-                    // Copy the client info to an intermediate variable 
+                    // Copy the client info to an intermediate variable
                     db_tdma_server_get_client_info((tdma_table_entry_t *)&_nrf53_net_vars.client, ipc_shared_data.tdma_server.client_id);
                     // Copy the intermediate variable to the ipc shared variable
                     ipc_shared_data.tdma_server.client_entry.client      = _nrf53_net_vars.client.client;
