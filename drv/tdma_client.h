@@ -28,7 +28,7 @@ typedef enum {
     DB_TDMA_CLIENT_REGISTERED,    ///< the DotBot registered with the gateway
 } db_tdma_registration_state_t;
 
-///< TDMA internal RX state
+/// TDMA internal RX state
 typedef enum {
     DB_TDMA_CLIENT_RX_WAIT,  ///< the DotBot receiver is OFF
     DB_TDMA_CLIENT_RX_ON,    ///< the DotBot is receiving radio packets
