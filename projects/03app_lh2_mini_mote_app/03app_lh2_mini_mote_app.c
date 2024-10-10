@@ -31,7 +31,7 @@
 //=========================== defines ==========================================
 
 #define TIMER_DEV                 (0)
-#define DB_RADIO_FREQ             (8)             //< Set the frequency to 2408 MHz
+#define DB_RADIO_FREQ             (8)              //< Set the frequency to 2408 MHz
 #define RADIO_APP                 (LH2_mini_mote)  // LH2 mini mote Radio App
 #define DB_LH2_UPDATE_DELAY_US    (100000U)        ///< 100ms delay between each LH2 data refresh
 #define DB_ADVERTISEMENT_DELAY_US (500000U)        ///< 500ms delay between each advertizement packet sending

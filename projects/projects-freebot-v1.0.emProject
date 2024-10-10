@@ -3,7 +3,7 @@
   <project Name="03app_freebot">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_timer(bsp);00drv_dotbot_hdlc(drv);00drv_dotbot_protocol(drv);00bsp_radio(bsp);00bsp_pwm(bsp)"
+      project_dependencies="00bsp_timer(bsp);00drv_dotbot_hdlc(drv);00drv_dotbot_protocol(drv);00bsp_radio(bsp);00bsp_pwm(bsp);00drv_tdma_client(drv)"
       project_directory="03app_freebot"
       project_type="Executable" />
     <folder Name="Device Files">
