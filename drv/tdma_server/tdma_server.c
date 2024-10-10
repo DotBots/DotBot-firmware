@@ -89,7 +89,7 @@ static const uint8_t ble_mode_to_byte_time[] = {
 
 static void tdma_server_callback(uint8_t *packet, uint8_t length);
 
-///< TDMA timer Interrupts
+/// TDMA timer Interrupts
 static void timer_tdma_interrupt(void);
 
 /**
