@@ -25,6 +25,8 @@
 #define DEFAULT_NETWORK_ADDRESS 0x12345678UL  ///< Default network address
 #endif
 
+#define DB_RADIO_PAYLOAD_MAX_LENGTH UINT8_MAX
+
 /// BLE modes supported by the radio
 typedef enum {
     DB_RADIO_BLE_1MBit,

@@ -3,7 +3,7 @@
   <project Name="03app_nrf5340_net">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_radio(bsp);00bsp_rng(bsp)"
+      project_dependencies="00bsp_radio(bsp);00bsp_rng(bsp);00drv_tdma_client(drv);00drv_tdma_server(drv);"
       project_directory="03app_nrf5340_net"
       project_type="Executable" />
     <folder Name="Device Files">

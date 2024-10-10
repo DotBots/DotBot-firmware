@@ -57,6 +57,8 @@ _examples/01drv_n25q128
 _examples/01drv_pid
 _examples/01drv_rgbled
 _examples/01drv_rgbled_pwm
+_examples/01drv_tdma_client
+_examples/01drv_tdma_server
 _examples/01drv_uzlib
 ```
 

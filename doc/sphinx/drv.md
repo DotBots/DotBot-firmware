@@ -26,6 +26,8 @@ _api/drv_pid
 _api/drv_protocol
 _api/drv_rgbled
 _api/drv_rgbled_pwm
+_api/drv_tdma_client
+_api/drv_tdma_server
 _api/drv_upgate
 _api/drv_uzlib
 ```

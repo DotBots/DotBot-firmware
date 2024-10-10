@@ -21,6 +21,8 @@
 #include "radio.h"
 #include "timer_hf.h"
 #include "uart.h"
+// Include DRV headers
+#include "tdma_client.h"
 
 //=========================== defines ==========================================
 
@@ -29,6 +31,7 @@
 #define TIMEOUT_CHECK_DELAY_US     (1000 * 500UL)  ///< 500 ms delay between packet received timeout checks
 
 #define XGO_RADIO_BUFFER_MAX_BYTES (255U)
+#define XGO_RADIO_FREQ             (8)  //< Set the frequency to 2408 MHz
 #define XGO_UART_BAUDRATE          (115200U)
 #define XGO_UART_MAX_BYTES         (64U)
 
@@ -269,9 +272,7 @@ static void _radio_callback(uint8_t *pkt, uint8_t len) {
 
 int main(void) {
     db_protocol_init();
-    db_radio_init(&_radio_callback, DB_RADIO_BLE_1MBit);
-    db_radio_set_frequency(8);
-    db_radio_rx();
+    db_tdma_client_init(&_radio_callback, DB_RADIO_BLE_1MBit, XGO_RADIO_FREQ, XGO);
 
     // Retrieve the device id once at startup
     _xgo_vars.device_id = db_device_id();
@@ -291,8 +292,7 @@ int main(void) {
 
         if (_xgo_vars.advertize) {
             db_protocol_header_to_buffer(_xgo_vars.radio_buffer, DB_BROADCAST_ADDRESS, XGO, DB_PROTOCOL_ADVERTISEMENT);
-            db_radio_disable();
-            db_radio_tx(_xgo_vars.radio_buffer, sizeof(protocol_header_t));
+            db_tdma_client_tx(_xgo_vars.radio_buffer, sizeof(protocol_header_t));
             _xgo_vars.advertize = false;
         }
 

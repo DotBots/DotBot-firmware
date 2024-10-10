@@ -23,7 +23,6 @@
 #define NRF_RADIO NRF_RADIO_NS
 #endif
 
-#define PAYLOAD_MAX_LENGTH UINT8_MAX
 #if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
 #define RADIO_INTERRUPT_PRIORITY 2
 #else
@@ -43,9 +42,9 @@
 #define RADIO_STATE_BUSY 0x04
 
 typedef struct __attribute__((packed)) {
-    uint8_t header;                       ///< PDU header (depends on the type of PDU - advertising physical channel or Data physical channel)
-    uint8_t length;                       ///< Length of the payload + MIC (if any)
-    uint8_t payload[PAYLOAD_MAX_LENGTH];  ///< Payload + MIC (if any)
+    uint8_t header;                                ///< PDU header (depends on the type of PDU - advertising physical channel or Data physical channel)
+    uint8_t length;                                ///< Length of the payload + MIC (if any)
+    uint8_t payload[DB_RADIO_PAYLOAD_MAX_LENGTH];  ///< Payload + MIC (if any)
 } ble_radio_pdu_t;
 
 typedef struct {
@@ -116,7 +115,7 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
                            (RADIO_PCNF0_PLEN_8bit << RADIO_PCNF0_PLEN_Pos);              // PREAMBLE length is 1 byte in BLE 1Mbit/s and 2Mbit/s
 
         NRF_RADIO->PCNF1 = (4UL << RADIO_PCNF1_BALEN_Pos) |  // The base address is 4 Bytes long
-                           (PAYLOAD_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos) |
+                           (DB_RADIO_PAYLOAD_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos) |
                            (0 << RADIO_PCNF1_STATLEN_Pos) |
                            (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |    // Make the on air packet be little endian (this enables some useful features)
                            (RADIO_PCNF1_WHITEEN_Enabled << RADIO_PCNF1_WHITEEN_Pos);  // Enable data whitening feature.
@@ -139,7 +138,7 @@ void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
                            (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |
                            (3 << RADIO_PCNF1_BALEN_Pos) |
                            (0 << RADIO_PCNF1_STATLEN_Pos) |
-                           (PAYLOAD_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos);
+                           (DB_RADIO_PAYLOAD_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos);
     }
 
     // Configuring the on-air radio address.
