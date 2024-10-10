@@ -52,6 +52,7 @@ static const gpio_t  _r_led_pin = { .port = DB_RGB_LED_PWM_RED_PORT, .pin = DB_R
 
 //=========================== prototypes =======================================
 
+static void _advertise(void);
 static void _turn_off_led(void);
 static void radio_callback(uint8_t *pkt, uint8_t len);
 

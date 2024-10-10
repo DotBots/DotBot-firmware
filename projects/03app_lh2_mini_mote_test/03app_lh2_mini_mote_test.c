@@ -68,6 +68,7 @@ static const gpio_t  _b_led_pin = { .port = DB_RGB_LED_PWM_BLUE_PORT, .pin = DB_
 //=========================== prototypes =======================================
 
 static void _previous_led_color(void);
+static void _advertise(void);
 static void radio_callback(uint8_t *pkt, uint8_t len);
 static void _imu_to_rgb(void);
 static void _set_rgb_led(void);
