@@ -22,7 +22,7 @@
 
 //=========================== defines ==========================================
 
-///< TDMA internal registrarion state
+/// TDMA internal registrarion state
 typedef enum {
     DB_TDMA_CLIENT_UNREGISTERED,  ///< the DotBot is not registered with the gateway
     DB_TDMA_CLIENT_REGISTERED,    ///< the DotBot registered with the gateway
