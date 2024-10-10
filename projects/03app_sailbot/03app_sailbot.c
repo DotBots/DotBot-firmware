@@ -348,7 +348,6 @@ static void _send_data(const nmea_gprmc_t *data, uint16_t heading, uint16_t wind
     size_t length = header_size + heading_size + latitude_size + longitude_size + wind_angle_size + rudder_angle_size + sail_trim_size;
 
     db_tdma_client_tx(_sailbot_vars.radio_buffer, length);
-    
 }
 
 static int8_t map_error_to_rudder_angle(float error) {
