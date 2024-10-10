@@ -30,17 +30,19 @@
 
 //=========================== defines ==========================================
 
-#define TIMER_DEV              (0)
-#define DB_RADIO_FREQ          (28)             //< Set the frequency to 2408 MHz
-#define RADIO_APP              (LH2_mini_mote)  // LH2 mini mote Radio App
-#define DB_LH2_UPDATE_DELAY_US (100000U)        ///< 100ms delay between each LH2 data refresh
-#define DB_BUFFER_MAX_BYTES    (255U)           ///< Max bytes in UART receive buffer
+#define TIMER_DEV                 (0)
+#define DB_RADIO_FREQ             (8)             //< Set the frequency to 2408 MHz
+#define RADIO_APP                 (LH2_mini_mote)  // LH2 mini mote Radio App
+#define DB_LH2_UPDATE_DELAY_US    (100000U)        ///< 100ms delay between each LH2 data refresh
+#define DB_ADVERTISEMENT_DELAY_US (500000U)        ///< 500ms delay between each advertizement packet sending
+#define DB_BUFFER_MAX_BYTES       (255U)           ///< Max bytes in UART receive buffer
 
 typedef struct {
     uint32_t ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
     db_lh2_t lh2;                                ///< LH2 device descriptor
     uint8_t  radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
     uint64_t device_id;                          ///< Device ID of the LH2 mini mote
+    bool     advertise;                          ///< Whether an advertize packet should be sent
 } dotbot_vars_t;
 
 //=========================== variables ========================================
@@ -61,6 +63,7 @@ static void radio_callback(uint8_t *pkt, uint8_t len);
 int main(void) {
     db_board_init();
     db_protocol_init();
+    _dotbot_vars.advertise = false;
     db_tdma_client_init(&radio_callback, DB_RADIO_BLE_1MBit, DB_RADIO_FREQ, RADIO_APP);
 
     // Retrieve the device id once at startup
@@ -68,6 +71,7 @@ int main(void) {
 
     // Setup up timer interrupts
     db_timer_hf_init(TIMER_DEV);
+    db_timer_hf_set_periodic_us(TIMER_DEV, 1, DB_ADVERTISEMENT_DELAY_US, &_advertise);
     db_lh2_init(&_dotbot_vars.lh2, &db_lh2_d, &db_lh2_e);
     db_lh2_start();
 
@@ -106,10 +110,21 @@ int main(void) {
                 }
             }
         }
+
+        if (_dotbot_vars.advertise) {
+            db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_ADVERTISEMENT);
+            size_t length = sizeof(protocol_header_t);
+            db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
+            _dotbot_vars.advertise = false;
+        }
     }
 }
 
 //=========================== private functions ================================
+
+static void _advertise(void) {
+    _dotbot_vars.advertise = true;
+}
 
 static void _turn_off_led(void) {
     db_gpio_set(&_r_led_pin);

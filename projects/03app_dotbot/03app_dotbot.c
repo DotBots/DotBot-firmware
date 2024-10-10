@@ -334,10 +334,10 @@ static void _timeout_check(void) {
     }
 }
 
-static void _update_lh2(void) {
-    _dotbot_vars.update_lh2 = true;
-}
-
 static void _advertise(void) {
     _dotbot_vars.advertize = true;
+}
+
+static void _update_lh2(void) {
+    _dotbot_vars.update_lh2 = true;
 }
