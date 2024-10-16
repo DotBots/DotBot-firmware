@@ -46,13 +46,13 @@ void db_qdec_init(qdec_t qdec, const qdec_conf_t *conf, qdec_cb_t callback, void
  *
  * @param[in]   qdec            Index of the QDEC peripheral to read
  */
-int16_t db_qdec_read(qdec_t qdec);
+int32_t db_qdec_read(qdec_t qdec);
 
 /**
  * @brief   Read and clear the QDEC accumulator
  *
  * @param[in]   qdec            Index of the QDEC peripheral to read and reset
  */
-int16_t db_qdec_read_and_clear(qdec_t qdec);
+int32_t db_qdec_read_and_clear(qdec_t qdec);
 
 #endif

@@ -57,20 +57,20 @@ int main(void) {
     db_qdec_init(QDEC_RIGHT, &qdec_right, _callback, (void *)&_qdec_vars.right_overflow);
 
     db_timer_init(TIMER_DEV);
+    printf("ACC left: %i\n", db_qdec_read_and_clear(QDEC_LEFT));
+    printf("ACC right: %i\n", db_qdec_read_and_clear(QDEC_RIGHT));
 
     while (1) {
-        if (!_qdec_vars.left_overflow) {
-            printf("ACC left: %i\n", db_qdec_read(QDEC_LEFT));
-        } else {
-            printf("ACC left (overflow): %i\n", db_qdec_read_and_clear(QDEC_LEFT));
+        if (_qdec_vars.left_overflow) {
+            puts("ACC left overflow");
             _qdec_vars.left_overflow = false;
         }
-        if (!_qdec_vars.right_overflow) {
-            printf("ACC right: %i\n", db_qdec_read(QDEC_RIGHT));
-        } else {
-            printf("ACC right (overflow): %i\n", db_qdec_read_and_clear(QDEC_RIGHT));
+        if (_qdec_vars.right_overflow) {
+            puts("ACC right overflow");
             _qdec_vars.right_overflow = false;
         }
+        printf("ACC left: %i\n", db_qdec_read(QDEC_LEFT));
+        printf("ACC right: %i\n", db_qdec_read(QDEC_RIGHT));
         db_timer_delay_s(TIMER_DEV, 1);
     }
 }

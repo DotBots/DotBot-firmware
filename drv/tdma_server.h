@@ -25,10 +25,10 @@
 #define TDMA_SERVER_MAX_CLIENTS             100    ///< Max number of clients that can register with this server
 #define TDMA_SERVER_TIME_SLOT_DURATION_US   2500   ///< default timeslot for a tdma slot in microseconds
 #define TDMA_SERVER_MAX_GATEWAY_TX_DELAY_US 20000  ///< Max amount of microseconds that can elapse between gateway transmissions
+/// Total amount of slots available in the tdma table, adds extra slots to MAX_CLIENTS to accomodate the gateway slots
 #define TDMA_SERVER_MAX_TABLE_SLOTS \
     TDMA_SERVER_MAX_CLIENTS +       \
-        TDMA_SERVER_MAX_CLIENTS / (TDMA_SERVER_MAX_GATEWAY_TX_DELAY / TDMA_SERVER_TIME_SLOT_DURATION - 1) + 1  ///< Total amount of slots available in the tdma table, adds extra slots to MAX_CLIENTS
-                                                                                                               //   to accomodate the gateway slots
+        TDMA_SERVER_MAX_CLIENTS / (TDMA_SERVER_MAX_GATEWAY_TX_DELAY / TDMA_SERVER_TIME_SLOT_DURATION - 1) + 1
 
 //=========================== variables ========================================
 
