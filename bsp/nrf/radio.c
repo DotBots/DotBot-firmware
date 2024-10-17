@@ -5,8 +5,9 @@
  * @brief  nRF52833-specific definition of the "radio" bsp module.
  *
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
+ * @author Diego Badillo-San-Juan <diego.badillo-san-juan@inria.fr>
  *
- * @copyright Inria, 2022
+ * @copyright Inria, 2022-2024
  */
 #include <nrf.h>
 #include <stdint.h>

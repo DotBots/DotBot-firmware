@@ -6,13 +6,15 @@
  * @ingroup     bsp
  * @brief       Control the radio peripheral
  *
- * This radio driver supports BLE 1MBit, 2MBit, Long Range 125KBit and Long Range 500KBit.
+ * This radio driver supports BLE 1Mbit, 2Mbit, Long Range 125Kbit, Long Range 500Kbit
+ * and IEEE 802.15.4 250Kbit
  *
  * @{
  * @file
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- * @copyright Inria, 2022-2023
+ * @author Diego Badillo-San-Juan <diego.badillo-san-juan@inria.fr>
+ * @copyright Inria, 2022-2024
  * @}
  */
 
