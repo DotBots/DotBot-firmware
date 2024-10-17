@@ -144,7 +144,7 @@ static uint32_t _get_random_delay_us(void);
 
 //=========================== public ===========================================
 
-void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq, application_type_t default_radio_app) {
+void db_tdma_client_init(tdma_client_cb_t callback, db_radio_mode_t radio_mode, uint8_t radio_freq, application_type_t default_radio_app) {
 
     // Initialize high frequency clock
     db_timer_hf_init(TDMA_CLIENT_TIMER_HF);

@@ -33,7 +33,8 @@ typedef enum {
     DB_RADIO_BLE_2MBit,
     DB_RADIO_BLE_LR125Kbit,
     DB_RADIO_BLE_LR500Kbit,
-} db_radio_ble_mode_t;
+    DB_RADIO_IEEE802154_250Kbit
+} db_radio_mode_t;
 
 typedef void (*radio_cb_t)(uint8_t *packet, uint8_t length);  ///< Function pointer to the callback function called on packet receive
 
@@ -49,7 +50,7 @@ typedef void (*radio_cb_t)(uint8_t *packet, uint8_t length);  ///< Function poin
  * @param[in] mode     BLE mode used by the radio (1MBit, 2MBit, LR125KBit, LR500Kbit)
  *
  */
-void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode);
+void db_radio_init(radio_cb_t callback, db_radio_mode_t mode);
 
 /**
  * @brief Set the tx-rx frequency of the radio, by the following formula

@@ -201,7 +201,7 @@ static void _server_register_new_client(tdma_server_table_t *tdma_table, uint64_
 
 //=========================== public ===========================================
 
-void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq, application_type_t default_radio_app) {
+void db_tdma_server_init(tdma_server_cb_t callback, db_radio_mode_t radio_mode, uint8_t radio_freq, application_type_t default_radio_app) {
 
     // Initialize high frequency clock
     db_timer_hf_init(TDMA_SERVER_TIMER_HF);

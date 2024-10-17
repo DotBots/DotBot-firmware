@@ -60,7 +60,7 @@ typedef void (*tdma_client_cb_t)(uint8_t *packet, uint8_t length);  ///< Functio
  * @param[in] radio_freq           Frequency of the radio [0, 100]
  * @param[in] default_radio_app    Which application to use for registration and sync messages
  */
-void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq, application_type_t default_radio_app);
+void db_tdma_client_init(tdma_client_cb_t callback, db_radio_mode_t radio_mode, uint8_t radio_freq, application_type_t default_radio_app);
 
 /**
  * @brief Updates the RX and TX timings for the TDMA table

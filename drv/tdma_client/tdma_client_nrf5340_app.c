@@ -27,7 +27,7 @@ static tdma_client_cb_t _tdma_client_callback = NULL;
 
 //=========================== public ===========================================
 
-void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq, application_type_t default_radio_app) {
+void db_tdma_client_init(tdma_client_cb_t callback, db_radio_mode_t radio_mode, uint8_t radio_freq, application_type_t default_radio_app) {
 
     // APPMUTEX (address at 0x41030000 => periph ID is 48)
     db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_APPMUTEX);

@@ -75,7 +75,7 @@ static void _radio_enable(void);
 
 //=========================== public ===========================================
 
-void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
+void db_radio_init(radio_cb_t callback, db_radio_mode_t mode) {
 
 #if defined(NRF5340_XXAA)
     // On nrf53 configure constant latency mode for better performances
