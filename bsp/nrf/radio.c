@@ -48,11 +48,22 @@ typedef struct __attribute__((packed)) {
     uint8_t payload[DB_BLE_PAYLOAD_MAX_LENGTH];  ///< Payload + MIC (if any)
 } ble_radio_pdu_t;
 
+typedef struct __attribute__((packed)) {
+    uint8_t length;                                     ///< Length of the payload
+    uint8_t payload[DB_IEEE802154_PAYLOAD_MAX_LENGTH];  ///< Payload (max 127B, or 125B if CRC is included)
+} ieee802154_radio_pdu_t;
+
 typedef struct {
     ble_radio_pdu_t pdu;       ///< Variable that stores the radio PDU (protocol data unit) that arrives and the radio packets that are about to be sent.
     radio_cb_t      callback;  ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
     uint8_t         state;     ///< Internal state of the radio
-} radio_vars_t;
+} ble_radio_vars_t;
+
+typedef struct {
+    ieee802154_radio_pdu_t pdu;       ///< Variable that stores the radio PDU (protocol data unit) that arrives and the radio packets that are about to be sent.
+    radio_cb_t             callback;  ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
+    uint8_t                state;     ///< Internal state of the radio
+} ieee802154_radio_vars_t;
 
 //=========================== variables ========================================
 
@@ -68,7 +79,8 @@ static const uint8_t _chan_to_freq[40] = {
     2, 26, 80  // Advertising channels
 };
 
-static radio_vars_t radio_vars = { 0 };
+static ble_radio_vars_t        radio_vars            = { 0 };
+static ieee802154_radio_vars_t ieee802154_radio_vars = { 0 };
 
 //========================== prototypes ========================================
 
