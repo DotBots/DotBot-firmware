@@ -50,7 +50,7 @@ typedef void (*radio_cb_t)(uint8_t *packet, uint8_t length);  ///< Function poin
  * with the db_radio_set_frequency function.
  *
  * @param[in] callback pointer to a function that will be called each time a packet is received.
- * @param[in] mode     BLE mode used by the radio (1MBit, 2MBit, LR125KBit, LR500Kbit)
+ * @param[in] mode     Mode used by the radio BLE (1MBit, 2MBit, LR125KBit, LR500Kbit) or IEEE 802.15.4 (250Kbit)
  *
  */
 void db_radio_init(radio_cb_t callback, db_radio_mode_t mode);
