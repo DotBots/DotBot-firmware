@@ -100,7 +100,7 @@ int main(void) {
                     db_radio_set_frequency(ipc_shared_data.radio.frequency);
                     break;
                 case DB_IPC_RADIO_CHAN_REQ:
-                    db_radio_set_channel(ipc_shared_data.radio.channel);
+                    db_radio_set_channel(ipc_shared_data.radio.channel, 0);
                     break;
                 case DB_IPC_RADIO_ADDR_REQ:
                     db_radio_set_network_address(ipc_shared_data.radio.addr);

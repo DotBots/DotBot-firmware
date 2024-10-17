@@ -72,7 +72,7 @@ void db_radio_set_frequency(uint8_t freq) {
     db_ipc_network_call(DB_IPC_RADIO_FREQ_REQ);
 }
 
-void db_radio_set_channel(uint8_t channel) {
+void db_radio_set_channel(uint8_t channel, db_radio_mode_t mode) {
     ipc_shared_data.radio.channel = channel;
     db_ipc_network_call(DB_IPC_RADIO_CHAN_REQ);
 }

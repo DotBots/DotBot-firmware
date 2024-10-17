@@ -67,11 +67,16 @@ void db_radio_set_frequency(uint8_t freq);
 /**
  * @brief Set the physical channel used of the radio
  *
+ * BLE channels in the interval [0-39]
  * Channels 37, 38 and 39 are BLE advertising channels.
  *
- * @param[in] channel BLE channel used by the radio [0-39]
+ * IEEE 802.15.4 in the interval [11 - 26]
+ * Channels range from 2405 MHz (channel 11) to 2480 MHz (channel 26)
+ *
+ * @param[in] channel   Channel used by the radio
+ * @param[in] mode      Mode used by the radio BLE (1MBit, 2MBit, LR125KBit, LR500Kbit) or IEEE 802.15.4 (250Kbit)
  */
-void db_radio_set_channel(uint8_t channel);
+void db_radio_set_channel(uint8_t channel, db_radio_mode_t mode);
 
 /**
  * @brief Set the network address used to send/receive radio packets

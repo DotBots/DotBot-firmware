@@ -67,7 +67,7 @@ typedef struct {
 
 //=========================== variables ========================================
 
-static const uint8_t _chan_to_freq[40] = {
+static const uint8_t _ble_chan_to_freq[40] = {
     4, 6, 8,
     10, 12, 14, 16, 18,
     20, 22, 24, 28,
@@ -191,12 +191,19 @@ void db_radio_init(radio_cb_t callback, db_radio_mode_t mode) {
 }
 
 void db_radio_set_frequency(uint8_t freq) {
-
     NRF_RADIO->FREQUENCY = freq << RADIO_FREQUENCY_FREQUENCY_Pos;
 }
 
-void db_radio_set_channel(uint8_t channel) {
-    NRF_RADIO->FREQUENCY = (_chan_to_freq[channel] << RADIO_FREQUENCY_FREQUENCY_Pos);
+void db_radio_set_channel(uint8_t channel, db_radio_mode_t mode) {
+    uint8_t freq;
+    if (mode == DB_RADIO_IEEE802154_250Kbit) {
+        assert(channel >= 11 && channel <= 26 && "Channel value must be between 11 and 26 for IEEE 802.15.4");
+        freq = 5 * (channel - 10);  // Frequency offset in MHz from 2400 MHz
+    } else {
+        freq = _ble_chan_to_freq[channel];
+    }
+
+    db_radio_set_frequency(freq);
 }
 
 void db_radio_set_network_address(uint32_t addr) {
