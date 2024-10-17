@@ -27,7 +27,8 @@
 #define DEFAULT_NETWORK_ADDRESS 0x12345678UL  ///< Default network address
 #endif
 
-#define DB_RADIO_PAYLOAD_MAX_LENGTH UINT8_MAX
+#define DB_BLE_PAYLOAD_MAX_LENGTH        UINT8_MAX
+#define DB_IEEE802154_PAYLOAD_MAX_LENGTH (125UL)  ///< Total usable payload for IEEE 802.15.4 is 125 octets (PSDU) when CRC is activated
 
 /// BLE modes supported by the radio
 typedef enum {
