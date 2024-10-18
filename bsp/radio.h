@@ -14,6 +14,7 @@
  * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
  * @author Diego Badillo-San-Juan <diego.badillo-san-juan@inria.fr>
+ *
  * @copyright Inria, 2022-2024
  * @}
  */
@@ -30,7 +31,7 @@
 #define DB_BLE_PAYLOAD_MAX_LENGTH        UINT8_MAX
 #define DB_IEEE802154_PAYLOAD_MAX_LENGTH (125UL)  ///< Total usable payload for IEEE 802.15.4 is 125 octets (PSDU) when CRC is activated
 
-/// BLE modes supported by the radio
+/// Modes supported by the radio
 typedef enum {
     DB_RADIO_BLE_1MBit,
     DB_RADIO_BLE_2MBit,
