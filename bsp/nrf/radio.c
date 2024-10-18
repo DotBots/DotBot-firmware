@@ -46,24 +46,13 @@ typedef struct __attribute__((packed)) {
     uint8_t header;                              ///< PDU header (depends on the type of PDU - advertising physical channel or Data physical channel)
     uint8_t length;                              ///< Length of the payload + MIC (if any)
     uint8_t payload[DB_BLE_PAYLOAD_MAX_LENGTH];  ///< Payload + MIC (if any)
-} ble_radio_pdu_t;
-
-typedef struct __attribute__((packed)) {
-    uint8_t length;                                     ///< Length of the payload
-    uint8_t payload[DB_IEEE802154_PAYLOAD_MAX_LENGTH];  ///< Payload (max 127B, or 125B if CRC is included)
-} ieee802154_radio_pdu_t;
+} radio_pdu_t;
 
 typedef struct {
-    ble_radio_pdu_t pdu;       ///< Variable that stores the radio PDU (protocol data unit) that arrives and the radio packets that are about to be sent.
-    radio_cb_t      callback;  ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
-    uint8_t         state;     ///< Internal state of the radio
-} ble_radio_vars_t;
-
-typedef struct {
-    ieee802154_radio_pdu_t pdu;       ///< Variable that stores the radio PDU (protocol data unit) that arrives and the radio packets that are about to be sent.
-    radio_cb_t             callback;  ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
-    uint8_t                state;     ///< Internal state of the radio
-} ieee802154_radio_vars_t;
+    radio_pdu_t pdu;       ///< Variable that stores the radio PDU (protocol data unit) that arrives and the radio packets that are about to be sent.
+    radio_cb_t  callback;  ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
+    uint8_t     state;     ///< Internal state of the radio
+} radio_vars_t;
 
 //=========================== variables ========================================
 
@@ -79,8 +68,7 @@ static const uint8_t _ble_chan_to_freq[40] = {
     2, 26, 80  // Advertising channels
 };
 
-static ble_radio_vars_t        radio_vars            = { 0 };
-static ieee802154_radio_vars_t ieee802154_radio_vars = { 0 };
+static radio_vars_t radio_vars = { 0 };
 
 //========================== prototypes ========================================
 
@@ -203,7 +191,11 @@ void db_radio_init(radio_cb_t callback, db_radio_mode_t mode) {
     }
 
     // Configure pointer to PDU for EasyDMA
-    NRF_RADIO->PACKETPTR = (uint32_t)&radio_vars.pdu;
+    if (mode == DB_RADIO_IEEE802154_250Kbit) {
+        NRF_RADIO->PACKETPTR = (uint32_t)((uint8_t *)&radio_vars.pdu + 1);  // Skip header for IEEE 802.15.4
+    } else {
+        NRF_RADIO->PACKETPTR = (uint32_t)&radio_vars.pdu;
+    }
 
     // Assign the callback function that will be called when a radio packet is received.
     radio_vars.callback = callback;
