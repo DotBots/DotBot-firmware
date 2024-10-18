@@ -301,11 +301,7 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="01bsp_radio_txrx.c">
-        <configuration Name="Common" build_exclude_from_build="Yes" />
-      </file>
-      <file file_name="conf.h" />
-      <file file_name="main.c" />
+      <file file_name="01bsp_radio_txrx.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="$(DeviceCommonVectorsFile)" />

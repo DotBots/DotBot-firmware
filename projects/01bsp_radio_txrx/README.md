@@ -1,3 +1,6 @@
-# Radio TX-RX board support package usage example
+# Radio TX-RX Board Support Package Usage Example
 
-Pressing any of the buttons in the DK will toggle ON and OFF the P0.31 pin on the DotBot's expansion header (P0.31).
+Loading this app onto two nRF boards enables communication using BLE or IEEE 802.15.4.
+Each board sends 125B packets every DELAY_MS milliseconds.
+
+You can test this code by loading the firmware onto two nRF DKs, with one DK in Debug mode to print the received packets.
