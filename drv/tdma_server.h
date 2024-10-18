@@ -65,7 +65,7 @@ typedef void (*tdma_server_cb_t)(uint8_t *packet, uint8_t length);  ///< Functio
  * @param[in] default_radio_app    Which application to use for registration and sync messages
  *
  */
-void db_tdma_server_init(tdma_server_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq, application_type_t default_radio_app);
+void db_tdma_server_init(tdma_server_cb_t callback, db_radio_mode_t radio_mode, uint8_t radio_freq, application_type_t default_radio_app);
 
 /**
  * @brief Get general info about the current TDMA table

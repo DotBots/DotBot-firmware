@@ -68,13 +68,13 @@ typedef struct __attribute__((packed)) {
 } ipc_radio_pdu_t;
 
 typedef struct __attribute__((packed)) {
-    db_radio_ble_mode_t mode;       ///< db_radio_init function parameters
-    uint8_t             frequency;  ///< db_set_frequency function parameters
-    uint8_t             channel;    ///< db_set_channel function parameters
-    uint32_t            addr;       ///< db_set_network_address function parameters
-    ipc_radio_pdu_t     tx_pdu;     ///< PDU to send
-    ipc_radio_pdu_t     rx_pdu;     ///< Received pdu
-    int8_t              rssi;       ///< RSSI value
+    db_radio_mode_t mode;       ///< db_radio_init function parameters
+    uint8_t         frequency;  ///< db_set_frequency function parameters
+    uint8_t         channel;    ///< db_set_channel function parameters
+    uint32_t        addr;       ///< db_set_network_address function parameters
+    ipc_radio_pdu_t tx_pdu;     ///< PDU to send
+    ipc_radio_pdu_t rx_pdu;     ///< Received pdu
+    int8_t          rssi;       ///< RSSI value
 } ipc_radio_data_t;
 
 typedef struct {
@@ -82,7 +82,7 @@ typedef struct {
 } ipc_rng_data_t;
 
 typedef struct __attribute__((packed)) {
-    db_radio_ble_mode_t          mode;                ///< db_radio_init function parameters
+    db_radio_mode_t              mode;                ///< db_radio_init function parameters
     application_type_t           default_radio_app;   ///< db_radio_init function parameters
     uint8_t                      frequency;           ///< db_set_frequency function parameters
     tdma_client_table_t          table_set;           ///< db_tdma_client_set_table function parameter
@@ -93,16 +93,16 @@ typedef struct __attribute__((packed)) {
 } ipc_tdma_client_data_t;
 
 typedef struct __attribute__((packed)) {
-    db_radio_ble_mode_t mode;               ///< db_radio_init function parameters
-    application_type_t  default_radio_app;  ///< db_radio_init function parameters
-    uint8_t             frequency;          ///< db_set_frequency function parameters
-    uint32_t            frame_duration_us;  ///< db_tdma_server_get_table_info function parameter
-    uint16_t            num_clients;        ///< db_tdma_server_get_table_info function parameter
-    uint16_t            table_index;        ///< db_tdma_server_get_table_info function parameter
-    uint8_t             client_id;          ///< db_tdma_server_get_client_info function parameter
-    tdma_table_entry_t  client_entry;       ///< db_tdma_server_get_client_info function parameter
-    ipc_radio_pdu_t     tx_pdu;             ///< PDU to send
-    ipc_radio_pdu_t     rx_pdu;             ///< Received pdu
+    db_radio_mode_t    mode;               ///< db_radio_init function parameters
+    application_type_t default_radio_app;  ///< db_radio_init function parameters
+    uint8_t            frequency;          ///< db_set_frequency function parameters
+    uint32_t           frame_duration_us;  ///< db_tdma_server_get_table_info function parameter
+    uint16_t           num_clients;        ///< db_tdma_server_get_table_info function parameter
+    uint16_t           table_index;        ///< db_tdma_server_get_table_info function parameter
+    uint8_t            client_id;          ///< db_tdma_server_get_client_info function parameter
+    tdma_table_entry_t client_entry;       ///< db_tdma_server_get_client_info function parameter
+    ipc_radio_pdu_t    tx_pdu;             ///< PDU to send
+    ipc_radio_pdu_t    rx_pdu;             ///< Received pdu
 } ipc_tdma_server_data_t;
 
 typedef struct __attribute__((packed)) {

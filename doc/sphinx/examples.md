@@ -24,6 +24,7 @@ _examples/01bsp_qdec
 _examples/01bsp_qspi
 _examples/01bsp_radio_txrx_lr
 _examples/01bsp_radio_txrx
+_examples/01bsp_radio_txrx_ieee802154
 _examples/01bsp_rng
 _examples/01bsp_rpm
 _examples/01bsp_saadc
