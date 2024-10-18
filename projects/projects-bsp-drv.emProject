@@ -315,7 +315,7 @@
       <file file_name="$(SeggerThumbStartup)" />
     </folder>
   </project>
-<project Name="01bsp_radio_txrx_ieee802154">
+  <project Name="01bsp_radio_txrx_ieee802154">
     <configuration
       Name="Common"
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_radio(bsp);00bsp_gpio(bsp);00bsp_timer_hf(bsp)"
@@ -344,7 +344,7 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="01bsp_radio_txrx_ieee802154.c">
+      <file file_name="../01bsp_radio_txrx/01bsp_radio_txrx.c">
         <configuration Name="Common" build_exclude_from_build="Yes" />
       </file>
       <file file_name="conf.h" />
