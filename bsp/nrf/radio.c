@@ -191,9 +191,16 @@ void db_radio_init(radio_cb_t callback, db_radio_mode_t mode) {
                           (RADIO_MODECNF0_DTX_Center << RADIO_MODECNF0_DTX_Pos);
 
     // CRC Config
-    NRF_RADIO->CRCCNF  = (RADIO_CRCCNF_LEN_Three << RADIO_CRCCNF_LEN_Pos) | (RADIO_CRCCNF_SKIPADDR_Skip << RADIO_CRCCNF_SKIPADDR_Pos);  // Checksum uses 3 bytes, and is enabled.
-    NRF_RADIO->CRCINIT = 0xFFFFUL;                                                                                                      // initial value
-    NRF_RADIO->CRCPOLY = 0x00065b;                                                                                                      // CRC poly: x^16 + x^12^x^5 + 1
+    if (mode == DB_RADIO_IEEE802154_250Kbit) {
+        NRF_RADIO->CRCCNF = (RADIO_CRCCNF_LEN_Two << RADIO_CRCCNF_LEN_Pos) |                  // 16-bit (2 bytes) CRC
+                            (RADIO_CRCCNF_SKIPADDR_Ieee802154 << RADIO_CRCCNF_SKIPADDR_Pos);  // CRCCNF = 0x202 for IEEE 802.15.4
+        NRF_RADIO->CRCINIT = 0;                                                               // The start value used by IEEE 802.15.4 is zero
+        NRF_RADIO->CRCPOLY = 0x11021;
+    } else {
+        NRF_RADIO->CRCCNF  = (RADIO_CRCCNF_LEN_Three << RADIO_CRCCNF_LEN_Pos) | (RADIO_CRCCNF_SKIPADDR_Skip << RADIO_CRCCNF_SKIPADDR_Pos);  // Checksum uses 3 bytes, and is enabled.
+        NRF_RADIO->CRCINIT = 0xFFFFUL;                                                                                                      // initial value
+        NRF_RADIO->CRCPOLY = 0x00065b;                                                                                                      // CRC poly: x^16 + x^12^x^5 + 1
+    }
 
     // Configure pointer to PDU for EasyDMA
     NRF_RADIO->PACKETPTR = (uint32_t)&radio_vars.pdu;
