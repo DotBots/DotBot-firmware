@@ -73,7 +73,7 @@ int main(void) {
     //=========================== Configure Radio ===============================
 
     db_radio_init(&radio_callback, DOTBOT_GW_RADIO_MODE);
-    db_radio_set_channel(CHANNEL, DOTBOT_GW_RADIO_MODE);
+    db_radio_set_channel(CHANNEL);
     db_radio_rx();
 
     while (1) {

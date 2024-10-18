@@ -50,9 +50,10 @@ typedef struct __attribute__((packed)) {
 } radio_pdu_t;
 
 typedef struct {
-    radio_pdu_t pdu;       ///< Variable that stores the radio PDU (protocol data unit) that arrives and the radio packets that are about to be sent.
-    radio_cb_t  callback;  ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
-    uint8_t     state;     ///< Internal state of the radio
+    radio_pdu_t     pdu;       ///< Variable that stores the radio PDU (protocol data unit) that arrives and the radio packets that are about to be sent.
+    radio_cb_t      callback;  ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
+    uint8_t         state;     ///< Internal state of the radio
+    db_radio_mode_t mode;      ///< PHY protocol used by the radio (BLE, IEEE 802.15.4)
 } radio_vars_t;
 
 //=========================== variables ========================================
@@ -78,6 +79,9 @@ static void _radio_enable(void);
 //=========================== public ===========================================
 
 void db_radio_init(radio_cb_t callback, db_radio_mode_t mode) {
+
+    // Set global radio mode
+    radio_vars.mode = mode;
 
 #if defined(NRF5340_XXAA)
     // On nrf53 configure constant latency mode for better performances
@@ -216,9 +220,9 @@ void db_radio_set_frequency(uint8_t freq) {
     NRF_RADIO->FREQUENCY = freq << RADIO_FREQUENCY_FREQUENCY_Pos;
 }
 
-void db_radio_set_channel(uint8_t channel, db_radio_mode_t mode) {
+void db_radio_set_channel(uint8_t channel) {
     uint8_t freq;
-    if (mode == DB_RADIO_IEEE802154_250Kbit) {
+    if (radio_vars.mode == DB_RADIO_IEEE802154_250Kbit) {
         assert(channel >= 11 && channel <= 26 && "Channel value must be between 11 and 26 for IEEE 802.15.4");
         freq = 5 * (channel - 10);  // Frequency offset in MHz from 2400 MHz
     } else {
