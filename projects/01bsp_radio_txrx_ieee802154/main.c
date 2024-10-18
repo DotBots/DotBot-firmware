@@ -13,4 +13,4 @@
 
 #include "conf.h"
 
-#include "01bsp_radio_txrx_ieee802154.c"
+#include "../01bsp_radio_txrx/01bsp_radio_txrx.c"
