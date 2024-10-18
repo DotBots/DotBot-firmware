@@ -80,9 +80,6 @@ static void _radio_enable(void);
 
 void db_radio_init(radio_cb_t callback, db_radio_mode_t mode) {
 
-    // Set global radio mode
-    radio_vars.mode = mode;
-
 #if defined(NRF5340_XXAA)
     // On nrf53 configure constant latency mode for better performances
     NRF_POWER_NS->TASKS_CONSTLAT = 1;
@@ -102,6 +99,7 @@ void db_radio_init(radio_cb_t callback, db_radio_mode_t mode) {
 #endif
 
     // General configuration of the radio.
+    radio_vars.mode = mode;  // Set global radio mode
     if (mode == DB_RADIO_IEEE802154_250Kbit) {
         // Configure IEEE 802.15.4 mode
         NRF_RADIO->MODE = (RADIO_MODE_MODE_Ieee802154_250Kbit << RADIO_MODE_MODE_Pos);
