@@ -45,7 +45,7 @@
 typedef struct __attribute__((packed)) {
     uint8_t header;                              ///< PDU header (depends on the type of PDU - advertising physical channel or Data physical channel)
     uint8_t length;                              ///< Length of the payload + MIC (if any)
-    uint8_t payload[DB_BLE_PAYLOAD_MAX_LENGTH];  ///< Payload + MIC (if any)
+    uint8_t payload[DB_BLE_PAYLOAD_MAX_LENGTH];  ///< Payload + MIC (if any) (DB_BLE_PAYLOAD_MAX_LENGTH > DB_IEEE802154_PAYLOAD_MAX_LENGTH)
 } radio_pdu_t;
 
 typedef struct {
@@ -125,11 +125,11 @@ void db_radio_init(radio_cb_t callback, db_radio_mode_t mode) {
                            (RADIO_PCNF0_CRCINC_Exclude << RADIO_PCNF0_CRCINC_Pos);
 
         // // Packet configuration register 1
-        NRF_RADIO->PCNF1 = (PAYLOAD_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos) |           // Max payload of 127 bytes
-                           (0 << RADIO_PCNF1_STATLEN_Pos) |                           // 0 bytes added to payload length
-                           (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |    // Little-endian format
-                           (0 << RADIO_PCNF1_BALEN_Pos) |                             // Base address length
-                           (RADIO_PCNF1_WHITEEN_Enabled << RADIO_PCNF1_WHITEEN_Pos);  // Enable whitening
+        NRF_RADIO->PCNF1 = (DB_IEEE802154_PAYLOAD_MAX_LENGTH << RADIO_PCNF1_MAXLEN_Pos) |  // Max payload of 127 bytes
+                           (0 << RADIO_PCNF1_STATLEN_Pos) |                                // 0 bytes added to payload length
+                           (RADIO_PCNF1_ENDIAN_Little << RADIO_PCNF1_ENDIAN_Pos) |         // Little-endian format
+                           (0 << RADIO_PCNF1_BALEN_Pos) |                                  // Base address length
+                           (RADIO_PCNF1_WHITEEN_Enabled << RADIO_PCNF1_WHITEEN_Pos);       // Enable whitening
 
     } else if (mode == DB_RADIO_BLE_1MBit || mode == DB_RADIO_BLE_2MBit) {
         NRF_RADIO->TXPOWER = (RADIO_TXPOWER_TXPOWER_0dBm << RADIO_TXPOWER_TXPOWER_Pos);  // 0dBm == 1mW Power output
