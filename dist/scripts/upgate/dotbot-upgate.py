@@ -224,8 +224,8 @@ class DotBotUpgate:
                 self.serial.write(hdlc_encode(buffer))
                 send_time = time.time()
                 tries += 1
-            time.sleep(0.0001)
-            send = time.time() - send_time > 0.1
+            time.sleep(0.01)
+            send = time.time() - send_time > 5
         else:
             raise Exception(f"packet #{chunk.index} ({packet.token.hex()}) not acknowledged. Aborting.")
 
