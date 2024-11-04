@@ -27,7 +27,7 @@ static radio_cb_t _radio_callback = NULL;
 
 //=========================== public ===========================================
 
-void db_radio_init(radio_cb_t callback, db_radio_ble_mode_t mode) {
+void db_radio_init(radio_cb_t callback, db_radio_mode_t mode) {
     db_hfclk_init();
 
     // Disable all DCDC regulators (use LDO)

@@ -41,11 +41,11 @@
 #define TDMA_CLIENT_TIMER_HF               2
 
 typedef struct {
-    uint8_t  buffer[TDMA_CLIENT_RING_BUFFER_SIZE][DB_RADIO_PAYLOAD_MAX_LENGTH];  ///< arrays of radio messages waiting to be sent
-    uint32_t packet_length[TDMA_CLIENT_RING_BUFFER_SIZE];                        ///< arrays of the length of the packets in the buffer
-    uint8_t  write_index;                                                        ///< Index for next write
-    uint8_t  read_index;                                                         ///< Index for next read
-    uint8_t  count;                                                              ///< Number of arrays in buffer
+    uint8_t  buffer[TDMA_CLIENT_RING_BUFFER_SIZE][DB_BLE_PAYLOAD_MAX_LENGTH];  ///< arrays of radio messages waiting to be sent
+    uint32_t packet_length[TDMA_CLIENT_RING_BUFFER_SIZE];                      ///< arrays of the length of the packets in the buffer
+    uint8_t  write_index;                                                      ///< Index for next write
+    uint8_t  read_index;                                                       ///< Index for next read
+    uint8_t  count;                                                            ///< Number of arrays in buffer
 } tdma_client_ring_buffer_t;
 
 typedef struct {
@@ -104,7 +104,7 @@ static void _message_rb_init(tdma_client_ring_buffer_t *rb);
  * @param[in]   data        pointer to the data array to save in the ring buffer
  * @param[in]   packet_length   length of the packet to send trough the radio
  */
-static void _message_rb_add(tdma_client_ring_buffer_t *rb, uint8_t data[DB_RADIO_PAYLOAD_MAX_LENGTH], uint8_t packet_length);
+static void _message_rb_add(tdma_client_ring_buffer_t *rb, uint8_t data[DB_BLE_PAYLOAD_MAX_LENGTH], uint8_t packet_length);
 
 /**
  * @brief retrieve the oldest element from the ring buffer for tdma captures
@@ -113,7 +113,7 @@ static void _message_rb_add(tdma_client_ring_buffer_t *rb, uint8_t data[DB_RADIO
  * @param[out]   data        pointer to the array where the ring buffer data will be saved
  * @param[out]   packet_length   length of the packet to send trough the radio
  */
-static bool _message_rb_get(tdma_client_ring_buffer_t *rb, uint8_t data[DB_RADIO_PAYLOAD_MAX_LENGTH], uint8_t *packet_length);
+static bool _message_rb_get(tdma_client_ring_buffer_t *rb, uint8_t data[DB_BLE_PAYLOAD_MAX_LENGTH], uint8_t *packet_length);
 
 /**
  * @brief Sends all the queued messages that can be sent in during the TX timeslot
@@ -144,7 +144,7 @@ static uint32_t _get_random_delay_us(void);
 
 //=========================== public ===========================================
 
-void db_tdma_client_init(tdma_client_cb_t callback, db_radio_ble_mode_t radio_mode, uint8_t radio_freq, application_type_t default_radio_app) {
+void db_tdma_client_init(tdma_client_cb_t callback, db_radio_mode_t radio_mode, uint8_t radio_freq, application_type_t default_radio_app) {
 
     // Initialize high frequency clock
     db_timer_hf_init(TDMA_CLIENT_TIMER_HF);
@@ -245,9 +245,9 @@ static void _message_rb_init(tdma_client_ring_buffer_t *rb) {
     rb->count       = 0;
 }
 
-static void _message_rb_add(tdma_client_ring_buffer_t *rb, uint8_t data[DB_RADIO_PAYLOAD_MAX_LENGTH], uint8_t packet_length) {
+static void _message_rb_add(tdma_client_ring_buffer_t *rb, uint8_t data[DB_BLE_PAYLOAD_MAX_LENGTH], uint8_t packet_length) {
 
-    memcpy(rb->buffer[rb->write_index], data, DB_RADIO_PAYLOAD_MAX_LENGTH);
+    memcpy(rb->buffer[rb->write_index], data, DB_BLE_PAYLOAD_MAX_LENGTH);
     rb->packet_length[rb->write_index] = packet_length;
     rb->write_index                    = (rb->write_index + 1) % TDMA_CLIENT_RING_BUFFER_SIZE;
 
@@ -259,13 +259,13 @@ static void _message_rb_add(tdma_client_ring_buffer_t *rb, uint8_t data[DB_RADIO
     }
 }
 
-static bool _message_rb_get(tdma_client_ring_buffer_t *rb, uint8_t data[DB_RADIO_PAYLOAD_MAX_LENGTH], uint8_t *packet_length) {
+static bool _message_rb_get(tdma_client_ring_buffer_t *rb, uint8_t data[DB_BLE_PAYLOAD_MAX_LENGTH], uint8_t *packet_length) {
     if (rb->count == 0) {
         // Buffer is empty
         return false;
     }
 
-    memcpy(data, rb->buffer[rb->read_index], DB_RADIO_PAYLOAD_MAX_LENGTH);
+    memcpy(data, rb->buffer[rb->read_index], DB_BLE_PAYLOAD_MAX_LENGTH);
     *packet_length = rb->packet_length[rb->read_index];
     rb->read_index = (rb->read_index + 1) % TDMA_CLIENT_RING_BUFFER_SIZE;
     rb->count--;
@@ -276,10 +276,10 @@ static bool _message_rb_get(tdma_client_ring_buffer_t *rb, uint8_t data[DB_RADIO
 static bool _message_rb_tx_queue(uint16_t max_tx_duration_us) {
 
     // initialize variables
-    uint32_t start_tx_slot                       = db_timer_hf_now(TDMA_CLIENT_TIMER_HF);
-    uint8_t  length                              = 0;
-    uint8_t  packet[DB_RADIO_PAYLOAD_MAX_LENGTH] = { 0 };
-    bool     packet_sent_flag                    = false;  ///< flag to keep track if a packet get sent during this function call
+    uint32_t start_tx_slot                     = db_timer_hf_now(TDMA_CLIENT_TIMER_HF);
+    uint8_t  length                            = 0;
+    uint8_t  packet[DB_BLE_PAYLOAD_MAX_LENGTH] = { 0 };
+    bool     packet_sent_flag                  = false;  ///< flag to keep track if a packet get sent during this function call
 
     // Return if there is nothing to send
     if (_tdma_client_vars.tx_ring_buffer.count == 0) {
