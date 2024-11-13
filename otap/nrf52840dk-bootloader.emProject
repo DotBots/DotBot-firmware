@@ -45,7 +45,7 @@
     link_time_optimization="No"
     linker_memory_map_file="$(ProjectDir)/nRF52840_xxAA_MemoryMap.xml"
     linker_section_placement_file="$(ProjectDir)/../../nRF/Setup/nRF52840_xxAA_flash_placement.xml"
-    macros="BuildTarget=dotbot-v1;Lh2ImplementationFile=lh2.c;PwmImplementationFile=pwm.c;RadioImplementationFile=radio.c;RngImplementationFile=rng.c;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52840_xxAA;Placement=Flash"
+    macros="BuildTarget=dotbot-v1;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52840_xxAA;Placement=Flash"
     project_type="Executable"
     target_reset_script="Reset();"
     target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />

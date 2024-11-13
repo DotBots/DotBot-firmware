@@ -50,7 +50,7 @@
     linker_printf_fp_enabled="Float"
     linker_printf_width_precision_supported="Yes"
     linker_section_placement_file="$(ProjectDir)/../../nRF/Setup/nRF5340_xxAA_Application_flash_placement.xml"
-    macros="BuildTarget=nrf5340dk-app;Lh2ImplementationFile=lh2.c;PwmImplementationFile=pwm.c;RadioImplementationFile=radio_nrf5340_app.c;RngImplementationFile=rng_nrf5340_app.c;TdmaClientImplementationFile=tdma_client_nrf5340_app.c;TdmaServerImplementationFile=tdma_server_nrf5340_app.c;DeviceFamily=nRF;Target=nRF5340_xxAA_Application;Placement=Flash"
+    macros="BuildTarget=nrf5340dk-app;DeviceFamily=nRF;Target=nRF5340_xxAA_Application;Placement=Flash"
     project_type="Executable"
     target_reset_script="Reset();"
     target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
