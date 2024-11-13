@@ -26,6 +26,8 @@
 
 static tdma_server_cb_t _tdma_server_callback = NULL;
 
+extern volatile __attribute__((section(".shared_data"))) ipc_shared_data_t ipc_shared_data;
+
 //=========================== public ===========================================
 
 void db_tdma_server_init(tdma_server_cb_t callback, db_radio_mode_t radio_mode, uint8_t radio_freq, application_type_t default_radio_app) {

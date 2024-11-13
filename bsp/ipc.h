@@ -116,11 +116,6 @@ typedef struct __attribute__((packed)) {
 } ipc_shared_data_t;
 
 /**
- * @brief Variable in RAM containing the shared data structure
- */
-volatile __attribute__((section(".ARM.__at_0x20004000"))) ipc_shared_data_t ipc_shared_data;
-
-/**
  * @brief Lock the mutex, blocks until the mutex is locked
  */
 static inline void mutex_lock(void) {
@@ -134,36 +129,8 @@ static inline void mutex_unlock(void) {
     NRF_MUTEX->MUTEX[0] = 0;
 }
 
-#if defined(NRF_APPLICATION)
-static inline void db_ipc_network_call(ipc_req_t req) {
-    if (req != DB_IPC_REQ_NONE) {
-        ipc_shared_data.req                    = req;
-        NRF_IPC_S->TASKS_SEND[DB_IPC_CHAN_REQ] = 1;
-    }
-    while (!ipc_shared_data.net_ack) {
-        if (ipc_shared_data.req == DB_IPC_REQ_NONE) {
-            // Something went wrong and, the net-core deleted the request without fulfilling it.
-            // Re-send it
-            ipc_shared_data.req                    = req;
-            NRF_IPC_S->TASKS_SEND[DB_IPC_CHAN_REQ] = 1;
-        }
-    }
-    ipc_shared_data.net_ack = false;
-};
+void db_ipc_network_call(ipc_req_t req);
 
-static inline void release_network_core(void) {
-    // Do nothing if network core is already started and ready
-    if (!NRF_RESET_S->NETWORK.FORCEOFF && ipc_shared_data.net_ready) {
-        return;
-    } else if (!NRF_RESET_S->NETWORK.FORCEOFF) {
-        ipc_shared_data.net_ready = false;
-    }
-
-    NRF_POWER_S->TASKS_CONSTLAT   = 1;
-    NRF_RESET_S->NETWORK.FORCEOFF = (RESET_NETWORK_FORCEOFF_FORCEOFF_Release << RESET_NETWORK_FORCEOFF_FORCEOFF_Pos);
-
-    while (!ipc_shared_data.net_ready) {}
-}
-#endif
+void release_network_core(void);
 
 #endif

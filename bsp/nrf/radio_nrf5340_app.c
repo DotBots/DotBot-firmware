@@ -25,6 +25,8 @@
 
 static radio_cb_t _radio_callback = NULL;
 
+extern volatile __attribute__((section(".shared_data"))) ipc_shared_data_t ipc_shared_data;
+
 //=========================== public ===========================================
 
 void db_radio_init(radio_cb_t callback, db_radio_mode_t mode) {

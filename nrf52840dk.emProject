@@ -6,21 +6,23 @@
     Name="Common"
     Placement="Flash"
     arm_architecture="v7EM"
+    arm_assembler_variant="SEGGER"
     arm_compiler_variant="SEGGER"
     arm_core_type="Cortex-M4"
     arm_endian="Little"
     arm_fp_abi="Hard"
     arm_fpu_type="FPv4-SP-D16"
+    arm_keep_assembly="Yes"
     arm_library_optimization="Small"
-    arm_linker_heap_size="1024"
-    arm_linker_process_stack_size="0"
-    arm_linker_stack_size="2048"
-    arm_linker_variant="SEGGER"
+    arm_linker_heap_size="2048"
+    arm_linker_stack_size="1024"
+    arm_linker_variant="GNU"
     arm_rtl_variant="SEGGER"
     arm_simulator_memory_simulation_parameter="ROM1;0x00000000;0x00080000;RAM1;0x00800000;0x00020000;RAM2;0x20000000;0x00020000;"
     arm_target_debug_interface_type="ADIv5"
     arm_target_device_name="nRF52840_xxAA"
     arm_target_interface_type="SWD"
+    arm_use_builtins="Yes"
     build_intermediate_directory="Output/$(BuildTarget)/$(Configuration)/Obj/$(ProjectName)"
     build_output_directory="Output/$(BuildTarget)/$(Configuration)/Exe"
     build_output_file_name="$(OutDir)/$(ProjectName)-$(BuildTarget)$(EXE)"
@@ -28,19 +30,27 @@
     c_additional_options="-Wno-missing-field-initializers"
     c_preprocessor_definitions="ARM_MATH_CM4;NRF52840_XXAA;__nRF_FAMILY;CONFIG_NFCT_PINS_AS_GPIOS;FLASH_PLACEMENT=1;BOARD_NRF52840DK;OTA_USE_CRYPTO;USE_CRYPTOCELL;UPGATE_USE_CRYPTO"
     c_user_include_directories="$(SolutionDir)/../bsp;$(SolutionDir)/../crypto;$(SolutionDir)/../drv;$(PackagesDir)/nRF/Device/Include;$(PackagesDir)/CMSIS_5/CMSIS/Core/Include"
+    clang_machine_outliner="Yes"
+    compiler_color_diagnostics="Yes"
     debug_register_definition_file="$(PackagesDir)/nRF/XML/nrf52840_Registers.xml"
     debug_stack_pointer_start="__stack_end__"
     debug_start_from_entry_point_symbol="No"
     debug_target_connection="J-Link"
+    gcc_c_language_standard="gnu17"
+    gcc_cplusplus_language_standard="gnu++20"
     gcc_enable_all_warnings="Yes"
-    gcc_entry_point="Reset_Handler"
-    link_linker_script_file="$(ProjectDir)/../../nRF/nrf52840/nRF_Flash_Variant4.icf"
+    gcc_entry_point="reset_handler"
+    gcc_strip_symbols="No"
+    link_dedupe_code="Yes"
     link_time_optimization="No"
-    linker_memory_map_file="$(PackagesDir)/nRF/XML/nRF52840_xxAA_MemoryMap.xml"
+    linker_additional_options="--gc-sections"
+    linker_memory_map_file="$(ProjectDir)/../../nRF/Setup/nRF52840_xxAA_MemoryMap.xml"
     linker_output_format="hex"
     linker_printf_fmt_level="int"
     linker_printf_fp_enabled="Float"
-    macros="BuildTarget=nrf52840dk;Lh2ImplementationFile=lh2.c;PwmImplementationFile=pwm.c;RadioImplementationFile=radio.c;RngImplementationFile=rng.c;TdmaClientImplementationFile=tdma_client.c;TdmaServerImplementationFile=tdma_server.c;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52840.h;DeviceCommonHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceSystemFile=$(PackagesDir)/nRF/Device/Source/system_nrf52.c;DeviceVectorsFile=$(PackagesDir)/nRF/Source/nrf52840_Vectors.s;DeviceCommonVectorsFile=$(PackagesDir)/nRF/Source/nRF_Startup.s;SeggerThumbStartup=$(ProjectDir)/../../../nRF/SEGGER_THUMB_Startup.s;DeviceLinkerScript=$(ProjectDir)/../../../nRF/nrf5340/nRF_Flash_Variant4.icf;DeviceMemoryMap=$(PackagesDir)/nRF/XML/nRF52840_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52840_xxAA;Placement=Flash"
+    linker_printf_width_precision_supported="Yes"
+    linker_section_placement_file="$(ProjectDir)/../../nRF/Setup/nRF52840_xxAA_flash_placement.xml"
+    macros="BuildTarget=nrf52840dk;Lh2ImplementationFile=lh2.c;PwmImplementationFile=pwm.c;RadioImplementationFile=radio.c;RngImplementationFile=rng.c;TdmaClientImplementationFile=tdma_client.c;TdmaServerImplementationFile=tdma_server.c;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF;Target=nRF52840_xxAA;Placement=Flash"
     project_type="Executable"
     target_reset_script="Reset();"
     target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
@@ -59,14 +69,14 @@
   <import file_name="bsp/bsp.emProject" />
   <import file_name="crypto/crypto.emProject" />
   <import file_name="drv/drv.emProject" />
+  <import file_name="otap/otap.emProject" />
   <import file_name="projects/projects-bsp-drv.emProject" />
   <import file_name="projects/projects-crypto.emProject" />
   <import file_name="projects/projects-dotbot.emProject" />
   <import file_name="projects/projects-gateway.emProject" />
+  <import file_name="projects/projects-lh2-minimote.emProject" />
   <import file_name="projects/projects-log-dump.emProject" />
   <import file_name="projects/projects-sailbot.emProject" />
-  <import file_name="otap/otap.emProject" />
-  <import file_name="upgate/upgate.emProject" />
   <import file_name="projects/projects-xgo.emProject" />
-  <import file_name="projects/projects-lh2-minimote.emProject" />
+  <import file_name="upgate/upgate.emProject" />
 </solution>
