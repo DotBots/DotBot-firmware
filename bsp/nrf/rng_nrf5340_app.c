@@ -23,14 +23,6 @@ extern volatile __attribute__((section(".shared_data"))) ipc_shared_data_t ipc_s
 //=========================== public ===========================================
 
 void db_rng_init(void) {
-    // RNG (address at 0x41009000 => periph ID is 9)
-    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_RNG);
-
-    // IPC (address at 0x41012000 => periph ID is 18)
-    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_IPC);
-
-    // APPMUTEX (address at 0x41030000 => periph ID is 48)
-    db_tz_enable_network_periph(NRF_NETWORK_PERIPH_ID_APPMUTEX);
 
     // Define RAMREGION 2 (0x20004000 to 0x20005FFF, e.g 8KiB) as non secure. It's used to share data between cores
     db_configure_ram_non_secure(2, 1);
