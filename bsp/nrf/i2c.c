@@ -43,16 +43,20 @@ void _wait_for_transfer(i2c_t i2c);
 static const i2c_conf_t _devs[TWIM_COUNT] = {
 #if defined(NRF5340_XXAA)
     {
-#if defined(NRF_APPLICATION)
-        .p = NRF_TWIM0_S,
-#else
+#if defined(NRF_NETWORK) || defined(NRF_TRUSTZONE_NONSECURE)
         .p = NRF_TWIM0_NS,
+#else
+        .p = NRF_TWIM0_S,
 #endif
         .irq = SERIAL0_IRQn,
     },
 #if defined(NRF_APPLICATION)
     {
-        .p   = NRF_TWIM1_S,
+#if defined(NRF_TRUSTZONE_NONSECURE)
+        .p = NRF_TWIM1_NS,
+#else
+        .p = NRF_TWIM1_S,
+#endif
         .irq = SERIAL1_IRQn,
     },
 #endif

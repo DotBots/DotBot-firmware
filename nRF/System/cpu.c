@@ -160,7 +160,7 @@ void reset_handler(void) {
         func++();
     }
 
-#ifndef __NO_SYSTEM_INIT
+#if !defined(__NO_SYSTEM_INIT) && !defined(NRF_TRUSTZONE_NONSECURE)
     system_init();
 #endif
 

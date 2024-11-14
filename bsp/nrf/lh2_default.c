@@ -54,11 +54,17 @@
 #endif
 
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
-#define NRF_SPIM         NRF_SPIM4_S
+#if defined(NRF_TRUSTZONE_NONSECURE)
+#define NRF_SPIM   NRF_SPIM4_NS
+#define NRF_GPIOTE NRF_GPIOTE0_NS
+#define NRF_PPI    NRF_DPPIC_NS
+#else
+#define NRF_SPIM   NRF_SPIM4_S
+#define NRF_GPIOTE NRF_GPIOTE0_S
+#define NRF_PPI    NRF_DPPIC_S
+#endif
 #define SPIM_IRQ         SPIM4_IRQn
 #define SPIM_IRQ_HANDLER SPIM4_IRQHandler
-#define NRF_GPIOTE       NRF_GPIOTE0_S
-#define NRF_PPI          NRF_DPPIC_S
 #else
 #define NRF_SPIM         NRF_SPIM3
 #define SPIM_IRQ         SPIM3_IRQn

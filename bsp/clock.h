@@ -14,10 +14,10 @@
  */
 
 #if defined(NRF5340_XXAA)
-#if defined(NRF_APPLICATION)
-#define NRF_CLOCK NRF_CLOCK_S
-#else
+#if defined(NRF_NETWORK) || defined(NRF_TRUSTZONE_NONSECURE)
 #define NRF_CLOCK NRF_CLOCK_NS
+#else
+#define NRF_CLOCK NRF_CLOCK_S
 #endif
 #endif
 

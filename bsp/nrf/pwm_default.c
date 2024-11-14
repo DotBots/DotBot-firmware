@@ -33,11 +33,18 @@ typedef struct {
 //=========================== variables ========================================
 
 static NRF_PWM_Type *_pwm_devs[PWM_COUNT] = {
-#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+#if defined(NRF5340_XXAA)
+#if defined(NRF_TRUSTZONE_NONSECURE)
+    NRF_PWM0_NS,
+    NRF_PWM1_NS,
+    NRF_PWM2_NS,
+    NRF_PWM3_NS,
+#else
     NRF_PWM0_S,
     NRF_PWM1_S,
     NRF_PWM2_S,
     NRF_PWM3_S,
+#endif
 #else
     NRF_PWM0,
     NRF_PWM1,
