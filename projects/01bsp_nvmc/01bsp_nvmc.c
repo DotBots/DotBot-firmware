@@ -38,7 +38,7 @@ int main(void) {
     db_nvmc_write(address, message, strlen(message));
     db_nvmc_read(buffer, address, strlen(message));
 
-    printf("Message written: %s\n", (char *)buffer, strlen(message));
+    printf("Message written: %s (len: %d)\n", (char *)buffer, strlen(message));
 
     while (1) {
         __NOP();

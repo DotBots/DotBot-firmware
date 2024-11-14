@@ -81,7 +81,7 @@ int main(void) {
                 db_log_dotbot_data_t data;
                 db_nvmc_read(&data, _read_address, sizeof(db_log_dotbot_data_t));
                 printf(
-                    "%lu;%i;%lu;%lu;%u;%lu;%i;%i;%i;%i;%i\n",
+                    "%u;%i;%u;%u;%u;%u;%i;%i;%i;%i;%i\n",
                     timestamp, data.direction, data.pos_x, data.pos_y,
                     data.next_waypoint_idx, data.distance_to_target,
                     data.angle_to_target, data.error_angle, data.angular_speed,
