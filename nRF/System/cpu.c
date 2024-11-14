@@ -147,7 +147,7 @@ void reset_handler(void) {
     _zero(&__bss_start__, &__bss_end__);
     _zero(&__tbss_start__, &__tbss_end__);
 
-#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+#if defined(NRF5340_XXAA) && defined(NRF_APPLICATION) && !defined(USE_SWARMIT)
     extern uint32_t __shared_data_start__;
     extern uint32_t __shared_data_end__;
     _zero(&__shared_data_start__, &__shared_data_end__);
