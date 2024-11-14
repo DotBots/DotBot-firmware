@@ -16,7 +16,7 @@
 
 //=========================== defines ==========================================
 
-#define TIMER_DEV           (1)
+#define TIMER_DEV           (0)
 #define DB_BUFFER_MAX_BYTES (255U)       ///< Max bytes in UART receive buffer
 #define DB_UART_BAUDRATE    (1000000UL)  ///< UART baudrate used by the gateway
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
