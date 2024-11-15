@@ -4,29 +4,19 @@
       "url": "https://dotbot-firmware.readthedocs.io/en/latest/"
     },
     {
-      "name": "REL-1.17 (stable)",
+      "name": "REL-1.18 (stable)",
       "version": "stable",
       "url": "https://dotbot-firmware.readthedocs.io/en/stable/",
       "preferred": true
     },
     {
+      "name": "REL-1.17",
+      "version": "REL-1.17",
+      "url": "https://dotbot-firmware.readthedocs.io/en/rel-1.17/"
+    },
+    {
       "name": "REL-1.16",
       "version": "REL-1.16",
       "url": "https://dotbot-firmware.readthedocs.io/en/rel-1.16/"
-    },
-    {
-      "name": "REL-1.15",
-      "version": "REL-1.15",
-      "url": "https://dotbot-firmware.readthedocs.io/en/rel-1.15/"
-    },
-    {
-      "name": "REL-1.14",
-      "version": "REL-1.14",
-      "url": "https://dotbot-firmware.readthedocs.io/en/rel-1.14/"
-    },
-    {
-      "name": "REL-1.13.1",
-      "version": "REL-1.13.1",
-      "url": "https://dotbot-firmware.readthedocs.io/en/rel-1.13.1/"
     }
 ]
