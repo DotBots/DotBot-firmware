@@ -140,7 +140,8 @@ endif
 OTAP_APPS ?= $(shell find otap/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/otap// | sort)
 OTAP_APPS := $(filter-out bootloader,$(OTAP_APPS))
 
-SRCS ?= $(shell find bsp/ -name "*.[c|h]") $(shell find crypto/ -name "*.[c|h]") $(shell find drv/ -name "*.[c|h]") $(shell find projects/ -name "*.[c|h]") $(shell find otap/ -name "*.[c|h]")
+DIRS ?= bsp crypto drv projects otap swarmit upgate
+SRCS ?= $(foreach dir,$(DIRS),$(shell find $(dir) -name "*.[c|h]"))
 CLANG_FORMAT ?= clang-format
 CLANG_FORMAT_TYPE ?= file
 

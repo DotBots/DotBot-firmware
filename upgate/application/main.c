@@ -24,14 +24,14 @@
 
 //=========================== defines ==========================================
 
-#define DB_UART_BAUDRATE  (1000000U)
+#define DB_UART_BAUDRATE (1000000U)
 
 typedef struct {
-    bool                  packet_received;
-    uint8_t               message_buffer[UINT8_MAX];
-    uint8_t               uart_byte;
-    bool                  uart_byte_received;
-    uint8_t               hdlc_buffer[UINT8_MAX];
+    bool    packet_received;
+    uint8_t message_buffer[UINT8_MAX];
+    uint8_t uart_byte;
+    bool    uart_byte_received;
+    uint8_t hdlc_buffer[UINT8_MAX];
 } application_vars_t;
 
 //=========================== variables ========================================
@@ -82,9 +82,9 @@ static void _upgate_reply(const uint8_t *message, size_t len) {
 }
 
 static const db_upgate_conf_t _upgate_config = {
-    .reply = _upgate_reply,
+    .reply        = _upgate_reply,
     .n25q128_conf = &_n25q128_conf,
-    .prog = &_prog_pin,
+    .prog         = &_prog_pin,
 };
 
 //================================ main ========================================
