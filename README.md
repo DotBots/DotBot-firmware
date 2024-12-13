@@ -11,7 +11,7 @@ hardware.
 
 <div align="center">
 
-![DotBot demo](doc/sphinx/_static/images/03app_dotbot.gif)
+[![DotBot pitch video](https://img.youtube.com/vi/fcSoofHngbo/0.jpg)](https://www.youtube.com/watch?v=fcSoofHngbo?autoplay=1&mute=1)
 
 </div>
 
