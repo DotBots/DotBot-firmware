@@ -120,6 +120,24 @@
     <file file_name="tdma_server.c" />
     <file file_name="../tdma_server.h" />
   </project>
+  <project Name="00drv_tsch">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_radio(bsp);00bsp_timer_hf(bsp);00drv_dotbot_protocol(drv);00drv_scheduler(drv)"
+      project_directory="tsch"
+      project_type="Library" />
+    <file file_name="tsch.c" />
+    <file file_name="../tsch.h" />
+  </project>
+  <project Name="00drv_scheduler">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_radio(bsp);00bsp_timer_hf(bsp);00drv_dotbot_protocol(drv)"
+      project_directory="scheduler"
+      project_type="Library" />
+    <file file_name="scheduler.c" />
+    <file file_name="../scheduler.h" />
+  </project>
   <project Name="00drv_move">
     <configuration
       Name="Common"
