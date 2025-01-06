@@ -36,11 +36,16 @@
 //=========================== variables ========================================
 
 typedef enum {
+    NODE_TYPE_GATEWAY = 'G',
+    NODE_TYPE_DOTBOT = 'D',
+} node_type_t;
+
+typedef enum {
     SLOT_TYPE_BEACON = 'B',
     SLOT_TYPE_SHARED_UPLINK = 'S',
     SLOT_TYPE_DOWNLINK = 'D',
     SLOT_TYPE_UPLINK = 'U',
-} slot_type_t;
+} slot_type_t; // FIXME: slot_type or cell_type?
 
 typedef struct {
     slot_type_t type;
@@ -67,7 +72,7 @@ typedef struct {
  *
  * @param[in] schedule         Schedule to be used.
  */
-void db_scheduler_init(schedule_t *schedule);
+void db_scheduler_init(node_type_t node_type, schedule_t *application_schedule);
 
 /**
  * @brief Advances the schedule by one cell/slot.

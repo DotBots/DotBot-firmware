@@ -41,6 +41,7 @@ typedef struct {
     tsch_radio_action_t radio_action;
     uint8_t frequency;
     uint32_t duration_us;
+    char slot_type; // FIXME: only for debugging, remove before merge
 } tsch_radio_event_t;
 
 //=========================== prototypes ==========================================

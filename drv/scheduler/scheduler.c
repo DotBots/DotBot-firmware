@@ -44,15 +44,15 @@ static const uint8_t _ble_chan_to_freq[40] = {
 };
 
 typedef struct {
+    node_type_t node_type; // whether the node is a gateway or a dotbot
+
     // counters and indexes
     uint64_t asn; // absolute slot number
-
     schedule_t *active_schedule_ptr; // pointer to the currently active schedule
     uint32_t slotframe_counter; // used to cycle beacon frequencies through slotframes (when listening for beacons at uplink slots)
-    size_t current_beacon_cell_index;
 
     // static data
-    schedule_t available_schedules[N_SCHEDULES];
+    schedule_t available_schedules[TSCH_N_SCHEDULES];
     size_t available_schedules_len;
 } schedule_vars_t;
 
@@ -60,10 +60,19 @@ static schedule_vars_t _schedule_vars = { 0 };
 
 //========================== prototypes ========================================
 
+// Compute the radio action when the node is a gateway
+void _compute_gateway_action(cell_t cell, tsch_radio_event_t *radio_event);
+
+// Compute the radio action when the node is a dotbot
+void _compute_dotbot_action(cell_t cell, tsch_radio_event_t *radio_event);
 
 //=========================== public ===========================================
 
-void db_scheduler_init(schedule_t *application_schedule) {
+void db_scheduler_init(node_type_t node_type, schedule_t *application_schedule) {
+    _schedule_vars.node_type = node_type;
+
+    if (_schedule_vars.available_schedules_len == TSCH_N_SCHEDULES) return; // FIXME: this is just to simplify debugging (allows calling init multiple times)
+
     _schedule_vars.available_schedules[_schedule_vars.available_schedules_len++] = schedule_minuscule;
     _schedule_vars.available_schedules[_schedule_vars.available_schedules_len++] = schedule_tiny;
     if (application_schedule != NULL) {
@@ -73,7 +82,7 @@ void db_scheduler_init(schedule_t *application_schedule) {
 }
 
 bool db_scheduler_set_schedule(uint8_t schedule_id) {
-    for (size_t i = 0; i < N_SCHEDULES; i++) {
+    for (size_t i = 0; i < TSCH_N_SCHEDULES; i++) {
         if (_schedule_vars.available_schedules[i].id == schedule_id) {
             _schedule_vars.active_schedule_ptr = &_schedule_vars.available_schedules[i];
             return true;
@@ -87,45 +96,22 @@ tsch_radio_event_t db_scheduler_tick(void) {
 
     // get the current cell
     size_t cell_index = _schedule_vars.asn % active_schedule.n_cells;
-    cell_t current_cell = active_schedule.cells[cell_index];
+    cell_t cell = active_schedule.cells[cell_index];
 
     tsch_radio_event_t radio_event = {
         .radio_action = TSCH_RADIO_ACTION_SLEEP,
         .duration_us = active_schedule.slot_duration_us,
-        .frequency = 0
+        .frequency = db_scheduler_get_frequency(cell.type, _schedule_vars.asn, cell.channel_offset),
+        .slot_type = cell.type, // FIXME: only for debugging, remove before merge
     };
-
-    radio_event.frequency = db_scheduler_get_frequency(current_cell.type, _schedule_vars.asn, current_cell.channel_offset);
-
-    switch (current_cell.type) {
-        case SLOT_TYPE_BEACON:
-        case SLOT_TYPE_DOWNLINK:
-            radio_event.radio_action = TSCH_RADIO_ACTION_RX;
-            break;
-        case SLOT_TYPE_SHARED_UPLINK:
-            radio_event.radio_action = TSCH_RADIO_ACTION_TX;
-            break;
-        case SLOT_TYPE_UPLINK:
-            if (current_cell.assigned_node_id != NULL) {
-                radio_event.radio_action = TSCH_RADIO_ACTION_TX;
-            }
-            break;
-        default:
-            break;
+    if (_schedule_vars.node_type == NODE_TYPE_GATEWAY) {
+        _compute_gateway_action(cell, &radio_event);
+    } else {
+        _compute_dotbot_action(cell, &radio_event);
     }
-
-// #define IS_DOTBOT
-#ifdef IS_DOTBOT
-    if (current_cell.type == SLOT_TYPE_UPLINK && current_cell.assigned_node_id == NULL) {
-        // listen for beacons using the same frequency during a whole slotframe
-        radio_event.radio_action = TSCH_RADIO_ACTION_RX;
-        size_t beacon_channel = TSCH_N_BLE_REGULAR_FREQUENCIES + (_schedule_vars.slotframe_counter % TSCH_N_BLE_ADVERTISING_FREQUENCIES);
-        radio_event.frequency = _ble_chan_to_freq[beacon_channel];
-    }
-#endif
 
     // if the slotframe wrapped, keep track of how many slotframes have passed (used to cycle beacon frequencies)
-    if (cell_index == 0) {
+    if (_schedule_vars.asn != 0 && cell_index == 0) {
         _schedule_vars.slotframe_counter++;
     }
 
@@ -138,7 +124,7 @@ tsch_radio_event_t db_scheduler_tick(void) {
 uint8_t db_scheduler_get_frequency(slot_type_t slot_type, uint64_t asn, uint8_t channel_offset) {
     if (slot_type == SLOT_TYPE_BEACON) {
         // special handling in case the cell is a beacon
-        size_t beacon_channel = TSCH_N_BLE_REGULAR_FREQUENCIES + (_schedule_vars.current_beacon_cell_index++ % TSCH_N_BLE_ADVERTISING_FREQUENCIES);
+        size_t beacon_channel = TSCH_N_BLE_REGULAR_FREQUENCIES + (asn % TSCH_N_BLE_ADVERTISING_FREQUENCIES);
         uint8_t freq = _ble_chan_to_freq[beacon_channel];
         return freq;
     } else {
@@ -150,3 +136,42 @@ uint8_t db_scheduler_get_frequency(slot_type_t slot_type, uint64_t asn, uint8_t 
 }
 
 //=========================== private ==========================================
+
+void _compute_gateway_action(cell_t cell, tsch_radio_event_t *radio_event) {
+    switch (cell.type) {
+        case SLOT_TYPE_BEACON:
+        case SLOT_TYPE_DOWNLINK:
+            radio_event->radio_action = TSCH_RADIO_ACTION_TX;
+            break;
+        case SLOT_TYPE_SHARED_UPLINK:
+        case SLOT_TYPE_UPLINK:
+            radio_event->radio_action = TSCH_RADIO_ACTION_RX;
+            break;
+    }
+}
+
+void _compute_dotbot_action(cell_t cell, tsch_radio_event_t *radio_event) {
+    switch (cell.type) {
+        case SLOT_TYPE_BEACON:
+        case SLOT_TYPE_DOWNLINK:
+            radio_event->radio_action = TSCH_RADIO_ACTION_RX;
+            break;
+        case SLOT_TYPE_SHARED_UPLINK:
+            // TODO: implement backoff algorithm
+            radio_event->radio_action = TSCH_RADIO_ACTION_TX;
+            break;
+        case SLOT_TYPE_UPLINK:
+            if (cell.assigned_node_id != NULL) { // TODO: check if the assigned node is *this* node
+                radio_event->radio_action = TSCH_RADIO_ACTION_TX;
+            } else {
+                // OPTIMIZATION: listen for beacons during unassigned uplink slot
+                // listen to the same beacon frequency for a whole slotframe
+                radio_event->radio_action = TSCH_RADIO_ACTION_RX;
+                size_t beacon_channel = TSCH_N_BLE_REGULAR_FREQUENCIES + (_schedule_vars.slotframe_counter % TSCH_N_BLE_ADVERTISING_FREQUENCIES);
+                radio_event->frequency = _ble_chan_to_freq[beacon_channel];
+            }
+            break;
+        default:
+            break;
+    }
+}

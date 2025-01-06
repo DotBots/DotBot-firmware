@@ -17,48 +17,56 @@
 #include "radio.h"
 #include "timer_hf.h"
 #include "protocol.h"
+#include "device.h"
 
 #define IS_DOTBOT
-#define TSCH_DEFAULT_SLOT_DURATION_US 1000 * 1000
+//#define TSCH_DEFAULT_SLOT_DURATION_US 1000 * 1000
+#define TSCH_DEFAULT_SLOT_DURATION_US 2024
 
 /* Very simple test schedule */
 schedule_t schedule_test = {
     .id = 10, // make sure it doesn't collide
-    .max_nodes = 0,
+    .max_nodes = 2,
     .backoff_n_min = 5,
     .backoff_n_max = 9,
     .slot_duration_us = TSCH_DEFAULT_SLOT_DURATION_US,
-    .n_cells = 3,
+    .n_cells = 5,
     .cells = {
         // Only downlink slots
         {'B', 0, NULL},
         {'S', 1, NULL},
         {'D', 2, NULL},
         {'U', 3, NULL},
-        {'U', 4, 1},
+        {'U', 4, NULL},
     }
 };
 
+extern schedule_t schedule_minuscule;
+
 int main(void) {
-    puts("Scheduler test application");
+    //schedule_t schedule = schedule_test;
+    //schedule.cells[4].assigned_node_id = db_device_id(); // assign itself to the last uplink slot
+
+    schedule_t schedule = schedule_minuscule;
 
     // initialize high frequency timer
     db_timer_hf_init(TSCH_TIMER_DEV);
 
-    db_scheduler_init(&schedule_test);
-    db_scheduler_set_schedule(32);
+    db_scheduler_init(NODE_TYPE_GATEWAY, &schedule);
+    //db_scheduler_init(NODE_TYPE_DOTBOT, &schedule);
 
-    uint8_t freq = db_scheduler_get_frequency(SLOT_TYPE_SHARED_UPLINK, 0, 0);
-    printf("Frequency: %d\n", freq);
+    size_t n_runs = 2;
+    for (size_t j = 0; j < n_runs; j++) {
+        for (size_t i = 0; i < schedule.n_cells; i++) {
+            tsch_radio_event_t event = db_scheduler_tick();
+            printf("Event %c:   %c, %d, %d\n", event.slot_type, event.radio_action, event.frequency, event.duration_us);
 
-    for (int i = 0; i < 11; i++) {
-        tsch_radio_event_t event = db_scheduler_tick();
-        printf("Event: %c, %d, %d\n", event.radio_action, event.frequency, event.duration_us);
+            // sleep for the duration of the slot
+            db_timer_hf_delay_us(TSCH_TIMER_DEV, event.duration_us);
 
-        // sleep for the duration of the slot
-        db_timer_hf_delay_us(TSCH_TIMER_DEV, event.duration_us);
-
-        //__WFE();
+            //__WFE();
+        }
+        puts(".");
     }
 
     while (1) {
