@@ -91,6 +91,28 @@ bool db_scheduler_set_schedule(uint8_t schedule_id) {
     return false;
 }
 
+bool db_scheduler_assign_next_available_uplink_cell(uint64_t node_id) {
+    for (size_t i = 0; i < _schedule_vars.active_schedule_ptr->n_cells; i++) {
+        cell_t *cell = &_schedule_vars.active_schedule_ptr->cells[i];
+        if (cell->type == SLOT_TYPE_UPLINK && cell->assigned_node_id == NULL) {
+            cell->assigned_node_id = node_id;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool db_scheduler_deassign_uplink_cell(uint64_t node_id) {
+    for (size_t i = 0; i < _schedule_vars.active_schedule_ptr->n_cells; i++) {
+        cell_t *cell = &_schedule_vars.active_schedule_ptr->cells[i];
+        if (cell->type == SLOT_TYPE_UPLINK && cell->assigned_node_id == node_id) {
+            cell->assigned_node_id = NULL;
+            return true;
+        }
+    }
+    return false;
+}
+
 tsch_radio_event_t db_scheduler_tick(void) {
     schedule_t active_schedule = *_schedule_vars.active_schedule_ptr;
 
@@ -161,7 +183,7 @@ void _compute_dotbot_action(cell_t cell, tsch_radio_event_t *radio_event) {
             radio_event->radio_action = TSCH_RADIO_ACTION_TX;
             break;
         case SLOT_TYPE_UPLINK:
-            if (cell.assigned_node_id != NULL) { // TODO: check if the assigned node is *this* node
+            if (cell.assigned_node_id == db_device_id()) {
                 radio_event->radio_action = TSCH_RADIO_ACTION_TX;
             } else {
                 // OPTIMIZATION: listen for beacons during unassigned uplink slot

@@ -93,6 +93,24 @@ tsch_radio_event_t db_scheduler_tick(void);
 bool db_scheduler_set_schedule(uint8_t schedule_id);
 
 /**
+ * @brief Assigns the next available uplink cell to a given node.
+ *
+ * @param[in] node_id         Node ID
+ *
+ * @return true if the uplink cell was successfully assigned, false otherwise (e.g., all uplink cells are already assigned)
+ */
+bool db_scheduler_assign_next_available_uplink_cell(uint64_t node_id);
+
+/**
+ * @brief Deassigns the uplink cell assigned to a given node.
+ *
+ * @param[in] node_id         Node ID
+ *
+ * @return true if the uplink cell was successfully deassigned, false otherwise
+ */
+bool db_scheduler_deassign_uplink_cell(uint64_t node_id);
+
+/**
  * @brief Computes the frequency to be used in a given slot.
  *
  * @param[in] slot_type         Type of slot
