@@ -19,28 +19,8 @@
 #include "protocol.h"
 #include "device.h"
 
-#define IS_DOTBOT
-//#define TSCH_DEFAULT_SLOT_DURATION_US 1000 * 1000
-#define TSCH_DEFAULT_SLOT_DURATION_US 2024
-
-/* Very simple test schedule */
-schedule_t schedule_test = {
-    .id = 10, // make sure it doesn't collide
-    .max_nodes = 2,
-    .backoff_n_min = 5,
-    .backoff_n_max = 9,
-    .slot_duration_us = TSCH_DEFAULT_SLOT_DURATION_US,
-    .n_cells = 5,
-    .cells = {
-        // Only downlink slots
-        {'B', 0, NULL},
-        {'S', 1, NULL},
-        {'D', 2, NULL},
-        {'U', 3, NULL},
-        {'U', 4, NULL},
-    }
-};
-
+// make some schedules available for testing
+#include "test_schedules.c"
 extern schedule_t schedule_minuscule;
 
 int main(void) {
