@@ -32,15 +32,15 @@
 typedef void (*tsch_cb_t)(uint8_t *packet, uint8_t length);  ///< Function pointer to the callback function called on packet receive
 
 typedef enum {
-    TSCH_RADIO_ACTION_TX,
-    TSCH_RADIO_ACTION_RX,
-    TSCH_RADIO_ACTION_SLEEP,
+    TSCH_RADIO_ACTION_SLEEP = 'S',
+    TSCH_RADIO_ACTION_RX = 'R',
+    TSCH_RADIO_ACTION_TX = 'T',
 } tsch_radio_action_t;
 
 typedef struct {
     tsch_radio_action_t radio_action;
     uint8_t frequency;
-    uint16_t duration_us;
+    uint32_t duration_us;
 } tsch_radio_event_t;
 
 //=========================== prototypes ==========================================

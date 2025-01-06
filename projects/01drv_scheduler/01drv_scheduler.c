@@ -19,6 +19,7 @@
 #include "protocol.h"
 
 #define IS_DOTBOT
+#define TSCH_DEFAULT_SLOT_DURATION_US 1000 * 1000
 
 /* Very simple test schedule */
 schedule_t schedule_test = {
@@ -26,13 +27,15 @@ schedule_t schedule_test = {
     .max_nodes = 0,
     .backoff_n_min = 5,
     .backoff_n_max = 9,
-    .slot_duration_us = 2024,
+    .slot_duration_us = TSCH_DEFAULT_SLOT_DURATION_US,
     .n_cells = 3,
     .cells = {
         // Only downlink slots
-        {'D', 0, NULL},
-        {'D', 1, NULL},
+        {'B', 0, NULL},
+        {'S', 1, NULL},
         {'D', 2, NULL},
+        {'U', 3, NULL},
+        {'U', 4, 1},
     }
 };
 
@@ -43,18 +46,22 @@ int main(void) {
     db_timer_hf_init(TSCH_TIMER_DEV);
 
     db_scheduler_init(&schedule_test);
-    // db_scheduler_set_schedule(5);
+    db_scheduler_set_schedule(32);
 
     uint8_t freq = db_scheduler_get_frequency(SLOT_TYPE_SHARED_UPLINK, 0, 0);
     printf("Frequency: %d\n", freq);
 
-    while (1) {
+    for (int i = 0; i < 11; i++) {
         tsch_radio_event_t event = db_scheduler_tick();
-        printf("Event: %d, %d, %d\n", event.radio_action, event.frequency, event.duration_us);
+        printf("Event: %c, %d, %d\n", event.radio_action, event.frequency, event.duration_us);
 
         // sleep for the duration of the slot
         db_timer_hf_delay_us(TSCH_TIMER_DEV, event.duration_us);
 
+        //__WFE();
+    }
+
+    while (1) {
         __WFE();
     }
 }

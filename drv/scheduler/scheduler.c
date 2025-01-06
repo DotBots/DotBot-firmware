@@ -47,7 +47,7 @@ typedef struct {
     // counters and indexes
     uint64_t asn; // absolute slot number
 
-    uint8_t active_schedule_id; // id of the active schedule in available_schedules
+    schedule_t *active_schedule_ptr; // pointer to the currently active schedule
     uint32_t slotframe_counter; // used to cycle beacon frequencies through slotframes (when listening for beacons at uplink slots)
     size_t current_beacon_cell_index;
 
@@ -68,14 +68,14 @@ void db_scheduler_init(schedule_t *application_schedule) {
     _schedule_vars.available_schedules[_schedule_vars.available_schedules_len++] = schedule_tiny;
     if (application_schedule != NULL) {
         _schedule_vars.available_schedules[_schedule_vars.available_schedules_len++] = *application_schedule;
-        _schedule_vars.active_schedule_id = application_schedule->id;
+        _schedule_vars.active_schedule_ptr = application_schedule;
     }
 }
 
 bool db_scheduler_set_schedule(uint8_t schedule_id) {
     for (size_t i = 0; i < N_SCHEDULES; i++) {
         if (_schedule_vars.available_schedules[i].id == schedule_id) {
-            _schedule_vars.active_schedule_id = i;
+            _schedule_vars.active_schedule_ptr = &_schedule_vars.available_schedules[i];
             return true;
         }
     }
@@ -83,19 +83,11 @@ bool db_scheduler_set_schedule(uint8_t schedule_id) {
 }
 
 tsch_radio_event_t db_scheduler_tick(void) {
-    schedule_t active_schedule = _schedule_vars.available_schedules[_schedule_vars.active_schedule_id];
+    schedule_t active_schedule = *_schedule_vars.active_schedule_ptr;
 
-    // increment ASN so that nodes are in sync
-    _schedule_vars.asn++;
-
-    // advance the current cell
+    // get the current cell
     size_t cell_index = _schedule_vars.asn % active_schedule.n_cells;
     cell_t current_cell = active_schedule.cells[cell_index];
-
-    // if wrapped, keep track of how many slotframes have passed (used to cycle beacon frequencies)
-    if (cell_index == 0) {
-        _schedule_vars.slotframe_counter++;
-    }
 
     tsch_radio_event_t radio_event = {
         .radio_action = TSCH_RADIO_ACTION_SLEEP,
@@ -105,13 +97,24 @@ tsch_radio_event_t db_scheduler_tick(void) {
 
     radio_event.frequency = db_scheduler_get_frequency(current_cell.type, _schedule_vars.asn, current_cell.channel_offset);
 
-    if (current_cell.type == SLOT_TYPE_BEACON || current_cell.type == SLOT_TYPE_DOWNLINK) {
-        radio_event.radio_action = TSCH_RADIO_ACTION_RX;
-    } else if (current_cell.type == SLOT_TYPE_SHARED_UPLINK || current_cell.type == SLOT_TYPE_UPLINK) {
-        radio_event.radio_action = TSCH_RADIO_ACTION_TX;
+    switch (current_cell.type) {
+        case SLOT_TYPE_BEACON:
+        case SLOT_TYPE_DOWNLINK:
+            radio_event.radio_action = TSCH_RADIO_ACTION_RX;
+            break;
+        case SLOT_TYPE_SHARED_UPLINK:
+            radio_event.radio_action = TSCH_RADIO_ACTION_TX;
+            break;
+        case SLOT_TYPE_UPLINK:
+            if (current_cell.assigned_node_id != NULL) {
+                radio_event.radio_action = TSCH_RADIO_ACTION_TX;
+            }
+            break;
+        default:
+            break;
     }
 
-#define IS_DOTBOT
+// #define IS_DOTBOT
 #ifdef IS_DOTBOT
     if (current_cell.type == SLOT_TYPE_UPLINK && current_cell.assigned_node_id == NULL) {
         // listen for beacons using the same frequency during a whole slotframe
@@ -120,6 +123,14 @@ tsch_radio_event_t db_scheduler_tick(void) {
         radio_event.frequency = _ble_chan_to_freq[beacon_channel];
     }
 #endif
+
+    // if the slotframe wrapped, keep track of how many slotframes have passed (used to cycle beacon frequencies)
+    if (cell_index == 0) {
+        _schedule_vars.slotframe_counter++;
+    }
+
+    // increment ASN so that (1) nodes are in sync and (2) next time we get the next cell
+    _schedule_vars.asn++;
 
     return radio_event;
 }
