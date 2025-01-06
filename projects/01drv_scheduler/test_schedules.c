@@ -1,8 +1,8 @@
 #include "scheduler.h"
 
 #define IS_DOTBOT
-#define TSCH_DEFAULT_SLOT_DURATION_US 2024
-//#define TSCH_DEFAULT_SLOT_DURATION_US 1000 * 1000
+// #define TSCH_DEFAULT_SLOT_DURATION_US 2024
+#define TSCH_DEFAULT_SLOT_DURATION_US 1000 * 1000
 
 /* Very simple test schedule */
 schedule_t schedule_test = {

@@ -17,10 +17,6 @@
 #include <stdlib.h>
 #include <nrf.h>
 
-#include "gpio.h"
-#include "radio.h"
-#include "protocol.h"
-
 //=========================== defines ==========================================
 
 #define TSCH_TIMER_DEV 2 ///< HF timer device used for the TSCH scheduler
@@ -37,6 +33,14 @@ typedef enum {
     TSCH_RADIO_ACTION_TX = 'T',
 } tsch_radio_action_t;
 
+typedef enum {
+    TSCH_PACKET_TYPE_BEACON = 1,
+    TSCH_PACKET_TYPE_JOIN_REQUEST = 2,
+    TSCH_PACKET_TYPE_JOIN_RESPONSE = 3,
+    TSCH_PACKET_TYPE_INFRASTRUCTURE_DATA = 8,
+    TSCH_PACKET_TYPE_EXPERIMENT_DATA = 9,
+} tsch_packet_type_t; // TODO: move to protocol.h, but that will be part of a larger refactoring
+
 typedef struct {
     tsch_radio_action_t radio_action;
     uint8_t frequency;
@@ -50,10 +54,8 @@ typedef struct {
  * @brief Initializes the TSCH scheme
  *
  * @param[in] callback             pointer to a function that will be called each time a packet is received.
- * @param[in] radio_mode           BLE mode used by the radio (1MBit, 2MBit, LR125KBit, LR500Kbit)
- * @param[in] default_radio_app    Which application to use for registration and sync messages
  *
  */
-void db_tsch_init(tsch_cb_t callback, db_radio_mode_t radio_mode, application_type_t default_radio_app);
+void db_tsch_init(tsch_cb_t callback);
 
 #endif
