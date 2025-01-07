@@ -33,12 +33,9 @@
 
 #define TSCH_N_CELLS_MAX 101
 
-//=========================== variables ========================================
+// #define TSCH_LISTEN_DURING_UNSCHEDULED_UPLINK 1
 
-typedef enum {
-    NODE_TYPE_GATEWAY = 'G',
-    NODE_TYPE_DOTBOT = 'D',
-} node_type_t;
+//=========================== variables ========================================
 
 typedef enum {
     SLOT_TYPE_BEACON = 'B',

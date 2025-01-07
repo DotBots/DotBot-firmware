@@ -27,17 +27,10 @@
 
 //=========================== variables ========================================
 
-typedef enum {
-    TSCH_STATE_WAIT_TO_RX,
-    TSCH_STATE_STARTED_RX,
-    TSCH_STATE_DONE_RX,
-    // etc.
-} tsch_state_t; // TODO: actually use this state in the handlers below
-
 tsch_slot_timing_t tsch_default_slot_timing = {
-    .rx_offset = 40 + 100, // Radio ramp-up time (40 us), + 100 us for any processing needed
+    .rx_offset = 40 + 300, // Radio ramp-up time (40 us), + 100 us for any processing needed
     .rx_max = _TSCH_START_GUARD_TIME + _TSCH_PACKET_TOA_WITH_PADDING, // Guard time + Enough time to receive the maximum payload.
-    .tx_offset = 40 + 100 + _TSCH_START_GUARD_TIME, // Same as rx_offset, plus the guard time.
+    .tx_offset = 40 + 300 + _TSCH_START_GUARD_TIME, // Same as rx_offset, plus the guard time.
     .tx_max = _TSCH_PACKET_TOA_WITH_PADDING, // Enough to transmit the maximum payload.
     .end_guard = 100, // Extra time at the end of the slot
 
@@ -46,10 +39,33 @@ tsch_slot_timing_t tsch_default_slot_timing = {
     .total_duration = 40 + 100 + _TSCH_START_GUARD_TIME + _TSCH_PACKET_TOA_WITH_PADDING + 100, // Total duration of the slot
 };
 
+typedef enum {
+    // receiver,
+    TSCH_STATE_WAIT_RX_OFFSET,
+    TSCH_STATE_DO_RX,
+    TSCH_STATE_IS_RXING,
+
+    // transmitter,
+    TSCH_STATE_WAIT_TX_OFFSET,
+    TSCH_STATE_DO_TX,
+    TSCH_STATE_IS_TXING,
+
+    // common,
+    TSCH_STATE_BEGIN_SLOT,
+    TSCH_STATE_IS_END_GUARD,
+} tsch_state_t; // TODO: actually use this state in the handlers below
+
 typedef struct {
-    tsch_cb_t application_callback; ///< Function pointer, stores the application callback
+    node_type_t node_type; // whether the node is a gateway or a dotbot
     uint64_t device_id; ///< Device ID
+
     tsch_state_t state; ///< State of the TSCH state machine
+    tsch_radio_event_t event; ///< Current event to process
+
+    uint8_t packet[DB_BLE_PAYLOAD_MAX_LENGTH]; ///< Buffer to store the packet to transmit
+    size_t packet_len; ///< Length of the packet to transmit
+
+    tsch_cb_t application_callback; ///< Function pointer, stores the application callback
 } tsch_vars_t;
 
 static tsch_vars_t _tsch_vars = { 0 };
@@ -61,15 +77,29 @@ uint8_t default_packet[] = {
 
 //========================== prototypes ========================================
 
-/**
- * @brief Interrupt handler for the slot-wise ticking of the TSCH scheduler.
- */
-static void _timer_tsch_slot_handler(void);
+// /**
+//  * @brief Interrupt handler for the slot-wise ticking of the TSCH scheduler.
+//  */
+// static void _timer_tsch_slot_handler(void);
 
 /*
 * @brief Callback function passed to the radio driver.
 */
 static void _tsch_callback(uint8_t *packet, uint8_t length);
+
+static void _tsch_sm_handler(void);
+static void _handler_sm_begin_slot(void);
+static void _handler_sm_do_rx(void);
+static void _handler_sm_is_rxing(void);
+static void _handler_sm_do_tx(void);
+static void _handler_sm_is_txing(void);
+
+static inline void _set_timer_and_compensate(uint32_t duration, uint32_t start_ts, timer_hf_cb_t cb);
+
+/*
+* @brief Set TSCH state machine state, to be used after the timer expires.
+*/
+static inline void _set_state_for_after_timer(tsch_state_t state);
 
 //=========================== public ===========================================
 
@@ -91,44 +121,139 @@ void db_tsch_init(tsch_cb_t application_callback) {
     tsch_default_slot_timing.total_duration = tsch_default_slot_timing.rx_offset + tsch_default_slot_timing.rx_max + tsch_default_slot_timing.end_guard;
 
     // start the ticking immediately
-    db_timer_hf_set_oneshot_us(TSCH_TIMER_DEV, TSCH_TIMER_SLOT_CHANNEL, 100, _timer_tsch_slot_handler);
+    // db_timer_hf_set_oneshot_us(TSCH_TIMER_DEV, TSCH_TIMER_SLOT_CHANNEL, 100, _timer_tsch_slot_handler);
+
+    // initialize and start the state machine
+    _set_state_for_after_timer(TSCH_STATE_BEGIN_SLOT);
+    db_timer_hf_set_oneshot_us(TSCH_TIMER_DEV, TSCH_TIMER_SLOT_CHANNEL, 100, _tsch_sm_handler);
 }
 
 //=========================== private ==========================================
 
+// state machine handler
+void _tsch_sm_handler(void) {
+    printf("State: %d\n", _tsch_vars.state);
 
-// TODO: manipulate the _tsch_vars.state
+    switch (_tsch_vars.state) {
+        case TSCH_STATE_BEGIN_SLOT:
+            _handler_sm_begin_slot();
+            break;
+        case TSCH_STATE_DO_RX:
+            _handler_sm_do_rx();
+            break;
+        case TSCH_STATE_IS_RXING:
+            _handler_sm_is_rxing();
+            break;
+        case TSCH_STATE_DO_TX:
+            _handler_sm_do_tx();
+            break;
+        case TSCH_STATE_IS_TXING:
+            _handler_sm_is_txing();
+            break;
+        default:
+            break;
+    }
+}
 
-
-void _timer_tsch_slot_handler(void) {
-    // FIXME: for some reason, it just receives (beacon) packets on frequency 26, and it is always "CRC error"
+void _handler_sm_begin_slot(void) {
+    uint32_t start_ts = db_timer_hf_now(TSCH_TIMER_DEV);
+    uint32_t timer_duration = 0;
 
     tsch_radio_event_t event = db_scheduler_tick();
-    printf("Event %c:   %c, %d    Slot duration: %d\n", event.slot_type, event.radio_action, event.frequency, tsch_default_slot_timing.total_duration); // FIXME: only for debugging, remove before merge
+    // printf("(_handler_sm_begin_slot) Event %c:   %c, %d    Slot duration: %d\n", event.slot_type, event.radio_action, event.frequency, tsch_default_slot_timing.total_duration);
 
     switch (event.radio_action) {
         case TSCH_RADIO_ACTION_TX:
+            // configure radio
             db_radio_disable();
             db_radio_set_frequency(event.frequency);
-            // TODO: send a real packet:
-            // - from the application queue
-            // - a beacon, if it is a beacon slot and the node is a gateway
-            db_radio_tx(default_packet, sizeof(default_packet));
+
+            // update state
+            _tsch_vars.event = event;
+            _set_state_for_after_timer(TSCH_STATE_DO_TX);
+
+            // get the packet to tx and save in _tsch_vars
+            // TODO: how to get a packet? decide based on _tsch_vars.node_type and event.slot_type
+            //       could the event come with a packet? sometimes maybe? or would it be confusing?
+            _tsch_vars.packet_len = sizeof(default_packet);
+            memcpy(_tsch_vars.packet, default_packet, _tsch_vars.packet_len); 
+
+            // set timer duration to resume again after tx_offset
+            timer_duration = tsch_default_slot_timing.tx_offset;
             break;
         case TSCH_RADIO_ACTION_RX:
-            // TODO: if this is a DotBot, implement re-synchronization logic
+            // configure radio
             db_radio_disable();
             db_radio_set_frequency(event.frequency);
-            db_radio_rx();
+
+            // update state
+            _tsch_vars.event = event;
+            _set_state_for_after_timer(TSCH_STATE_DO_RX);
+
+            // set timer duration to resume again after rx_offset
+            timer_duration = tsch_default_slot_timing.rx_offset;
             break;
         case TSCH_RADIO_ACTION_SLEEP:
+            // just disable the radio and do nothing, then come back for the next slot
             db_radio_disable();
+            _set_state_for_after_timer(TSCH_STATE_BEGIN_SLOT); // keep the same state
+            timer_duration = tsch_default_slot_timing.total_duration;
             break;
     }
 
-    // schedule the next tick
-    // FIXME: compensate for the time spent in the instructions above. For now, just using 'event.duration_us' will do.
-    db_timer_hf_set_oneshot_us(TSCH_TIMER_DEV, TSCH_TIMER_SLOT_CHANNEL, tsch_default_slot_timing.total_duration, _timer_tsch_slot_handler);
+    _set_timer_and_compensate(timer_duration, start_ts, &_tsch_sm_handler);
+}
+
+// --- rx handlers ---
+void _handler_sm_do_rx(void) {
+    uint32_t start_ts = db_timer_hf_now(TSCH_TIMER_DEV);
+
+    // update state
+    _set_state_for_after_timer(TSCH_STATE_IS_RXING);
+
+    // receive packets
+    db_radio_rx(); // remember: this always starts with a guard time before the actual transmission begins
+
+    _set_timer_and_compensate(tsch_default_slot_timing.rx_max, start_ts, &_tsch_sm_handler);
+}
+void _handler_sm_is_rxing(void) {
+    // just disable the radio and do nothing, then come back for the next slot
+
+    uint32_t start_ts = db_timer_hf_now(TSCH_TIMER_DEV);
+
+    // configure radio
+    db_radio_disable();
+
+    // set state for after the timer expires
+    _set_state_for_after_timer(TSCH_STATE_BEGIN_SLOT);
+
+    _set_timer_and_compensate(tsch_default_slot_timing.end_guard, start_ts, &_tsch_sm_handler);
+}
+
+// --- tx handlers ---
+void _handler_sm_do_tx(void) {
+    uint32_t start_ts = db_timer_hf_now(TSCH_TIMER_DEV);
+
+    // update state
+    _set_state_for_after_timer(TSCH_STATE_IS_TXING);
+
+    // send the packet
+    db_radio_tx(_tsch_vars.packet, _tsch_vars.packet_len);
+
+    _set_timer_and_compensate(tsch_default_slot_timing.tx_max, start_ts, &_tsch_sm_handler);
+}
+void _handler_sm_is_txing(void) {
+    // just disable the radio and do nothing, then come back for the next slot
+
+    uint32_t start_ts = db_timer_hf_now(TSCH_TIMER_DEV);
+
+    // configure radio
+    db_radio_disable();
+
+    // set state for after the timer expires
+    _set_state_for_after_timer(TSCH_STATE_BEGIN_SLOT);
+
+    _set_timer_and_compensate(tsch_default_slot_timing.end_guard, start_ts, &_tsch_sm_handler);
 }
 
 static void _tsch_callback(uint8_t *packet, uint8_t length) {
@@ -145,4 +270,19 @@ static void _tsch_callback(uint8_t *packet, uint8_t length) {
     } else if (_tsch_vars.application_callback) {
         _tsch_vars.application_callback(packet, length);
     }
+}
+
+static inline void _set_state_for_after_timer(tsch_state_t state) {
+    _tsch_vars.state = state;
+}
+
+static inline void _set_timer_and_compensate(uint32_t duration, uint32_t start_ts, timer_hf_cb_t timer_callback) {
+    uint32_t elapsed_ts = db_timer_hf_now(TSCH_TIMER_DEV) - start_ts;
+    printf("Setting timer for duration %d, compensating for elapsed %d gives: %d\n", duration, elapsed_ts, duration - elapsed_ts);
+    db_timer_hf_set_oneshot_us(
+        TSCH_TIMER_DEV,
+        TSCH_TIMER_SLOT_CHANNEL,
+        duration - elapsed_ts,
+        timer_callback
+    );
 }

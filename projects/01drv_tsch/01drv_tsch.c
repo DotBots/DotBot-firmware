@@ -33,7 +33,7 @@ schedule_t schedule_test = {
         //{'U', 3, NULL},
         //{'U', 4, NULL},
 
-        {'B', 0, NULL},
+        {'S', 0, NULL},
         {'B', 1, NULL},
         {'B', 2, NULL},
         {'B', 3, NULL},
@@ -53,7 +53,7 @@ static void radio_callback(uint8_t *packet, uint8_t length);
 
 int main(void) {
     // initialize schedule
-    schedule_t schedule = schedule_minuscule;
+    schedule_t schedule = schedule_test;
     node_type_t node_type = NODE_TYPE_DOTBOT;
     db_scheduler_init(node_type, &schedule);
     printf("Device of type %c and id %llx is using schedule %d\n\n", node_type, db_device_id(), schedule.id);

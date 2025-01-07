@@ -185,11 +185,13 @@ void _compute_dotbot_action(cell_t cell, tsch_radio_event_t *radio_event) {
             if (cell.assigned_node_id == db_device_id()) {
                 radio_event->radio_action = TSCH_RADIO_ACTION_TX;
             } else {
+#ifdef TSCH_LISTEN_DURING_UNSCHEDULED_UPLINK
                 // OPTIMIZATION: listen for beacons during unassigned uplink slot
                 // listen to the same beacon frequency for a whole slotframe
                 radio_event->radio_action = TSCH_RADIO_ACTION_RX;
                 size_t beacon_channel = TSCH_N_BLE_REGULAR_FREQUENCIES + (_schedule_vars.slotframe_counter % TSCH_N_BLE_ADVERTISING_FREQUENCIES);
                 radio_event->frequency = _ble_chan_to_freq[beacon_channel];
+#endif
             }
             break;
         default:

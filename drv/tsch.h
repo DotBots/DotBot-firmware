@@ -36,7 +36,10 @@
 
 //=========================== variables ========================================
 
-typedef void (*tsch_cb_t)(uint8_t *packet, uint8_t length);  ///< Function pointer to the callback function called on packet receive
+typedef enum {
+    NODE_TYPE_GATEWAY = 'G',
+    NODE_TYPE_DOTBOT = 'D',
+} node_type_t;
 
 typedef enum {
     TSCH_RADIO_ACTION_SLEEP = 'S',
@@ -89,6 +92,8 @@ typedef struct {
     uint8_t frequency;
     char slot_type; // FIXME: only for debugging, remove before merge
 } tsch_radio_event_t;
+
+typedef void (*tsch_cb_t)(uint8_t *packet, uint8_t length);  ///< Function pointer to the callback function called on packet receive
 
 //=========================== prototypes ==========================================
 
