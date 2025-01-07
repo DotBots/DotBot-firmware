@@ -35,7 +35,7 @@ typedef enum {
 } tsch_state_t; // TODO: actually use this state in the handlers below
 
 typedef struct {
-    tsch_cb_t callback; ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
+    tsch_cb_t application_callback; ///< Function pointer, stores the application callback
     uint64_t device_id; ///< Device ID
     tsch_state_t state; ///< State of the TSCH state machine
 } tsch_vars_t;
@@ -61,15 +61,15 @@ static void _tsch_callback(uint8_t *packet, uint8_t length);
 
 //=========================== public ===========================================
 
-void db_tsch_init(tsch_cb_t callback) {
+void db_tsch_init(tsch_cb_t application_callback) {
     // initialize the high frequency clock
     db_timer_hf_init(TSCH_TIMER_DEV);
 
     // initialize the radio
     db_radio_init(&_tsch_callback, DB_RADIO_BLE_2MBit);  // set the radio callback to our tsch catch function
 
-    // Save the user callback to use in our interruption
-    _tsch_vars.callback = callback;
+    // Save the application callback to use in our interruption
+    _tsch_vars.application_callback = application_callback;
 
     _tsch_vars.device_id = db_device_id();
 
@@ -117,31 +117,17 @@ void _timer_tsch_slot_handler(void) {
 }
 
 static void _tsch_callback(uint8_t *packet, uint8_t length) {
-    uint8_t *ptk_ptr = packet;
-    protocol_header_t *header = (protocol_header_t *)ptk_ptr;
+    printf("Received packet of length %d\n", length);
 
-    // Check destination address matches
-    if (header->dst != DB_BROADCAST_ADDRESS && header->dst != _tsch_vars.device_id) {
+    // Check if the packet is big enough to have a header
+    if (length < sizeof(protocol_header_t)) {
         return;
     }
 
-    // Check version is supported
-    if (header->version != DB_FIRMWARE_VERSION) {
-        return;
-    }
-
-    switch (header->type) {
-        case TSCH_PACKET_TYPE_BEACON:
-        {
-            // ...
-        } break;
-
-        // This is not a TSCH packet, send to the user callback
-        default:
-        {
-            if (_tsch_vars.callback) {
-                _tsch_vars.callback(packet, length);
-            }
-        }
+    // Check if it is a beacon
+    if (packet[1] == TSCH_PACKET_TYPE_BEACON) {
+        // _tsch_handle_beacon(packet, length);
+    } else if (_tsch_vars.application_callback) {
+        _tsch_vars.application_callback(packet, length);
     }
 }

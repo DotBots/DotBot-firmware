@@ -33,13 +33,33 @@ typedef enum {
     TSCH_RADIO_ACTION_TX = 'T',
 } tsch_radio_action_t;
 
+// ==== BEGIN TODO: move to protocol.h, but that will be part of a larger refactoring ====
 typedef enum {
     TSCH_PACKET_TYPE_BEACON = 1,
     TSCH_PACKET_TYPE_JOIN_REQUEST = 2,
     TSCH_PACKET_TYPE_JOIN_RESPONSE = 3,
     TSCH_PACKET_TYPE_INFRASTRUCTURE_DATA = 8,
     TSCH_PACKET_TYPE_EXPERIMENT_DATA = 9,
-} tsch_packet_type_t; // TODO: move to protocol.h, but that will be part of a larger refactoring
+} tsch_packet_type_t;
+
+// general packet header
+typedef struct {
+    uint8_t version;
+    tsch_packet_type_t type;
+    uint64_t dst;
+    uint64_t src;
+} tsch_packet_header_t;
+
+// beacon packet
+typedef struct {
+    uint8_t version;
+    tsch_packet_type_t type;
+    uint64_t src;
+    uint8_t remaining_capacity;
+    uint8_t active_schedule_id;
+    uint64_t asn;
+} tsch_beacon_packet_header_t;
+// ==== END TODO: move to protocol.h, but that will be part of a larger refactoring ======
 
 typedef struct {
     tsch_radio_action_t radio_action;

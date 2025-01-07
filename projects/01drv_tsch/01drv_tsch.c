@@ -20,7 +20,7 @@
 #include "device.h"
 
 //#define TSCH_DEFAULT_SLOT_DURATION_US 2024
-#define TSCH_DEFAULT_SLOT_DURATION_US 1000 * 20
+#define TSCH_DEFAULT_SLOT_DURATION_US 1000 * 2000
 
 /* Very simple test schedule */
 schedule_t schedule_test = {
@@ -57,9 +57,9 @@ static void radio_callback(uint8_t *packet, uint8_t length);
 
 int main(void) {
     // initialize schedule
-    schedule_t schedule = schedule_test;
+    schedule_t schedule = schedule_minuscule;
     schedule.slot_duration_us = TSCH_DEFAULT_SLOT_DURATION_US;
-    node_type_t node_type = NODE_TYPE_GATEWAY;
+    node_type_t node_type = NODE_TYPE_DOTBOT;
     db_scheduler_init(node_type, &schedule);
     printf("Device of type %c and id %llx is using schedule %d\n\n", node_type, db_device_id(), schedule.id);
 
