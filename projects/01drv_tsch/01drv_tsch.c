@@ -19,16 +19,12 @@
 #include "protocol.h"
 #include "device.h"
 
-//#define TSCH_DEFAULT_SLOT_DURATION_US 2024
-#define TSCH_DEFAULT_SLOT_DURATION_US 1000 * 2000
-
 /* Very simple test schedule */
 schedule_t schedule_test = {
     .id = 32, // make sure it doesn't collide
     .max_nodes = 0,
     .backoff_n_min = 5,
     .backoff_n_max = 9,
-    .slot_duration_us = TSCH_DEFAULT_SLOT_DURATION_US,
     .n_cells = 5,
     .cells = {
         //{'B', 0, NULL},
@@ -58,12 +54,12 @@ static void radio_callback(uint8_t *packet, uint8_t length);
 int main(void) {
     // initialize schedule
     schedule_t schedule = schedule_minuscule;
-    schedule.slot_duration_us = TSCH_DEFAULT_SLOT_DURATION_US;
     node_type_t node_type = NODE_TYPE_DOTBOT;
     db_scheduler_init(node_type, &schedule);
     printf("Device of type %c and id %llx is using schedule %d\n\n", node_type, db_device_id(), schedule.id);
 
     // initialize the TSCH driver
+    tsch_default_slot_timing.end_guard = 1000 * 1000; // add an extra second of delay.
     db_tsch_init(radio_callback);
 
     while (1) {

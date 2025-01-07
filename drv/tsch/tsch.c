@@ -34,6 +34,18 @@ typedef enum {
     // etc.
 } tsch_state_t; // TODO: actually use this state in the handlers below
 
+tsch_slot_timing_t tsch_default_slot_timing = {
+    .rx_offset = 40 + 100, // Radio ramp-up time (40 us), + 100 us for any processing needed
+    .rx_max = _TSCH_START_GUARD_TIME + _TSCH_PACKET_TOA_WITH_PADDING, // Guard time + Enough time to receive the maximum payload.
+    .tx_offset = 40 + 100 + _TSCH_START_GUARD_TIME, // Same as rx_offset, plus the guard time.
+    .tx_max = _TSCH_PACKET_TOA_WITH_PADDING, // Enough to transmit the maximum payload.
+    .end_guard = 100, // Extra time at the end of the slot
+
+    // receive slot is: rx_offset / rx_max / end_guard
+    // transmit slot is: tx_offset / tx_max / end_guard
+    .total_duration = 40 + 100 + _TSCH_START_GUARD_TIME + _TSCH_PACKET_TOA_WITH_PADDING + 100, // Total duration of the slot
+};
+
 typedef struct {
     tsch_cb_t application_callback; ///< Function pointer, stores the application callback
     uint64_t device_id; ///< Device ID
@@ -75,6 +87,9 @@ void db_tsch_init(tsch_cb_t application_callback) {
 
     // NOTE: assume the scheduler has already been initialized by the application
 
+    // set slot total duration
+    tsch_default_slot_timing.total_duration = tsch_default_slot_timing.rx_offset + tsch_default_slot_timing.rx_max + tsch_default_slot_timing.end_guard;
+
     // start the ticking immediately
     db_timer_hf_set_oneshot_us(TSCH_TIMER_DEV, TSCH_TIMER_SLOT_CHANNEL, 100, _timer_tsch_slot_handler);
 }
@@ -89,7 +104,7 @@ void _timer_tsch_slot_handler(void) {
     // FIXME: for some reason, it just receives (beacon) packets on frequency 26, and it is always "CRC error"
 
     tsch_radio_event_t event = db_scheduler_tick();
-    printf("Event %c:   %c, %d, %d\n", event.slot_type, event.radio_action, event.frequency, event.duration_us); // FIXME: only for debugging, remove before merge
+    printf("Event %c:   %c, %d    Slot duration: %d\n", event.slot_type, event.radio_action, event.frequency, tsch_default_slot_timing.total_duration); // FIXME: only for debugging, remove before merge
 
     switch (event.radio_action) {
         case TSCH_RADIO_ACTION_TX:
@@ -113,7 +128,7 @@ void _timer_tsch_slot_handler(void) {
 
     // schedule the next tick
     // FIXME: compensate for the time spent in the instructions above. For now, just using 'event.duration_us' will do.
-    db_timer_hf_set_oneshot_us(TSCH_TIMER_DEV, TSCH_TIMER_SLOT_CHANNEL, event.duration_us, _timer_tsch_slot_handler);
+    db_timer_hf_set_oneshot_us(TSCH_TIMER_DEV, TSCH_TIMER_SLOT_CHANNEL, tsch_default_slot_timing.total_duration, _timer_tsch_slot_handler);
 }
 
 static void _tsch_callback(uint8_t *packet, uint8_t length) {

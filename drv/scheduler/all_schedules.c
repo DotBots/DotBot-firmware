@@ -12,19 +12,12 @@
 
 #define TSCH_N_SCHEDULES 1 + 2 // account for the schedule that can be passed by the application during initialization
 
-#ifndef TSCH_DEFAULT_SLOT_DURATION_US
-#define TSCH_DEFAULT_SLOT_DURATION_US 2024
-// #define TSCH_DEFAULT_SLOT_DURATION_US 1000 * 1000
-#endif
-
 /* Schedule with 11 slots, supporting up to 5 nodes */
 schedule_t schedule_minuscule = {
     .id = 6,
     .max_nodes = 5,
     .backoff_n_min = 5,
     .backoff_n_max = 9,
-    // .slot_duration_us = 2024,
-    .slot_duration_us = TSCH_DEFAULT_SLOT_DURATION_US,
     .n_cells = 11,
     .cells = {
         // Begin with beacon cells. They use their own channel offsets and frequencies.
@@ -49,7 +42,6 @@ schedule_t schedule_tiny = {
     .max_nodes = 11,
     .backoff_n_min = 5,
     .backoff_n_max = 9,
-    .slot_duration_us = TSCH_DEFAULT_SLOT_DURATION_US,
     .n_cells = 17,
     .cells = {
         // Begin with beacon cells. They use their own channel offsets and frequencies.
@@ -80,7 +72,6 @@ schedule_t schedule_small = {
     .max_nodes = 29,
     .backoff_n_min = 5,
     .backoff_n_max = 9,
-    .slot_duration_us = TSCH_DEFAULT_SLOT_DURATION_US,
     .n_cells = 41,
     .cells = {
         {'B', 0, NULL},

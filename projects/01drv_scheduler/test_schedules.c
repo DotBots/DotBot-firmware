@@ -1,16 +1,11 @@
 #include "scheduler.h"
 
-#define IS_DOTBOT
-// #define TSCH_DEFAULT_SLOT_DURATION_US 2024
-#define TSCH_DEFAULT_SLOT_DURATION_US 1000 * 1000
-
 /* Very simple test schedule */
 schedule_t schedule_test = {
     .id = 10, // make sure it doesn't collide
     .max_nodes = 2,
     .backoff_n_min = 5,
     .backoff_n_max = 9,
-    .slot_duration_us = TSCH_DEFAULT_SLOT_DURATION_US,
     .n_cells = 5,
     .cells = {
         // Only downlink slots
@@ -28,7 +23,6 @@ schedule_t schedule_all_uplink = {
     .max_nodes = 2,
     .backoff_n_min = 5,
     .backoff_n_max = 9,
-    .slot_duration_us = TSCH_DEFAULT_SLOT_DURATION_US,
     .n_cells = 5,
     .cells = {
         // Only downlink slots
@@ -46,7 +40,6 @@ schedule_t schedule_all_downlink = {
     .max_nodes = 2,
     .backoff_n_min = 5,
     .backoff_n_max = 9,
-    .slot_duration_us = TSCH_DEFAULT_SLOT_DURATION_US,
     .n_cells = 5,
     .cells = {
         // Only downlink slots

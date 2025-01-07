@@ -58,7 +58,6 @@ typedef struct {
     uint8_t max_nodes; // maximum number of nodes that can be scheduled, equivalent to the number of uplink slots
     uint8_t backoff_n_min; // minimum exponent for the backoff algorithm
     uint8_t backoff_n_max; // maximum exponent for the backoff algorithm
-    uint32_t slot_duration_us; // duration of a slot in microseconds
     size_t n_cells; // number of cells in this schedule
     cell_t cells[TSCH_N_CELLS_MAX]; // cells in this schedule. NOTE(FIXME?): the first 3 cells must be beacons
 } schedule_t;

@@ -122,7 +122,6 @@ tsch_radio_event_t db_scheduler_tick(void) {
 
     tsch_radio_event_t radio_event = {
         .radio_action = TSCH_RADIO_ACTION_SLEEP,
-        .duration_us = active_schedule.slot_duration_us,
         .frequency = db_scheduler_get_frequency(cell.type, _schedule_vars.asn, cell.channel_offset),
         .slot_type = cell.type, // FIXME: only for debugging, remove before merge
     };
