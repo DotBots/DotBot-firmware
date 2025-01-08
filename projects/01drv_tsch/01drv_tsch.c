@@ -59,8 +59,9 @@ int main(void) {
     printf("Device of type %c and id %llx is using schedule %d\n\n", node_type, db_device_id(), schedule.id);
 
     // initialize the TSCH driver
-    tsch_default_slot_timing.end_guard = 1000 * 1000; // add an extra second of delay.
+    //tsch_default_slot_timing.end_guard = 1000 * 1000; // add an extra second of delay.
     db_tsch_init(radio_callback);
+    printf("Slot total duration: %d us\n", tsch_default_slot_timing.total_duration);
 
     while (1) {
         __WFE();
