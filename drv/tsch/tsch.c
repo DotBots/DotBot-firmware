@@ -100,6 +100,8 @@ uint8_t default_packet[] = {
     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07
 };
 
+tsch_beacon_packet_header_t beacon = { 0 };
+
 //========================== prototypes ========================================
 
 //-------------------------- state machine handlers ----------------------------
@@ -147,6 +149,10 @@ void db_tsch_init(node_type_t node_type, tsch_cb_t application_callback) {
     _tsch_vars.device_id = db_device_id();
 
     _tsch_vars.asn = 0;
+
+    // configure beacon
+    beacon.version = 1;
+    beacon.src = db_device_id();
 
     // NOTE: assume the scheduler has already been initialized by the application
 
@@ -227,8 +233,14 @@ void _handler_sm_begin_slot(void) {
             // get the packet to tx and save in _tsch_vars
             // TODO: how to get a packet? decide based on _tsch_vars.node_type and event.slot_type
             //       could the event come with a packet? sometimes maybe? or would it be confusing?
-            _tsch_vars.packet_len = sizeof(default_packet);
-            memcpy(_tsch_vars.packet, default_packet, _tsch_vars.packet_len);
+
+            if (event.slot_type == TSCH_PACKET_TYPE_BEACON) {
+                _tsch_vars.packet_len = sizeof(beacon);
+                memcpy(_tsch_vars.packet, &beacon, _tsch_vars.packet_len);
+            } else {
+                _tsch_vars.packet_len = sizeof(default_packet);
+                memcpy(_tsch_vars.packet, default_packet, _tsch_vars.packet_len);
+            }
 
             // set timer duration to resume again after tx_offset
             timer_duration = tsch_default_slot_timing.tx_offset;
