@@ -18,7 +18,7 @@
 
 //=========================== swarmit ==========================================
 
-void reload_wdt0(void);
+void swarmit_reload_wdt0(void);
 
 //=========================== defines ==========================================
 
@@ -35,7 +35,7 @@ int main(void) {
     db_timer_init(TIMER_DEV);
 
     db_timer_init(1);
-    db_timer_set_periodic_ms(1, 0, 500, &reload_wdt0);
+    db_timer_set_periodic_ms(1, 0, 500, &swarmit_reload_wdt0);
 
     // Configure Motors
     db_motors_init();

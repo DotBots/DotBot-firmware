@@ -18,7 +18,7 @@
 
 //=========================== swarmit ==========================================
 
-void reload_wdt0(void);
+void swarmit_reload_wdt0(void);
 
 //=========================== defines ==========================================
 
@@ -42,7 +42,7 @@ int main(void) {
     db_board_init();
 
     db_timer_init(TIMER_DEV);
-    db_timer_set_periodic_ms(TIMER_DEV, 0, 500, &reload_wdt0);
+    db_timer_set_periodic_ms(TIMER_DEV, 0, 500, &swarmit_reload_wdt0);
 
     db_rgbled_pwm_init(&rgbled_pwm_conf);
 
