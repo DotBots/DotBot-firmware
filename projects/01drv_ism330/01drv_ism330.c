@@ -8,7 +8,6 @@
  *
  */
 #include <nrf.h>
-#include <stdlib.h>
 #include "board.h"
 #include "board_config.h"
 #include "timer_hf.h"
@@ -34,11 +33,9 @@ int main(void) {
         // Read Accelerometer data
         db_ism330_accel_read(&acc_data);
         db_timer_hf_delay_ms(0, 250);
-        __NOP();  // A place for a breakpoint
 
         // Read Gyroscope data
         db_ism330_gyro_read(&gyro_data);
         db_timer_hf_delay_ms(0, 250);
-        __NOP();  // A place for a breakpoint
     }
 }

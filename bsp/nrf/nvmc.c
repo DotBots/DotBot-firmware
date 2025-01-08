@@ -14,7 +14,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "nrf.h"
+#include <nrf.h>
+
 #include "nvmc.h"
 
 //=========================== defines =========================================

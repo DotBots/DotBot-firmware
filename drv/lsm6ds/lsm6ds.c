@@ -9,8 +9,7 @@
  */
 
 #include <assert.h>
-#include <math.h>
-#include <stdio.h>
+#include <stdbool.h>
 
 #include "board_config.h"
 #include "gpio.h"

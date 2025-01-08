@@ -9,10 +9,10 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include <nrf.h>
 #include <string.h>
 #include <stdint.h>
 #include <assert.h>
+#include <nrf.h>
 #include "gpio.h"
 #include "uart.h"
 #include "gps.h"

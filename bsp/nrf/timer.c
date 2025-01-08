@@ -8,11 +8,12 @@
  *
  * @copyright Inria, 2022
  */
-#include <nrf.h>
-#include <nrf_peripherals.h>
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <nrf.h>
+#include <nrf_peripherals.h>
 #include "clock.h"
 #include "timer.h"
 

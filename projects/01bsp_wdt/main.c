@@ -7,9 +7,9 @@
  * @copyright Inria, 2024
  *
  */
-#include <nrf.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdint.h>
+#include <nrf.h>
 #include "board_config.h"
 #include "gpio.h"
 #include "timer_hf.h"

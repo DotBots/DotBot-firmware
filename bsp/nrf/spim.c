@@ -9,7 +9,6 @@
  * @copyright Inria, 2024-present
  */
 
-#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>

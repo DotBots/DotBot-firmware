@@ -13,7 +13,6 @@
  *
  */
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdint.h>
 #include <nrf.h>
 #include "motors.h"

@@ -1,15 +1,14 @@
-#include <nrf.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <nrf.h>
 // Include BSP headers
 #include "board.h"
 #include "board_config.h"
 #include "gpio.h"
 #include "hdlc.h"
 #include "protocol.h"
-#include "radio.h"
 #include "timer.h"
 #include "uart.h"
 #include "tdma_server.h"

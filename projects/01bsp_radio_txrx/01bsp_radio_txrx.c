@@ -10,9 +10,8 @@
  * @copyright Inria, 2022-2024
  *
  */
-#include <nrf.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <nrf.h>
 // Include BSP packages
 #include "board.h"
 #include "board_config.h"

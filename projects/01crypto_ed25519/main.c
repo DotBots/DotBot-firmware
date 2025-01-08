@@ -7,10 +7,9 @@
  * @copyright Inria, 2023
  *
  */
-#include <nrf.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <nrf.h>
 #include "ed25519.h"
 
 #include "private_key.h"

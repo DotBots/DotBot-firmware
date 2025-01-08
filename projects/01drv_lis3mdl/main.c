@@ -7,10 +7,10 @@
  * @copyright Inria, 2023
  *
  */
+#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
+
 #include <nrf.h>
-#include <stdbool.h>
 
 #include "board_config.h"
 #include "board.h"

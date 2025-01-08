@@ -9,12 +9,10 @@
  * @copyright Inria, 2023
  */
 
-#include <assert.h>
-#include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 
-#include "nrf.h"
+#include <nrf.h>
 #include "nvmc.h"
 #include "partition.h"
 

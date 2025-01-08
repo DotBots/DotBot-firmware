@@ -15,9 +15,9 @@
  * @}
  */
 
-#include <nrf.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <nrf.h>
 
 #include "gpio.h"
 

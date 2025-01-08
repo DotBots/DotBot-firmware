@@ -13,9 +13,8 @@
  * @}
  */
 
+#include <stdint.h>
 #include <nrf.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 /**
  * @brief Configures the SPIM peripheral to work with the onboard DotBot RGB LED driver

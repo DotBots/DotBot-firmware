@@ -32,7 +32,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <string.h>
 #include <assert.h>
 #include "uzlib.h"
 #include "defl_static.h"

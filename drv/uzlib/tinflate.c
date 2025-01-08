@@ -32,8 +32,6 @@
  *    any source distribution.
  */
 
-#include <assert.h>
-#include <string.h>
 #include "tinf.h"
 
 #define UZLIB_DUMP_ARRAY(heading, arr, size) \

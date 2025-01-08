@@ -11,7 +11,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 #include "hdlc.h"
 
 //=========================== definitions ======================================

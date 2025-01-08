@@ -9,11 +9,8 @@
  * @copyright Inria, 2022
  */
 
-#include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
-#include <nrf.h>
 
 #include "gpio.h"
 

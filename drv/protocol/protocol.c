@@ -11,7 +11,6 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <stdio.h>
 #include "device.h"
 #include "protocol.h"
 #include "rng.h"

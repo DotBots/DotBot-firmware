@@ -13,9 +13,9 @@
 
 #include <nrf.h>
 #include "sha256.h"
-#include "utils.h"
 
 #if defined(USE_CRYPTOCELL)
+#include "utils.h"
 #include "nrf_cc310/include/crys_hash.h"
 
 static CRYS_HASHUserContext_t _hash_context;

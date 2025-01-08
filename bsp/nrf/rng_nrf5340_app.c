@@ -8,9 +8,8 @@
  *
  * @copyright Inria, 2023
  */
-#include <nrf.h>
-#include <stdbool.h>
 #include <stdint.h>
+#include <nrf.h>
 
 #include "ipc.h"
 #include "rng.h"

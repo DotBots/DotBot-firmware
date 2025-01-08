@@ -10,11 +10,11 @@
  * @copyright Inria, 2023
  *
  */
-#include <nrf.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
+#include <nrf.h>
 // Include BSP headers
 #include "device.h"
 #include "protocol.h"

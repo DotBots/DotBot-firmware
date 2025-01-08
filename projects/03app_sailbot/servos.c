@@ -7,10 +7,9 @@
  * @copyright Inria, 2022
  *
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include <nrf.h>
+#include <stdint.h>
 #include <string.h>
+#include <nrf.h>
 #include "pwm.h"
 #include "servos.h"
 

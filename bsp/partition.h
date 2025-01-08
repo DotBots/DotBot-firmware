@@ -14,7 +14,6 @@
  */
 
 #include <stdint.h>
-#include <string.h>
 
 #include <nrf.h>
 

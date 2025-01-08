@@ -8,8 +8,6 @@
  *
  */
 #include <nrf.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include "board_config.h"
 #include "gpio.h"
 
@@ -72,7 +70,4 @@ int main(void) {
     while (1) {
         __WFE();
     }
-
-    // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
-    __NOP();
 }

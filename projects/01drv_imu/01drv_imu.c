@@ -8,7 +8,7 @@
  *
  */
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdint.h>
 #include <nrf.h>
 #include <stdbool.h>
 
@@ -53,6 +53,4 @@ int main(void) {
         }
         __WFE();
     }
-    // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
-    __NOP();
 }

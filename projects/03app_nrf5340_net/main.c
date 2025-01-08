@@ -8,7 +8,6 @@
  * @copyright Inria, 2023
  */
 
-#include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
 #include <nrf.h>
@@ -16,7 +15,6 @@
 #include "ipc.h"
 #include "radio.h"
 #include "rng.h"
-#include "gpio.h"
 // Include DRV headers
 #include "tdma_client.h"
 #include "tdma_server.h"

@@ -9,7 +9,6 @@
  */
 #include <nrf.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include "device.h"
 
 int main(void) {

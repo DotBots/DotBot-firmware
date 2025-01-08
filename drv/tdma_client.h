@@ -14,9 +14,7 @@
  */
 
 #include <stdint.h>
-#include <stdlib.h>
 #include <nrf.h>
-#include "gpio.h"
 #include "radio.h"
 #include "protocol.h"
 

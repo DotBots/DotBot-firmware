@@ -8,13 +8,11 @@
  *
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <stdint.h>
 #include <math.h>
 
 // Include BSP packages
 #include "board_config.h"
-#include "gpio.h"
 #include "i2c.h"
 #include "as5048b.h"
 

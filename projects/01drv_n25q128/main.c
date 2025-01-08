@@ -7,13 +7,11 @@
  * @copyright Inria, 2024-present
  *
  */
-#include <stdio.h>
-#include <stdlib.h>
+#include <stdint.h>
 #include <nrf.h>
 #include <stdbool.h>
 
 #include "board_config.h"
-#include "board.h"
 #include "gpio.h"
 #include "n25q128.h"
 

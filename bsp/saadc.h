@@ -13,8 +13,8 @@
  * @}
  */
 
-#include <nrf.h>
 #include <stdint.h>
+#include <nrf.h>
 
 typedef enum {
     DB_SAADC_RESOLUTION_8BIT  = SAADC_RESOLUTION_VAL_8bit,   ///< 8-bit resolution

@@ -8,12 +8,11 @@
  *
  * @copyright Inria, 2024-present
  */
-#include <nrf.h>
 #include <assert.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <nrf.h>
 
 #include "gpio.h"
 #include "n25q128.h"

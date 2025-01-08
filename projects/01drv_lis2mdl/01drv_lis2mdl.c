@@ -10,9 +10,7 @@
  *
  */
 #include <stdio.h>
-#include <stdlib.h>
 #include <nrf.h>
-#include <stdbool.h>
 
 // Include BSP packages
 
@@ -24,15 +22,8 @@
 typedef struct {
 } drv_lis2mdl_vars_t;
 
-//=========================== variables =========================================
+//=========================== main ============================================
 
-//=========================== prototypes =========================================
-
-//=========================== main =========================================
-
-/**
- *  @brief The program starts executing here.
- */
 int main(void) {
     // Init the magnetometer
     lis2mdl_init(NULL);
@@ -46,6 +37,4 @@ int main(void) {
         }
         __WFE();
     }
-    // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
-    __NOP();
 }

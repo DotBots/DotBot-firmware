@@ -9,11 +9,9 @@
  * @copyright Inria, 2024-present
  */
 
-#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 #include <nrf.h>
 
 #include "clock.h"
