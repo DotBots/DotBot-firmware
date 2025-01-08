@@ -10,7 +10,34 @@
  */
 #include "scheduler.h"
 
-#define TSCH_N_SCHEDULES 1 + 2 // account for the schedule that can be passed by the application during initialization
+#define TSCH_N_SCHEDULES 1 + 4 // account for the schedule that can be passed by the application during initialization
+
+/* Schedule only for beacons. Used when scanning the network. */
+schedule_t schedule_only_beacons = {
+    .id = 0xBE,
+    .max_nodes = 0,
+    .backoff_n_min = 5,
+    .backoff_n_max = 9,
+    .n_cells = 3,
+    .cells = {
+        {'B', 0, NULL},
+        {'B', 1, NULL},
+        {'B', 2, NULL},
+    }
+};
+
+/* Schedule only for beacons, used for network scanning, specifically when the TSCH_LISTEN_DURING_UNSCHEDULED_UPLINK optimization is enabled. */
+schedule_t schedule_only_beacons_optimized_scan = {
+    .id = 0xBF,
+    .max_nodes = 0,
+    .backoff_n_min = 5,
+    .backoff_n_max = 9,
+    .n_cells = 1,
+    .cells = {
+        // the channel offset doesn't matter here
+        {'U', 0, NULL},
+    }
+};
 
 /* Schedule with 11 slots, supporting up to 5 nodes */
 schedule_t schedule_minuscule = {

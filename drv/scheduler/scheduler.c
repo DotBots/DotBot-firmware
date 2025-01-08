@@ -73,8 +73,12 @@ void db_scheduler_init(node_type_t node_type, schedule_t *application_schedule) 
 
     if (_schedule_vars.available_schedules_len == TSCH_N_SCHEDULES) return; // FIXME: this is just to simplify debugging (allows calling init multiple times)
 
+    _schedule_vars.available_schedules[_schedule_vars.available_schedules_len++] = schedule_only_beacons;
+    _schedule_vars.available_schedules[_schedule_vars.available_schedules_len++] = schedule_only_beacons_optimized_scan;
+
     _schedule_vars.available_schedules[_schedule_vars.available_schedules_len++] = schedule_minuscule;
     _schedule_vars.available_schedules[_schedule_vars.available_schedules_len++] = schedule_tiny;
+
     if (application_schedule != NULL) {
         _schedule_vars.available_schedules[_schedule_vars.available_schedules_len++] = *application_schedule;
         _schedule_vars.active_schedule_ptr = application_schedule;

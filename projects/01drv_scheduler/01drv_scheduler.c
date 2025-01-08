@@ -23,14 +23,14 @@
 
 // make some schedules available for testing
 #include "test_schedules.c"
-extern schedule_t schedule_minuscule;
+extern schedule_t schedule_minuscule, schedule_only_beacons_optimized_scan;
 
 int main(void) {
     // initialize high frequency timer
     db_timer_hf_init(TSCH_TIMER_DEV);
 
     // initialize schedule
-    schedule_t schedule = schedule_minuscule;
+    schedule_t schedule = schedule_only_beacons_optimized_scan;
     node_type_t node_type = NODE_TYPE_DOTBOT;
     db_scheduler_init(node_type, &schedule);
 
@@ -43,7 +43,7 @@ int main(void) {
     for (size_t j = 0; j < n_slotframes; j++) {
         for (size_t i = 0; i < schedule.n_cells; i++) {
             tsch_radio_event_t event = db_scheduler_tick(asn++);
-            printf("Event %c:   %c, %d, %d\n", event.slot_type, event.radio_action, event.frequency);
+            printf(">> Event %c:   %c, %d\n", event.slot_type, event.radio_action, event.frequency);
 
             // sleep for the duration of the slot
             db_timer_hf_delay_us(TSCH_TIMER_DEV, SLOT_DURATION);
