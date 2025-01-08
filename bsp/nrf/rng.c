@@ -8,8 +8,6 @@
  *
  * @copyright Inria, 2023
  */
-#include <nrf.h>
-#include <stdint.h>
 
 #if defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
 #include "rng_nrf5340_app.c"

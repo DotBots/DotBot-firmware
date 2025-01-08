@@ -12,13 +12,13 @@
  * @copyright Inria, 2022
  *
  */
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <nrf.h>
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
-#include <assert.h>
+#include <nrf.h>
 
 // Include BSP packages
 #include "device.h"
@@ -30,7 +30,6 @@
 #include "imu.h"
 #include "protocol.h"
 #include "timer.h"
-#include "timer_hf.h"
 #include "gpio.h"
 #include "as5048b.h"
 

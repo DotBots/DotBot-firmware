@@ -10,9 +10,7 @@
 #include <nrf.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include "board_config.h"
-#include "gpio.h"
 #include "qdec.h"
 #include "timer.h"
 

@@ -16,10 +16,12 @@
 #include "board_config.h"
 #include "gpio.h"
 #include "radio.h"
-#include "timer.h"
 
 #include "ota.h"
 #include "partition.h"
+#ifdef DB_LED2_PIN
+#include "timer.h"
+#endif
 
 //=========================== defines ==========================================
 

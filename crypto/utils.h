@@ -13,10 +13,6 @@
  * @}
  */
 
-#include <stdlib.h>
-#include <stdbool.h>
-#include <stdint.h>
-
 #include <nrf.h>
 
 //=========================== defines ==========================================

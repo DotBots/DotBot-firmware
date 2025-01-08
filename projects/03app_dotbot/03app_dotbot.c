@@ -12,11 +12,10 @@
  * @copyright Inria, 2022
  */
 
-#include <nrf.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <stdio.h>
+#include <nrf.h>
 // Include BSP headers
 #include "board.h"
 #include "board_config.h"

@@ -8,12 +8,10 @@
  *
  * @copyright Inria, 2022
  */
-#include <stdio.h>
-#include <stdlib.h>
+#include <stdint.h>
 #include <nrf.h>
 
 #include "board_config.h"
-#include "gpio.h"
 #include "motors.h"
 #include "pwm.h"
 

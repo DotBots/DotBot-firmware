@@ -8,9 +8,6 @@
  * @copyright Inria, 2024
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
 #include <nrf.h>
 #include "move.h"
 #include "timer.h"

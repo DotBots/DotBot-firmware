@@ -29,7 +29,4 @@ int main(void) {
 
         db_timer_hf_delay_ms(0, 100);
     }
-
-    // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
-    __NOP();
 }

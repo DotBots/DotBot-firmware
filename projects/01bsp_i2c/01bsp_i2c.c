@@ -9,7 +9,6 @@
  */
 #include <nrf.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include "board.h"
 #include "board_config.h"
 #include "i2c.h"

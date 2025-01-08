@@ -8,9 +8,6 @@
  *
  * @copyright Inria, 2024-present
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include <nrf.h>
 
 /**
  * @file
@@ -21,9 +18,7 @@
  *
  */
 
-#include <stdlib.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <nrf.h>
 
 extern __NO_RETURN int main(void);

@@ -14,7 +14,6 @@
  */
 #include <nrf.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include "board_config.h"
 #include "gpio.h"
 #include "timer_hf.h"

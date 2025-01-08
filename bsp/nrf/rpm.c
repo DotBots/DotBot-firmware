@@ -9,8 +9,6 @@
  * @copyright Inria, 2022
  */
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <nrf.h>
 #include "board_config.h"
 #include "rpm.h"

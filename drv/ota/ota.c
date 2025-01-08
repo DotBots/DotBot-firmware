@@ -8,10 +8,10 @@
  *
  * @copyright Inria, 2023
  */
-#include <nrf.h>
-#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
+#include <nrf.h>
 
 #include "nvmc.h"
 #include "ota.h"

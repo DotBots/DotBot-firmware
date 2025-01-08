@@ -20,12 +20,10 @@ void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
     (void)gpio_e;
 }
 
-void db_lh2_start(db_lh2_t *lh2) {
-    (void)lh2;
+void db_lh2_start(void) {
 }
 
-void db_lh2_stop(db_lh2_t *lh2) {
-    (void)lh2;
+void db_lh2_stop(void) {
 }
 
 void db_lh2_reset(db_lh2_t *lh2) {

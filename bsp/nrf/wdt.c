@@ -8,8 +8,9 @@
  *
  * @copyright Inria, 2024
  */
-#include <nrf.h>
+
 #include <stdint.h>
+#include <nrf.h>
 
 #include "wdt.h"
 

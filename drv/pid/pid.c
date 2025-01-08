@@ -8,11 +8,10 @@
  *
  * @copyright Inria, 2022
  */
-#include <nrf.h>
 #include <assert.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include "pid.h"
+#include <nrf.h>
 
 void db_pid_init(pid_t *pid, float input, float target,
                  float kp, float ki, float kd,

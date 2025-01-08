@@ -9,9 +9,7 @@
  * @copyright Inria, 2023
  */
 
-#include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 
 #include "rgbled_pwm.h"
 #include "pwm.h"

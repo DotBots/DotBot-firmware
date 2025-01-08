@@ -10,12 +10,10 @@
  */
 #include <nrf.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
 
 #include "tdma_client.h"
-#include "clock.h"
 #include "radio.h"
 #include "rng.h"
 #include "timer_hf.h"

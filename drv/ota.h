@@ -14,6 +14,7 @@
  */
 
 #include <stdint.h>
+#include <stdlib.h>
 #include "partition.h"
 
 //=========================== defines ==========================================

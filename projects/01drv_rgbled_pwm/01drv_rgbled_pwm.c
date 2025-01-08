@@ -9,9 +9,8 @@
  * @copyright Inria, 2023
  *
  */
-#include <nrf.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <nrf.h>
 #include "board.h"
 #include "rgbled_pwm.h"
 #include "timer.h"

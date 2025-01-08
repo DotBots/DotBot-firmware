@@ -8,12 +8,11 @@
  *
  * @copyright Inria, 2023
  */
-#include <nrf.h>
-#include <nrf_peripherals.h>
 #include <assert.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdio.h>
+#include <nrf.h>
+#include <nrf_peripherals.h>
 #include "gpio.h"
 #include "qdec.h"
 

@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include "board.h"
 #include "board_config.h"

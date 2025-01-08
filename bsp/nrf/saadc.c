@@ -8,11 +8,11 @@
  *
  * @copyright Inria, 2023
  */
-#include <nrf.h>
-#include <nrf_peripherals.h>
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <nrf.h>
+#include <nrf_peripherals.h>
 #include "saadc.h"
 
 //=========================== defines ==========================================

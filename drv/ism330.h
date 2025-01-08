@@ -13,8 +13,6 @@
  * @}
  */
 
-#include <stdint.h>
-#include <stdlib.h>
 #include <nrf.h>
 #include "gpio.h"
 

@@ -29,7 +29,6 @@
  */
 #include <stdint.h>
 #include <string.h>
-#include <stdio.h>
 #include "uzlib.h"
 
 #if 0

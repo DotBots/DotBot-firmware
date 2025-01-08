@@ -13,8 +13,8 @@
  * @}
  */
 
-#include <nrf.h>
 #include <stdint.h>
+#include <nrf.h>
 #include "gpio.h"
 
 //=========================== defines ==========================================

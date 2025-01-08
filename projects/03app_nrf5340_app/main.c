@@ -8,10 +8,9 @@
  * @copyright Inria, 2023
  */
 
+#include <stdint.h>
 #include <nrf.h>
 
-#include "clock.h"
-#include "ipc.h"
 #include "tz.h"
 
 int main(void) {

@@ -14,10 +14,10 @@
 
 #include <nrf.h>
 #include "ed25519.h"
-#include "utils.h"
 
 #if defined(USE_CRYPTOCELL)
 #include "nrf_cc310/include/crys_ec_edw_api.h"
+#include "utils.h"
 #else
 #include "soft_edsign.h"
 #endif

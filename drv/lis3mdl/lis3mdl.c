@@ -9,8 +9,7 @@
  */
 
 #include <assert.h>
-#include <math.h>
-#include <stdio.h>
+#include <stdbool.h>
 
 #include "gpio.h"
 #include "i2c.h"

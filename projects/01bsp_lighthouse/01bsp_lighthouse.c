@@ -12,8 +12,6 @@
  *
  */
 #include <nrf.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include "board.h"
 #include "board_config.h"
 #include "lh2.h"
@@ -44,7 +42,4 @@ int main(void) {
         // the location function has to be running all the time
         db_lh2_process_location(&_lh2);
     }
-
-    // one last instruction, doesn't do anything, it's just to have a place to put a breakpoint.
-    __NOP();
 }

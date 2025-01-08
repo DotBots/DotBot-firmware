@@ -11,9 +11,8 @@
  * @copyright Inria, 2022
  *
  */
+#include <stdint.h>
 #include <nrf.h>
-#include <stdio.h>
-#include <stdlib.h>
 // Include BSP packages
 #include "board.h"
 #include "motors.h"

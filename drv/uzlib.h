@@ -35,7 +35,6 @@
 #ifndef UZLIB_H_INCLUDED
 #define UZLIB_H_INCLUDED
 
-#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 

@@ -10,7 +10,6 @@
  *
  */
 #include <stdio.h>
-#include <stdlib.h>
 #include <nrf.h>
 
 #include "timer_hf.h"
