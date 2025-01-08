@@ -19,6 +19,8 @@
 #include "protocol.h"
 #include "device.h"
 
+#define SLOT_DURATION 1000 * 1000 // 1 s
+
 // make some schedules available for testing
 #include "test_schedules.c"
 extern schedule_t schedule_minuscule;
@@ -37,13 +39,14 @@ int main(void) {
     // loop n_slotframes*n_cells times and make the scheduler tick
     // also, try to assign and deassign uplink cell at specific slotframes
     size_t n_slotframes = 4;
+    uint64_t asn = 0;
     for (size_t j = 0; j < n_slotframes; j++) {
         for (size_t i = 0; i < schedule.n_cells; i++) {
-            tsch_radio_event_t event = db_scheduler_tick();
-            printf("Event %c:   %c, %d, %d\n", event.slot_type, event.radio_action, event.frequency, event.duration_us);
+            tsch_radio_event_t event = db_scheduler_tick(asn++);
+            printf("Event %c:   %c, %d, %d\n", event.slot_type, event.radio_action, event.frequency);
 
             // sleep for the duration of the slot
-            db_timer_hf_delay_us(TSCH_TIMER_DEV, event.duration_us);
+            db_timer_hf_delay_us(TSCH_TIMER_DEV, SLOT_DURATION);
         }
         puts(".");
         if (j == 0 && !db_scheduler_assign_next_available_uplink_cell(db_device_id())) { // try to assign at the end of first slotframe

@@ -75,7 +75,8 @@ void db_scheduler_init(node_type_t node_type, schedule_t *application_schedule);
  *
  * @return A configuration for the TSCH radio driver to follow in the next slot.
  */
-tsch_radio_event_t db_scheduler_tick(void);
+// tsch_radio_event_t db_scheduler_tick(void);
+tsch_radio_event_t db_scheduler_tick(uint64_t asn);
 
 /**
  * @brief Activates a given schedule.

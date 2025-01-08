@@ -53,14 +53,14 @@ static void radio_callback(uint8_t *packet, uint8_t length);
 
 int main(void) {
     // initialize schedule
-    schedule_t schedule = schedule_test;
+    schedule_t schedule = schedule_minuscule;
     node_type_t node_type = NODE_TYPE_DOTBOT;
     db_scheduler_init(node_type, &schedule);
     printf("Device of type %c and id %llx is using schedule %d\n\n", node_type, db_device_id(), schedule.id);
 
     // initialize the TSCH driver
     //tsch_default_slot_timing.end_guard = 1000 * 1000; // add an extra second of delay.
-    db_tsch_init(radio_callback);
+    db_tsch_init(node_type, radio_callback);
     printf("Slot total duration: %d us\n", tsch_default_slot_timing.total_duration);
 
     while (1) {

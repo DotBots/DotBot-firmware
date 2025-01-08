@@ -22,8 +22,9 @@
 //=========================== defines ==========================================
 
 #define TSCH_TIMER_DEV 2 ///< HF timer device used for the TSCH scheduler
-#define TSCH_TIMER_SLOT_CHANNEL 0
-#define TSCH_TIMER_INTRA_SLOT_CHANNEL 1
+#define TSCH_TIMER_INTER_SLOT_CHANNEL 0 ///< Channel for ticking the whole slot
+#define TSCH_TIMER_INTRA_SLOT_CHANNEL 1 ///< Channel for ticking intra-slot sections, such as tx offset and tx max
+#define TSCH_TIMER_DESYNC_WINDOW_CHANNEL 2 ///< Channel for ticking the desynchronization window
 
 // Bytes per millisecond in BLE 2M mode
 #define BLE_2M (1000 * 1000 * 2) // 2 Mbps
@@ -31,6 +32,7 @@
 #define BLE_2M_US_PER_BYTE (1000 / BLE_2M_B_MS) // 4 us
 
 #define _TSCH_START_GUARD_TIME (200)
+#define _TSCH_END_GUARD_TIME (100)
 #define _TSCH_PACKET_TOA (BLE_2M_US_PER_BYTE * DB_BLE_PAYLOAD_MAX_LENGTH) // Time on air for the maximum payload.
 #define _TSCH_PACKET_TOA_WITH_PADDING (_TSCH_PACKET_TOA + (BLE_2M_US_PER_BYTE * 32)) // Add some padding just in case.
 
@@ -80,10 +82,10 @@ typedef struct {
 typedef struct {
     uint8_t version;
     tsch_packet_type_t type;
+    uint64_t asn;
     uint64_t src;
     uint8_t remaining_capacity;
     uint8_t active_schedule_id;
-    uint64_t asn;
 } tsch_beacon_packet_header_t;
 // ==== END TODO: move to protocol.h, but that will be part of a larger refactoring ======
 
@@ -103,6 +105,6 @@ typedef void (*tsch_cb_t)(uint8_t *packet, uint8_t length);  ///< Function point
  * @param[in] callback             pointer to a function that will be called each time a packet is received.
  *
  */
-void db_tsch_init(tsch_cb_t callback);
+void db_tsch_init(node_type_t node_type, tsch_cb_t application_callback);
 
 #endif

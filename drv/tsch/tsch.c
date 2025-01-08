@@ -36,6 +36,16 @@ gpio_t pin2 = { .port = 1, .pin = 4 };
 gpio_t pin3 = { .port = 1, .pin = 5 };
 #endif
 
+#ifdef DEBUG
+    #define DEBUG_GPIO_TOGGLE(pin) db_gpio_toggle(pin)
+    #define DEBUG_GPIO_SET(pin) db_gpio_set(pin)
+    #define DEBUG_GPIO_CLEAR(pin) db_gpio_clear(pin)
+#else
+    // No-op when DEBUG is not defined
+    #define DEBUG_GPIO_TOGGLE(pin) ((void)0))
+    #define DEBUG_GPIO_SET(pin) ((void)0))
+#endif
+
 //=========================== defines ==========================================
 
 //=========================== variables ========================================
@@ -45,11 +55,11 @@ tsch_slot_timing_t tsch_default_slot_timing = {
     .rx_max = _TSCH_START_GUARD_TIME + _TSCH_PACKET_TOA_WITH_PADDING, // Guard time + Enough time to receive the maximum payload.
     .tx_offset = 40 + 300 + _TSCH_START_GUARD_TIME, // Same as rx_offset, plus the guard time.
     .tx_max = _TSCH_PACKET_TOA_WITH_PADDING, // Enough to transmit the maximum payload.
-    .end_guard = 100, // Extra time at the end of the slot
+    .end_guard = _TSCH_END_GUARD_TIME, // Extra time at the end of the slot
 
     // receive slot is: rx_offset / rx_max / end_guard
     // transmit slot is: tx_offset / tx_max / end_guard
-    .total_duration = 40 + 100 + _TSCH_START_GUARD_TIME + _TSCH_PACKET_TOA_WITH_PADDING + 100, // Total duration of the slot
+    .total_duration = 40 + 100 + _TSCH_START_GUARD_TIME + _TSCH_PACKET_TOA_WITH_PADDING + _TSCH_END_GUARD_TIME, // Total duration of the slot
 };
 
 typedef enum {
@@ -72,6 +82,8 @@ typedef struct {
     node_type_t node_type; // whether the node is a gateway or a dotbot
     uint64_t device_id; ///< Device ID
 
+    uint64_t asn; ///< Absolute slot number
+
     tsch_state_t state; ///< State of the TSCH state machine
     tsch_radio_event_t event; ///< Current event to process
 
@@ -90,33 +102,30 @@ uint8_t default_packet[] = {
 
 //========================== prototypes ========================================
 
-// /**
-//  * @brief Interrupt handler for the slot-wise ticking of the TSCH scheduler.
-//  */
-// static void _timer_tsch_slot_handler(void);
+//-------------------------- state machine handlers ----------------------------
 
-/*
-* @brief Callback function passed to the radio driver.
-*/
-static void _tsch_callback(uint8_t *packet, uint8_t length);
-
-static void _tsch_sm_handler(void);
+static void _tsch_state_machine_handler(void);
 static void _handler_sm_begin_slot(void);
-static void _handler_sm_do_rx(void);
-static void _handler_sm_is_rxing(void);
-static void _handler_sm_do_tx(void);
-static void _handler_sm_is_txing(void);
-
-static inline void _set_timer_and_compensate(uint32_t duration, uint32_t start_ts, timer_hf_cb_t cb);
 
 /*
 * @brief Set TSCH state machine state, to be used after the timer expires.
 */
 static inline void _set_next_state(tsch_state_t state);
 
+// ------------------------- other functions ------------------------------------
+
+/*
+* @brief Callback function passed to the radio driver.
+*/
+static void _tsch_callback(uint8_t *packet, uint8_t length);
+
+static inline void _set_timer_and_compensate(uint8_t channel, uint32_t duration, uint32_t start_ts, timer_hf_cb_t cb);
+// static inline void _set_timer(uint8_t channel, uint32_t duration, timer_hf_cb_t timer_callback);
+
+
 //=========================== public ===========================================
 
-void db_tsch_init(tsch_cb_t application_callback) {
+void db_tsch_init(node_type_t node_type, tsch_cb_t application_callback) {
 #ifdef DEBUG
     db_gpio_init(&pin0, DB_GPIO_OUT);
     db_gpio_init(&pin1, DB_GPIO_OUT);
@@ -133,42 +142,64 @@ void db_tsch_init(tsch_cb_t application_callback) {
     // Save the application callback to use in our interruption
     _tsch_vars.application_callback = application_callback;
 
+    // set node information
+    _tsch_vars.node_type = node_type;
     _tsch_vars.device_id = db_device_id();
+
+    _tsch_vars.asn = 0;
 
     // NOTE: assume the scheduler has already been initialized by the application
 
     // set slot total duration
     tsch_default_slot_timing.total_duration = tsch_default_slot_timing.rx_offset + tsch_default_slot_timing.rx_max + tsch_default_slot_timing.end_guard;
 
-    // start the ticking immediately
-    // db_timer_hf_set_oneshot_us(TSCH_TIMER_DEV, TSCH_TIMER_SLOT_CHANNEL, 100, _timer_tsch_slot_handler);
-
     // initialize and start the state machine
     _set_next_state(TSCH_STATE_BEGIN_SLOT);
-    db_timer_hf_set_oneshot_us(TSCH_TIMER_DEV, TSCH_TIMER_SLOT_CHANNEL, 100, _tsch_sm_handler);
+    uint32_t time_padding = 10; // account for function call and interrupt latency
+    db_timer_hf_set_oneshot_us(TSCH_TIMER_DEV, TSCH_TIMER_INTER_SLOT_CHANNEL, time_padding, _tsch_state_machine_handler); // trigger the state machine
 }
 
 //=========================== private ==========================================
 
 // state machine handler
-void _tsch_sm_handler(void) {
+void _tsch_state_machine_handler(void) {
+    uint32_t start_ts = db_timer_hf_now(TSCH_TIMER_DEV);
     // printf("State: %d\n", _tsch_vars.state);
 
     switch (_tsch_vars.state) {
         case TSCH_STATE_BEGIN_SLOT:
+            DEBUG_GPIO_TOGGLE(&pin0);
+            DEBUG_GPIO_SET(&pin1);
+            // set the timer for the next slot TOTAL DURATION
+            // _set_timer(TSCH_TIMER_INTER_SLOT_CHANNEL, tsch_default_slot_timing.total_duration, &_tsch_state_machine_handler);
+            _set_timer_and_compensate(TSCH_TIMER_INTER_SLOT_CHANNEL, tsch_default_slot_timing.total_duration, start_ts, &_tsch_state_machine_handler);
             _handler_sm_begin_slot();
             break;
         case TSCH_STATE_DO_RX:
-            _handler_sm_do_rx();
-            break;
-        case TSCH_STATE_IS_RXING:
-            _handler_sm_is_rxing();
+            DEBUG_GPIO_CLEAR(&pin1);
+            DEBUG_GPIO_SET(&pin2);
+            // update state
+            _set_next_state(TSCH_STATE_IS_RXING);
+            // receive packets
+            db_radio_rx(); // remember: this always starts with before the actual transmission begins, i.e, rx_offset < tx_offset always holds
+            _set_timer_and_compensate(TSCH_TIMER_INTRA_SLOT_CHANNEL, tsch_default_slot_timing.rx_max, start_ts, &_tsch_state_machine_handler);
             break;
         case TSCH_STATE_DO_TX:
-            _handler_sm_do_tx();
+            DEBUG_GPIO_CLEAR(&pin1);
+            DEBUG_GPIO_SET(&pin2);
+            // update state
+            _set_next_state(TSCH_STATE_IS_TXING);
+            // send the packet
+            db_radio_tx(_tsch_vars.packet, _tsch_vars.packet_len);
+            _set_timer_and_compensate(TSCH_TIMER_INTRA_SLOT_CHANNEL, tsch_default_slot_timing.tx_max, start_ts, &_tsch_state_machine_handler);
             break;
+        // in case was receiving or sending, now just finish. timeslot will begin again because of the inter-slot timer
+        case TSCH_STATE_IS_RXING:
         case TSCH_STATE_IS_TXING:
-            _handler_sm_is_txing();
+            DEBUG_GPIO_CLEAR(&pin2);
+            // just disable the radio and set the next state
+            db_radio_disable();
+            _set_next_state(TSCH_STATE_BEGIN_SLOT);
             break;
         default:
             break;
@@ -176,17 +207,12 @@ void _tsch_sm_handler(void) {
 }
 
 void _handler_sm_begin_slot(void) {
-#ifdef DEBUG
-    db_gpio_toggle(&pin0);
-#endif
     uint32_t start_ts = db_timer_hf_now(TSCH_TIMER_DEV);
 
     uint32_t timer_duration = 0;
 
-    // uint32_t start_sched_ts = db_timer_hf_now(TSCH_TIMER_DEV);
-    tsch_radio_event_t event = db_scheduler_tick();
-    // printf("Scheduler tick took %d us\n", db_timer_hf_now(TSCH_TIMER_DEV) - start_sched_ts);
-    // printf("(_handler_sm_begin_slot) Event %c:   %c, %d    Slot duration: %d\n", event.slot_type, event.radio_action, event.frequency, tsch_default_slot_timing.total_duration);
+    tsch_radio_event_t event = db_scheduler_tick(_tsch_vars.asn++);
+    // printf("  Event %c:   %c, %d    Slot duration: %d\n", event.slot_type, event.radio_action, event.frequency, tsch_default_slot_timing.total_duration);
 
     switch (event.radio_action) {
         case TSCH_RADIO_ACTION_TX:
@@ -202,10 +228,11 @@ void _handler_sm_begin_slot(void) {
             // TODO: how to get a packet? decide based on _tsch_vars.node_type and event.slot_type
             //       could the event come with a packet? sometimes maybe? or would it be confusing?
             _tsch_vars.packet_len = sizeof(default_packet);
-            memcpy(_tsch_vars.packet, default_packet, _tsch_vars.packet_len); 
+            memcpy(_tsch_vars.packet, default_packet, _tsch_vars.packet_len);
 
             // set timer duration to resume again after tx_offset
             timer_duration = tsch_default_slot_timing.tx_offset;
+            _set_timer_and_compensate(TSCH_TIMER_INTRA_SLOT_CHANNEL, timer_duration, start_ts, &_tsch_state_machine_handler);
             break;
         case TSCH_RADIO_ACTION_RX:
             // configure radio
@@ -218,72 +245,50 @@ void _handler_sm_begin_slot(void) {
 
             // set timer duration to resume again after rx_offset
             timer_duration = tsch_default_slot_timing.rx_offset;
+            _set_timer_and_compensate(TSCH_TIMER_INTRA_SLOT_CHANNEL, timer_duration, start_ts, &_tsch_state_machine_handler);
             break;
         case TSCH_RADIO_ACTION_SLEEP:
             // just disable the radio and do nothing, then come back for the next slot
             db_radio_disable();
             _set_next_state(TSCH_STATE_BEGIN_SLOT); // keep the same state
-            timer_duration = tsch_default_slot_timing.total_duration;
+            // timer_duration = tsch_default_slot_timing.total_duration;
             break;
     }
 
-    _set_timer_and_compensate(timer_duration, start_ts, &_tsch_sm_handler);
+    // _set_timer_and_compensate(TSCH_TIMER_INTRA_SLOT_CHANNEL, timer_duration, start_ts, &_tsch_state_machine_handler);
 }
 
-// --- rx handlers ---
-void _handler_sm_do_rx(void) {
-    uint32_t start_ts = db_timer_hf_now(TSCH_TIMER_DEV);
+// --------------------- timers ---------------------
 
-    // update state
-    _set_next_state(TSCH_STATE_IS_RXING);
-
-    // receive packets
-    db_radio_rx(); // remember: this always starts with a guard time before the actual transmission begins
-
-    _set_timer_and_compensate(tsch_default_slot_timing.rx_max, start_ts, &_tsch_sm_handler);
-}
-void _handler_sm_is_rxing(void) {
-    // just disable the radio and do nothing, then come back for the next slot
-
-    uint32_t start_ts = db_timer_hf_now(TSCH_TIMER_DEV);
-
-    // configure radio
-    db_radio_disable();
-
-    // set state for after the timer expires
-    _set_next_state(TSCH_STATE_BEGIN_SLOT);
-
-    _set_timer_and_compensate(tsch_default_slot_timing.end_guard, start_ts, &_tsch_sm_handler);
+static inline void _set_next_state(tsch_state_t state) {
+    _tsch_vars.state = state;
 }
 
-// --- tx handlers ---
-void _handler_sm_do_tx(void) {
-    uint32_t start_ts = db_timer_hf_now(TSCH_TIMER_DEV);
-
-    // update state
-    _set_next_state(TSCH_STATE_IS_TXING);
-
-    // send the packet
-    db_radio_tx(_tsch_vars.packet, _tsch_vars.packet_len);
-
-    _set_timer_and_compensate(tsch_default_slot_timing.tx_max, start_ts, &_tsch_sm_handler);
+static inline void _set_timer_and_compensate(uint8_t channel, uint32_t duration, uint32_t start_ts, timer_hf_cb_t timer_callback) {
+    uint32_t elapsed_ts = db_timer_hf_now(TSCH_TIMER_DEV) - start_ts;
+    // printf("Setting timer for duration %d, compensating for elapsed %d gives: %d\n", duration, elapsed_ts, duration - elapsed_ts);
+    db_timer_hf_set_oneshot_us(
+        TSCH_TIMER_DEV,
+        channel,
+        duration - elapsed_ts,
+        timer_callback
+    );
 }
-void _handler_sm_is_txing(void) {
-    // just disable the radio and do nothing, then come back for the next slot
 
-    uint32_t start_ts = db_timer_hf_now(TSCH_TIMER_DEV);
+//static inline void _set_timer(uint8_t channel, uint32_t duration, timer_hf_cb_t timer_callback) {
+////    printf("Setting timer for duration %d\n", duration);
+//   db_timer_hf_set_oneshot_us(
+//       TSCH_TIMER_DEV,
+//       channel,
+//       duration,
+//       timer_callback
+//   );
+//}
 
-    // configure radio
-    db_radio_disable();
-
-    // set state for after the timer expires
-    _set_next_state(TSCH_STATE_BEGIN_SLOT);
-
-    _set_timer_and_compensate(tsch_default_slot_timing.end_guard, start_ts, &_tsch_sm_handler);
-}
+// --------------------- others ---------------------
 
 static void _tsch_callback(uint8_t *packet, uint8_t length) {
-    // printf("Received packet of length %d\n", length);
+    printf("Received packet of length %d\n", length);
 
     // Check if the packet is big enough to have a header
     if (length < sizeof(protocol_header_t)) {
@@ -296,19 +301,4 @@ static void _tsch_callback(uint8_t *packet, uint8_t length) {
     } else if (_tsch_vars.application_callback) {
         _tsch_vars.application_callback(packet, length);
     }
-}
-
-static inline void _set_next_state(tsch_state_t state) {
-    _tsch_vars.state = state;
-}
-
-static inline void _set_timer_and_compensate(uint32_t duration, uint32_t start_ts, timer_hf_cb_t timer_callback) {
-    uint32_t elapsed_ts = db_timer_hf_now(TSCH_TIMER_DEV) - start_ts;
-    // printf("Setting timer for duration %d, compensating for elapsed %d gives: %d\n", duration, elapsed_ts, duration - elapsed_ts);
-    db_timer_hf_set_oneshot_us(
-        TSCH_TIMER_DEV,
-        TSCH_TIMER_SLOT_CHANNEL,
-        duration - elapsed_ts,
-        timer_callback
-    );
 }

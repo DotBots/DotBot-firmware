@@ -113,16 +113,16 @@ bool db_scheduler_deassign_uplink_cell(uint64_t node_id) {
     return false;
 }
 
-tsch_radio_event_t db_scheduler_tick(void) {
+tsch_radio_event_t db_scheduler_tick(uint64_t asn) {
     schedule_t active_schedule = *_schedule_vars.active_schedule_ptr;
 
     // get the current cell
-    size_t cell_index = _schedule_vars.asn % active_schedule.n_cells;
+    size_t cell_index = asn % active_schedule.n_cells;
     cell_t cell = active_schedule.cells[cell_index];
 
     tsch_radio_event_t radio_event = {
         .radio_action = TSCH_RADIO_ACTION_SLEEP,
-        .frequency = db_scheduler_get_frequency(cell.type, _schedule_vars.asn, cell.channel_offset),
+        .frequency = db_scheduler_get_frequency(cell.type, asn, cell.channel_offset),
         .slot_type = cell.type, // FIXME: only for debugging, remove before merge
     };
     if (_schedule_vars.node_type == NODE_TYPE_GATEWAY) {
@@ -132,12 +132,9 @@ tsch_radio_event_t db_scheduler_tick(void) {
     }
 
     // if the slotframe wrapped, keep track of how many slotframes have passed (used to cycle beacon frequencies)
-    if (_schedule_vars.asn != 0 && cell_index == 0) {
+    if (asn != 0 && cell_index == 0) {
         _schedule_vars.slotframe_counter++;
     }
-
-    // increment ASN so that (1) nodes are in sync and (2) next time we get the next cell
-    _schedule_vars.asn++;
 
     return radio_event;
 }
