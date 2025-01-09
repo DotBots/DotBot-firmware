@@ -16,13 +16,13 @@
 
 //=========================== swarmit ==========================================
 
-void reload_wdt0(void);
+void swarmit_reload_wdt0(void);
 
 //=========================== main =============================================
 
 int main(void) {
     db_timer_init(1);
-    db_timer_set_periodic_ms(1, 0, 500, &reload_wdt0);
+    db_timer_set_periodic_ms(1, 0, 500, &swarmit_reload_wdt0);
 
     db_gpio_init(&db_led1, DB_GPIO_OUT);
 

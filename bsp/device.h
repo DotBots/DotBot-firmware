@@ -16,6 +16,10 @@
 #include <stdint.h>
 #include <nrf.h>
 
+#if defined(USE_SWARMIT)
+uint64_t swarmit_read_device_id(void);
+#endif
+
 #if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
 #define NRF_FICR NRF_FICR_NS
 #endif
@@ -39,10 +43,14 @@ static inline uint64_t db_device_addr(void) {
  * @return device identifier in 64bit format
  */
 static inline uint64_t db_device_id(void) {
-#if defined(NRF5340_XXAA) && defined(NRF_NETWORK)
+#if defined(NRF5340_XXAA)
+#if defined(NRF_NETWORK)
     return ((uint64_t)NRF_FICR_NS->INFO.DEVICEID[1]) << 32 | (uint64_t)NRF_FICR_NS->INFO.DEVICEID[0];
-#elif defined(NRF5340_XXAA) && defined(NRF_APPLICATION)
+#elif defined(USE_SWARMIT)
+    return swarmit_read_device_id();
+#elif defined(NRF_APPLICATION)
     return ((uint64_t)NRF_FICR_S->INFO.DEVICEID[1]) << 32 | (uint64_t)NRF_FICR_S->INFO.DEVICEID[0];
+#endif
 #else
     return ((uint64_t)NRF_FICR->DEVICEID[1]) << 32 | (uint64_t)NRF_FICR->DEVICEID[0];
 #endif
