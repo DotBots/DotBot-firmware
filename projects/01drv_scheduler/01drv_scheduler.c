@@ -42,7 +42,9 @@ int main(void) {
     uint64_t asn = 0;
     for (size_t j = 0; j < n_slotframes; j++) {
         for (size_t i = 0; i < schedule.n_cells; i++) {
+            uint32_t start_ts = db_timer_hf_now(TSCH_TIMER_DEV);
             tsch_radio_event_t event = db_scheduler_tick(asn++);
+            printf("Scheduler tick took %d us\n", db_timer_hf_now(TSCH_TIMER_DEV) - start_ts);
             printf(">> Event %c:   %c, %d\n", event.slot_type, event.radio_action, event.frequency);
 
             // sleep for the duration of the slot

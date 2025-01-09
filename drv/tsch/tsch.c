@@ -53,9 +53,9 @@ gpio_t pin3 = { .port = 1, .pin = 5 };
 //=========================== variables ========================================
 
 tsch_slot_timing_t tsch_default_slot_timing = {
-    .rx_offset = 40 + 300, // Radio ramp-up time (40 us), + 100 us for any processing needed
+    .rx_offset = 40 + 200, // Radio ramp-up time (40 us), + some margin for any processing needed
     .rx_max = _TSCH_START_GUARD_TIME + _TSCH_PACKET_TOA_WITH_PADDING, // Guard time + Enough time to receive the maximum payload.
-    .tx_offset = 40 + 300 + _TSCH_START_GUARD_TIME, // Same as rx_offset, plus the guard time.
+    .tx_offset = 40 + 200 + _TSCH_START_GUARD_TIME, // Same as rx_offset, plus the guard time.
     .tx_max = _TSCH_PACKET_TOA_WITH_PADDING, // Enough to transmit the maximum payload.
     .end_guard = _TSCH_END_GUARD_TIME, // Extra time at the end of the slot
 

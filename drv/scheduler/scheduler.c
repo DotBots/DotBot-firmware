@@ -118,11 +118,9 @@ bool db_scheduler_deassign_uplink_cell(uint64_t node_id) {
 }
 
 tsch_radio_event_t db_scheduler_tick(uint64_t asn) {
-    schedule_t active_schedule = *_schedule_vars.active_schedule_ptr;
-
     // get the current cell
-    size_t cell_index = asn % active_schedule.n_cells;
-    cell_t cell = active_schedule.cells[cell_index];
+    size_t cell_index = asn % (_schedule_vars.active_schedule_ptr)->n_cells;
+    cell_t cell = (_schedule_vars.active_schedule_ptr)->cells[cell_index];
 
     tsch_radio_event_t radio_event = {
         .radio_action = TSCH_RADIO_ACTION_SLEEP,
