@@ -54,10 +54,10 @@ static void radio_callback(uint8_t *packet, uint8_t length);
 int main(void) {
     // initialize schedule
 
-    //schedule_t schedule = schedule_only_beacons;
-    //node_type_t node_type = NODE_TYPE_GATEWAY;
-    schedule_t schedule = schedule_small;
-    node_type_t node_type = NODE_TYPE_DOTBOT;
+    schedule_t schedule = schedule_only_beacons;
+    node_type_t node_type = NODE_TYPE_GATEWAY;
+    //schedule_t schedule = schedule_small;
+    //node_type_t node_type = NODE_TYPE_DOTBOT;
 
     db_scheduler_init(node_type, &schedule);
     printf("\n==== Device of type %c and id %llx is using schedule %d ====\n\n", node_type, db_device_id(), schedule.id);

@@ -33,7 +33,7 @@
 
 #define TSCH_N_CELLS_MAX 101
 
-// #define TSCH_LISTEN_DURING_UNSCHEDULED_UPLINK 1
+#define TSCH_LISTEN_DURING_UNSCHEDULED_UPLINK 1
 
 //=========================== variables ========================================
 

@@ -46,6 +46,8 @@ gpio_t pin3 = { .port = 1, .pin = 5 };
     #define DEBUG_GPIO_SET(pin) ((void)0))
 #endif
 
+#define TSCH_TX_TIME_ONE_BEACON ((sizeof(beacon) * BLE_2M_US_PER_BYTE) + 150)
+
 //=========================== defines ==========================================
 
 //=========================== variables ========================================
@@ -89,6 +91,10 @@ typedef struct {
 
     uint8_t packet[DB_BLE_PAYLOAD_MAX_LENGTH]; ///< Buffer to store the packet to transmit
     size_t packet_len; ///< Length of the packet to transmit
+
+    uint8_t max_beacons_per_slot; ///< Maximum number of beacons to send in a single slot
+    uint8_t beacons_sent_this_slot; ///< Tracker to allow sending several beacons in the same slot
+    uint8_t tx_time_one_beacon; ///< Tracker to allow sending several beacons in the same slot
 
     tsch_cb_t application_callback; ///< Function pointer, stores the application callback
 } tsch_vars_t;
@@ -150,10 +156,13 @@ void db_tsch_init(node_type_t node_type, tsch_cb_t application_callback) {
 
     _tsch_vars.asn = 0;
 
-    // configure beacon
+    // beacon configurations
     beacon.version = 1;
     beacon.type = TSCH_PACKET_TYPE_BEACON;
     beacon.src = db_device_id();
+    _tsch_vars.max_beacons_per_slot = tsch_default_slot_timing.tx_max / ((sizeof(beacon) * BLE_2M_US_PER_BYTE) + 180); // 180 us margin
+    _tsch_vars.beacons_sent_this_slot = 0;
+    // _tsch_vars.tx_time_one_beacon = (sizeof(beacon) * BLE_2M_US_PER_BYTE) + 100; // 100 us margin
 
     // NOTE: assume the scheduler has already been initialized by the application
 
@@ -162,7 +171,7 @@ void db_tsch_init(node_type_t node_type, tsch_cb_t application_callback) {
 
     // initialize and start the state machine
     _set_next_state(TSCH_STATE_BEGIN_SLOT);
-    uint32_t time_padding = 10; // account for function call and interrupt latency
+    uint32_t time_padding = 50; // account for function call and interrupt latency
     db_timer_hf_set_oneshot_us(TSCH_TIMER_DEV, TSCH_TIMER_INTER_SLOT_CHANNEL, time_padding, _tsch_state_machine_handler); // trigger the state machine
 }
 
@@ -180,6 +189,11 @@ void _tsch_state_machine_handler(void) {
             // set the timer for the next slot TOTAL DURATION
             // _set_timer(TSCH_TIMER_INTER_SLOT_CHANNEL, tsch_default_slot_timing.total_duration, &_tsch_state_machine_handler);
             _set_timer_and_compensate(TSCH_TIMER_INTER_SLOT_CHANNEL, tsch_default_slot_timing.total_duration, start_ts, &_tsch_state_machine_handler);
+
+            // common logic, which doesn't depend on schedule
+            _tsch_vars.beacons_sent_this_slot = 0;
+
+            // logic of beginning the slot
             _handler_sm_begin_slot();
             break;
         case TSCH_STATE_DO_RX:
@@ -194,19 +208,38 @@ void _tsch_state_machine_handler(void) {
         case TSCH_STATE_DO_TX:
             DEBUG_GPIO_CLEAR(&pin1);
             DEBUG_GPIO_SET(&pin1);
-            // update state
-            _set_next_state(TSCH_STATE_IS_TXING);
             // send the packet
             // printf("Sending packet of length %d\n", _tsch_vars.packet_len);
             // for (uint8_t i = 0; i < _tsch_vars.packet_len; i++) {
             //     printf("%02x ", _tsch_vars.packet[i]);
             // }
             // puts("");
-            if (_tsch_vars.node_type == NODE_TYPE_GATEWAY && _tsch_vars.event.slot_type == SLOT_TYPE_BEACON) {
-                DEBUG_GPIO_CLEAR(&pin2); // Gateway sending beacon NOW
+
+            // FIXME: this code is ugly, there must be a better way.
+            if (_tsch_vars.node_type == NODE_TYPE_GATEWAY) {
+                // we want to send several beacons in the same slot, to maximize chance or reception.
+                // this is important because a DotBot will always be un-synced with relation to a Beacon from a Gateway it is not associated with.
+                if (_tsch_vars.event.slot_type == SLOT_TYPE_BEACON) {
+                    if (_tsch_vars.beacons_sent_this_slot++ < _tsch_vars.max_beacons_per_slot) {
+                        // stay in the same state, so that we can send still one more beacon
+                        _set_next_state(TSCH_STATE_DO_TX);
+                        DEBUG_GPIO_SET(&pin2); DEBUG_GPIO_CLEAR(&pin2); // Gateway sending beacon NOW
+                        _set_timer_and_compensate(TSCH_TIMER_INTRA_SLOT_CHANNEL, TSCH_TX_TIME_ONE_BEACON, start_ts, &_tsch_state_machine_handler);
+                        db_radio_tx(_tsch_vars.packet, _tsch_vars.packet_len);
+                        break;
+                    } else {
+                        // we have sent all beacons for this slot, so we can just finish the TX phase
+                        _set_next_state(TSCH_STATE_IS_TXING);
+                        // _set_timer_and_compensate(TSCH_TIMER_INTRA_SLOT_CHANNEL, 100, start_ts, &_tsch_state_machine_handler);
+                        _tsch_state_machine_handler();
+                        break;
+                    }
+                }
             }
-            db_radio_tx(_tsch_vars.packet, _tsch_vars.packet_len);
+
+            _set_next_state(TSCH_STATE_IS_TXING);
             _set_timer_and_compensate(TSCH_TIMER_INTRA_SLOT_CHANNEL, tsch_default_slot_timing.tx_max, start_ts, &_tsch_state_machine_handler);
+            db_radio_tx(_tsch_vars.packet, _tsch_vars.packet_len);
             break;
         // in case was receiving or sending, now just finish. timeslot will begin again because of the inter-slot timer
         case TSCH_STATE_IS_RXING:
@@ -243,10 +276,9 @@ void _handler_sm_begin_slot(void) {
             // TODO: how to get a packet? decide based on _tsch_vars.node_type and event.slot_type
             //       could the event come with a packet? sometimes maybe? or would it be confusing?
 
-            if (event.slot_type == SLOT_TYPE_BEACON) {
+            if (_tsch_vars.node_type == NODE_TYPE_GATEWAY && event.slot_type == SLOT_TYPE_BEACON) {
                 _tsch_vars.packet_len = sizeof(beacon);
                 memcpy(_tsch_vars.packet, &beacon, _tsch_vars.packet_len);
-                DEBUG_GPIO_SET(&pin2); // Gateway prepared a beacon to send
             } else {
                 _tsch_vars.packet_len = sizeof(default_packet);
                 memcpy(_tsch_vars.packet, default_packet, _tsch_vars.packet_len);
@@ -273,6 +305,7 @@ void _handler_sm_begin_slot(void) {
             // just disable the radio and do nothing, then come back for the next slot
             db_radio_disable();
             _set_next_state(TSCH_STATE_BEGIN_SLOT); // keep the same state
+            DEBUG_GPIO_CLEAR(&pin1);
             // timer_duration = tsch_default_slot_timing.total_duration;
             break;
     }
