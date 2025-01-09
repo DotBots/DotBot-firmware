@@ -121,4 +121,7 @@ int8_t db_radio_rssi(void);
  */
 void db_radio_disable(void);
 
+void db_radio_tx_prepare(const uint8_t *tx_buffer, uint8_t length);
+void db_radio_tx_dispatch(void);
+
 #endif

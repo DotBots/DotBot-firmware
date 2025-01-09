@@ -281,6 +281,32 @@ int8_t db_radio_rssi(void) {
     return (uint8_t)NRF_RADIO->RSSISAMPLE * -1;
 }
 
+
+void db_radio_tx_prepare(const uint8_t *tx_buffer, uint8_t length) {
+    radio_vars.pdu.length = length;
+    memcpy(radio_vars.pdu.payload, tx_buffer, length);
+}
+
+void db_radio_tx_dispatch(void) {
+    NRF_RADIO->SHORTS = RADIO_SHORTS_COMMON | (RADIO_SHORTS_DISABLED_RXEN_Enabled << RADIO_SHORTS_DISABLED_RXEN_Pos);
+    if (radio_vars.state == RADIO_STATE_IDLE) {
+
+        // Enable the Radio to send the packet
+        NRF_RADIO->EVENTS_DISABLED = 0;  // We must use EVENT_DISABLED, if we use EVENT_END. the interrupts will be enabled in the time between the END event and the Disable event, triggering an undesired interrupt
+        NRF_RADIO->TASKS_TXEN      = RADIO_TASKS_TXEN_TASKS_TXEN_Trigger << RADIO_TASKS_TXEN_TASKS_TXEN_Pos;
+        // Wait for transmission to end and the radio to be disabled
+        while (NRF_RADIO->EVENTS_DISABLED == 0) {}
+
+        // We re-enable interrupts AFTER the packet is sent, to avoid triggering an EVENT_ADDRESS and EVENT_DISABLED interrupt with the outgoing packet
+        // We also clear both flags to avoid insta-triggering an interrupt as soon as we assert INTENSET
+        NRF_RADIO->EVENTS_ADDRESS  = 0;
+        NRF_RADIO->EVENTS_DISABLED = 0;
+        _radio_enable();
+    }
+    radio_vars.state = RADIO_STATE_RX;
+}
+
+
 //=========================== private ==========================================
 
 static void _radio_enable(void) {

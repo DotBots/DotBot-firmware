@@ -160,7 +160,7 @@ void db_tsch_init(node_type_t node_type, tsch_cb_t application_callback) {
     beacon.version = 1;
     beacon.type = TSCH_PACKET_TYPE_BEACON;
     beacon.src = db_device_id();
-    _tsch_vars.max_beacons_per_slot = tsch_default_slot_timing.tx_max / ((sizeof(beacon) * BLE_2M_US_PER_BYTE) + 180); // 180 us margin
+    _tsch_vars.max_beacons_per_slot = 1;//tsch_default_slot_timing.tx_max / ((sizeof(beacon) * BLE_2M_US_PER_BYTE) + 180); // 180 us margin
     _tsch_vars.beacons_sent_this_slot = 0;
     // _tsch_vars.tx_time_one_beacon = (sizeof(beacon) * BLE_2M_US_PER_BYTE) + 100; // 100 us margin
 
@@ -215,31 +215,14 @@ void _tsch_state_machine_handler(void) {
             // }
             // puts("");
 
-            // FIXME: this code is ugly, there must be a better way.
-            if (_tsch_vars.node_type == NODE_TYPE_GATEWAY) {
-                // we want to send several beacons in the same slot, to maximize chance or reception.
-                // this is important because a DotBot will always be un-synced with relation to a Beacon from a Gateway it is not associated with.
-                if (_tsch_vars.event.slot_type == SLOT_TYPE_BEACON) {
-                    if (_tsch_vars.beacons_sent_this_slot++ < _tsch_vars.max_beacons_per_slot) {
-                        // stay in the same state, so that we can send still one more beacon
-                        _set_next_state(TSCH_STATE_DO_TX);
-                        DEBUG_GPIO_SET(&pin2); DEBUG_GPIO_CLEAR(&pin2); // Gateway sending beacon NOW
-                        _set_timer_and_compensate(TSCH_TIMER_INTRA_SLOT_CHANNEL, TSCH_TX_TIME_ONE_BEACON, start_ts, &_tsch_state_machine_handler);
-                        db_radio_tx(_tsch_vars.packet, _tsch_vars.packet_len);
-                        break;
-                    } else {
-                        // we have sent all beacons for this slot, so we can just finish the TX phase
-                        _set_next_state(TSCH_STATE_IS_TXING);
-                        // _set_timer_and_compensate(TSCH_TIMER_INTRA_SLOT_CHANNEL, 100, start_ts, &_tsch_state_machine_handler);
-                        _tsch_state_machine_handler();
-                        break;
-                    }
-                }
+            if (_tsch_vars.node_type == NODE_TYPE_GATEWAY && _tsch_vars.event.slot_type == SLOT_TYPE_BEACON) {
+                DEBUG_GPIO_SET(&pin2); DEBUG_GPIO_CLEAR(&pin2); // Gateway sending beacon NOW
             }
 
             _set_next_state(TSCH_STATE_IS_TXING);
             _set_timer_and_compensate(TSCH_TIMER_INTRA_SLOT_CHANNEL, tsch_default_slot_timing.tx_max, start_ts, &_tsch_state_machine_handler);
-            db_radio_tx(_tsch_vars.packet, _tsch_vars.packet_len);
+            // db_radio_tx(_tsch_vars.packet, _tsch_vars.packet_len);
+            db_radio_tx_dispatch();
             break;
         // in case was receiving or sending, now just finish. timeslot will begin again because of the inter-slot timer
         case TSCH_STATE_IS_RXING:
@@ -264,9 +247,20 @@ void _handler_sm_begin_slot(void) {
 
     switch (event.radio_action) {
         case TSCH_RADIO_ACTION_TX:
+            // set the packet that will be transmitted
+            if (_tsch_vars.node_type == NODE_TYPE_GATEWAY && event.slot_type == SLOT_TYPE_BEACON) {
+                _tsch_vars.packet_len = sizeof(beacon);
+                memcpy(_tsch_vars.packet, &beacon, _tsch_vars.packet_len);
+            } else {
+                // TODO: get from a queue or something
+                _tsch_vars.packet_len = sizeof(default_packet);
+                memcpy(_tsch_vars.packet, default_packet, _tsch_vars.packet_len);
+            }
+
             // configure radio
             db_radio_disable();
             db_radio_set_frequency(event.frequency);
+            db_radio_tx_prepare(_tsch_vars.packet, _tsch_vars.packet_len);
 
             // update state
             _tsch_vars.event = event;
@@ -275,14 +269,6 @@ void _handler_sm_begin_slot(void) {
             // get the packet to tx and save in _tsch_vars
             // TODO: how to get a packet? decide based on _tsch_vars.node_type and event.slot_type
             //       could the event come with a packet? sometimes maybe? or would it be confusing?
-
-            if (_tsch_vars.node_type == NODE_TYPE_GATEWAY && event.slot_type == SLOT_TYPE_BEACON) {
-                _tsch_vars.packet_len = sizeof(beacon);
-                memcpy(_tsch_vars.packet, &beacon, _tsch_vars.packet_len);
-            } else {
-                _tsch_vars.packet_len = sizeof(default_packet);
-                memcpy(_tsch_vars.packet, default_packet, _tsch_vars.packet_len);
-            }
 
             // set timer duration to resume again after tx_offset
             timer_duration = tsch_default_slot_timing.tx_offset;
