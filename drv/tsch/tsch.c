@@ -152,6 +152,7 @@ void db_tsch_init(node_type_t node_type, tsch_cb_t application_callback) {
 
     // configure beacon
     beacon.version = 1;
+    beacon.type = TSCH_PACKET_TYPE_BEACON;
     beacon.src = db_device_id();
 
     // NOTE: assume the scheduler has already been initialized by the application
@@ -174,8 +175,8 @@ void _tsch_state_machine_handler(void) {
 
     switch (_tsch_vars.state) {
         case TSCH_STATE_BEGIN_SLOT:
-            DEBUG_GPIO_TOGGLE(&pin0);
-            DEBUG_GPIO_SET(&pin1);
+            DEBUG_GPIO_CLEAR(&pin0); DEBUG_GPIO_SET(&pin0); // slot-wide debug pin
+            DEBUG_GPIO_SET(&pin1); // intra-slot debug pin
             // set the timer for the next slot TOTAL DURATION
             // _set_timer(TSCH_TIMER_INTER_SLOT_CHANNEL, tsch_default_slot_timing.total_duration, &_tsch_state_machine_handler);
             _set_timer_and_compensate(TSCH_TIMER_INTER_SLOT_CHANNEL, tsch_default_slot_timing.total_duration, start_ts, &_tsch_state_machine_handler);
@@ -183,7 +184,7 @@ void _tsch_state_machine_handler(void) {
             break;
         case TSCH_STATE_DO_RX:
             DEBUG_GPIO_CLEAR(&pin1);
-            DEBUG_GPIO_SET(&pin2);
+            DEBUG_GPIO_SET(&pin1);
             // update state
             _set_next_state(TSCH_STATE_IS_RXING);
             // receive packets
@@ -192,17 +193,25 @@ void _tsch_state_machine_handler(void) {
             break;
         case TSCH_STATE_DO_TX:
             DEBUG_GPIO_CLEAR(&pin1);
-            DEBUG_GPIO_SET(&pin2);
+            DEBUG_GPIO_SET(&pin1);
             // update state
             _set_next_state(TSCH_STATE_IS_TXING);
             // send the packet
+            // printf("Sending packet of length %d\n", _tsch_vars.packet_len);
+            // for (uint8_t i = 0; i < _tsch_vars.packet_len; i++) {
+            //     printf("%02x ", _tsch_vars.packet[i]);
+            // }
+            // puts("");
+            if (_tsch_vars.node_type == NODE_TYPE_GATEWAY && _tsch_vars.event.slot_type == SLOT_TYPE_BEACON) {
+                DEBUG_GPIO_CLEAR(&pin2); // Gateway sending beacon NOW
+            }
             db_radio_tx(_tsch_vars.packet, _tsch_vars.packet_len);
             _set_timer_and_compensate(TSCH_TIMER_INTRA_SLOT_CHANNEL, tsch_default_slot_timing.tx_max, start_ts, &_tsch_state_machine_handler);
             break;
         // in case was receiving or sending, now just finish. timeslot will begin again because of the inter-slot timer
         case TSCH_STATE_IS_RXING:
         case TSCH_STATE_IS_TXING:
-            DEBUG_GPIO_CLEAR(&pin2);
+            DEBUG_GPIO_CLEAR(&pin1);
             // just disable the radio and set the next state
             db_radio_disable();
             _set_next_state(TSCH_STATE_BEGIN_SLOT);
@@ -234,9 +243,10 @@ void _handler_sm_begin_slot(void) {
             // TODO: how to get a packet? decide based on _tsch_vars.node_type and event.slot_type
             //       could the event come with a packet? sometimes maybe? or would it be confusing?
 
-            if (event.slot_type == TSCH_PACKET_TYPE_BEACON) {
+            if (event.slot_type == SLOT_TYPE_BEACON) {
                 _tsch_vars.packet_len = sizeof(beacon);
                 memcpy(_tsch_vars.packet, &beacon, _tsch_vars.packet_len);
+                DEBUG_GPIO_SET(&pin2); // Gateway prepared a beacon to send
             } else {
                 _tsch_vars.packet_len = sizeof(default_packet);
                 memcpy(_tsch_vars.packet, default_packet, _tsch_vars.packet_len);
@@ -300,7 +310,7 @@ static inline void _set_timer_and_compensate(uint8_t channel, uint32_t duration,
 // --------------------- others ---------------------
 
 static void _tsch_callback(uint8_t *packet, uint8_t length) {
-    printf("Received packet of length %d\n", length);
+    // printf("TSCH: Received packet of length %d\n", length);
 
     // Check if the packet is big enough to have a header
     if (length < sizeof(protocol_header_t)) {
@@ -308,8 +318,10 @@ static void _tsch_callback(uint8_t *packet, uint8_t length) {
     }
 
     // Check if it is a beacon
-    if (packet[1] == TSCH_PACKET_TYPE_BEACON) {
+    if (packet[1] == TSCH_PACKET_TYPE_BEACON && _tsch_vars.node_type == NODE_TYPE_DOTBOT) {
         // _tsch_handle_beacon(packet, length);
+        DEBUG_GPIO_SET(&pin2); // DotBot received a beacon
+        DEBUG_GPIO_CLEAR(&pin2);
     } else if (_tsch_vars.application_callback) {
         _tsch_vars.application_callback(packet, length);
     }

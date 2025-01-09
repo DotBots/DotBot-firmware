@@ -47,16 +47,20 @@ schedule_t schedule_test = {
     }
 };
 
-extern schedule_t schedule_minuscule, schedule_small, schedule_only_beacons_optimized_scan;
+extern schedule_t schedule_minuscule, schedule_small, schedule_only_beacons, schedule_only_beacons_optimized_scan;
 
 static void radio_callback(uint8_t *packet, uint8_t length);
 
 int main(void) {
     // initialize schedule
-    schedule_t schedule = schedule_only_beacons_optimized_scan;
+
+    //schedule_t schedule = schedule_only_beacons;
+    //node_type_t node_type = NODE_TYPE_GATEWAY;
+    schedule_t schedule = schedule_small;
     node_type_t node_type = NODE_TYPE_DOTBOT;
+
     db_scheduler_init(node_type, &schedule);
-    printf("Device of type %c and id %llx is using schedule %d\n\n", node_type, db_device_id(), schedule.id);
+    printf("\n==== Device of type %c and id %llx is using schedule %d ====\n\n", node_type, db_device_id(), schedule.id);
 
     // initialize the TSCH driver
     //tsch_default_slot_timing.end_guard = 1000 * 1000; // add an extra second of delay.
@@ -69,9 +73,11 @@ int main(void) {
 }
 
 static void radio_callback(uint8_t *packet, uint8_t length) {
-    printf("Received packet of length %d\n", length);
-    for (uint8_t i = 0; i < length; i++) {
-        printf("%02x ", packet[i]);
-    }
-    puts("");
+    (void) packet;
+    (void) length;
+    //printf("Received packet of length %d\n", length);
+    //for (uint8_t i = 0; i < length; i++) {
+    //    printf("%02x ", packet[i]);
+    //}
+    //puts("");
 }

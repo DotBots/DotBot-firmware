@@ -33,16 +33,9 @@
 
 #define TSCH_N_CELLS_MAX 101
 
-#define TSCH_LISTEN_DURING_UNSCHEDULED_UPLINK 1
+// #define TSCH_LISTEN_DURING_UNSCHEDULED_UPLINK 1
 
 //=========================== variables ========================================
-
-typedef enum {
-    SLOT_TYPE_BEACON = 'B',
-    SLOT_TYPE_SHARED_UPLINK = 'S',
-    SLOT_TYPE_DOWNLINK = 'D',
-    SLOT_TYPE_UPLINK = 'U',
-} slot_type_t; // FIXME: slot_type or cell_type?
 
 typedef struct {
     slot_type_t type;

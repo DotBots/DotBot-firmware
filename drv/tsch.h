@@ -49,6 +49,13 @@ typedef enum {
     TSCH_RADIO_ACTION_TX = 'T',
 } tsch_radio_action_t;
 
+typedef enum {
+    SLOT_TYPE_BEACON = 'B',
+    SLOT_TYPE_SHARED_UPLINK = 'S',
+    SLOT_TYPE_DOWNLINK = 'D',
+    SLOT_TYPE_UPLINK = 'U',
+} slot_type_t; // FIXME: slot_type or cell_type?
+
 /* Timing of intra-slot sections */
 typedef struct {
     uint32_t rx_offset; ///< Offset for the receiver to start receiving.
@@ -92,7 +99,7 @@ typedef struct {
 typedef struct {
     tsch_radio_action_t radio_action;
     uint8_t frequency;
-    char slot_type; // FIXME: only for debugging, remove before merge
+    slot_type_t slot_type;
 } tsch_radio_event_t;
 
 typedef void (*tsch_cb_t)(uint8_t *packet, uint8_t length);  ///< Function pointer to the callback function called on packet receive
