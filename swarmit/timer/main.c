@@ -31,6 +31,7 @@ static const gpio_t led2 = { .port = DB_LED2_PORT, .pin = DB_LED2_PIN };
 //=========================== callbacks ========================================
 
 static void _leds_callback(void) {
+    swarmit_reload_wdt0();
     db_gpio_toggle(&led1);
     db_gpio_toggle(&led2);
 }
@@ -45,7 +46,6 @@ int main(void) {
     db_timer_set_periodic_ms(TIMER_DEV0, 0, 500, &_leds_callback);
 
     while (1) {
-        swarmit_reload_wdt0();
-        db_timer_delay_ms(TIMER_DEV0, 500);
+        __WFE();
     }
 }
