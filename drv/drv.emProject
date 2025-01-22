@@ -25,7 +25,7 @@
   <project Name="00drv_dotbot_protocol">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_rng(bsp)"
+      project_dependencies=""
       project_directory="protocol"
       project_type="Library" />
     <file file_name="protocol.c" />
