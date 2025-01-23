@@ -85,14 +85,9 @@ static void _radio_callback(uint8_t *pkt, uint8_t len) {
         return;
     }
 
-    // Check application is compatible
-    if (header->application != DotBot) {
-        return;
-    }
-
     uint8_t *cmd_ptr = ptk_ptr + sizeof(protocol_header_t);
     // parse received packet and update the motors' speeds
-    switch (header->type) {
+    switch ((uint8_t)*cmd_ptr++) {
         case DB_PROTOCOL_CMD_MOVE_RAW:
         {
             protocol_move_raw_command_t *command = (protocol_move_raw_command_t *)cmd_ptr;
@@ -110,8 +105,7 @@ static void _radio_callback(uint8_t *pkt, uint8_t len) {
 //=========================== main =============================================
 
 int main(void) {
-    db_protocol_init();
-    db_tdma_client_init(&_radio_callback, DB_RADIO_BLE_1MBit, DB_RADIO_FREQ, FreeBot);
+    db_tdma_client_init(&_radio_callback, DB_RADIO_BLE_1MBit, DB_RADIO_FREQ);
 
     // db_gpio_init(&db_led1, DB_GPIO_OUT);
     //  Retrieve the device id once at startup
@@ -129,8 +123,7 @@ int main(void) {
 
         if (_freebot_vars.advertize) {
             // db_gpio_toggle(&db_led1);
-            db_protocol_header_to_buffer(_freebot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_ADVERTISEMENT);
-            size_t length = sizeof(protocol_header_t);
+            size_t length = db_protocol_advertizement_to_buffer(_freebot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot);
             db_tdma_client_tx(_freebot_vars.radio_buffer, length);
             _freebot_vars.advertize = false;
         }
