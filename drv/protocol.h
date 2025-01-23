@@ -25,7 +25,7 @@
 #define DB_MAX_WAYPOINTS     (16)                  ///< Max number of waypoints
 
 /// Command type
-enum {
+typedef enum {
     DB_PROTOCOL_CMD_MOVE_RAW       = 0,   ///< Move raw command type
     DB_PROTOCOL_CMD_RGB_LED        = 1,   ///< RGB LED command type
     DB_PROTOCOL_LH2_RAW_DATA       = 2,   ///< Lighthouse 2 raw data
@@ -39,7 +39,7 @@ enum {
     DB_PROTOCOL_SAILBOT_DATA       = 10,  ///< SailBot specific data (for now GPS and direction)
     DB_PROTOCOL_CMD_XGO_ACTION     = 11,  ///< XGO action command
     DB_PROTOCOL_LH2_PROCESSED_DATA = 12,  ///< Lighthouse 2 data processed at the DotBot
-};
+} protocol_data_type_t;
 
 /// Protocol packet type
 typedef enum {
