@@ -13,47 +13,59 @@
 #include <string.h>
 #include "device.h"
 #include "protocol.h"
-#include "rng.h"
 
 //=========================== public ===========================================
 
-void db_protocol_init(void) {
-    db_rng_init();
-}
-
-void db_protocol_header_to_buffer(uint8_t *buffer, uint64_t dst,
-                                  application_type_t application, command_type_t command_type) {
-    uint64_t src    = db_device_id();
-    uint8_t  rnd[4] = { 0 };
-    for (uint8_t i = 0; i < 4; i++) {
-        db_rng_read(&rnd[i]);
-    }
-
-    uint32_t msg_id = 0;
-    memcpy(&msg_id, rnd, sizeof(uint32_t));
+static size_t _protocol_header_to_buffer(uint8_t *buffer, uint64_t dst, packet_type_t packet_type) {
+    uint64_t src = db_device_id();
 
     protocol_header_t header = {
+        .version     = DB_FIRMWARE_VERSION,
+        .packet_type = packet_type,
         .dst         = dst,
         .src         = src,
-        .swarm_id    = DB_SWARM_ID,
-        .application = application,
-        .version     = DB_FIRMWARE_VERSION,
-        .msg_id      = msg_id,
-        .type        = command_type,
     };
     memcpy(buffer, &header, sizeof(protocol_header_t));
+    return sizeof(protocol_header_t);
 }
 
-void db_protocol_cmd_move_raw_to_buffer(uint8_t *buffer, uint64_t dst,
-                                        application_type_t application, protocol_move_raw_command_t *command) {
-    db_protocol_header_to_buffer(buffer, dst, application, DB_PROTOCOL_CMD_MOVE_RAW);
-    uint8_t *cmd_ptr = buffer + sizeof(protocol_header_t);
-    memcpy(cmd_ptr, command, sizeof(protocol_move_raw_command_t));
+size_t db_protocol_header_to_buffer(uint8_t *buffer, uint64_t dst) {
+    return _protocol_header_to_buffer(buffer, dst, DB_PACKET_DATA);
 }
 
-void db_protocol_cmd_rgbled_to_buffer(uint8_t *buffer, uint64_t dst,
-                                      application_type_t application, protocol_rgbled_command_t *command) {
-    db_protocol_header_to_buffer(buffer, dst, application, DB_PROTOCOL_CMD_RGB_LED);
-    uint8_t *cmd_ptr = buffer + sizeof(protocol_header_t);
-    memcpy(cmd_ptr, command, sizeof(protocol_rgbled_command_t));
+size_t db_protocol_tdma_keep_alive_to_buffer(uint8_t *buffer, uint64_t dst) {
+    return _protocol_header_to_buffer(buffer, dst, DB_PACKET_TDMA_KEEP_ALIVE);
+}
+
+size_t db_protocol_tdma_table_update_to_buffer(uint8_t *buffer, uint64_t dst, protocol_tdma_table_t *tdma_table) {
+    size_t header_length = _protocol_header_to_buffer(buffer, dst, DB_PACKET_TDMA_UPDATE_TABLE);
+    memcpy(buffer + sizeof(protocol_header_t), tdma_table, sizeof(protocol_tdma_table_t));
+    return header_length + sizeof(protocol_tdma_table_t);
+}
+
+size_t db_protocol_tdma_sync_frame_to_buffer(uint8_t *buffer, uint64_t dst, protocol_sync_frame_t *sync_frame) {
+    size_t header_length = _protocol_header_to_buffer(buffer, dst, DB_PACKET_TDMA_SYNC_FRAME);
+    memcpy(buffer + sizeof(protocol_header_t), sync_frame, sizeof(protocol_sync_frame_t));
+    return header_length + sizeof(protocol_sync_frame_t);
+}
+
+size_t db_protocol_advertizement_to_buffer(uint8_t *buffer, uint64_t dst, application_type_t application) {
+    size_t header_length                        = _protocol_header_to_buffer(buffer, dst, DB_PACKET_DATA);
+    *(buffer + header_length)                   = DB_PROTOCOL_ADVERTISEMENT;
+    *(buffer + header_length + sizeof(uint8_t)) = application;
+    return header_length + sizeof(uint8_t) + sizeof(uint8_t);
+}
+
+size_t db_protocol_cmd_move_raw_to_buffer(uint8_t *buffer, uint64_t dst, protocol_move_raw_command_t *command) {
+    size_t header_length      = _protocol_header_to_buffer(buffer, dst, DB_PACKET_DATA);
+    *(buffer + header_length) = DB_PROTOCOL_CMD_MOVE_RAW;
+    memcpy(buffer + header_length + sizeof(uint8_t), command, sizeof(protocol_move_raw_command_t));
+    return header_length + sizeof(uint8_t) + sizeof(protocol_move_raw_command_t);
+}
+
+size_t db_protocol_cmd_rgbled_to_buffer(uint8_t *buffer, uint64_t dst, protocol_rgbled_command_t *command) {
+    size_t header_length      = _protocol_header_to_buffer(buffer, dst, DB_PACKET_DATA);
+    *(buffer + header_length) = DB_PROTOCOL_CMD_RGB_LED;
+    memcpy(buffer + header_length + sizeof(uint8_t), command, sizeof(protocol_rgbled_command_t));
+    return header_length + sizeof(uint8_t) + sizeof(protocol_rgbled_command_t);
 }

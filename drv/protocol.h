@@ -13,6 +13,7 @@
  * @}
  */
 
+#include <stdlib.h>
 #include <stdint.h>
 
 //=========================== defines ==========================================
@@ -38,10 +39,19 @@ typedef enum {
     DB_PROTOCOL_SAILBOT_DATA       = 10,  ///< SailBot specific data (for now GPS and direction)
     DB_PROTOCOL_CMD_XGO_ACTION     = 11,  ///< XGO action command
     DB_PROTOCOL_LH2_PROCESSED_DATA = 12,  ///< Lighthouse 2 data processed at the DotBot
-    DB_PROTOCOL_TDMA_UPDATE_TABLE  = 13,  ///< Receive new timings for the TDMA table
-    DB_PROTOCOL_TDMA_SYNC_FRAME    = 14,  ///< Sent by the gateway at the beginning of a TDMA frame.
-    DB_PROTOCOL_TDMA_KEEP_ALIVE    = 15,  ///< Sent by the client if there is nothing else to send.
-} command_type_t;
+} protocol_data_type_t;
+
+/// Protocol packet type
+typedef enum {
+    DB_PACKET_BEACON            = 1,  ///< Beacon packet
+    DB_PACKET_JOIN_REQUEST      = 2,  ///< Join request packet
+    DB_PACKET_JOIN_RESPONSE     = 3,  ///< Join response packet
+    DB_PACKET_LEAVE             = 4,  ///< Leave packet
+    DB_PACKET_DATA              = 5,  ///< Data packet
+    DB_PACKET_TDMA_UPDATE_TABLE = 6,  ///< TDMA table update packet
+    DB_PACKET_TDMA_SYNC_FRAME   = 7,  ///< TDMA sync frame packet
+    DB_PACKET_TDMA_KEEP_ALIVE   = 8,  ///< TDMA keep alive packet
+} packet_type_t;
 
 /// Application type
 typedef enum {
@@ -60,13 +70,10 @@ typedef enum {
 
 /// DotBot protocol header
 typedef struct __attribute__((packed)) {
-    uint64_t           dst;          ///< Destination address of this packet
-    uint64_t           src;          ///< Source address of this packet
-    uint16_t           swarm_id;     ///< Swarm ID
-    application_type_t application;  ///< Application type
-    uint8_t            version;      ///< Version of the firmware
-    uint32_t           msg_id;       ///< Message ID
-    command_type_t     type;         ///< Type of command following this header
+    uint8_t       version;      ///< Version of the firmware
+    packet_type_t packet_type;  ///< Type of packet
+    uint64_t      dst;          ///< Destination address of this packet
+    uint64_t      src;          ///< Source address of this packet
 } protocol_header_t;
 
 /// DotBot protocol move raw command
@@ -116,7 +123,7 @@ typedef struct __attribute__((packed)) {
     uint32_t timestamp_us;         ///< How many microseconds passed since the sample was taken
 } protocol_lh2_processed_packet_t;
 
-///< DotBot protocol TDMA table update [all units are in microseconds]
+/// DotBot protocol TDMA table update [all units are in microseconds]
 typedef struct __attribute__((packed)) {
     uint32_t frame_period;       ///< duration of a full TDMA frame
     uint32_t rx_start;           ///< start to listen for packets
@@ -126,7 +133,7 @@ typedef struct __attribute__((packed)) {
     uint32_t next_period_start;  ///< time until the start of the next TDMA frame
 } protocol_tdma_table_t;
 
-///< DotBot protocol sync messages marks the start of a TDMA frame [all units are in microseconds]
+/// DotBot protocol sync messages marks the start of a TDMA frame [all units are in microseconds]
 typedef struct __attribute__((packed)) {
     uint32_t frame_period;  ///< duration of a full TDMA frame
 } protocol_sync_frame_t;
@@ -134,38 +141,78 @@ typedef struct __attribute__((packed)) {
 //=========================== public ===========================================
 
 /**
- * @brief   Initializes the RNG used as a source for random message IDs
- */
-void db_protocol_init(void);
-
-/**
  * @brief   Write the protocol header in a buffer
  *
- * @param[out]  buffer          Bytes array to write to
- * @param[in]   dst             Destination address written in the header
- * @param[in]   application     Application type that relates to this header
- * @param[in]   command_type    Command type that follows this header
+ * @param[out]  buffer      Bytes array to write to
+ * @param[in]   dst         Destination address written in the header
+ *
+ * @return                  Number of bytes written in the buffer
  */
-void db_protocol_header_to_buffer(uint8_t *buffer, uint64_t dst, application_type_t application, command_type_t command_type);
+size_t db_protocol_header_to_buffer(uint8_t *buffer, uint64_t dst);
+
+/**
+ * @brief   Write a TDMA keep alive packet in a buffer
+ *
+ * @param[out]  buffer      Bytes array to write to
+ * @param[in]   dst         Destination address written in the header
+ *
+ * @return                  Number of bytes written in the buffer
+ */
+size_t db_protocol_tdma_keep_alive_to_buffer(uint8_t *buffer, uint64_t dst);
+
+/**
+ * @brief   Write a TDMA table update in a buffer
+ *
+ * @param[out]  buffer      Bytes array to write to
+ * @param[in]   dst         Destination address written in the header
+ * @param[in]   tdma_table  Pointer to the TDMA table
+ *
+ * @return                  Number of bytes written in the buffer
+ */
+size_t db_protocol_tdma_table_update_to_buffer(uint8_t *buffer, uint64_t dst, protocol_tdma_table_t *tdma_table);
+
+/**
+ * @brief   Write a TDMA sync frame in a buffer
+ *
+ * @param[out]  buffer      Bytes array to write to
+ * @param[in]   dst         Destination address written in the header
+ * @param[in]   sync_frame  Pointer to the sync frame
+ *
+ * @return                  Number of bytes written in the buffer
+ */
+size_t db_protocol_tdma_sync_frame_to_buffer(uint8_t *buffer, uint64_t dst, protocol_sync_frame_t *sync_frame);
+
+/**
+ * @brief   Write an application advertizement packet in a buffer
+ *
+ * @param[out]  buffer      Bytes array to write to
+ * @param[in]   dst         Destination address written in the header
+ * @param[in]   application Type of application advertized
+ *
+ * @return                  Number of bytes written in the buffer
+ */
+size_t db_protocol_advertizement_to_buffer(uint8_t *buffer, uint64_t dst, application_type_t application);
 
 /**
  * @brief   Write a move raw command in a buffer
  *
  * @param[out]  buffer      Bytes array to write to
  * @param[in]   dst         Destination address written in the header
- * @param[in]   application Application type that relates to this command
  * @param[in]   command     Pointer to the move raw command
+ *
+ * @return                  Number of bytes written in the buffer
  */
-void db_protocol_cmd_move_raw_to_buffer(uint8_t *buffer, uint64_t dst, application_type_t application, protocol_move_raw_command_t *command);
+size_t db_protocol_cmd_move_raw_to_buffer(uint8_t *buffer, uint64_t dst, protocol_move_raw_command_t *command);
 
 /**
  * @brief   Write an rgbled command in a buffer
  *
  * @param[out]  buffer      Bytes array to write to
  * @param[in]   dst         Destination address written in the header
- * @param[in]   application Application type that relates to this command
  * @param[in]   command     Pointer to the rgbled command
+ *
+ * @return                  Number of bytes written in the buffer
  */
-void db_protocol_cmd_rgbled_to_buffer(uint8_t *buffer, uint64_t dst, application_type_t application, protocol_rgbled_command_t *command);
+size_t db_protocol_cmd_rgbled_to_buffer(uint8_t *buffer, uint64_t dst, protocol_rgbled_command_t *command);
 
 #endif

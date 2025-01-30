@@ -207,8 +207,8 @@ static void _radio_callback(uint8_t *pkt, uint8_t len) {
 
     _xgo_vars.packet_received = true;
 
-    uint8_t           *ptk_ptr = pkt;
-    protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
+    uint8_t                 *ptk_ptr = pkt;
+    const protocol_header_t *header  = (const protocol_header_t *)ptk_ptr;
     // Check destination address is matching
     if (header->dst != DB_BROADCAST_ADDRESS && header->dst != _xgo_vars.device_id) {
         return;
@@ -219,23 +219,18 @@ static void _radio_callback(uint8_t *pkt, uint8_t len) {
         return;
     }
 
-    // Check application is compatible
-    if (header->application != XGO) {
-        return;
-    }
-
     uint8_t *cmd_ptr = ptk_ptr + sizeof(protocol_header_t);
     // parse received packet and execute the command
-    switch (header->type) {
+    switch ((uint8_t)*cmd_ptr++) {
         case DB_PROTOCOL_CMD_MOVE_RAW:
         {
             if (_xgo_vars.action_running) {
                 // An action is already running, just ignore the command
                 return;
             }
-            protocol_move_raw_command_t *command = (protocol_move_raw_command_t *)cmd_ptr;
-            int16_t                      left    = (int16_t)command->left_y;
-            int16_t                      right   = (int16_t)command->right_y;
+            const protocol_move_raw_command_t *command = (const protocol_move_raw_command_t *)cmd_ptr;
+            int16_t                            left    = (int16_t)command->left_y;
+            int16_t                            right   = (int16_t)command->right_y;
             if (left != 0 && left == right) {
                 // Move forward or backward
                 _write(XGO_ADDRESS_MOVE_X_SPEED, (uint8_t)(left + 128));
@@ -271,8 +266,7 @@ static void _radio_callback(uint8_t *pkt, uint8_t len) {
 //=========================== main =============================================
 
 int main(void) {
-    db_protocol_init();
-    db_tdma_client_init(&_radio_callback, DB_RADIO_BLE_1MBit, XGO_RADIO_FREQ, XGO);
+    db_tdma_client_init(&_radio_callback, DB_RADIO_BLE_1MBit, XGO_RADIO_FREQ);
 
     // Retrieve the device id once at startup
     _xgo_vars.device_id = db_device_id();
@@ -291,8 +285,8 @@ int main(void) {
         }
 
         if (_xgo_vars.advertize) {
-            db_protocol_header_to_buffer(_xgo_vars.radio_buffer, DB_BROADCAST_ADDRESS, XGO, DB_PROTOCOL_ADVERTISEMENT);
-            db_tdma_client_tx(_xgo_vars.radio_buffer, sizeof(protocol_header_t));
+            size_t length = db_protocol_advertizement_to_buffer(_xgo_vars.radio_buffer, DB_BROADCAST_ADDRESS, XGO);
+            db_tdma_client_tx(_xgo_vars.radio_buffer, length);
             _xgo_vars.advertize = false;
         }
 

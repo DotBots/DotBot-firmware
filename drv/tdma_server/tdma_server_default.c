@@ -58,19 +58,17 @@ typedef struct {
 } new_client_ring_buffer_t;
 
 typedef struct {
-    tdma_server_cb_t    callback;                              ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
-    tdma_server_table_t tdma_table;                            ///< Timing table
-    uint16_t            active_slot_idx;                       ///< index of the current active slot in the TDMA table
-    uint32_t            last_tx_packet_ts;                     ///< Timestamp of when the previous packet was sent
-    uint32_t            frame_start_ts;                        ///< Timestamp of when the previous tdma superframe started
-    uint32_t            slot_start_ts;                         ///< Timestamp of when the current tdma slot started
-    uint8_t             byte_onair_time;                       ///< How many microseconds it takes to send a byte of data
-    uint64_t            device_id;                             ///< Device ID of the DotBot
-    tdma_ring_buffer_t  tx_ring_buffer;                        ///< ring buffer to queue the outgoing packets
-    uint8_t             radio_buffer[RADIO_MESSAGE_MAX_SIZE];  ///< Internal buffer that contains the command to send (from buttons)
-    application_type_t  default_radio_app;                     ///< Which application to use for registration and sync messages
-
-    new_client_ring_buffer_t new_clients_rb;  //
+    tdma_server_cb_t         callback;                              ///< Function pointer, stores the callback to use in the RADIO_Irq handler.
+    tdma_server_table_t      tdma_table;                            ///< Timing table
+    uint16_t                 active_slot_idx;                       ///< index of the current active slot in the TDMA table
+    uint32_t                 last_tx_packet_ts;                     ///< Timestamp of when the previous packet was sent
+    uint32_t                 frame_start_ts;                        ///< Timestamp of when the previous tdma superframe started
+    uint32_t                 slot_start_ts;                         ///< Timestamp of when the current tdma slot started
+    uint8_t                  byte_onair_time;                       ///< How many microseconds it takes to send a byte of data
+    uint64_t                 device_id;                             ///< Device ID of the DotBot
+    tdma_ring_buffer_t       tx_ring_buffer;                        ///< ring buffer to queue the outgoing packets
+    uint8_t                  radio_buffer[RADIO_MESSAGE_MAX_SIZE];  ///< Internal buffer that contains the command to send (from buttons)
+    new_client_ring_buffer_t new_clients_rb;                        //
 } tdma_server_vars_t;
 
 //=========================== variables ========================================
@@ -201,7 +199,7 @@ static void _server_register_new_client(tdma_server_table_t *tdma_table, uint64_
 
 //=========================== public ===========================================
 
-void db_tdma_server_init(tdma_server_cb_t callback, db_radio_mode_t radio_mode, uint8_t radio_freq, application_type_t default_radio_app) {
+void db_tdma_server_init(tdma_server_cb_t callback, db_radio_mode_t radio_mode, uint8_t radio_freq) {
 
     // Initialize high frequency clock
     db_timer_hf_init(TDMA_SERVER_TIMER_HF);
@@ -219,9 +217,6 @@ void db_tdma_server_init(tdma_server_cb_t callback, db_radio_mode_t radio_mode, 
 
     // Retrieve the device ID.
     _tdma_vars.device_id = db_device_id();
-
-    // Save default radio application
-    _tdma_vars.default_radio_app = default_radio_app;
 
     // Save the user callback to use in our interruption
     _tdma_vars.callback = callback;
@@ -439,19 +434,8 @@ static void _tx_sync_frame(void) {
     // This message signals the start of a TDMA frame
     // Prepare packet payload
     protocol_sync_frame_t frame = { _tdma_vars.tdma_table.frame_duration_us };
-    // Prepare packet header, don't use the helper function, it takes too long to calculate the random message ID
-    protocol_header_t header = {
-        .dst         = DB_BROADCAST_ADDRESS,
-        .src         = _tdma_vars.device_id,
-        .swarm_id    = DB_SWARM_ID,
-        .application = _tdma_vars.default_radio_app,
-        .version     = DB_FIRMWARE_VERSION,
-        .msg_id      = 0x00000000,  // Use a static msg ID to avoid the penalty of calculating the random ID
-        .type        = DB_PROTOCOL_TDMA_SYNC_FRAME,
-    };
-    memcpy(_tdma_vars.radio_buffer, &header, sizeof(protocol_header_t));
-    memcpy(_tdma_vars.radio_buffer + sizeof(protocol_header_t), &frame, sizeof(protocol_sync_frame_t));
-    size_t length = sizeof(protocol_header_t) + sizeof(protocol_sync_frame_t);
+    // Prepare packet header
+    size_t length = db_protocol_tdma_sync_frame_to_buffer(_tdma_vars.radio_buffer, DB_BROADCAST_ADDRESS, &frame);
     db_radio_disable();
     db_radio_tx(_tdma_vars.radio_buffer, length);
 }
@@ -473,15 +457,11 @@ static void _tx_registration_messages(uint64_t client) {
     table.tx_duration = _tdma_vars.tdma_table.table[slot].tx_duration;
     table.tx_start    = _tdma_vars.tdma_table.table[slot].tx_start;
 
-    // Start filling out the message header
-    db_protocol_header_to_buffer(_tdma_vars.radio_buffer, client, _tdma_vars.default_radio_app, DB_PROTOCOL_TDMA_UPDATE_TABLE);
-
     // Compute the time before the next frame. (as close as possible to the TX as you can, so that it's more accurate)
     table.next_period_start = table.frame_period - (db_timer_hf_now(TDMA_SERVER_TIMER_HF) - _tdma_vars.frame_start_ts);
 
-    // Fill the rest of the message.
-    memcpy(_tdma_vars.radio_buffer + sizeof(protocol_header_t), &table, sizeof(protocol_tdma_table_t));
-    size_t length = sizeof(protocol_header_t) + sizeof(protocol_tdma_table_t);
+    // Fill out the buffer with the TDMA message (header + table)
+    size_t length = db_protocol_tdma_table_update_to_buffer(_tdma_vars.radio_buffer, client, &table);
 
     // Send the message
     db_radio_disable();
@@ -623,7 +603,7 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
     }
 
     // Consume TDMA-only messages, don't let it go up to the application.
-    if (header->type == DB_PROTOCOL_TDMA_KEEP_ALIVE) {
+    if (header->packet_type == DB_PACKET_TDMA_KEEP_ALIVE) {
         return;
     }
 

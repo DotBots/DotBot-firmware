@@ -125,7 +125,7 @@ int main(void) {
 
                 // TDMA Client functions
                 case DB_IPC_TDMA_CLIENT_INIT_REQ:
-                    db_tdma_client_init(&tdma_client_callback, ipc_shared_data.tdma_client.mode, ipc_shared_data.tdma_client.frequency, ipc_shared_data.tdma_client.default_radio_app);
+                    db_tdma_client_init(&tdma_client_callback, ipc_shared_data.tdma_client.mode, ipc_shared_data.tdma_client.frequency);
                     break;
                 case DB_IPC_TDMA_CLIENT_SET_TABLE_REQ:
                     db_tdma_client_set_table((const tdma_client_table_t *)&ipc_shared_data.tdma_client.table_set);
@@ -148,7 +148,7 @@ int main(void) {
 
                 // TDMA Server functions
                 case DB_IPC_TDMA_SERVER_INIT_REQ:
-                    db_tdma_server_init(&tdma_server_callback, ipc_shared_data.tdma_server.mode, ipc_shared_data.tdma_server.frequency, ipc_shared_data.tdma_server.default_radio_app);
+                    db_tdma_server_init(&tdma_server_callback, ipc_shared_data.tdma_server.mode, ipc_shared_data.tdma_server.frequency);
                     break;
                 case DB_IPC_TDMA_SERVER_GET_TABLE_REQ:
                     db_tdma_server_get_table_info(&_nrf53_net_vars.frame_duration_us, &_nrf53_net_vars.num_clients, &_nrf53_net_vars.table_index);
