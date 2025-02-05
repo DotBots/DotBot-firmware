@@ -41,8 +41,12 @@ static const uint8_t packet_tx[] = {
     0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41,  // AAAAAAAA
     0x2D, 0x2D, 0x2D, 0x2D, 0x2D, 0x2D, 0x2D, 0x2D,  // --------
     0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41,  // AAAAAAAA
-    0x31, 0x32, 0x33, 0x34, 0x00,                    // 1234 + null
-};
+    0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x00         // 123456 + null
+};  // 127 Bytes long.
+
+// For IEEE 802.15.4, the last two bytes, 0x36 and 0x00 are discarded to place the CRC.
+// The output print being wrong for the last two bytes is expected, and has to be accounted for when enabling CRC.
+// The CRC is not loaded into RAM as part of the packet and checked directly in the radio peripheral.
 
 static const gpio_t _dbg_pin = { .port = DB_LED1_PORT, .pin = DB_LED1_PIN };
 
