@@ -42,7 +42,7 @@
 #define DB_DIRECTION_THRESHOLD    (0.01)   ///< Threshold to update the direction
 #define DB_DIRECTION_INVALID      (-1000)  ///< Invalid angle e.g out of [0, 360] range
 #define DB_MAX_SPEED              (60)     ///< Max speed in autonomous control mode
-#if defined(BOARD_DOTBOT_V2)
+#if defined(BOARD_DOTBOT_V2) || defined(BOARD_DOTBOT_V3)
 #define DB_REDUCE_SPEED_FACTOR  (0.7)  ///< Reduction factor applied to speed when close to target or error angle is too large
 #define DB_REDUCE_SPEED_ANGLE   (25)   ///< Max angle amplitude where speed reduction factor is applied
 #define DB_ANGULAR_SPEED_FACTOR (35)   ///< Constant applied to the normalized angle to target error

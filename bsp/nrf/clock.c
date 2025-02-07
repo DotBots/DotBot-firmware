@@ -15,7 +15,7 @@
 //=========================== defines ==========================================
 
 #ifndef NRF53_XOSC32_CAPACITANCE
-#ifdef BOARD_DOTBOT_V2
+#if defined(BOARD_DOTBOT_V2) || defined(BOARD_DOTBOT_V3)
 #define NRF53_XOSC32_CAPACITANCE_X2 22  ///< 11pF on BT40 module
 #else
 #define NRF53_XOSC32_CAPACITANCE_X2 16  ///< Depends on the 32MHz crytal used, its capacitance is 8pF on nRF5340-DK
@@ -79,7 +79,7 @@ void db_lfclk_init(void) {
     NRF_P0_S->PIN_CNF[1] = GPIO_PIN_CNF_MCUSEL_Peripheral << GPIO_PIN_CNF_MCUSEL_Pos;
 
     // Apply internal capacitor values as defined in 32k crystal specs
-#if defined(BOARD_DOTBOT_V2)
+#if defined(BOARD_DOTBOT_V2) || defined(BOARD_DOTBOT_V3)
     NRF_OSCILLATORS_S->XOSC32KI.INTCAP = OSCILLATORS_XOSC32KI_INTCAP_INTCAP_C7PF << OSCILLATORS_XOSC32KI_INTCAP_INTCAP_Pos;
 #else
     NRF_OSCILLATORS_S->XOSC32KI.INTCAP = OSCILLATORS_XOSC32KI_INTCAP_INTCAP_C9PF << OSCILLATORS_XOSC32KI_INTCAP_INTCAP_Pos;

@@ -19,6 +19,8 @@
 #include "conf/dotbot_v1_config.h"
 #elif defined(BOARD_DOTBOT_V2)
 #include "conf/dotbot_v2_config.h"
+#elif defined(BOARD_DOTBOT_V3)
+#include "conf/dotbot_v3_config.h"
 #elif defined(BOARD_FREEBOT_V1_0)
 #include "conf/freebot_v1_0_config.h"
 #elif defined(BOARD_SAILBOT_V1)

@@ -1,5 +1,5 @@
 <!DOCTYPE CrossStudio_Project_File>
-<solution Name="swarmit" target="8" version="2">
+<solution Name="swarmit-dotbot-v3" target="8" version="2">
   <configuration
     CMSIS_CORE="Yes"
     LIBRARY_IO_TYPE="RTT"
