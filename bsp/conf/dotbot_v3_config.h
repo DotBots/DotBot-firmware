@@ -1,15 +1,15 @@
-#ifndef __BOARD_DOTBOT_V2_CONFIG_H
-#define __BOARD_DOTBOT_V2_CONFIG_H
+#ifndef __BOARD_DOTBOT_V3_CONFIG_H
+#define __BOARD_DOTBOT_V3_CONFIG_H
 
 /**
- * @defgroup    bsp_board_config_dotbot-v2    DotBot v2
+ * @defgroup    bsp_board_config_dotbot-v3    DotBot v3
  * @ingroup     bsp_board_config
- * @brief       DotBot v2 board configuration
+ * @brief       DotBot v3 board configuration
  *
  * @{
  * @file
  * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- * @copyright Inria, 2023
+ * @copyright Inria, 2025
  * @}
  */
 
@@ -18,11 +18,11 @@
  * @{
  */
 #define DB_DEBUG1_PORT 0
-#define DB_DEBUG1_PIN  6
+#define DB_DEBUG1_PIN  25  // Addon io2
 #define DB_DEBUG2_PORT 0
-#define DB_DEBUG2_PIN  7
+#define DB_DEBUG2_PIN  28  // Addon io3
 #define DB_DEBUG3_PORT 0
-#define DB_DEBUG3_PIN  20
+#define DB_DEBUG3_PIN  12  // Addon io7
 /** @} */
 
 /**
@@ -30,9 +30,9 @@
  * @{
  */
 #define DB_LED1_PORT 1
-#define DB_LED1_PIN  4
-#define DB_LED2_PORT 1
-#define DB_LED2_PIN  5
+#define DB_LED1_PIN  5
+#define DB_LED2_PORT 0
+#define DB_LED2_PIN  22
 /** @} */
 
 /**
@@ -50,19 +50,41 @@
  * @{
  */
 #define DB_I2C_SCL_PORT 0
-#define DB_I2C_SCL_PIN  2
+#define DB_I2C_SCL_PIN  2  // Addon io1
 #define DB_I2C_SDA_PORT 0
-#define DB_I2C_SDA_PIN  3
-/** @} */
+#define DB_I2C_SDA_PIN  3  // Addon io0
+                           /** @} */
 
 /**
  * @name    UART pins definitions
  * @{
  */
-#define DB_UART_RX_PORT DB_DEBUG3_PORT
-#define DB_UART_RX_PIN  DB_DEBUG3_PIN
+#define DB_UART_RX_PORT 0
+#define DB_UART_RX_PIN  18
 #define DB_UART_TX_PORT 0
-#define DB_UART_TX_PIN  25
+#define DB_UART_TX_PIN  17
+/** @} */
+
+/**
+ * @name    Addon UART pins definitions
+ * @{
+ */
+#define DB_ADDON_UART_RX_PORT 1
+#define DB_ADDON_UART_RX_PIN  1
+#define DB_ADDON_UART_TX_PORT 1
+#define DB_ADDON_UART_TX_PIN  0
+/** @} */
+
+/**
+ * @name    Addon SPI pins definitions
+ * @{
+ */
+#define DB_ADDON_SPI_SCK_PORT  0
+#define DB_ADDON_SPI_SCK_PIN   8
+#define DB_ADDON_SPI_MOSI_PORT 1
+#define DB_ADDON_SPI_MOSI_PIN  3
+#define DB_ADDON_SPI_MISO_PORT 1
+#define DB_ADDON_SPI_MISO_PIN  15
 /** @} */
 
 /**
@@ -70,9 +92,9 @@
  * @{
  */
 #define DB_LH2_E_PORT 0
-#define DB_LH2_E_PIN  27
-#define DB_LH2_D_PORT 1
-#define DB_LH2_D_PIN  1
+#define DB_LH2_E_PIN  9
+#define DB_LH2_D_PORT 0
+#define DB_LH2_D_PIN  13
 /** @} */
 
 /**
@@ -80,21 +102,21 @@
  * @{
  */
 #define DB_REGULATOR_PORT 0
-#define DB_REGULATOR_PIN  8
+#define DB_REGULATOR_PIN  7
 /** @} */
 
 /**
  * @name    Motor driver pins definitions
  * @{
  */
-#define DB_MOTOR_AIN1_PORT 1
-#define DB_MOTOR_AIN1_PIN  14
-#define DB_MOTOR_AIN2_PORT 1
-#define DB_MOTOR_AIN2_PIN  15
+#define DB_MOTOR_AIN1_PORT 0
+#define DB_MOTOR_AIN1_PIN  30
 #define DB_MOTOR_BIN1_PORT 0
-#define DB_MOTOR_BIN1_PIN  29
+#define DB_MOTOR_BIN1_PIN  11
+#define DB_MOTOR_AIN2_PORT 0
+#define DB_MOTOR_AIN2_PIN  26
 #define DB_MOTOR_BIN2_PORT 0
-#define DB_MOTOR_BIN2_PIN  22
+#define DB_MOTOR_BIN2_PIN  10
 /** @} */
 
 /**
@@ -114,11 +136,11 @@
 #define DB_QDEC_LEFT_A_PORT  1
 #define DB_QDEC_LEFT_A_PIN   12
 #define DB_QDEC_LEFT_B_PORT  1
-#define DB_QDEC_LEFT_B_PIN   11
+#define DB_QDEC_LEFT_B_PIN   13
 #define DB_QDEC_RIGHT_A_PORT 0
-#define DB_QDEC_RIGHT_A_PIN  21
-#define DB_QDEC_RIGHT_B_PORT 0
-#define DB_QDEC_RIGHT_B_PIN  31
+#define DB_QDEC_RIGHT_A_PIN  6
+#define DB_QDEC_RIGHT_B_PORT 1
+#define DB_QDEC_RIGHT_B_PIN  14
 /** @} */
 
 /**
@@ -141,10 +163,10 @@
  * @name    LIS3MDL pin definitions
  * @{
  */
-#define DB_LIS3MDL_DRDY_PORT 1
-#define DB_LIS3MDL_DRDY_PIN  2
-#define DB_LIS3MDL_INT_PORT  1
-#define DB_LIS3MDL_INT_PIN   3
+#define DB_LIS3MDL_DRDY_PORT DB_DEBUG1_PORT
+#define DB_LIS3MDL_DRDY_PIN  DB_DEBUG1_PIN
+#define DB_LIS3MDL_INT_PORT  DB_DEBUG2_PORT
+#define DB_LIS3MDL_INT_PIN   DB_DEBUG1_PORT
 /** @} */
 
 /**
@@ -152,11 +174,11 @@
  * @{
  */
 #define DB_RGB_LED_PWM_RED_PORT   0
-#define DB_RGB_LED_PWM_RED_PIN    10
-#define DB_RGB_LED_PWM_GREEN_PORT 1
-#define DB_RGB_LED_PWM_GREEN_PIN  7
+#define DB_RGB_LED_PWM_RED_PIN    22
+#define DB_RGB_LED_PWM_GREEN_PORT 0
+#define DB_RGB_LED_PWM_GREEN_PIN  23
 #define DB_RGB_LED_PWM_BLUE_PORT  1
-#define DB_RGB_LED_PWM_BLUE_PIN   6
+#define DB_RGB_LED_PWM_BLUE_PIN   5
 /** @} */
 
 #endif

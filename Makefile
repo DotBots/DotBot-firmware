@@ -9,6 +9,11 @@ BUILD_TARGET ?= dotbot-v1
 PROJECT_FILE ?= $(BUILD_TARGET).emProject
 BOOTLOADER ?= bootloader
 SWARMIT_APPS ?=
+QUIET ?= 0
+VERBOSE_OPTS ?= -verbose -echo
+ifeq ($(QUIET),1)
+  VERBOSE_OPTS =
+endif
 
 ifeq (nrf5340dk-app,$(BUILD_TARGET))
   PROJECTS ?= \
@@ -93,7 +98,7 @@ ifneq (,$(filter dotbot-v1,$(BUILD_TARGET)))
   ARTIFACT_PROJECTS := 03app_dotbot
 endif
 
-ifneq (,$(filter dotbot-v2,$(BUILD_TARGET)))
+ifneq (,$(filter dotbot-v2 dotbot-v3,$(BUILD_TARGET)))
   PROJECTS := $(filter-out 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_xgo 03app_nrf5340_net 03app_freebot 03app_lh2_mini_mote%,$(PROJECTS))
   ARTIFACT_PROJECTS := 03app_dotbot
   SWARMIT_APPS := $(addprefix swarmit_, motors move rgbled timer)
@@ -156,22 +161,22 @@ all: $(PROJECTS) $(OTAP_APPS) $(BOOTLOADER) $(SWARMIT_APPS)
 
 $(PROJECTS):
 	@echo "\e[1mBuilding project $@\e[0m"
-	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -project $@ -config $(BUILD_CONFIG) $(PACKAGES_DIR_OPT) -rebuild -verbose
+	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -project $@ -config $(BUILD_CONFIG) $(PACKAGES_DIR_OPT) -rebuild $(VERBOSE_OPTS)
 	@echo "\e[1mDone\e[0m\n"
 
 $(OTAP_APPS):
 	@echo "\e[1mBuilding otap application $@\e[0m"
-	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -project $@ -config $(BUILD_CONFIG) $(PACKAGES_DIR_OPT) -rebuild -verbose
+	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -project $@ -config $(BUILD_CONFIG) $(PACKAGES_DIR_OPT) -rebuild $(VERBOSE_OPTS)
 	@echo "\e[1mDone\e[0m\n"
 
 $(BOOTLOADER):
 	@echo "\e[1mBuilding bootloader application $@\e[0m"
-	"$(SEGGER_DIR)/bin/emBuild" otap/$(BUILD_TARGET)-bootloader.emProject -project $@ -config Release $(PACKAGES_DIR_OPT) -rebuild -verbose
+	"$(SEGGER_DIR)/bin/emBuild" otap/$(BUILD_TARGET)-bootloader.emProject -project $@ -config Release -rebuild $(PACKAGES_DIR_OPT) $(VERBOSE_OPTS)
 	@echo "\e[1mDone\e[0m\n"
 
 $(SWARMIT_APPS):
 	@echo "\e[1mBuilding $@ application\e[0m"
-	"$(SEGGER_DIR)/bin/emBuild" swarmit/swarmit.emProject -project $@ -config $(BUILD_CONFIG) $(PACKAGES_DIR_OPT) -rebuild -verbose
+	"$(SEGGER_DIR)/bin/emBuild" swarmit/swarmit-$(BUILD_TARGET).emProject -project $@ -config $(BUILD_CONFIG) -rebuild $(PACKAGES_DIR_OPT) $(VERBOSE_OPTS)
 	@echo "\e[1mDone\e[0m\n"
 
 list-projects:
@@ -179,7 +184,7 @@ list-projects:
 	@echo $(PROJECTS) | tr ' ' '\n'
 
 clean:
-	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -config $(BUILD_CONFIG) -clean
+	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -config $(BUILD_CONFIG) -clean $(VERBOSE_OPTS)
 
 distclean: clean
 	rm -rf artifacts/

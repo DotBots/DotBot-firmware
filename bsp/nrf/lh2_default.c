@@ -22,9 +22,13 @@
 
 //=========================== defines =========================================
 
-#define SPIM_INTERRUPT_PRIORITY                2                                                              ///< Interrupt priority, as high as it will go
-#define SPI_BUFFER_SIZE                        64                                                             ///< Size of buffers used for SPI communications
-#define SPI_FAKE_SCK_PIN                       6                                                              ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
+#define SPIM_INTERRUPT_PRIORITY 2   ///< Interrupt priority, as high as it will go
+#define SPI_BUFFER_SIZE         64  ///< Size of buffers used for SPI communications
+#if defined(BOARD_DOTBOT_V3)
+#define SPI_FAKE_SCK_PIN 7  ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
+#else
+#define SPI_FAKE_SCK_PIN 6  ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
+#endif
 #define SPI_FAKE_SCK_PORT                      1                                                              ///< NOTE: SPIM needs an SCK pin to be defined, P1.6 is used because it's not an available pin in the BCM module.
 #define FUZZY_CHIP                             0xFF                                                           ///< not sure what this is about
 #define LH2_LOCATION_ERROR_INDICATOR           0xFFFFFFFF                                                     ///< indicate the location value is false
@@ -802,6 +806,13 @@ bool _check_mocap_interference(uint8_t *arr);
 //=========================== public ===========================================
 
 void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
+
+#if defined(BOARD_DOTBOT_V3)
+    // DotBot-v3 has its own LH enable pin
+    gpio_t lh_en = { .port = 0, .pin = 16 };
+    db_gpio_init(&lh_en, DB_GPIO_OUT);
+    db_gpio_set(&lh_en);
+#endif
     // Initialize the TS4231 on power-up - this is only necessary when power-cycling
     _initialize_ts4231(gpio_d, gpio_e);
 
