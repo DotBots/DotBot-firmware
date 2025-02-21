@@ -119,14 +119,9 @@ static void _rx_data_callback(const uint8_t *pkt, size_t len) {
         return;
     }
 
-    // Check application is compatible
-    if (header->application != DotBot) {
-        return;
-    }
-
     uint8_t *cmd_ptr = ptk_ptr + sizeof(protocol_header_t);
     // parse received packet and update the motors' speeds
-    switch (header->type) {
+    switch ((uint8_t)*cmd_ptr++) {
         case DB_PROTOCOL_CMD_MOVE_RAW:
         {
             protocol_move_raw_command_t *command = (protocol_move_raw_command_t *)cmd_ptr;
@@ -159,8 +154,8 @@ static void _rx_data_callback(const uint8_t *pkt, size_t len) {
         {
             db_motors_set_speed(0, 0);
             _dotbot_vars.control_mode        = ControlManual;
-            _dotbot_vars.waypoints.length    = (uint8_t)*cmd_ptr++;
             _dotbot_vars.waypoints_threshold = (uint32_t)((uint8_t)*cmd_ptr++ * 1000);
+            _dotbot_vars.waypoints.length    = (uint8_t)*cmd_ptr++;
             memcpy(&_dotbot_vars.waypoints.points, cmd_ptr, _dotbot_vars.waypoints.length * sizeof(protocol_lh2_location_t));
             _dotbot_vars.next_waypoint_idx = 0;
             if (_dotbot_vars.waypoints.length > 0) {
@@ -176,7 +171,6 @@ static void _rx_data_callback(const uint8_t *pkt, size_t len) {
 
 int main(void) {
     db_board_init();
-    db_protocol_init();
 #ifdef DB_RGB_LED_PWM_RED_PORT
     db_rgbled_pwm_init(&rgbled_pwm_conf);
 #endif
@@ -212,15 +206,20 @@ int main(void) {
 
                 db_lh2_stop();
                 // Prepare the radio buffer
-                db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_DOTBOT_DATA);
-                memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t), &_dotbot_vars.direction, sizeof(int16_t));
+                size_t header_length                     = db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS);
+                _dotbot_vars.radio_buffer[header_length] = DB_PROTOCOL_DOTBOT_DATA;
+                memcpy(_dotbot_vars.radio_buffer + header_length + sizeof(uint8_t), &_dotbot_vars.direction, sizeof(int16_t));
+                _dotbot_vars.radio_buffer[header_length + sizeof(uint8_t) + sizeof(int16_t)] = LH2_SWEEP_COUNT;
                 // Add the LH2 sweep
                 for (uint8_t lh2_sweep_index = 0; lh2_sweep_index < LH2_SWEEP_COUNT; lh2_sweep_index++) {
-                    memcpy(_dotbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(int16_t) + lh2_sweep_index * sizeof(db_lh2_raw_data_t), &_dotbot_vars.lh2.raw_data[lh2_sweep_index][0], sizeof(db_lh2_raw_data_t));
+                    memcpy(
+                        _dotbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(uint8_t) + sizeof(uint8_t) + sizeof(int16_t) + lh2_sweep_index * sizeof(db_lh2_raw_data_t),
+                        &_dotbot_vars.lh2.raw_data[lh2_sweep_index][0],
+                        sizeof(db_lh2_raw_data_t));
                     // Mark the data as already sent
                     _dotbot_vars.lh2.data_ready[lh2_sweep_index][0] = DB_LH2_NO_NEW_DATA;
                 }
-                size_t length = sizeof(protocol_header_t) + sizeof(int16_t) + sizeof(db_lh2_raw_data_t) * LH2_SWEEP_COUNT;
+                size_t length = sizeof(protocol_header_t) + sizeof(uint8_t) + sizeof(uint8_t) + sizeof(int16_t) + sizeof(db_lh2_raw_data_t) * LH2_SWEEP_COUNT;
 
                 // Send the radio packet
                 swarmit_send_raw_data(_dotbot_vars.radio_buffer, length);
@@ -236,8 +235,7 @@ int main(void) {
         }
 
         if (_dotbot_vars.advertize) {
-            db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot, DB_PROTOCOL_ADVERTISEMENT);
-            size_t length = sizeof(protocol_header_t);
+            size_t length = db_protocol_advertizement_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, DotBot);
             swarmit_send_raw_data(_dotbot_vars.radio_buffer, length);
             _dotbot_vars.advertize = false;
         }
