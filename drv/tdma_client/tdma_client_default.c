@@ -314,14 +314,14 @@ static bool _message_rb_tx_queue(uint16_t max_tx_duration_us) {
 
 static void _tx_keep_alive_message(void) {
 
-    size_t length = db_protocol_tdma_keep_alive_to_buffer(_tdma_client_vars.radio_buffer, DB_BROADCAST_ADDRESS);
+    size_t length = db_protocol_tdma_keep_alive_to_buffer(_tdma_client_vars.radio_buffer, DB_GATEWAY_ADDRESS);
     db_radio_disable();
     db_radio_tx(_tdma_client_vars.radio_buffer, length);
 }
 
 static void _tx_tdma_register_message(void) {
 
-    size_t length = db_protocol_tdma_keep_alive_to_buffer(_tdma_client_vars.radio_buffer, DB_BROADCAST_ADDRESS);
+    size_t length = db_protocol_tdma_keep_alive_to_buffer(_tdma_client_vars.radio_buffer, DB_GATEWAY_ADDRESS);
     db_radio_disable();
     db_radio_tx(_tdma_client_vars.radio_buffer, length);
 }
