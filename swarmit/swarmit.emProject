@@ -41,8 +41,8 @@
     gcc_enable_all_warnings="Yes"
     gcc_entry_point="reset_handler"
     link_dedupe_code="Yes"
-    linker_additional_options="--gc-sections"
     link_time_optimization="No"
+    linker_additional_options="--gc-sections"
     linker_memory_map_file="$(ProjectDir)/../$(Target)_MemoryMap.xml"
     linker_output_format="bin"
     linker_printf_fmt_level="int"
@@ -65,12 +65,14 @@
     gcc_debugging_level="Level 2"
     gcc_omit_frame_pointer="Yes"
     gcc_optimization_level="Level 2 balanced" />
-  <project Name="swarmit_timer">
+  <import file_name="../bsp/bsp.emProject" />
+  <import file_name="../drv/drv.emProject" />
+  <project Name="swarmit_dotbot">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_timer(bsp);00bsp_gpio(bsp)"
-      project_directory="timer"
       linker_additional_files="$(ProjectDir)/../cmse_implib$(LIB)"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_lh2(bsp);00bsp_timer(bsp);00drv_dotbot_protocol(drv);00drv_rgbled_pwm(drv);00drv_motors(drv)"
+      project_directory="dotbot"
       project_type="Executable" />
     <folder Name="Setup">
       <file file_name="$(ProjectDir)/../$(Target)_flash_placement.xml" />
@@ -89,14 +91,12 @@
       <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
-  <import file_name="../bsp/bsp.emProject" />
-  <import file_name="../drv/drv.emProject" />
   <project Name="swarmit_motors">
     <configuration
       Name="Common"
+      linker_additional_files="$(ProjectDir)/../cmse_implib$(LIB)"
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00drv_motors(drv)"
       project_directory="motors"
-      linker_additional_files="$(ProjectDir)/../cmse_implib$(LIB)"
       project_type="Executable" />
     <folder Name="Setup">
       <file file_name="$(ProjectDir)/../$(Target)_flash_placement.xml" />
@@ -118,9 +118,9 @@
   <project Name="swarmit_move">
     <configuration
       Name="Common"
+      linker_additional_files="$(ProjectDir)/../cmse_implib$(LIB)"
       project_dependencies="00bsp_timer(bsp);00drv_move(drv)"
       project_directory="move"
-      linker_additional_files="$(ProjectDir)/../cmse_implib$(LIB)"
       project_type="Executable" />
     <folder Name="Setup">
       <file file_name="$(ProjectDir)/../$(Target)_flash_placement.xml" />
@@ -142,9 +142,9 @@
   <project Name="swarmit_rgbled">
     <configuration
       Name="Common"
+      linker_additional_files="$(ProjectDir)/../cmse_implib$(LIB)"
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00drv_rgbled_pwm(drv)"
       project_directory="rgbled"
-      linker_additional_files="$(ProjectDir)/../cmse_implib$(LIB)"
       project_type="Executable" />
     <folder Name="Setup">
       <file file_name="$(ProjectDir)/../$(Target)_flash_placement.xml" />
@@ -163,12 +163,12 @@
       <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
     </folder>
   </project>
-  <project Name="swarmit_dotbot">
+  <project Name="swarmit_timer">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_lh2(bsp);00bsp_timer(bsp);00drv_dotbot_protocol(drv);00drv_rgbled_pwm(drv);00drv_motors(drv)"
-      project_directory="dotbot"
       linker_additional_files="$(ProjectDir)/../cmse_implib$(LIB)"
+      project_dependencies="00bsp_timer(bsp);00bsp_gpio(bsp)"
+      project_directory="timer"
       project_type="Executable" />
     <folder Name="Setup">
       <file file_name="$(ProjectDir)/../$(Target)_flash_placement.xml" />
