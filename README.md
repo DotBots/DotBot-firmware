@@ -9,11 +9,7 @@
 This repository contains the source code for firmwares usable with the DotBot
 hardware.
 
-<div align="center">
-
-[![DotBot pitch video](https://img.youtube.com/vi/fcSoofHngbo/0.jpg)](https://www.youtube.com/watch?v=fcSoofHngbo?autoplay=1&mute=1)
-
-</div>
+https://github.com/user-attachments/assets/a863de41-39d5-4cf8-93e3-022bea400bc5
 
 ## Related projects
 
