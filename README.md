@@ -9,11 +9,7 @@
 This repository contains the source code for firmwares usable with the DotBot
 hardware.
 
-<p align="center">
-
-https://github.com/user-attachments/assets/a863de41-39d5-4cf8-93e3-022bea400bc5
-
-</p>
+https://github.com/user-attachments/assets/9a59ea55-e4d2-416e-9a9d-6d9ee3e18aec
 
 ## Related projects
 
