@@ -29,7 +29,7 @@
 #endif
 
 #define DB_BLE_PAYLOAD_MAX_LENGTH        UINT8_MAX
-#define DB_IEEE802154_PAYLOAD_MAX_LENGTH (125UL)  ///< Total usable payload for IEEE 802.15.4 is 125 octets (PSDU) when CRC is activated
+#define DB_IEEE802154_PAYLOAD_MAX_LENGTH (127UL)  ///< Total usable payload for IEEE 802.15.4 is 125 octets (PSDU) when CRC is activated
 
 /// Modes supported by the radio
 typedef enum {
