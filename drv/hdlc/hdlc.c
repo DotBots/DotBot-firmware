@@ -132,7 +132,7 @@ size_t db_hdlc_decode(uint8_t *output) {
     }
 
     _hdlc_vars.state = DB_HDLC_STATE_IDLE;
-    return output_pos;
+    return output_pos - 2;
 }
 
 size_t db_hdlc_encode(const uint8_t *input, size_t input_len, uint8_t *frame) {
