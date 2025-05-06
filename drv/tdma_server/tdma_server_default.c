@@ -570,7 +570,7 @@ static void tdma_server_callback(uint8_t *packet, uint8_t length) {
     protocol_header_t *header  = (protocol_header_t *)ptk_ptr;
 
     // Check destination address matches
-    if (header->dst != DB_GATEWAY_ADDRESS && header->dst != _tdma_vars.device_id) {
+    if (header->dst != DB_GATEWAY_ADDRESS && header->dst != DB_BROADCAST_ADDRESS && header->dst != _tdma_vars.device_id) {
         return;
     }
 
