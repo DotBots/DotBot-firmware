@@ -63,17 +63,20 @@ jobs:
       - name: Build documentation
         run: make doc
 
-  docker:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-      - name: Build docker image
-        run: docker build -t dotbot .
+  # Disable Docker build for now because SEGGER requires authentication
+  # to download SEGGER Embedded Studio
+  # docker:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout repo
+  #       uses: actions/checkout@v4
+  #     - name: Build docker image
+  #       run: docker build -t dotbot .
 
   release:
     runs-on: ubuntu-latest
-    needs: [docker, doc, style, build-success]
+    # needs: [docker, doc, style, build-success]
+    needs: [doc, style, build-success]
     if: >-
       github.event_name == 'push' &&
       startsWith(github.event.ref, 'refs/tags')
