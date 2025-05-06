@@ -18,8 +18,7 @@
 
 //=========================== defines ==========================================
 
-#define DB_FIRMWARE_VERSION  (9)                   ///< Version of the firmware
-#define DB_SWARM_ID          (0x0000)              ///< Default swarm ID
+#define DB_FIRMWARE_VERSION  (1)                   ///< Version of the firmware
 #define DB_BROADCAST_ADDRESS 0xffffffffffffffffUL  ///< Broadcast address
 #define DB_GATEWAY_ADDRESS   0x0000000000000000UL  ///< Gateway address
 #define DB_MAX_WAYPOINTS     (16)                  ///< Max number of waypoints
@@ -43,14 +42,14 @@ typedef enum {
 
 /// Protocol packet type
 typedef enum {
-    DB_PACKET_BEACON            = 1,  ///< Beacon packet
-    DB_PACKET_JOIN_REQUEST      = 2,  ///< Join request packet
-    DB_PACKET_JOIN_RESPONSE     = 3,  ///< Join response packet
-    DB_PACKET_LEAVE             = 4,  ///< Leave packet
-    DB_PACKET_DATA              = 5,  ///< Data packet
-    DB_PACKET_TDMA_UPDATE_TABLE = 6,  ///< TDMA table update packet
-    DB_PACKET_TDMA_SYNC_FRAME   = 7,  ///< TDMA sync frame packet
-    DB_PACKET_TDMA_KEEP_ALIVE   = 8,  ///< TDMA keep alive packet
+    DB_PACKET_BEACON            = 1,    ///< Beacon packet
+    DB_PACKET_JOIN_REQUEST      = 2,    ///< Join request packet
+    DB_PACKET_JOIN_RESPONSE     = 4,    ///< Join response packet
+    DB_PACKET_KEEP_ALIVE        = 6,    ///< Leave packet
+    DB_PACKET_DATA              = 16,   ///< Data packet
+    DB_PACKET_TDMA_UPDATE_TABLE = 128,  ///< TDMA table update packet
+    DB_PACKET_TDMA_SYNC_FRAME   = 129,  ///< TDMA sync frame packet
+    DB_PACKET_TDMA_KEEP_ALIVE   = 130,  ///< TDMA keep alive packet
 } packet_type_t;
 
 /// Application type
