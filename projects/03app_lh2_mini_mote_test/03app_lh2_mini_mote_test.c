@@ -116,7 +116,7 @@ int main(void) {
                     db_timer_hf_set_oneshot_us(TIMER_DEV, 0, 3000, &_previous_led_color);
 
                     // Prepare the radio buffer
-                    size_t length = db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS);
+                    size_t length = db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
 
                     // Package data into a variable
                     protocol_lh2_processed_packet_t lh2_packet;
@@ -146,7 +146,7 @@ int main(void) {
         }
 
         if (_dotbot_vars.advertise) {
-            size_t length = db_protocol_advertizement_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS, LH2_mini_mote);
+            size_t length = db_protocol_advertizement_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS, LH2_mini_mote);
             db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
             _dotbot_vars.advertise = false;
         }
