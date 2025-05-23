@@ -20,6 +20,7 @@
 //=========================== define ===========================================
 
 #define TIMER_MAX_CHANNELS (4U)
+#define TIMER_IRQ_PRIORITY (3U)
 
 typedef struct {
     NRF_RTC_Type *p;
@@ -102,6 +103,7 @@ void db_timer_init(timer_t timer) {
     _devs[timer].p->PRESCALER   = 0;  // Run RTC at 32768Hz
     _devs[timer].p->INTENSET    = (1 << (RTC_INTENSET_COMPARE0_Pos + _devs[timer].cc_num));
     NVIC_EnableIRQ(_devs[timer].irq);
+    NVIC_SetPriority(_devs[timer].irq, TIMER_IRQ_PRIORITY);
 
     // Start the timer
     _devs[timer].p->TASKS_START = 1;
