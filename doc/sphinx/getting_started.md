@@ -18,12 +18,12 @@ the DotBot (v1 or v2).
 All DotBots and DKs are based on Nordic Semiconductors microcontrollers, so
 we recommend that you use Nordic programming tools to flash the firmwares:
 
-- [nRF Command Line Tools][nrf-cli-tools]
+- [nRF Util][nrf-util]
 - [nRF Connect Programmer][nrf-connect-programmer]
 
-In this document, we will give instructions about how to flash using `nrfjprog`
-from [nRF Command Line Tools][nrf-cli-tools], so make sure it's installed on your
-computer before continuing.
+In this document, we will give instructions about how to flash using the
+`device` subcommand of `nrfutil` from [nRF Util][nrf-util], so make sure it's
+installed on your computer before continuing.
 
 ## Download and flash the DotBot gateway application firmware
 
@@ -45,12 +45,12 @@ computer before continuing.
 3. Flash the firmware(s) on the DK. Depending on your type of DK board, do:
   - for nrf52 based DK, run:
   ```
-  nrfjprog --family NRF52 --debugreset --sectorerase --program <path to 03app_dotbot_gateway hex file>
+  nrfutil device program --x-family nrf52 --options reset=RESET_DEBUG --firmware <path to 03app_dotbot_gateway hex file>
   ```
   - for nrf53 based DK, flash both the application and network cores with the following 2 commands:
   ```
-  nrfjprog --family NRF53 --debugreset --sectorerase --program <path to 03app_dotbot_gateway-nrf5340dk-app hex file>
-  nrfjprog --family NRF53 --coprocessor CP_NETWORK --debugreset --sectorerase --program <path to 03app_nrf5340_net hex file>
+  nrfutil device program --x-family nrf53 --core Application --options reset=RESET_DEBUG --firmware <path to 03app_dotbot_gateway-nrf5340dk-app hex file>
+  nrfutil device program --x-family nrf53 --core Network --options reset=RESET_DEBUG --firmware <path to 03app_nrf5340_net hex file>
   ```
 
 4. After flashing the firmware LED1 blinks during one second to indicate that
@@ -84,13 +84,13 @@ computer before continuing.
 3. Flash the firmware(s) on the DotBot. Depending on your DotBot version, do:
   - for v1.x (nrf52 based), run:
   ```
-  nrfjprog --family NRF52 --debugreset --sectorerase --program <path to the hex file>
+  nrfutil device program --x-family nrf52 --options reset=RESET_DEBUG --firmware <path to the hex file>
   ```
   - for v2.x (nrf53 based), flash both the application and network cores with the
   following 2 commands:
   ```
-  nrfjprog --family NRF53 --debugreset --sectorerase --program <path to dotbot-v2 hex file>
-  nrfjprog --family NRF53 --coprocessor CP_NETWORK --debugreset --sectorerase --program <path to 03app_nrf5340_net hex file>
+  nrfutil device program --x-family nrf53 --core Application --options reset=RESET_DEBUG --firmware <path to dotbot-v2 hex file>
+  nrfutil device program --x-family nrf53 --core Network --options reset=RESET_DEBUG --firmware <path to 03app_nrf5340_net hex file>
   ```
 
 4. Disconnect the DotBot from the nRF DK
@@ -115,8 +115,8 @@ You can combine buttons 1 & 2 to move the DotBot straight forward, buttons 3 &
 4 to move the DotBot backward, etc.
 
 
-[nrf-cli-tools]: https://infocenter.nordicsemi.com/topic/ug_nrf_cltools/UG/cltools/nrf_command_line_tools_lpage.html
-[nrf-connect-programmer]: https://infocenter.nordicsemi.com/topic/ug_nc_programmer/UG/nrf_connect_programmer/ncp_introduction.html
+[nrf-util]: https://docs.nordicsemi.com/bundle/nrfutil/page/README.html
+[nrf-connect-programmer]: https://docs.nordicsemi.com/bundle/nrf-connect-programmer/page/index.html
 
 [dotbot-gateway-hex-nrf52833dk]: https://github.com/DotBots/DotBot-firmware/releases/latest/download/03app_dotbot_gateway-nrf52833dk.hex
 [dotbot-gateway-hex-nrf52840dk]: https://github.com/DotBots/DotBot-firmware/releases/latest/download/03app_dotbot_gateway-nrf52840dk.hex
