@@ -104,7 +104,7 @@ uint8_t db_gpio_read(const gpio_t *gpio) {
     }
 }
 
-#if !defined(USE_MIRA)
+#if !defined(USE_MARI)
 void GPIOTE_IRQHandler(void) {
     for (uint8_t i = 0; i < _gpio_vars.gpiote_pin_idx; ++i) {
         if (NRF_GPIOTE->EVENTS_IN[i] == 1) {
