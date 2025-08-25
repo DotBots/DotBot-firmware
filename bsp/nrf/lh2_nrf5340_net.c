@@ -37,3 +37,6 @@ void db_lh2_process_raw_data(db_lh2_t *lh2) {
 void db_lh2_process_location(db_lh2_t *lh2) {
     (void)lh2;
 }
+
+void db_lh2_handle_isr(void) {
+}

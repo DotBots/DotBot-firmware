@@ -103,4 +103,10 @@ void db_lh2_stop(void);
  */
 void db_lh2_reset(db_lh2_t *lh2);
 
+/**
+ * @brief Handle the fast SPI interrupt
+ *
+ */
+void db_lh2_handle_isr(void);
+
 #endif /* __LH2_H_ */

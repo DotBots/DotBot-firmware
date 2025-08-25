@@ -1848,6 +1848,15 @@ bool _check_mocap_interference(uint8_t *arr) {
     return false;  // No error found
 }
 
+void db_lh2_handle_isr(void) {
+    // Reenable the PPI channel
+    db_lh2_start();
+    // Read the current time.
+    uint32_t timestamp = db_timer_hf_now(LH2_TIMER_DEV);
+    // Add new reading to the ring buffer
+    _add_to_spi_ring_buffer(&_lh2_vars.data, _lh2_vars.spi_rx_buffer, timestamp);
+}
+
 //=========================== interrupts =======================================
 
 void SPIM_IRQ_HANDLER(void) {
@@ -1855,11 +1864,6 @@ void SPIM_IRQ_HANDLER(void) {
     if (NRF_SPIM->EVENTS_END) {
         // Clear the Interrupt flag
         NRF_SPIM->EVENTS_END = 0;
-        // Reenable the PPI channel
-        db_lh2_start();
-        // Read the current time.
-        uint32_t timestamp = db_timer_hf_now(LH2_TIMER_DEV);
-        // Add new reading to the ring buffer
-        _add_to_spi_ring_buffer(&_lh2_vars.data, _lh2_vars.spi_rx_buffer, timestamp);
+        db_lh2_handle_isr();
     }
 }
