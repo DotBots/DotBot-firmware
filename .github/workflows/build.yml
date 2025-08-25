@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: ["dotbot-v1", "dotbot-v2", "freebot-v1.0", "lh2-mini-mote", "nrf52833dk", "nrf52840dk", "nrf5340dk-app", "nrf5340dk-net", "sailbot-v1", "xgo-v1", "xgo-v2"]
+        target: ["dotbot-v1", "dotbot-v2", "dotbot-v3", "freebot-v1.0", "lh2-mini-mote", "nrf52833dk", "nrf52840dk", "nrf5340dk-app", "nrf5340dk-net", "sailbot-v1", "xgo-v1", "xgo-v2"]
         config: ["Debug", "Release"]
     steps:
       - name: Checkout repo
@@ -92,6 +92,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: artifacts-dotbot-v2
+          path: ./artifacts
+      - name: Download DotBot v3 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-dotbot-v3
           path: ./artifacts
       - name: Download Sailbot v1 artifacts
         uses: actions/download-artifact@v4

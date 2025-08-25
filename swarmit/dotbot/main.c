@@ -74,9 +74,17 @@ typedef struct {
 
 typedef void (*ipc_isr_cb_t)(const uint8_t *, size_t);
 
+// Swarmit NSC callbable functions
 void swarmit_reload_wdt0(void);
+
 void swarmit_send_raw_data(const uint8_t *packet, uint8_t length);
 void swarmit_ipc_isr(ipc_isr_cb_t cb);
+
+void swarmit_lh2_init(void);
+void swarmit_lh2_start(void);
+void swarmit_lh2_stop(void);
+void swarmit_lh2_process_location(db_lh2_t *lh2);
+void swarmit_lh2_spim_isr(void);
 
 //=========================== variables ========================================
 
@@ -191,20 +199,19 @@ int main(void) {
     db_timer_set_periodic_ms(TIMER_DEV, 0, DB_TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
     db_timer_set_periodic_ms(TIMER_DEV, 1, DB_LH2_UPDATE_DELAY_MS, &_update_lh2);
     db_timer_set_periodic_ms(TIMER_DEV, 2, DB_ADVERTIZEMENT_DELAY_MS, &_advertise);
-    db_lh2_init(&_dotbot_vars.lh2, &db_lh2_d, &db_lh2_e);
-    db_lh2_start();
+    swarmit_lh2_init();
 
     while (1) {
         __WFE();
 
         // Process available lighthouse data
-        db_lh2_process_location(&_dotbot_vars.lh2);
+        swarmit_lh2_process_location(&_dotbot_vars.lh2);
 
         if (_dotbot_vars.update_lh2) {
             // Check if data is ready to send
             if (_dotbot_vars.lh2.data_ready[0][0] == DB_LH2_PROCESSED_DATA_AVAILABLE && _dotbot_vars.lh2.data_ready[1][0] == DB_LH2_PROCESSED_DATA_AVAILABLE) {
 
-                db_lh2_stop();
+                swarmit_lh2_stop();
                 // Prepare the radio buffer
                 size_t header_length                     = db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_BROADCAST_ADDRESS);
                 _dotbot_vars.radio_buffer[header_length] = DB_PROTOCOL_DOTBOT_DATA;
@@ -224,7 +231,7 @@ int main(void) {
                 // Send the radio packet
                 swarmit_send_raw_data(_dotbot_vars.radio_buffer, length);
 
-                db_lh2_start();
+                swarmit_lh2_start();
             }
             _dotbot_vars.update_lh2 = false;
         }
@@ -332,4 +339,8 @@ static void _update_lh2(void) {
 
 void IPC_IRQHandler(void) {
     swarmit_ipc_isr(_rx_data_callback);
+}
+
+void SPIM_IRQ_HANDLER(void) {
+    swarmit_lh2_spim_isr();
 }
