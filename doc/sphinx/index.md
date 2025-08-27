@@ -6,7 +6,6 @@ applications
 examples
 otap
 upgate
-swarmit
 api
 ```
 
