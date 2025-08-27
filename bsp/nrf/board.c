@@ -23,6 +23,10 @@
 static const gpio_t _reg_pin = { .port = DB_REGULATOR_PORT, .pin = DB_REGULATOR_PIN };
 #endif
 
+#if defined(DB_RELAY_SW_PORT)
+static const gpio_t _relay_ws_pin = { .port = DB_RELAY_SW_PORT, .pin = DB_RELAY_SW_PIN };
+#endif
+
 //=========================== public ==========================================
 
 void db_board_init(void) {
@@ -55,6 +59,11 @@ void db_board_init(void) {
     db_gpio_set(&_g_led_pin);
     db_gpio_set(&_b_led_pin);
 
+#endif
+
+#if defined(DB_RELAY_SW_PORT)
+    db_gpio_init(&_relay_ws_pin, DB_GPIO_OUT);
+    db_gpio_set(&_relay_ws_pin);
 #endif
 
 #if defined(DB_REGULATOR_PORT)
