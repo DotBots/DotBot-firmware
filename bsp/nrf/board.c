@@ -62,7 +62,7 @@ void db_board_init(void) {
     db_gpio_init(&_reg_pin, DB_GPIO_OUT);
 #if defined(BOARD_DOTBOT_V3)
     // Regulator pin correspond to motor_en and is active low
-    db_gpio_set(&_reg_pin);
+    db_gpio_clear(&_reg_pin);
 #else
     db_gpio_set(&_reg_pin);
 #endif
