@@ -106,6 +106,14 @@
 /** @} */
 
 /**
+ * @name    Relay switch pin to allow charging
+ * @{
+ */
+#define DB_RELAY_SW_PORT 0
+#define DB_RELAY_SW_PIN  20
+/** @} */
+
+/**
  * @name    Motor driver pins definitions
  * @{
  */
