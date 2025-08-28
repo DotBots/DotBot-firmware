@@ -15,6 +15,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <nrf.h>
+#include <math.h>
 
 #include "gpio.h"
 #include "lh2.h"
@@ -659,6 +660,8 @@ typedef enum {
     LH2_SWEEP_BOTH_SLOTS_FULL,    ///< Both sweep slots are filled with raw data
 } db_lh2_sweep_slot_state_t;
 
+static double homography_matrix[3][3][LH2_BASESTATION_COUNT] = { 0 };
+
 static lh2_vars_t _lh2_vars;  ///< local data of the LH2 driver
 
 //=========================== prototypes =======================================
@@ -792,6 +795,7 @@ void _update_lfsr_checkpoints(uint8_t polynomial, uint32_t bits, uint32_t count)
  * @param[in] lh2 pointer to the lh2 instance
  * @param[in] polynomial: index of found polynomia
  * @param[in] timestamp: timestamp of the SPI capture
+ * 
  */
 uint8_t _select_sweep(db_lh2_t *lh2, uint8_t polynomial, uint32_t timestamp);
 
@@ -997,6 +1001,57 @@ void db_lh2_process_location(db_lh2_t *lh2) {
     // Mark the data point as processed
     lh2->data_ready[sweep][basestation] = DB_LH2_PROCESSED_DATA_AVAILABLE;
 }
+
+/**
+ * @brief calculates the x,y coordinates of a robot using pre-calibrated Homography
+ * 
+ * @param[in] count1: first received count value
+ * @param[in] count2: second received count value
+ * @param[in] polynomial: polynomial of the pair of demodulated signals
+ * @param[in] coordinates: 2-D array (x,y) of robot position
+ * 
+ */
+void _lh2_calculate_position(unit32_t count1, uint32_t count2, uint8_t polynomial, double *coordinates) {
+
+    uint8_t source_lh_index;
+    switch (polynomial) {
+        case _polynomials[LH2_POLYNOMIAL_COUNT]:
+            source_lh_index = 0;
+        case _polynomials[1]:
+            source_lh_index = 0;
+        case _polynomials[2]:
+            source_lh_index = 1;
+        case _polynomials[3]:
+            source_lh_index = 1;
+        case _polynomials[4]:
+            source_lh_index = 2;
+        case _polynomials[5]:
+            source_lh_index = 2;
+        case _polynomials[6]:
+            source_lh_index = 3;
+        case _polynomials[7]:
+            source_lh_index = 3;
+    }
+
+    double alpha_1 = (count1 * 8 / period[source_lh_index]) * 2 * M_PI;
+    double alpha_2 = (count2 * 8 / period[source_lh_index]) * 2 * M_PI;
+
+    double cam_x = tan(0.5 * (alpha_1 + a2));
+    double cam_y = 0;
+
+    if count1 < count2:
+        cam_y = -sin(alpha_2 / 2 - alpha_1 / 2 - 60 * M_PI / 180) / tan(M_PI / 6)
+    else{
+        cam_y = -math.sin(alpha_1 / 2 - alpha_2 / 2 - 60 * M_PI / 180) / tan(M_PI / 6)
+    }
+
+    double x_position = homography_matrix[0][0][source_lh_index] * cam_x + homography_matrix[0][1][source_lh_index] * cam_y + homography_matrix[0][2][source_lh_index];
+    double y_position = homography_matrix[1][0][source_lh_index] * cam_x + homography_matrix[1][1][source_lh_index] * cam_y + homography_matrix[0][2][source_lh_index];
+        
+    coordinates[0] = x_position;
+    coordinates[1] = y_position;
+}
+
 
 //=========================== private ==========================================
 
