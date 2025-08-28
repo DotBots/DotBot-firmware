@@ -100,6 +100,13 @@ static const uint32_t _polynomials[LH2_POLYNOMIAL_COUNT] = {
     0x00018A55,
 };
 
+static const uint32_t _periods[LH2_BASESTATION_COUNT] = {
+    959000,
+    957000,
+    953000,
+    951000,
+};
+
 static const uint32_t _end_buffers[LH2_POLYNOMIAL_COUNT][NUM_LSFR_COUNT_CHECKPOINTS] = {
     {
         // p0
@@ -1011,11 +1018,11 @@ void db_lh2_process_location(db_lh2_t *lh2) {
  * @param[in] coordinates: 2-D array (x,y) of robot position
  * 
  */
-void _lh2_calculate_position(unit32_t count1, uint32_t count2, uint8_t polynomial, double *coordinates) {
+void _lh2_calculate_position(uint32_t count1, uint32_t count2, uint32_t polynomial, double *coordinates) {
 
     uint8_t source_lh_index;
     switch (polynomial) {
-        case _polynomials[LH2_POLYNOMIAL_COUNT]:
+        case _polynomials[0]:
             source_lh_index = 0;
         case _polynomials[1]:
             source_lh_index = 0;
@@ -1033,17 +1040,18 @@ void _lh2_calculate_position(unit32_t count1, uint32_t count2, uint8_t polynomia
             source_lh_index = 3;
     }
 
-    double alpha_1 = (count1 * 8 / period[source_lh_index]) * 2 * M_PI;
-    double alpha_2 = (count2 * 8 / period[source_lh_index]) * 2 * M_PI;
+    double alpha_1 = ((double)(count1) * 8.0 / _periods[source_lh_index]) * 2.0 * M_PI;
+    double alpha_2 = ((double)(count2) * 8.0 / _periods[source_lh_index]) * 2.0 * M_PI;
 
-    double cam_x = tan(0.5 * (alpha_1 + a2));
+    double cam_x = tan(0.5 * (alpha_1 + alpha_2));
     double cam_y = 0;
 
-    if count1 < count2:
-        cam_y = -sin(alpha_2 / 2 - alpha_1 / 2 - 60 * M_PI / 180) / tan(M_PI / 6)
-    else{
-        cam_y = -math.sin(alpha_1 / 2 - alpha_2 / 2 - 60 * M_PI / 180) / tan(M_PI / 6)
+    if (count1 < count2) {
+        cam_y = -sin(alpha_2 / 2 - alpha_1 / 2 - 60 * M_PI / 180) / tan(M_PI / 6);
     }
+    else{
+        cam_y = -sin(alpha_1 / 2 - alpha_2 / 2 - 60 * M_PI / 180) / tan(M_PI / 6);
+    };
 
     double x_position = homography_matrix[0][0][source_lh_index] * cam_x + homography_matrix[0][1][source_lh_index] * cam_y + homography_matrix[0][2][source_lh_index];
     double y_position = homography_matrix[1][0][source_lh_index] * cam_x + homography_matrix[1][1][source_lh_index] * cam_y + homography_matrix[0][2][source_lh_index];
