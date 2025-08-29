@@ -38,6 +38,7 @@ typedef enum {
     DB_PROTOCOL_SAILBOT_DATA       = 10,  ///< SailBot specific data (for now GPS and direction)
     DB_PROTOCOL_CMD_XGO_ACTION     = 11,  ///< XGO action command
     DB_PROTOCOL_LH2_PROCESSED_DATA = 12,  ///< Lighthouse 2 data processed at the DotBot
+    DB_PROTOCOL_LH2_CALIBRATION    = 13,  ///< Lighthouse 2 homography matrix after calibration
 } protocol_data_type_t;
 
 /// Protocol packet type
@@ -102,6 +103,11 @@ typedef struct __attribute__((packed)) {
     uint8_t                 length;                    ///< Number of waypoints
     protocol_lh2_location_t points[DB_MAX_WAYPOINTS];  ///< Array containing a list of lh2 point coordinates
 } protocol_lh2_waypoints_t;
+
+typedef struct __attribute__((packed)) {
+    uint8_t                 basestation_index;        ///< which LH basestation is this homography for?
+    double                  homography_matrix[3][3];  ///< homography matrix
+} protocol_lh2_homography_t;
 
 /// DotBot protocol GPS coordinates
 typedef struct __attribute__((packed)) {
