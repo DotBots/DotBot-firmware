@@ -226,7 +226,14 @@ int main(void) {
 
                 db_lh2_start();
             }
+            // 
+            else if ( _dotbot_vars.lh2_calibration_complete ) {
+                
+            }
+
             _dotbot_vars.update_lh2 = false;
+
+
         }
 
         if (_dotbot_vars.update_control_loop) {
