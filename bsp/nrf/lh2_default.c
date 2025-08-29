@@ -842,7 +842,7 @@ void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
     lh2->spi_ring_buffer_count_ptr = &_lh2_vars.data.count;  // pointer to the size of the spi ring buffer,
 
     for (uint8_t sweep = 0; sweep < LH2_SWEEP_COUNT; sweep++) {
-        for (uint8_t basestation = 0; basestation < LH2_SWEEP_COUNT; basestation++) {
+        for (uint8_t basestation = 0; basestation < LH2_BASESTATION_COUNT; basestation++) {
             lh2->raw_data[sweep][basestation].bits_sweep           = 0;
             lh2->raw_data[sweep][basestation].selected_polynomial  = LH2_POLYNOMIAL_ERROR_INDICATOR;
             lh2->raw_data[sweep][basestation].bit_offset           = 0;
