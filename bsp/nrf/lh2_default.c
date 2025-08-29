@@ -802,7 +802,7 @@ void _update_lfsr_checkpoints(uint8_t polynomial, uint32_t bits, uint32_t count)
  * @param[in] lh2 pointer to the lh2 instance
  * @param[in] polynomial: index of found polynomia
  * @param[in] timestamp: timestamp of the SPI capture
- * 
+ *
  */
 uint8_t _select_sweep(db_lh2_t *lh2, uint8_t polynomial, uint32_t timestamp);
 
@@ -1011,12 +1011,12 @@ void db_lh2_process_location(db_lh2_t *lh2) {
 
 /**
  * @brief calculates the x,y coordinates of a robot using pre-calibrated Homography
- * 
+ *
  * @param[in] count1: first received count value
  * @param[in] count2: second received count value
  * @param[in] polynomial: polynomial of the pair of demodulated signals
  * @param[in] coordinates: 2-D array (x,y) of robot position
- * 
+ *
  */
 void _lh2_calculate_position(uint32_t count1, uint32_t count2, uint32_t polynomial, double *coordinates) {
 
@@ -1048,18 +1048,16 @@ void _lh2_calculate_position(uint32_t count1, uint32_t count2, uint32_t polynomi
 
     if (count1 < count2) {
         cam_y = -sin(alpha_2 / 2 - alpha_1 / 2 - 60 * M_PI / 180) / tan(M_PI / 6);
-    }
-    else{
+    } else {
         cam_y = -sin(alpha_1 / 2 - alpha_2 / 2 - 60 * M_PI / 180) / tan(M_PI / 6);
     };
 
     double x_position = homography_matrix[0][0][source_lh_index] * cam_x + homography_matrix[0][1][source_lh_index] * cam_y + homography_matrix[0][2][source_lh_index];
     double y_position = homography_matrix[1][0][source_lh_index] * cam_x + homography_matrix[1][1][source_lh_index] * cam_y + homography_matrix[0][2][source_lh_index];
-        
+
     coordinates[0] = x_position;
     coordinates[1] = y_position;
 }
-
 
 //=========================== private ==========================================
 
