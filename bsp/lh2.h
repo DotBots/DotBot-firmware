@@ -104,6 +104,17 @@ void db_lh2_stop(void);
 void db_lh2_reset(db_lh2_t *lh2);
 
 /**
+ * @brief calculates the x,y coordinates of a robot using pre-calibrated Homography
+ *
+ * @param[in] count1: first received count value
+ * @param[in] count2: second received count value
+ * @param[in] basestation_index: index of which LH transmitted the pulse
+ * @param[in] coordinates: 2-D array (x,y) of robot position
+ *
+ */
+void lh2_calculate_position(uint32_t count1, uint32_t count2, uint32_t basestation_index, double *coordinates);
+
+/**
  * @brief Handle the fast SPI interrupt
  *
  */

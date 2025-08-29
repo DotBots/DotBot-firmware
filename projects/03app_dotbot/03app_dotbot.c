@@ -70,6 +70,7 @@ typedef struct {
     uint64_t                 device_id;                          ///< Device ID of the DotBot
     db_log_dotbot_data_t     log_data;
     bool                     lh2_calibration_complete;           ///< Indicator of LH system calibration status (False = uncalibrated)
+    double                   coordinates[2];                     ///< x, y coordinates of the robot
 } dotbot_vars_t;
 
 //=========================== variables ========================================
@@ -226,9 +227,16 @@ int main(void) {
 
                 db_lh2_start();
             }
-            // 
+            // After calibration - calculate position locally if two sweeps from the same lighthouse are available
             else if ( _dotbot_vars.lh2_calibration_complete ) {
-                
+                for (uint32_t basestation_index=0; basestation_index < LH2_BASESTATION_COUNT; basestation_index++){
+                    if ( _dotbot_vars.lh2.data_ready[0][basestation_index] == DB_LH2_PROCESSED_DATA_AVAILABLE && _dotbot_vars.lh2.data_ready[1][basestation_index] == DB_LH2_PROCESSED_DATA_AVAILABLE ) {
+                        db_lh2_stop();
+                        lh2_calculate_position(_dotbot_vars.lh2.locations[0][basestation_index].lfsr_location, _dotbot_vars.lh2.locations[1][basestation_index].lfsr_location, basestation_index, _dotbot_vars.coordinates);
+                        db_lh2_start();
+                        break;
+                    }
+                }
             }
 
             _dotbot_vars.update_lh2 = false;
