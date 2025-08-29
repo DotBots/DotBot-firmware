@@ -69,6 +69,7 @@ typedef struct {
     bool                     update_lh2;                         ///< Whether LH2 data must be processed
     uint64_t                 device_id;                          ///< Device ID of the DotBot
     db_log_dotbot_data_t     log_data;
+    bool                     lh2_calibration_complete;           ///< Indicator of LH system calibration status (False = uncalibrated)
 } dotbot_vars_t;
 
 //=========================== variables ========================================
@@ -183,6 +184,9 @@ int main(void) {
     // Retrieve the device id once at startup
     _dotbot_vars.device_id = db_device_id();
 
+    // Initialize calibration status to false
+    _dotbot_vars.lh2_calibration_complete = false;
+
     db_timer_init(TIMER_DEV);
     db_timer_set_periodic_ms(TIMER_DEV, 0, DB_TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
     db_timer_set_periodic_ms(TIMER_DEV, 1, DB_LH2_UPDATE_DELAY_MS, &_update_lh2);
@@ -198,7 +202,7 @@ int main(void) {
 
         if (_dotbot_vars.update_lh2) {
             // Check if data is ready to send
-            if (_dotbot_vars.lh2.data_ready[0][0] == DB_LH2_PROCESSED_DATA_AVAILABLE && _dotbot_vars.lh2.data_ready[1][0] == DB_LH2_PROCESSED_DATA_AVAILABLE) {
+            if (_dotbot_vars.lh2.data_ready[0][0] == DB_LH2_PROCESSED_DATA_AVAILABLE && _dotbot_vars.lh2.data_ready[1][0] == DB_LH2_PROCESSED_DATA_AVAILABLE && !_dotbot_vars.lh2_calibration_complete ) {
 
                 db_lh2_stop();
                 // Prepare the radio buffer
