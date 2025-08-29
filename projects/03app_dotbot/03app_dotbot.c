@@ -69,7 +69,6 @@ typedef struct {
     bool                     update_lh2;                         ///< Whether LH2 data must be processed
     uint64_t                 device_id;                          ///< Device ID of the DotBot
     db_log_dotbot_data_t     log_data;
-    bool                     lh2_calibration_complete;           ///< Indicator of LH system calibration status (False = uncalibrated)
     double                   coordinates[2];                     ///< x, y coordinates of the robot
 } dotbot_vars_t;
 
@@ -157,6 +156,12 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
                 _dotbot_vars.control_mode = ControlAuto;
             }
         } break;
+        case DB_PROTOCOL_LH2_CALIBRATION:
+        {
+            protocol_lh2_homography_t *homography_from_packet = (protocol_lh2_homography_t *)cmd_ptr;
+            lh2_store_homography(homography_from_packet->basestation_index, homography_from_packet->homography_matrix);
+
+            } break;
         default:
             break;
     }
@@ -186,7 +191,7 @@ int main(void) {
     _dotbot_vars.device_id = db_device_id();
 
     // Initialize calibration status to false
-    _dotbot_vars.lh2_calibration_complete = false;
+    _dotbot_vars.lh2.lh2_calibration_complete = false;
 
     db_timer_init(TIMER_DEV);
     db_timer_set_periodic_ms(TIMER_DEV, 0, DB_TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
@@ -203,7 +208,7 @@ int main(void) {
 
         if (_dotbot_vars.update_lh2) {
             // Check if data is ready to send
-            if (_dotbot_vars.lh2.data_ready[0][0] == DB_LH2_PROCESSED_DATA_AVAILABLE && _dotbot_vars.lh2.data_ready[1][0] == DB_LH2_PROCESSED_DATA_AVAILABLE && !_dotbot_vars.lh2_calibration_complete ) {
+            if (_dotbot_vars.lh2.data_ready[0][0] == DB_LH2_PROCESSED_DATA_AVAILABLE && _dotbot_vars.lh2.data_ready[1][0] == DB_LH2_PROCESSED_DATA_AVAILABLE && !_dotbot_vars.lh2.lh2_calibration_complete ) {
 
                 db_lh2_stop();
                 // Prepare the radio buffer
@@ -228,7 +233,7 @@ int main(void) {
                 db_lh2_start();
             }
             // After calibration - calculate position locally if two sweeps from the same lighthouse are available
-            else if ( _dotbot_vars.lh2_calibration_complete ) {
+            else if ( _dotbot_vars.lh2.lh2_calibration_complete ) {
                 for (uint32_t basestation_index=0; basestation_index < LH2_BASESTATION_COUNT; basestation_index++){
                     if ( _dotbot_vars.lh2.data_ready[0][basestation_index] == DB_LH2_PROCESSED_DATA_AVAILABLE && _dotbot_vars.lh2.data_ready[1][basestation_index] == DB_LH2_PROCESSED_DATA_AVAILABLE ) {
                         db_lh2_stop();
@@ -238,9 +243,7 @@ int main(void) {
                     }
                 }
             }
-
             _dotbot_vars.update_lh2 = false;
-
 
         }
 

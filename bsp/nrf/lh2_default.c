@@ -667,7 +667,7 @@ typedef enum {
     LH2_SWEEP_BOTH_SLOTS_FULL,    ///< Both sweep slots are filled with raw data
 } db_lh2_sweep_slot_state_t;
 
-static double homography_matrix[3][3][LH2_BASESTATION_COUNT] = { 0 };
+static double homography_matrix[LH2_BASESTATION_COUNT][3][3] = { 0 };
 
 static lh2_vars_t _lh2_vars;  ///< local data of the LH2 driver
 
@@ -1023,11 +1023,15 @@ void lh2_calculate_position(uint32_t count1, uint32_t count2, uint32_t basestati
         cam_y = -sin(alpha_1 / 2 - alpha_2 / 2 - 60 * M_PI / 180) / tan(M_PI / 6);
     };
 
-    double x_position = homography_matrix[0][0][basestation_index] * cam_x + homography_matrix[0][1][basestation_index] * cam_y + homography_matrix[0][2][basestation_index];
-    double y_position = homography_matrix[1][0][basestation_index] * cam_x + homography_matrix[1][1][basestation_index] * cam_y + homography_matrix[0][2][basestation_index];
+    double x_position = homography_matrix[basestation_index][0][0] * cam_x + homography_matrix[basestation_index][0][1] * cam_y + homography_matrix[basestation_index][0][2];
+    double y_position = homography_matrix[basestation_index][1][0] * cam_x + homography_matrix[basestation_index][1][1] * cam_y + homography_matrix[basestation_index][0][2];
 
     coordinates[0] = x_position;
     coordinates[1] = y_position;
+}
+
+void lh2_store_homography(uint8_t basestation_index, double homography_matrix_from_packet[3][3]) {
+    memcpy(homography_matrix[basestation_index], homography_matrix_from_packet, sizeof(double)*3*3);
 }
 
 //=========================== private ==========================================
