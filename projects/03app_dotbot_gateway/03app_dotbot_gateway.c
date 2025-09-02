@@ -52,7 +52,6 @@ typedef struct {
     uint8_t                      radio_tx_buffer[DB_BUFFER_MAX_BYTES];     ///< Internal buffer that contains the command to send (from buttons)
     gateway_radio_packet_queue_t radio_queue;                              ///< Queue used to process received radio packets outside of interrupt
     gateway_uart_queue_t         uart_queue;                               ///< Queue used to process received UART bytes outside of interrupt
-    bool                         handshake_done;                           ///< Whether startup handshake is done
     bool                         led1_blink;                               ///< Whether the status LED should blink
 } gateway_vars_t;
 
@@ -63,22 +62,11 @@ static gateway_vars_t _gw_vars;
 //=========================== callbacks ========================================
 
 static void _uart_callback(uint8_t data) {
-    if (!_gw_vars.handshake_done) {
-        uint8_t version = DB_FIRMWARE_VERSION;
-        db_uart_write(DB_UART_INDEX, &version, 1);
-        if (data == version) {
-            _gw_vars.handshake_done = true;
-        }
-        return;
-    }
     _gw_vars.uart_queue.buffer[_gw_vars.uart_queue.last] = data;
     _gw_vars.uart_queue.last                             = (_gw_vars.uart_queue.last + 1) & (DB_UART_QUEUE_SIZE - 1);
 }
 
 static void _radio_callback(uint8_t *packet, uint8_t length) {
-    if (!_gw_vars.handshake_done) {
-        return;
-    }
     memcpy(_gw_vars.radio_queue.packets[_gw_vars.radio_queue.last].buffer, packet, length);
     _gw_vars.radio_queue.packets[_gw_vars.radio_queue.last].length = length;
     _gw_vars.radio_queue.last                                      = (_gw_vars.radio_queue.last + 1) & (DB_RADIO_QUEUE_SIZE - 1);
@@ -144,7 +132,6 @@ int main(void) {
     _gw_vars.buttons             = 0x0000;
     _gw_vars.radio_queue.current = 0;
     _gw_vars.radio_queue.last    = 0;
-    _gw_vars.handshake_done      = false;
     db_uart_init(DB_UART_INDEX, &db_uart_rx, &db_uart_tx, DB_UART_BAUDRATE, &_uart_callback);
 
     // Initialize buttons used to broadcast move raw values to DotBots
