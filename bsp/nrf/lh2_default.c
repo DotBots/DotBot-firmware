@@ -1030,11 +1030,11 @@ void lh2_calculate_position(uint32_t count1, uint32_t count2, uint32_t basestati
     coordinates[1] = y_position;
 }
 
-void lh2_store_homography(uint8_t basestation_index, int32_t *homography_matrix_from_packet) {
+void lh2_store_homography(uint8_t basestation_index, int32_t homography_matrix_from_packet[3][3]) {
     double homography_matrix_temp_storage[3][3] = {0};
     for (uint8_t i=0; i<3; i++) {
         for (uint8_t j=0; j<3; j++) {
-            homography_matrix_temp_storage[i][j] = (double)(homography_matrix_from_packet[i][j])/1e6;
+            homography_matrix_temp_storage[i][j] = (double)(homography_matrix_from_packet[i][j]) / 1e6;
         }
     }
     memcpy(homography_matrix[basestation_index], homography_matrix_temp_storage, sizeof(double)*3*3);
