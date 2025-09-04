@@ -160,7 +160,6 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
         {
             protocol_lh2_homography_t *homography_from_packet = (protocol_lh2_homography_t *)cmd_ptr;
             lh2_store_homography(homography_from_packet->basestation_index, homography_from_packet->homography_matrix);
-
             } break;
         default:
             break;
