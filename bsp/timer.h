@@ -31,6 +31,20 @@ typedef void (*timer_cb_t)(void);  ///< Callback function prototype, it is calle
 void db_timer_init(timer_t timer);
 
 /**
+ * @brief Start an RTC timer
+ *
+ * @param[in] timer     timer reference used
+ */
+void db_timer_start(timer_t timer);
+
+/**
+ * @brief Stop an RTC timer
+ *
+ * @param[in] timer     timer reference used
+ */
+void db_timer_stop(timer_t timer);
+
+/**
  * @brief Returns the number of ticks since timer initialization
  *
  * @param[in] timer     timer reference used
