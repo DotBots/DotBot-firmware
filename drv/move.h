@@ -23,6 +23,13 @@
 void db_move_init();
 
 /**
+ * @brief   Deinitialize the move module
+ *
+ * Only stop the move timer
+ */
+void db_move_deinit(void);
+
+/**
  * @brief   Move straight by a given distance at a given speed
  *
  * @param[in]   distance        Distance in centimeters
