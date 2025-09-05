@@ -74,6 +74,10 @@ void db_move_init(void) {
     db_qdec_init(QDEC_RIGHT, &qdec_right, NULL, NULL);
 }
 
+void db_move_deinit(void) {
+    db_timer_stop(MOVE_TIMER_DEV);
+}
+
 void db_move_straight(uint16_t distance, int8_t speed) {
     _move_reset();
 
