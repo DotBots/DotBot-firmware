@@ -1014,7 +1014,7 @@ void lh2_calculate_position(uint32_t count1, uint32_t count2, uint32_t basestati
     double alpha_1 = ((double)(count1) * 8.0 / _periods[basestation_index]) * 2.0 * M_PI;
     double alpha_2 = ((double)(count2) * 8.0 / _periods[basestation_index]) * 2.0 * M_PI;
 
-    double cam_x = tan(0.5 * (alpha_1 + alpha_2));
+    double cam_x = -tan(0.5 * (alpha_1 + alpha_2));
     double cam_y = 0;
 
     if (count1 < count2) {

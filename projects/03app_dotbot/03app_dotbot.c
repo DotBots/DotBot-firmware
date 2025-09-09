@@ -219,8 +219,8 @@ int main(void) {
 
                     size_t header_length                     = db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
                     _dotbot_vars.radio_buffer[header_length] = DB_PROTOCOL_LH2_LOCATION;
-                    memcpy(_dotbot_vars.radio_buffer + header_length + sizeof(uint8_t), &_dotbot_vars.last_location.x, sizeof(uint32_t)*3);
-                    size_t length = sizeof(protocol_header_t) + sizeof(uint8_t) + sizeof(uint32_t)*3;
+                    memcpy(_dotbot_vars.radio_buffer + header_length + sizeof(uint8_t), &_dotbot_vars.last_location.x, sizeof(_dotbot_vars.last_location));
+                    size_t length = sizeof(protocol_header_t) + sizeof(uint8_t) + sizeof(_dotbot_vars.last_location);
                     db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
 
                 } else {
