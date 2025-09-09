@@ -238,7 +238,7 @@ int main(void) {
                 }
                 db_lh2_start();
             }
-            _dotbot_vars.update_lh2 = false;
+            //_dotbot_vars.update_lh2 = false;
         }
 
         if (_dotbot_vars.update_control_loop) {
