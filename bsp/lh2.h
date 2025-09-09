@@ -122,7 +122,7 @@ void lh2_calculate_position(uint32_t count1, uint32_t count2, uint32_t basestati
  * @param[in] homography_matrix_from_packet: the 3x3 homography matrix
  *
  */
-void lh2_store_homography(uint8_t basestation_index, int32_t homography_matrix_from_packet[3][3]);
+void lh2_store_homography(db_lh2_t *lh2, uint8_t basestation_index, int32_t homography_matrix_from_packet[3][3]);
 
 /**
  * @brief Handle the fast SPI interrupt
