@@ -196,7 +196,7 @@ int main(void) {
 
     db_timer_init(TIMER_DEV);
     db_timer_set_periodic_ms(TIMER_DEV, 0, DB_TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
-    db_timer_set_periodic_ms(TIMER_DEV, 1, DB_LH2_UPDATE_DELAY_MS, &_update_lh2);
+    db_timer_set_periodic_ms(TIMER_DEV, 1, 5*DB_LH2_UPDATE_DELAY_MS, &_update_lh2);
     db_timer_set_periodic_ms(TIMER_DEV, 2, DB_ADVERTIZEMENT_DELAY_MS, &_advertise);
     db_lh2_init(&_dotbot_vars.lh2, &db_lh2_d, &db_lh2_e);
     db_lh2_start();
@@ -246,7 +246,7 @@ int main(void) {
                 }
                 db_lh2_start();
             }
-            //_dotbot_vars.update_lh2 = false;
+            _dotbot_vars.update_lh2 = false;
         }
 
         if (_dotbot_vars.update_control_loop) {
