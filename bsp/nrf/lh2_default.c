@@ -1024,10 +1024,11 @@ void lh2_calculate_position(uint32_t count1, uint32_t count2, uint32_t basestati
     };
 
     double x_position = homography_matrix[basestation_index][0][0] * cam_x + homography_matrix[basestation_index][0][1] * cam_y + homography_matrix[basestation_index][0][2];
-    double y_position = homography_matrix[basestation_index][1][0] * cam_x + homography_matrix[basestation_index][1][1] * cam_y + homography_matrix[basestation_index][0][2];
+    double y_position = homography_matrix[basestation_index][1][0] * cam_x + homography_matrix[basestation_index][1][1] * cam_y + homography_matrix[basestation_index][1][2];
+    double scale =      homography_matrix[basestation_index][2][0] * cam_x + homography_matrix[basestation_index][2][1] * cam_y + homography_matrix[basestation_index][2][2];
 
-    coordinates[0] = x_position;
-    coordinates[1] = y_position;
+    coordinates[0] = x_position / scale;
+    coordinates[1] = y_position / scale;
 }
 
 void lh2_store_homography(db_lh2_t *lh2, uint8_t basestation_index, int32_t homography_matrix_from_packet[3][3]) {
