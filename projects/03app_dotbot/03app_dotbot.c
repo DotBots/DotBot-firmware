@@ -212,9 +212,17 @@ int main(void) {
                 db_lh2_stop();
                 if (_dotbot_vars.lh2.lh2_calibration_complete) {
                     lh2_calculate_position(_dotbot_vars.lh2.locations[0][0].lfsr_location, _dotbot_vars.lh2.locations[1][0].lfsr_location, 0, _dotbot_vars.coordinates);
-                    __NOP();
-                    // check calculated position
-                    // send position DB_LH2_LOCATION
+
+                    _dotbot_vars.last_location.x = (uint32_t)(_dotbot_vars.coordinates[0] * 1e6);
+                    _dotbot_vars.last_location.y = (uint32_t)(_dotbot_vars.coordinates[1] * 1e6);
+                    _dotbot_vars.last_location.z = (uint32_t)(0);
+
+                    size_t header_length                     = db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
+                    _dotbot_vars.radio_buffer[header_length] = DB_PROTOCOL_LH2_LOCATION;
+                    memcpy(_dotbot_vars.radio_buffer + header_length + sizeof(uint8_t), &_dotbot_vars.last_location.x, sizeof(uint32_t)*3);
+                    size_t length = sizeof(protocol_header_t) + sizeof(uint8_t) + sizeof(uint32_t)*3;
+                    db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
+
                 } else {
                     // Prepare the radio buffer
                     size_t header_length                     = db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
