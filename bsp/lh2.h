@@ -116,8 +116,9 @@ void db_lh2_reset(db_lh2_t *lh2);
 void lh2_calculate_position(uint32_t count1, uint32_t count2, uint32_t basestation_index, double *coordinates);
 
 /**
- * @brief copies homography from a calibration packet into local scope of lh2_default.c
+ * @brief copies homography from a calibration packet into local scope
  *
+ * @param[in] lh2 pointer to the lh2 instance
  * @param[in] basestation_index: index of the basestation that corresponds to the calibration
  * @param[in] homography_matrix_from_packet: the 3x3 homography matrix
  *
