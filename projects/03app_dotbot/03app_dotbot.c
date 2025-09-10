@@ -129,19 +129,6 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             protocol_rgbled_command_t *command = (protocol_rgbled_command_t *)cmd_ptr;
             db_rgbled_pwm_set_color(command->r, command->g, command->b);
         } break;
-        case DB_PROTOCOL_LH2_LOCATION:
-        {
-            const protocol_lh2_location_t *location = (const protocol_lh2_location_t *)cmd_ptr;
-            int16_t                        angle    = -1000;
-            _compute_angle(location, &_dotbot_vars.last_location, &angle);
-            if (angle != DB_DIRECTION_INVALID) {
-                _dotbot_vars.last_location.x = location->x;
-                _dotbot_vars.last_location.y = location->y;
-                _dotbot_vars.last_location.z = location->z;
-                _dotbot_vars.direction       = angle;
-            }
-            _dotbot_vars.update_control_loop = (_dotbot_vars.control_mode == ControlAuto);
-        } break;
         case DB_PROTOCOL_CONTROL_MODE:
             db_motors_set_speed(0, 0);
             break;
@@ -213,13 +200,26 @@ int main(void) {
                 if (_dotbot_vars.lh2.lh2_calibration_complete) {
                     lh2_calculate_position(_dotbot_vars.lh2.locations[0][0].lfsr_location, _dotbot_vars.lh2.locations[1][0].lfsr_location, 0, _dotbot_vars.coordinates);
 
-                    _dotbot_vars.last_location.x = (uint32_t)(_dotbot_vars.coordinates[0] * 1e6);
-                    _dotbot_vars.last_location.y = (uint32_t)(_dotbot_vars.coordinates[1] * 1e6);
-                    _dotbot_vars.last_location.z = (uint32_t)(0);
+                    int16_t                 angle    = -1000;
+                    protocol_lh2_location_t location = {
+                        .x = (uint32_t)(_dotbot_vars.coordinates[0] * 1e6),
+                        .y = (uint32_t)(_dotbot_vars.coordinates[1] * 1e6),
+                        .z = 0
+                    };
+                    _compute_angle(&location, &_dotbot_vars.last_location, &angle);
+                    if (angle != DB_DIRECTION_INVALID) {
+                        _dotbot_vars.last_location.x = location.x;
+                        _dotbot_vars.last_location.y = location.y;
+                        _dotbot_vars.last_location.z = location.z;
+                        _dotbot_vars.direction       = angle;
+                    }
+                    _dotbot_vars.update_control_loop = (_dotbot_vars.control_mode == ControlAuto);
 
                     size_t length                       = db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
-                    _dotbot_vars.radio_buffer[length++] = DB_PROTOCOL_LH2_LOCATION;
-                    memcpy(&_dotbot_vars.radio_buffer[length], &_dotbot_vars.last_location.x, sizeof(protocol_lh2_location_t));
+                    _dotbot_vars.radio_buffer[length++] = DB_PROTOCOL_DOTBOT_DATA;
+                    memcpy(&_dotbot_vars.radio_buffer[length], &_dotbot_vars.direction, sizeof(int16_t));
+                    length += sizeof(int16_t);
+                    memcpy(&_dotbot_vars.radio_buffer[length], &_dotbot_vars.last_location, sizeof(protocol_lh2_location_t));
                     length += sizeof(protocol_lh2_location_t);
                     db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
                 } else {
