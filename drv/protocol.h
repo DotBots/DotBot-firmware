@@ -15,6 +15,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 //=========================== defines ==========================================
 
@@ -193,10 +194,11 @@ size_t db_protocol_tdma_sync_frame_to_buffer(uint8_t *buffer, uint64_t dst, prot
  * @param[out]  buffer      Bytes array to write to
  * @param[in]   dst         Destination address written in the header
  * @param[in]   application Type of application advertized
+ * @param[in]   calibrated  Whether the device LH2 is calibrated (true) or not (false)
  *
  * @return                  Number of bytes written in the buffer
  */
-size_t db_protocol_advertizement_to_buffer(uint8_t *buffer, uint64_t dst, application_type_t application);
+size_t db_protocol_advertizement_to_buffer(uint8_t *buffer, uint64_t dst, application_type_t application, bool calibrated);
 
 /**
  * @brief   Write a move raw command in a buffer

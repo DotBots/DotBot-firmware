@@ -9,6 +9,7 @@
  */
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <nrf.h>
 
 #include "board_config.h"
@@ -58,7 +59,7 @@ int main(void) {
         }
 
         // Send an advertisement message
-        db_protocol_advertizement_to_buffer(packet_tx, DB_GATEWAY_ADDRESS, DotBot);
+        db_protocol_advertizement_to_buffer(packet_tx, DB_GATEWAY_ADDRESS, DotBot, false);
         size_t length = sizeof(protocol_header_t);
         // Send 7 messages in a row, to test the QUEUE system
         db_tdma_client_tx((uint8_t *)packet_tx, length);

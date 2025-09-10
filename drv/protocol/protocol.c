@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 #include "device.h"
 #include "protocol.h"
 
@@ -49,10 +50,11 @@ size_t db_protocol_tdma_sync_frame_to_buffer(uint8_t *buffer, uint64_t dst, prot
     return header_length + sizeof(protocol_sync_frame_t);
 }
 
-size_t db_protocol_advertizement_to_buffer(uint8_t *buffer, uint64_t dst, application_type_t application) {
-    size_t header_length                        = _protocol_header_to_buffer(buffer, dst, DB_PACKET_DATA);
-    *(buffer + header_length)                   = DB_PROTOCOL_ADVERTISEMENT;
-    *(buffer + header_length + sizeof(uint8_t)) = application;
+size_t db_protocol_advertizement_to_buffer(uint8_t *buffer, uint64_t dst, application_type_t application, bool calibrated) {
+    size_t header_length                                       = _protocol_header_to_buffer(buffer, dst, DB_PACKET_DATA);
+    *(buffer + header_length)                                  = DB_PROTOCOL_ADVERTISEMENT;
+    *(buffer + header_length + sizeof(uint8_t))                = application;
+    *(buffer + header_length + sizeof(uint8_t) + sizeof(bool)) = calibrated;
     return header_length + sizeof(uint8_t) + sizeof(uint8_t);
 }
 
