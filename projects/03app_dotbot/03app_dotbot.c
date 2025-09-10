@@ -217,29 +217,23 @@ int main(void) {
                     _dotbot_vars.last_location.y = (uint32_t)(_dotbot_vars.coordinates[1] * 1e6);
                     _dotbot_vars.last_location.z = (uint32_t)(0);
 
-                    size_t header_length                     = db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
-                    _dotbot_vars.radio_buffer[header_length] = DB_PROTOCOL_LH2_LOCATION;
-                    memcpy(_dotbot_vars.radio_buffer + header_length + sizeof(uint8_t), &_dotbot_vars.last_location.x, sizeof(_dotbot_vars.last_location));
-                    size_t length = sizeof(protocol_header_t) + sizeof(uint8_t) + sizeof(_dotbot_vars.last_location);
+                    size_t length = db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
+                    _dotbot_vars.radio_buffer[length++] = DB_PROTOCOL_LH2_LOCATION;
+                    memcpy(&_dotbot_vars.radio_buffer[length], &_dotbot_vars.last_location.x, sizeof(protocol_lh2_location_t));
+                    length += sizeof(protocol_lh2_location_t);
                     db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
-
                 } else {
                     // Prepare the radio buffer
-                    size_t header_length                     = db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
-                    _dotbot_vars.radio_buffer[header_length] = DB_PROTOCOL_DOTBOT_DATA;
-                    memcpy(_dotbot_vars.radio_buffer + header_length + sizeof(uint8_t), &_dotbot_vars.direction, sizeof(int16_t));
-                    _dotbot_vars.radio_buffer[header_length + sizeof(uint8_t) + sizeof(int16_t)] = LH2_SWEEP_COUNT;
+                    size_t length = db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
+                    _dotbot_vars.radio_buffer[length++] = DB_PROTOCOL_LH2_RAW_DATA;
+                    _dotbot_vars.radio_buffer[length++] = LH2_SWEEP_COUNT;
                     // Add the LH2 sweep
                     for (uint8_t lh2_sweep_index = 0; lh2_sweep_index < LH2_SWEEP_COUNT; lh2_sweep_index++) {
-                        memcpy(
-                            _dotbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(uint8_t) + sizeof(uint8_t) + sizeof(int16_t) + lh2_sweep_index * sizeof(db_lh2_raw_data_t),
-                            &_dotbot_vars.lh2.raw_data[lh2_sweep_index][0],
-                            sizeof(db_lh2_raw_data_t)
-                        );
+                        memcpy(&_dotbot_vars.radio_buffer[length], &_dotbot_vars.lh2.raw_data[lh2_sweep_index][0], sizeof(db_lh2_raw_data_t));
+                        length += sizeof(db_lh2_raw_data_t);
                         // Mark the data as already sent
                         _dotbot_vars.lh2.data_ready[lh2_sweep_index][0] = DB_LH2_NO_NEW_DATA;
                     }
-                    size_t length = sizeof(protocol_header_t) + sizeof(uint8_t) + sizeof(uint8_t) + sizeof(int16_t) + sizeof(db_lh2_raw_data_t) * LH2_SWEEP_COUNT;
 
                     // Send the radio packet
                     db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
