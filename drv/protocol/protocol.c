@@ -51,11 +51,11 @@ size_t db_protocol_tdma_sync_frame_to_buffer(uint8_t *buffer, uint64_t dst, prot
 }
 
 size_t db_protocol_advertizement_to_buffer(uint8_t *buffer, uint64_t dst, application_type_t application, bool calibrated) {
-    size_t header_length                                       = _protocol_header_to_buffer(buffer, dst, DB_PACKET_DATA);
-    *(buffer + header_length)                                  = DB_PROTOCOL_ADVERTISEMENT;
-    *(buffer + header_length + sizeof(uint8_t))                = application;
-    *(buffer + header_length + sizeof(uint8_t) + sizeof(bool)) = calibrated;
-    return header_length + sizeof(uint8_t) + sizeof(uint8_t);
+    size_t header_length                                          = _protocol_header_to_buffer(buffer, dst, DB_PACKET_DATA);
+    *(buffer + header_length)                                     = DB_PROTOCOL_ADVERTISEMENT;
+    *(buffer + header_length + sizeof(uint8_t))                   = application;
+    *(buffer + header_length + sizeof(uint8_t) + sizeof(uint8_t)) = calibrated;
+    return header_length + sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint8_t);
 }
 
 size_t db_protocol_cmd_move_raw_to_buffer(uint8_t *buffer, uint64_t dst, protocol_move_raw_command_t *command) {
