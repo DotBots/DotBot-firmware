@@ -3,6 +3,9 @@
 *.jlink
 *.ind
 
+# Mac OS files
+.DS_Store
+
 # Visual Studio specific files
 .vscode/
 
