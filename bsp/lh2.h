@@ -57,6 +57,7 @@ typedef struct {
     uint32_t                  timestamps[LH2_SWEEP_COUNT][LH2_BASESTATION_COUNT];  ///< timestamp of when the raw data was received
     db_lh2_data_ready_state_t data_ready[LH2_SWEEP_COUNT][LH2_BASESTATION_COUNT];  ///< Is the data in the buffer ready to send over radio, or has it already been sent ?
     uint8_t                  *spi_ring_buffer_count_ptr;                           ///< pointer to the SPI rung buffer packet count, so the user application can read how many spi captures are waiting to be processed.
+    bool                      lh2_calibration_complete;                            ///< Indicator of LH system calibration status (False = uncalibrated)
 } db_lh2_t;
 
 //=========================== public ===========================================
@@ -102,6 +103,27 @@ void db_lh2_stop(void);
  * @param[in]   lh2 pointer to the lh2 instance
  */
 void db_lh2_reset(db_lh2_t *lh2);
+
+/**
+ * @brief calculates the x,y coordinates of a robot using pre-calibrated Homography
+ *
+ * @param[in] count1: first received count value
+ * @param[in] count2: second received count value
+ * @param[in] basestation_index: index of which LH transmitted the pulse
+ * @param[in] coordinates: 2-D array (x,y) of robot position
+ *
+ */
+void lh2_calculate_position(uint32_t count1, uint32_t count2, uint32_t basestation_index, double *coordinates);
+
+/**
+ * @brief copies homography from a calibration packet into local scope
+ *
+ * @param[in] lh2 pointer to the lh2 instance
+ * @param[in] basestation_index: index of the basestation that corresponds to the calibration
+ * @param[in] homography_matrix_from_packet: the 3x3 homography matrix
+ *
+ */
+void lh2_store_homography(db_lh2_t *lh2, uint8_t basestation_index, int32_t homography_matrix_from_packet[3][3]);
 
 /**
  * @brief Handle the fast SPI interrupt

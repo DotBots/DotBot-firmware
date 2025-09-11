@@ -15,6 +15,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 //=========================== defines ==========================================
 
@@ -38,6 +39,7 @@ typedef enum {
     DB_PROTOCOL_SAILBOT_DATA       = 10,  ///< SailBot specific data (for now GPS and direction)
     DB_PROTOCOL_CMD_XGO_ACTION     = 11,  ///< XGO action command
     DB_PROTOCOL_LH2_PROCESSED_DATA = 12,  ///< Lighthouse 2 data processed at the DotBot
+    DB_PROTOCOL_LH2_CALIBRATION    = 14,  ///< Lighthouse 2 homography matrix after calibration
 } protocol_data_type_t;
 
 /// Protocol packet type
@@ -102,6 +104,11 @@ typedef struct __attribute__((packed)) {
     uint8_t                 length;                    ///< Number of waypoints
     protocol_lh2_location_t points[DB_MAX_WAYPOINTS];  ///< Array containing a list of lh2 point coordinates
 } protocol_lh2_waypoints_t;
+
+typedef struct __attribute__((packed)) {
+    uint8_t basestation_index;        ///< which LH basestation is this homography for?
+    int32_t homography_matrix[3][3];  ///< homography matrix, each element multiplied by 1e6
+} protocol_lh2_homography_t;
 
 /// DotBot protocol GPS coordinates
 typedef struct __attribute__((packed)) {
@@ -187,10 +194,11 @@ size_t db_protocol_tdma_sync_frame_to_buffer(uint8_t *buffer, uint64_t dst, prot
  * @param[out]  buffer      Bytes array to write to
  * @param[in]   dst         Destination address written in the header
  * @param[in]   application Type of application advertized
+ * @param[in]   calibrated  Whether the device LH2 is calibrated (true) or not (false)
  *
  * @return                  Number of bytes written in the buffer
  */
-size_t db_protocol_advertizement_to_buffer(uint8_t *buffer, uint64_t dst, application_type_t application);
+size_t db_protocol_advertizement_to_buffer(uint8_t *buffer, uint64_t dst, application_type_t application, bool calibrated);
 
 /**
  * @brief   Write a move raw command in a buffer

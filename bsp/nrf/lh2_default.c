@@ -15,6 +15,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <nrf.h>
+#include <math.h>
 
 #include "gpio.h"
 #include "lh2.h"
@@ -97,6 +98,13 @@ static const uint32_t _polynomials[LH2_POLYNOMIAL_COUNT] = {
     0x000198D1,
     0x000178C7,
     0x00018A55,
+};
+
+static const uint32_t _periods[LH2_BASESTATION_COUNT] = {
+    959000,
+    957000,
+    953000,
+    951000,
 };
 
 static const uint32_t _end_buffers[LH2_POLYNOMIAL_COUNT][NUM_LSFR_COUNT_CHECKPOINTS] = {
@@ -659,6 +667,8 @@ typedef enum {
     LH2_SWEEP_BOTH_SLOTS_FULL,    ///< Both sweep slots are filled with raw data
 } db_lh2_sweep_slot_state_t;
 
+static double homography_matrix[LH2_BASESTATION_COUNT][3][3] = { 0 };
+
 static lh2_vars_t _lh2_vars;  ///< local data of the LH2 driver
 
 //=========================== prototypes =======================================
@@ -792,6 +802,7 @@ void _update_lfsr_checkpoints(uint8_t polynomial, uint32_t bits, uint32_t count)
  * @param[in] lh2 pointer to the lh2 instance
  * @param[in] polynomial: index of found polynomia
  * @param[in] timestamp: timestamp of the SPI capture
+ *
  */
 uint8_t _select_sweep(db_lh2_t *lh2, uint8_t polynomial, uint32_t timestamp);
 
@@ -831,7 +842,7 @@ void db_lh2_init(db_lh2_t *lh2, const gpio_t *gpio_d, const gpio_t *gpio_e) {
     lh2->spi_ring_buffer_count_ptr = &_lh2_vars.data.count;  // pointer to the size of the spi ring buffer,
 
     for (uint8_t sweep = 0; sweep < LH2_SWEEP_COUNT; sweep++) {
-        for (uint8_t basestation = 0; basestation < LH2_SWEEP_COUNT; basestation++) {
+        for (uint8_t basestation = 0; basestation < LH2_BASESTATION_COUNT; basestation++) {
             lh2->raw_data[sweep][basestation].bits_sweep           = 0;
             lh2->raw_data[sweep][basestation].selected_polynomial  = LH2_POLYNOMIAL_ERROR_INDICATOR;
             lh2->raw_data[sweep][basestation].bit_offset           = 0;
@@ -996,6 +1007,40 @@ void db_lh2_process_location(db_lh2_t *lh2) {
     lh2->locations[sweep][basestation].selected_polynomial = temp_selected_polynomial;
     // Mark the data point as processed
     lh2->data_ready[sweep][basestation] = DB_LH2_PROCESSED_DATA_AVAILABLE;
+}
+
+void lh2_calculate_position(uint32_t count1, uint32_t count2, uint32_t basestation_index, double *coordinates) {
+
+    double alpha_1 = ((double)(count1) * 8.0 / _periods[basestation_index]) * 2.0 * M_PI;
+    double alpha_2 = ((double)(count2) * 8.0 / _periods[basestation_index]) * 2.0 * M_PI;
+
+    double cam_x = -tan(0.5 * (alpha_1 + alpha_2));
+    double cam_y = 0;
+
+    if (count1 < count2) {
+        cam_y = -sin(alpha_2 / 2 - alpha_1 / 2 - 60 * M_PI / 180) / tan(M_PI / 6);
+    } else {
+        cam_y = -sin(alpha_1 / 2 - alpha_2 / 2 - 60 * M_PI / 180) / tan(M_PI / 6);
+    };
+
+    double x_position = homography_matrix[basestation_index][0][0] * cam_x + homography_matrix[basestation_index][0][1] * cam_y + homography_matrix[basestation_index][0][2];
+    double y_position = homography_matrix[basestation_index][1][0] * cam_x + homography_matrix[basestation_index][1][1] * cam_y + homography_matrix[basestation_index][1][2];
+    double scale      = homography_matrix[basestation_index][2][0] * cam_x + homography_matrix[basestation_index][2][1] * cam_y + homography_matrix[basestation_index][2][2];
+
+    coordinates[0] = x_position / scale;
+    coordinates[1] = (double)(1.0) - (y_position / scale);
+}
+
+void lh2_store_homography(db_lh2_t *lh2, uint8_t basestation_index, int32_t homography_matrix_from_packet[3][3]) {
+    double homography_matrix_temp_storage[3][3] = { 0 };
+    for (uint8_t i = 0; i < 3; i++) {
+        for (uint8_t j = 0; j < 3; j++) {
+            homography_matrix_temp_storage[i][j] = (double)(homography_matrix_from_packet[i][j]) / 1e6;
+        }
+    }
+    memcpy(homography_matrix[basestation_index], homography_matrix_temp_storage, sizeof(double) * 3 * 3);
+
+    lh2->lh2_calibration_complete = true;
 }
 
 //=========================== private ==========================================

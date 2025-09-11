@@ -16,6 +16,7 @@
 #include <nrf.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <math.h>
 #include <stdio.h>
 // Include BSP headers
@@ -146,7 +147,7 @@ int main(void) {
         }
 
         if (_dotbot_vars.advertise) {
-            size_t length = db_protocol_advertizement_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS, LH2_mini_mote);
+            size_t length = db_protocol_advertizement_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS, LH2_mini_mote, false);
             db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
             _dotbot_vars.advertise = false;
         }

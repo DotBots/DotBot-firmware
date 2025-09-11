@@ -14,6 +14,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <math.h>
 #include <nrf.h>
 // Include BSP headers
@@ -69,6 +70,7 @@ typedef struct {
     bool                     update_lh2;                         ///< Whether LH2 data must be processed
     uint64_t                 device_id;                          ///< Device ID of the DotBot
     db_log_dotbot_data_t     log_data;
+    double                   coordinates[2];  ///< x, y coordinates of the robot
 } dotbot_vars_t;
 
 //=========================== variables ========================================
@@ -127,19 +129,6 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             protocol_rgbled_command_t *command = (protocol_rgbled_command_t *)cmd_ptr;
             db_rgbled_pwm_set_color(command->r, command->g, command->b);
         } break;
-        case DB_PROTOCOL_LH2_LOCATION:
-        {
-            const protocol_lh2_location_t *location = (const protocol_lh2_location_t *)cmd_ptr;
-            int16_t                        angle    = -1000;
-            _compute_angle(location, &_dotbot_vars.last_location, &angle);
-            if (angle != DB_DIRECTION_INVALID) {
-                _dotbot_vars.last_location.x = location->x;
-                _dotbot_vars.last_location.y = location->y;
-                _dotbot_vars.last_location.z = location->z;
-                _dotbot_vars.direction       = angle;
-            }
-            _dotbot_vars.update_control_loop = (_dotbot_vars.control_mode == ControlAuto);
-        } break;
         case DB_PROTOCOL_CONTROL_MODE:
             db_motors_set_speed(0, 0);
             break;
@@ -154,6 +143,12 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             if (_dotbot_vars.waypoints.length > 0) {
                 _dotbot_vars.control_mode = ControlAuto;
             }
+        } break;
+        case DB_PROTOCOL_LH2_CALIBRATION:
+        {
+            puts("Received calibration data");
+            protocol_lh2_homography_t *homography_from_packet = (protocol_lh2_homography_t *)cmd_ptr;
+            lh2_store_homography(&_dotbot_vars.lh2, homography_from_packet->basestation_index, homography_from_packet->homography_matrix);
         } break;
         default:
             break;
@@ -183,9 +178,12 @@ int main(void) {
     // Retrieve the device id once at startup
     _dotbot_vars.device_id = db_device_id();
 
+    // Initialize calibration status to false
+    _dotbot_vars.lh2.lh2_calibration_complete = false;
+
     db_timer_init(TIMER_DEV);
     db_timer_set_periodic_ms(TIMER_DEV, 0, DB_TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
-    db_timer_set_periodic_ms(TIMER_DEV, 1, DB_LH2_UPDATE_DELAY_MS, &_update_lh2);
+    db_timer_set_periodic_ms(TIMER_DEV, 1, 5 * DB_LH2_UPDATE_DELAY_MS, &_update_lh2);
     db_timer_set_periodic_ms(TIMER_DEV, 2, DB_ADVERTIZEMENT_DELAY_MS, &_advertise);
     db_lh2_init(&_dotbot_vars.lh2, &db_lh2_d, &db_lh2_e);
     db_lh2_start();
@@ -197,29 +195,49 @@ int main(void) {
         db_lh2_process_location(&_dotbot_vars.lh2);
 
         if (_dotbot_vars.update_lh2) {
-            // Check if data is ready to send
             if (_dotbot_vars.lh2.data_ready[0][0] == DB_LH2_PROCESSED_DATA_AVAILABLE && _dotbot_vars.lh2.data_ready[1][0] == DB_LH2_PROCESSED_DATA_AVAILABLE) {
-
                 db_lh2_stop();
-                // Prepare the radio buffer
-                size_t header_length                     = db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
-                _dotbot_vars.radio_buffer[header_length] = DB_PROTOCOL_DOTBOT_DATA;
-                memcpy(_dotbot_vars.radio_buffer + header_length + sizeof(uint8_t), &_dotbot_vars.direction, sizeof(int16_t));
-                _dotbot_vars.radio_buffer[header_length + sizeof(uint8_t) + sizeof(int16_t)] = LH2_SWEEP_COUNT;
-                // Add the LH2 sweep
-                for (uint8_t lh2_sweep_index = 0; lh2_sweep_index < LH2_SWEEP_COUNT; lh2_sweep_index++) {
-                    memcpy(
-                        _dotbot_vars.radio_buffer + sizeof(protocol_header_t) + sizeof(uint8_t) + sizeof(uint8_t) + sizeof(int16_t) + lh2_sweep_index * sizeof(db_lh2_raw_data_t),
-                        &_dotbot_vars.lh2.raw_data[lh2_sweep_index][0],
-                        sizeof(db_lh2_raw_data_t));
-                    // Mark the data as already sent
-                    _dotbot_vars.lh2.data_ready[lh2_sweep_index][0] = DB_LH2_NO_NEW_DATA;
+                if (_dotbot_vars.lh2.lh2_calibration_complete) {
+                    lh2_calculate_position(_dotbot_vars.lh2.locations[0][0].lfsr_location, _dotbot_vars.lh2.locations[1][0].lfsr_location, 0, _dotbot_vars.coordinates);
+
+                    int16_t                 angle    = -1000;
+                    protocol_lh2_location_t location = {
+                        .x = (uint32_t)(_dotbot_vars.coordinates[0] * 1e6),
+                        .y = (uint32_t)(_dotbot_vars.coordinates[1] * 1e6),
+                        .z = 0
+                    };
+                    _compute_angle(&location, &_dotbot_vars.last_location, &angle);
+                    if (angle != DB_DIRECTION_INVALID) {
+                        _dotbot_vars.last_location.x = location.x;
+                        _dotbot_vars.last_location.y = location.y;
+                        _dotbot_vars.last_location.z = location.z;
+                        _dotbot_vars.direction       = angle;
+                    }
+                    _dotbot_vars.update_control_loop = (_dotbot_vars.control_mode == ControlAuto);
+
+                    size_t length                       = db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
+                    _dotbot_vars.radio_buffer[length++] = DB_PROTOCOL_DOTBOT_DATA;
+                    memcpy(&_dotbot_vars.radio_buffer[length], &_dotbot_vars.direction, sizeof(int16_t));
+                    length += sizeof(int16_t);
+                    memcpy(&_dotbot_vars.radio_buffer[length], &_dotbot_vars.last_location, sizeof(protocol_lh2_location_t));
+                    length += sizeof(protocol_lh2_location_t);
+                    db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
+                } else {
+                    // Prepare the radio buffer
+                    size_t length                       = db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
+                    _dotbot_vars.radio_buffer[length++] = DB_PROTOCOL_LH2_RAW_DATA;
+                    _dotbot_vars.radio_buffer[length++] = LH2_SWEEP_COUNT;
+                    // Add the LH2 sweep
+                    for (uint8_t lh2_sweep_index = 0; lh2_sweep_index < LH2_SWEEP_COUNT; lh2_sweep_index++) {
+                        memcpy(&_dotbot_vars.radio_buffer[length], &_dotbot_vars.lh2.raw_data[lh2_sweep_index][0], sizeof(db_lh2_raw_data_t));
+                        length += sizeof(db_lh2_raw_data_t);
+                        // Mark the data as already sent
+                        _dotbot_vars.lh2.data_ready[lh2_sweep_index][0] = DB_LH2_NO_NEW_DATA;
+                    }
+
+                    // Send the radio packet
+                    db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
                 }
-                size_t length = sizeof(protocol_header_t) + sizeof(uint8_t) + sizeof(uint8_t) + sizeof(int16_t) + sizeof(db_lh2_raw_data_t) * LH2_SWEEP_COUNT;
-
-                // Send the radio packet
-                db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
-
                 db_lh2_start();
             }
             _dotbot_vars.update_lh2 = false;
@@ -231,7 +249,7 @@ int main(void) {
         }
 
         if (_dotbot_vars.advertize) {
-            size_t length = db_protocol_advertizement_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS, DotBot);
+            size_t length = db_protocol_advertizement_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS, DotBot, _dotbot_vars.lh2.lh2_calibration_complete);
             db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
             _dotbot_vars.advertize = false;
         }

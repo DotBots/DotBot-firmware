@@ -285,7 +285,7 @@ int main(void) {
         }
 
         if (_xgo_vars.advertize) {
-            size_t length = db_protocol_advertizement_to_buffer(_xgo_vars.radio_buffer, DB_GATEWAY_ADDRESS, XGO);
+            size_t length = db_protocol_advertizement_to_buffer(_xgo_vars.radio_buffer, DB_GATEWAY_ADDRESS, XGO, false);
             db_tdma_client_tx(_xgo_vars.radio_buffer, length);
             _xgo_vars.advertize = false;
         }
