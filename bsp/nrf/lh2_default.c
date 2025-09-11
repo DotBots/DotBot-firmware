@@ -1009,7 +1009,7 @@ void db_lh2_process_location(db_lh2_t *lh2) {
     lh2->data_ready[sweep][basestation] = DB_LH2_PROCESSED_DATA_AVAILABLE;
 }
 
-void lh2_calculate_position(uint32_t count1, uint32_t count2, uint32_t basestation_index, double *coordinates) {
+void db_lh2_calculate_position(uint32_t count1, uint32_t count2, uint32_t basestation_index, double *coordinates) {
 
     double alpha_1 = ((double)(count1) * 8.0 / _periods[basestation_index]) * 2.0 * M_PI;
     double alpha_2 = ((double)(count2) * 8.0 / _periods[basestation_index]) * 2.0 * M_PI;
@@ -1031,7 +1031,7 @@ void lh2_calculate_position(uint32_t count1, uint32_t count2, uint32_t basestati
     coordinates[1] = (double)(1.0) - (y_position / scale);
 }
 
-void lh2_store_homography(db_lh2_t *lh2, uint8_t basestation_index, int32_t homography_matrix_from_packet[3][3]) {
+void db_lh2_store_homography(db_lh2_t *lh2, uint8_t basestation_index, int32_t homography_matrix_from_packet[3][3]) {
     double homography_matrix_temp_storage[3][3] = { 0 };
     for (uint8_t i = 0; i < 3; i++) {
         for (uint8_t j = 0; j < 3; j++) {

@@ -148,7 +148,7 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
         {
             puts("Received calibration data");
             protocol_lh2_homography_t *homography_from_packet = (protocol_lh2_homography_t *)cmd_ptr;
-            lh2_store_homography(&_dotbot_vars.lh2, homography_from_packet->basestation_index, homography_from_packet->homography_matrix);
+            db_lh2_store_homography(&_dotbot_vars.lh2, homography_from_packet->basestation_index, homography_from_packet->homography_matrix);
         } break;
         default:
             break;
@@ -198,7 +198,7 @@ int main(void) {
             if (_dotbot_vars.lh2.data_ready[0][0] == DB_LH2_PROCESSED_DATA_AVAILABLE && _dotbot_vars.lh2.data_ready[1][0] == DB_LH2_PROCESSED_DATA_AVAILABLE) {
                 db_lh2_stop();
                 if (_dotbot_vars.lh2.lh2_calibration_complete) {
-                    lh2_calculate_position(_dotbot_vars.lh2.locations[0][0].lfsr_location, _dotbot_vars.lh2.locations[1][0].lfsr_location, 0, _dotbot_vars.coordinates);
+                    db_lh2_calculate_position(_dotbot_vars.lh2.locations[0][0].lfsr_location, _dotbot_vars.lh2.locations[1][0].lfsr_location, 0, _dotbot_vars.coordinates);
 
                     int16_t                 angle    = -1000;
                     protocol_lh2_location_t location = {
