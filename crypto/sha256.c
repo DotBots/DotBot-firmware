@@ -14,43 +14,32 @@
 #include <nrf.h>
 #include "sha256.h"
 
-#if defined(USE_CRYPTOCELL)
-#include "utils.h"
-#include "nrf_cc310/include/crys_hash.h"
-
-static CRYS_HASHUserContext_t _hash_context;
-#else
-#include "soft_sha256.h"
-
-static SHA256_CTX _hash_context;
-#endif
-
-void crypto_sha256_init(void) {
+void crypto_sha256_init(crypto_sha256_ctx_t *ctx) {
 #if defined(USE_CRYPTOCELL)
     crypto_enable_cryptocell();
-    CRYS_HASH_Init(&_hash_context, CRYS_HASH_SHA256_mode);
+    CRYS_HASH_Init(&ctx->_hash_context, CRYS_HASH_SHA256_mode);
     crypto_disable_cryptocell();
 #else
-    sha256_init(&_hash_context);
+    sha256_init(&ctx->_hash_context);
 #endif
 }
 
-void crypto_sha256_update(const uint8_t *data, size_t len) {
+void crypto_sha256_update(crypto_sha256_ctx_t *ctx, const uint8_t *data, size_t len) {
 #if defined(USE_CRYPTOCELL)
     crypto_enable_cryptocell();
-    CRYS_HASH_Update(&_hash_context, (uint8_t *)data, len);
+    CRYS_HASH_Update(&ctx->_hash_context, (uint8_t *)data, len);
     crypto_disable_cryptocell();
 #else
-    sha256_update(&_hash_context, (uint8_t *)data, len);
+    sha256_update(&ctx->_hash_context, (uint8_t *)data, len);
 #endif
 }
 
-void crypto_sha256(uint8_t *digest) {
+void crypto_sha256(crypto_sha256_ctx_t *ctx, uint8_t *digest) {
 #if defined(USE_CRYPTOCELL)
     crypto_enable_cryptocell();
-    CRYS_HASH_Finish(&_hash_context, (uint32_t *)digest);
+    CRYS_HASH_Finish(&ctx->_hash_context, (uint32_t *)digest);
     crypto_disable_cryptocell();
 #else
-    sha256_final(&_hash_context, (BYTE *)digest);
+    sha256_final(&ctx->_hash_context, (BYTE *)digest);
 #endif
 }
