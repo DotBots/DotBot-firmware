@@ -33,6 +33,7 @@ nitpick_ignore_regex = [
     (r'c:.*', r'NRF_.*'),               # ignore NRF_ macros
     (r'c:.*', r'[s]*size_t'),           # ignore size_t and ssize_t 
     (r'c:.*', r'[U]*INT\d{1,2}_MAX'),   # ignore INT8_MAX, UINT8_MAX, ...
+    (r'c:.*', r'SHA256_CTX'),           # ignore SHA256_CTX identifier
 ]
 
 # -- Options for breathe ------------------------------------------------------
