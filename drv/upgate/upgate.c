@@ -41,6 +41,7 @@ typedef struct {
     uint32_t                addr;
     uint32_t                last_packet_acked;
     uint32_t                bistream_size;
+    crypto_sha256_ctx_t     sha256_ctx;
     uint8_t                 hash[DB_UPGATE_SHA256_LENGTH];
     uint8_t                 read_buf[DB_UPGATE_CHUNK_SIZE * 2];
     uint8_t                 write_buf[DB_UPGATE_CHUNK_SIZE * 2];
@@ -84,7 +85,7 @@ void db_upgate_start(void) {
 void db_upgate_finish(void) {
 #if defined(UPGATE_USE_CRYPTO)
     uint8_t hash_result[DB_UPGATE_SHA256_LENGTH] = { 0 };
-    crypto_sha256(hash_result);
+    crypto_sha256(&_upgate_vars.sha256_ctx, hash_result);
 
     if (memcmp(hash_result, _upgate_vars.hash, DB_UPGATE_SHA256_LENGTH) != 0) {
         puts("Bitstream hashes don't match!");
@@ -175,7 +176,7 @@ void db_upgate_handle_packet(const db_upgate_pkt_t *pkt) {
                 }
             }
 #if defined(UPGATE_USE_CRYPTO)
-            crypto_sha256_update((const uint8_t *)_upgate_vars.decompressed_buffer, pkt->original_size);
+            crypto_sha256_update(&_upgate_vars.sha256_ctx, (const uint8_t *)_upgate_vars.decompressed_buffer, pkt->original_size);
 #endif
         }
     } else {
@@ -193,7 +194,7 @@ void db_upgate_handle_packet(const db_upgate_pkt_t *pkt) {
             puts("packet doesn't match!!");
         }
 #if defined(UPGATE_USE_CRYPTO)
-        crypto_sha256_update((const uint8_t *)_upgate_vars.read_buf, data_size);
+        crypto_sha256_update(&_upgate_vars.sha256_ctx, (const uint8_t *)_upgate_vars.read_buf, data_size);
 #endif
     }
 }
@@ -213,7 +214,7 @@ void db_upgate_handle_message(const uint8_t *message) {
             }
             printf("Success!\n");
             memcpy(_upgate_vars.hash, hash, DB_UPGATE_SHA256_LENGTH);
-            crypto_sha256_init();
+            crypto_sha256_init(&_upgate_vars.sha256_ctx);
 #endif
             uint8_t  compression       = upgate_start->compression;
             uint32_t bitstream_size    = upgate_start->bitstream_size;

@@ -33,7 +33,10 @@ typedef struct {
     uint32_t              target_partition;
     uint32_t              addr;
     uint32_t              last_index_acked;
-    uint8_t               hash[DB_OTA_SHA256_LENGTH];
+#if defined(OTA_USE_CRYPTO)
+    crypto_sha256_ctx_t sha256_ctx;
+#endif
+    uint8_t hash[DB_OTA_SHA256_LENGTH];
 } db_ota_vars_t;
 
 //=========================== variables ========================================
@@ -71,7 +74,7 @@ void db_ota_finish(void) {
     // Switch active image in partition table before resetting the device
 #if defined(OTA_USE_CRYPTO)
     uint8_t hash_result[DB_OTA_SHA256_LENGTH] = { 0 };
-    crypto_sha256(hash_result);
+    crypto_sha256(&_ota_vars.sha256_ctx, hash_result);
 
     if (memcmp(hash_result, _ota_vars.hash, DB_OTA_SHA256_LENGTH) != 0) {
         return;
@@ -116,7 +119,7 @@ void db_ota_handle_message(const uint8_t *message) {
                 break;
             }
             memcpy(_ota_vars.hash, hash, DB_OTA_SHA256_LENGTH);
-            crypto_sha256_init();
+            crypto_sha256_init(&_ota_vars.sha256_ctx);
 #else
             (void)ota_start;
 #endif
@@ -135,7 +138,7 @@ void db_ota_handle_message(const uint8_t *message) {
                 // Skip writing the chunk if already acked
                 db_ota_write_chunk(ota_pkt);
 #if defined(OTA_USE_CRYPTO)
-                crypto_sha256_update((const uint8_t *)ota_pkt->fw_chunk, DB_OTA_CHUNK_SIZE);
+                crypto_sha256_update(&_ota_vars.sha256_ctx, (const uint8_t *)ota_pkt->fw_chunk, DB_OTA_CHUNK_SIZE);
 #endif
             }
 
