@@ -18,8 +18,22 @@ The DotBots ecosystem provides Python
 [PyDotBot](https://github.com/DotBots/PyDotBot) to interacts with a nRF DK board
 used a gateway.
 
+The [DotBot-libs](https://github.com/DotBots/DotBot-libs) repository provides
+low-level peripheral drivers and libraries to facilitate the development of
+applications for the DotBot platform.
+
 The DotBots hardware design are published on GitHub at
 [https://github.com/DotBots/DotBot-hardware](https://github.com/DotBots/DotBot-hardware).
+
+## Get the code
+
+This repository uses [DotBot-libs](https://github.com/DotBots/DotBot-libs) as a
+[Git submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules).
+To clone the repository use the following command:
+
+```
+git clone --recurse-submodules https://github.com/DotBots/DotBot-firmware
+```
 
 ## Building firmwares
 
