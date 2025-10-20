@@ -1,1 +1,0 @@
-# Watchdog sample application

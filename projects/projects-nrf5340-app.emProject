@@ -7,8 +7,8 @@
       project_directory="03app_nrf5340_app"
       project_type="Executable" />
     <folder Name="Setup">
-      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_flash_placement.xml" />
-      <file file_name="$(ProjectDir)/../../nRF/Setup/$(Target)_MemoryMap.xml">
+      <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/Setup/$(Target)_MemoryMap.xml">
         <configuration Name="Common" file_type="Memory Map" />
       </file>
       <file file_name="../../nRF/Scripts/nRF_Target.js">
@@ -20,8 +20,8 @@
       <file file_name="main.c" />
     </folder>
     <folder Name="System">
-      <file file_name="$(ProjectDir)/../../nRF/System/$(Target)_system_init.c" />
-      <file file_name="$(ProjectDir)/../../nRF/System/cpu.c" />
+      <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/System/cpu.c" />
     </folder>
   </project>
 </solution>

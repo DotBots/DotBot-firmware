@@ -1,5 +1,0 @@
-click==8.1.7
-cryptography==43.0.3
-lz4==4.3.3
-tqdm==4.66.1
-pydotbot==0.21.2

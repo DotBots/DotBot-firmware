@@ -1,4 +1,0 @@
-/**
-* @defgroup    crypto Cryptographic support
-* @brief       The cryptographic API provides SHA256 hashing and ED25519 signature support
-*/
