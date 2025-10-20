@@ -14,4 +14,4 @@
 
 #include "conf.h"
 
-#include "../03app_dotbot_gateway/03app_dotbot_gateway.c"
+#include "../dotbot_gateway/dotbot_gateway.c"

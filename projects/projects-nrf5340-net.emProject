@@ -1,10 +1,10 @@
 <!DOCTYPE CrossStudio_Project_File>
 <solution Name="projects-nrf5340-net" target="8" version="2">
-  <project Name="03app_nrf5340_net">
+  <project Name="nrf5340_net">
     <configuration
       Name="Common"
       project_dependencies="00bsp_radio(bsp);00bsp_rng(bsp);00drv_tdma_client(drv);00drv_tdma_server(drv);"
-      project_directory="03app_nrf5340_net"
+      project_directory="nrf5340_net"
       project_type="Executable" />
     <folder Name="Setup">
       <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/Setup/$(Target)_flash_placement.xml" />

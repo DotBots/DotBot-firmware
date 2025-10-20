@@ -115,19 +115,20 @@ README_INCLUDE_TEMPLATE = """```{{include}} {path_to_readme}
 ```
 """
 
-def generate_readme(app, prefix, dest):
+def generate_readme(app, dest):
     projects_dir = os.path.join(app.srcdir, "../../projects/")
-    projects = [os.path.basename(project) for project in glob.glob(f"{projects_dir}/{prefix}*")]
     output_dir = os.path.join(app.srcdir, dest)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
-    for project in projects:
-        with open(os.path.join(output_dir, f"{project}.md"), "w") as f:
-            f.write(README_INCLUDE_TEMPLATE.format(path_to_readme=f"../../../projects/{project}/README.md"))
+    with os.scandir(projects_dir) as entries:
+        for entry in entries:
+            if entry.is_dir():
+                with open(os.path.join(output_dir, f"{entry.name}.md"), "w") as f:
+                    f.write(README_INCLUDE_TEMPLATE.format(path_to_readme=f"../../../projects/{entry.name}/README.md"))
 
 
 def generate_projects_readme(app):
-    generate_readme(app, "03app", "_projects")
+    generate_readme(app, "_projects")
 
 
 def setup(app):

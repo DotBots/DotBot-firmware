@@ -1,10 +1,10 @@
 <!DOCTYPE CrossStudio_Project_File>
 <solution Name="projects-freebot-v1.0" target="8" version="2">
-  <project Name="03app_freebot">
+  <project Name="freebot">
     <configuration
       Name="Common"
       project_dependencies="00bsp_timer(bsp);00drv_dotbot_hdlc(drv);00drv_dotbot_protocol(drv);00bsp_radio(bsp);00bsp_pwm(bsp);00drv_tdma_client(drv)"
-      project_directory="03app_freebot"
+      project_directory="freebot"
       project_type="Executable" />
     <folder Name="Setup">
       <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/Setup/$(Target)_flash_placement.xml" />

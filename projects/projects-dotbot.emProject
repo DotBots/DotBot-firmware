@@ -1,10 +1,10 @@
 <!DOCTYPE CrossStudio_Project_File>
 <solution Name="projects-dotbot" target="8" version="2">
-  <project Name="03app_dotbot">
+  <project Name="dotbot">
     <configuration
       Name="Common"
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_lh2(bsp);00bsp_timer(bsp);00drv_dotbot_hdlc(drv);00drv_dotbot_protocol(drv);00bsp_radio(bsp);00drv_log_flash(drv);00drv_rgbled_pwm(drv);00drv_motors(drv);00drv_tdma_client(drv)"
-      project_directory="03app_dotbot"
+      project_directory="dotbot"
       project_type="Executable" />
     <folder Name="Setup">
       <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/Setup/$(Target)_flash_placement.xml" />
@@ -17,7 +17,7 @@
     </folder>
     <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="03app_dotbot.c" />
+      <file file_name="main.c" />
     </folder>
     <folder Name="System">
       <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/System/$(Target)_system_init.c" />

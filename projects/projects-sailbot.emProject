@@ -1,10 +1,10 @@
 <!DOCTYPE CrossStudio_Project_File>
 <solution Name="projects-sailbot" target="8" version="2">
-  <project Name="03app_sailbot">
+  <project Name="sailbot">
     <configuration
       Name="Common"
       project_dependencies="00bsp_radio(bsp);00bsp_uart(bsp);00drv_dotbot_protocol(drv);00bsp_pwm(bsp);00bsp_timer_hf(bsp);00bsp_timer(bsp);00bsp_i2c(bsp);00drv_imu(drv);00drv_as5048b(drv);00drv_tdma_client(drv)"
-      project_directory="03app_sailbot"
+      project_directory="sailbot"
       project_type="Executable" />
     <folder Name="Setup">
       <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/Setup/$(Target)_flash_placement.xml" />
@@ -15,7 +15,7 @@
     </folder>
     <folder Name="Source">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="03app_sailbot.c" />
+      <file file_name="main.c" />
       <file file_name="gps.h" />
       <file file_name="gps.c" />
       <file file_name="servos.h" />

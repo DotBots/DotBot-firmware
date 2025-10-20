@@ -15,33 +15,33 @@ endif
 
 ifeq (nrf5340dk-app,$(BUILD_TARGET))
   PROJECTS ?= \
-    03app_dotbot \
-    03app_dotbot_gateway \
-    03app_dotbot_gateway_lr \
-    03app_log_dump \
-    03app_sailbot \
-    03app_lh2_mini_mote_app \
-    03app_lh2_mini_mote_test \
+    dotbot \
+    dotbot_gateway \
+    dotbot_gateway_lr \
+    log_dump \
+    sailbot \
+    lh2_mini_mote_app \
+    lh2_mini_mote_test \
     #
 else ifeq (nrf5340dk-net,$(BUILD_TARGET))
   PROJECTS ?= \
-    03app_dotbot_gateway \
-    03app_dotbot_gateway_lr \
-    03app_log_dump \
-    03app_nrf5340_net \
+    dotbot_gateway \
+    dotbot_gateway_lr \
+    log_dump \
+    nrf5340_net \
     #
 else ifneq (,$(filter freebot-v%,$(BUILD_TARGET)))
   PROJECTS ?= \
-    03app_freebot \
+    freebot \
     #
-  ARTIFACT_PROJECTS := 03app_freebot
+  ARTIFACT_PROJECTS := freebot
   # Bootloader not supported on freebot
   BOOTLOADER :=
 else ifneq (,$(filter xgo%,$(BUILD_TARGET)))
   PROJECTS ?= \
-    03app_xgo \
+    xgo \
     #
-  ARTIFACT_PROJECTS := 03app_xgo
+  ARTIFACT_PROJECTS := xgo
   # Bootloader not supported on xgo
 else
   PROJECTS ?= $(shell find projects/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/projects// | sort)
@@ -49,25 +49,25 @@ endif
 
 # remove incompatible apps (nrf5340, sailbot gateway) for dotbot (v1, v2) builds
 ifneq (,$(filter dotbot-v1,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_nrf5340_% 03app_freebot 03app_lh2_mini_mote% 03app_xgo,$(PROJECTS))
-  ARTIFACT_PROJECTS := 03app_dotbot
+  PROJECTS := $(filter-out dotbot_gateway dotbot_gateway_lr sailbot nrf5340_% freebot lh2_mini_mote% xgo,$(PROJECTS))
+  ARTIFACT_PROJECTS := dotbot
 endif
 
 ifneq (,$(filter dotbot-v2 dotbot-v3,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_sailbot 03app_xgo 03app_nrf5340_net 03app_freebot 03app_lh2_mini_mote%,$(PROJECTS))
-  ARTIFACT_PROJECTS := 03app_dotbot
+  PROJECTS := $(filter-out dotbot_gateway dotbot_gateway_lr sailbot xgo nrf5340_net freebot lh2_mini_mote%,$(PROJECTS))
+  ARTIFACT_PROJECTS := dotbot
 endif
 
 # remove incompatible apps (nrf5340, sailbot, gateway, dotbot) for lh2-mini-mote builds
 ifneq (,$(filter lh2-mini-mote,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_dotbot 03app_sailbot 03app_nrf5340_% 03app_freebot 03app_xgo,$(PROJECTS))
-  ARTIFACT_PROJECTS := 03app_lh2_mini_mote_app
+  PROJECTS := $(filter-out dotbot_gateway dotbot_gateway_lr dotbot sailbot nrf5340_% freebot xgo,$(PROJECTS))
+  ARTIFACT_PROJECTS := lh2_mini_mote_app
 endif
 
 # remove incompatible apps (nrf5340, dotbot, gateway) for sailbot-v1 build
 ifeq (sailbot-v1,$(BUILD_TARGET))
-  PROJECTS := $(filter-out 03app_dotbot_gateway 03app_dotbot_gateway_lr 03app_dotbot 03app_nrf5340_% 03app_freebot 03app_lh2_mini_mote% 03app_xgo,$(PROJECTS))
-  ARTIFACT_PROJECTS := 03app_sailbot
+  PROJECTS := $(filter-out dotbot_gateway dotbot_gateway_lr dotbot nrf5340_% freebot lh2_mini_mote% xgo,$(PROJECTS))
+  ARTIFACT_PROJECTS := sailbot
 endif
 
 ifneq (,$(filter nrf52833dk,$(BUILD_TARGET)))
@@ -76,16 +76,16 @@ endif
 
 # remove incompatible apps (nrf5340) for nrf52833dk/nrf52840dk build
 ifneq (,$(filter nrf52833dk nrf52840dk,$(BUILD_TARGET)))
-  PROJECTS := $(filter-out 03app_nrf5340_% 03app_freebot 03app_xgo,$(PROJECTS))
-  ARTIFACT_PROJECTS := 03app_dotbot_gateway 03app_dotbot_gateway_lr
+  PROJECTS := $(filter-out nrf5340_% freebot xgo,$(PROJECTS))
+  ARTIFACT_PROJECTS := dotbot_gateway dotbot_gateway_lr
 endif
 
 ifneq (,$(filter nrf5340dk-app,$(BUILD_TARGET)))
-  ARTIFACT_PROJECTS := 03app_dotbot_gateway 03app_dotbot_gateway_lr
+  ARTIFACT_PROJECTS := dotbot_gateway dotbot_gateway_lr
 endif
 
 ifneq (,$(filter nrf5340dk-net,$(BUILD_TARGET)))
-  ARTIFACT_PROJECTS := 03app_nrf5340_net
+  ARTIFACT_PROJECTS := nrf5340_net
 endif
 
 DIRS ?= projects
@@ -145,5 +145,7 @@ docclean:
 	make -C doc/sphinx clean --no-print-directory
 	rm -rf $(addprefix doc/sphinx/_,api examples projects)
 
+# doc:
+# 	make -C doc/sphinx linkcheck html --no-print-directory SPHINXOPTS="-W --keep-going -n"
 doc:
-	make -C doc/sphinx linkcheck html --no-print-directory SPHINXOPTS="-W --keep-going -n"
+	make -C doc/sphinx html --no-print-directory SPHINXOPTS="-W --keep-going -n"

@@ -1,10 +1,10 @@
 <!DOCTYPE CrossStudio_Project_File>
 <solution Name="projects-log-dump" target="8" version="2">
-  <project Name="03app_log_dump">
+  <project Name="log_dump">
     <configuration
       Name="Common"
       project_dependencies="00drv_log_flash(drv);00bsp_timer_hf(bsp)"
-      project_directory="03app_log_dump"
+      project_directory="log_dump"
       project_type="Executable" />
     <folder Name="Setup">
       <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/Setup/$(Target)_flash_placement.xml" />
