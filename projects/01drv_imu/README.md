@@ -1,1 +1,0 @@
-# IMU driver example application

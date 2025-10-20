@@ -1,9 +1,9 @@
 # Getting started
 
 The following instructions will guide through running the default remote
-control example in your DotBot board. You will flash the `03app_dotbot_gateway`
+control example in your DotBot board. You will flash the `dotbot_gateway`
 application on an nRF DK board (nRF52833-DK, nRF52840-DK or nRF5340-DK) that will
-act as the remote control and you will flash the `03app_dotbot` application on
+act as the remote control and you will flash the `dotbot` application on
 the DotBot (v1 or v2).
 
 ## Materials
@@ -45,12 +45,12 @@ installed on your computer before continuing.
 3. Flash the firmware(s) on the DK. Depending on your type of DK board, do:
   - for nrf52 based DK, run:
   ```
-  nrfutil device program --x-family nrf52 --options reset=RESET_DEBUG --firmware <path to 03app_dotbot_gateway hex file>
+  nrfutil device program --x-family nrf52 --options reset=RESET_DEBUG --firmware <path to dotbot_gateway hex file>
   ```
   - for nrf53 based DK, flash both the application and network cores with the following 2 commands:
   ```
-  nrfutil device program --x-family nrf53 --core Application --options reset=RESET_DEBUG --firmware <path to 03app_dotbot_gateway-nrf5340dk-app hex file>
-  nrfutil device program --x-family nrf53 --core Network --options reset=RESET_DEBUG --firmware <path to 03app_nrf5340_net hex file>
+  nrfutil device program --x-family nrf53 --core Application --options reset=RESET_DEBUG --firmware <path to dotbot_gateway-nrf5340dk-app hex file>
+  nrfutil device program --x-family nrf53 --core Network --options reset=RESET_DEBUG --firmware <path to nrf5340_net hex file>
   ```
 
 4. After flashing the firmware LED1 blinks during one second to indicate that
@@ -90,7 +90,7 @@ installed on your computer before continuing.
   following 2 commands:
   ```
   nrfutil device program --x-family nrf53 --core Application --options reset=RESET_DEBUG --firmware <path to dotbot-v2 hex file>
-  nrfutil device program --x-family nrf53 --core Network --options reset=RESET_DEBUG --firmware <path to 03app_nrf5340_net hex file>
+  nrfutil device program --x-family nrf53 --core Network --options reset=RESET_DEBUG --firmware <path to nrf5340_net hex file>
   ```
 
 4. Disconnect the DotBot from the nRF DK
@@ -118,11 +118,11 @@ You can combine buttons 1 & 2 to move the DotBot straight forward, buttons 3 &
 [nrf-util]: https://docs.nordicsemi.com/bundle/nrfutil/page/README.html
 [nrf-connect-programmer]: https://docs.nordicsemi.com/bundle/nrf-connect-programmer/page/index.html
 
-[dotbot-gateway-hex-nrf52833dk]: https://github.com/DotBots/DotBot-firmware/releases/latest/download/03app_dotbot_gateway-nrf52833dk.hex
-[dotbot-gateway-hex-nrf52840dk]: https://github.com/DotBots/DotBot-firmware/releases/latest/download/03app_dotbot_gateway-nrf52840dk.hex
-[dotbot-gateway-hex-nrf5340dk-app]: https://github.com/DotBots/DotBot-firmware/releases/latest/download/03app_dotbot_gateway-nrf5340dk-app.hex
+[dotbot-gateway-hex-nrf52833dk]: https://github.com/DotBots/DotBot-firmware/releases/latest/download/dotbot_gateway-nrf52833dk.hex
+[dotbot-gateway-hex-nrf52840dk]: https://github.com/DotBots/DotBot-firmware/releases/latest/download/dotbot_gateway-nrf52840dk.hex
+[dotbot-gateway-hex-nrf5340dk-app]: https://github.com/DotBots/DotBot-firmware/releases/latest/download/dotbot_gateway-nrf5340dk-app.hex
 
-[dotbot-hex-dotbot-v1]: https://github.com/DotBots/DotBot-firmware/releases/latest/download/03app_dotbot-dotbot-v1.hex
-[dotbot-hex-dotbot-v2]: https://github.com/DotBots/DotBot-firmware/releases/latest/download/03app_dotbot-dotbot-v2.hex
+[dotbot-hex-dotbot-v1]: https://github.com/DotBots/DotBot-firmware/releases/latest/download/dotbot-dotbot-v1.hex
+[dotbot-hex-dotbot-v2]: https://github.com/DotBots/DotBot-firmware/releases/latest/download/dotbot-dotbot-v2.hex
 
-[hex-nrf5340dk-net]: https://github.com/DotBots/DotBot-firmware/releases/latest/download/03app_nrf5340_net-nrf5340dk-net.hex
+[hex-nrf5340dk-net]: https://github.com/DotBots/DotBot-firmware/releases/latest/download/nrf5340_net-nrf5340dk-net.hex

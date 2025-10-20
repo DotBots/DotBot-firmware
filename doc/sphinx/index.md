@@ -3,10 +3,6 @@
 
 getting_started
 applications
-examples
-otap
-upgate
-api
 ```
 
 ```{include} ../../README.md

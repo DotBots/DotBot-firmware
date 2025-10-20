@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          submodules: 'true'
       - name: Build projects
         run: BUILD_TARGET=${{ matrix.target }} BUILD_CONFIG=${{ matrix.config }} make docker
       - name: Build for release and convert elf artifacts to hex
@@ -56,8 +58,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
-      - name: Install Doxygen
-        run: sudo apt-get install -y doxygen graphviz
       - name: Install Sphinx
         run: python -m pip install -r doc/sphinx/requirements.txt
       - name: Build documentation

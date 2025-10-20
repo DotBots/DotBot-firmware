@@ -1,1 +1,0 @@
-# Reads the device information
