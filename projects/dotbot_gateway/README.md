@@ -5,7 +5,7 @@ and a DotBot.
 
 Plug an nRF52840-DK on your computer and flash this application on it.
 
-Use the button on the DK to control a DotBot running the 03app_dotbot application:
+Use the button on the DK to control a DotBot running the `dotbot` application:
 - button 1: drive the left wheel forward
 - button 3: drive the left wheel backward
 - button 2: drive the right wheel forward
