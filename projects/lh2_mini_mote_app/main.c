@@ -95,7 +95,7 @@ int main(void) {
                     // Package data into a variable
                     protocol_lh2_processed_packet_t lh2_packet;
                     lh2_packet.selected_polynomial = _dotbot_vars.lh2.locations[sweep][basestation].selected_polynomial;
-                    lh2_packet.lfsr_location       = _dotbot_vars.lh2.locations[sweep][basestation].lfsr_location;
+                    lh2_packet.lfsr_counts         = _dotbot_vars.lh2.locations[sweep][basestation].lfsr_counts;
                     lh2_packet.timestamp_us        = _dotbot_vars.lh2.timestamps[sweep][basestation];
 
                     // Add the LH2 sweep
