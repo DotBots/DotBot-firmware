@@ -130,8 +130,12 @@ artifacts: $(ARTIFACT_PROJECTS)
 		done
 	@ls -l artifacts/
 
+UID := $(shell id -u)
+GID := $(shell id -g)
+
 docker:
 	docker run --rm -i \
+		-u $(UID):$(GID) \
 		-e BUILD_TARGET="$(BUILD_TARGET)" \
 		-e BUILD_CONFIG="$(BUILD_CONFIG)" \
 		-e PACKAGES_DIR_OPT="-packagesdir $(SEGGER_DIR)/packages" \
