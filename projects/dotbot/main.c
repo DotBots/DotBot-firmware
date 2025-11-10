@@ -29,6 +29,7 @@
 #include "timer.h"
 #include "log_flash.h"
 #include "tdma_client.h"
+#include "battery.h"
 
 //=========================== defines ==========================================
 
@@ -165,6 +166,7 @@ int main(void) {
 #ifdef DB_RGB_LED_PWM_RED_PORT
     db_rgbled_pwm_init(&rgbled_pwm_conf);
 #endif
+    db_battery_level_init();
     db_motors_init();
     db_tdma_client_init(&radio_callback, DB_RADIO_BLE_1MBit, DB_RADIO_FREQ);
 
@@ -220,14 +222,6 @@ int main(void) {
                     _dotbot_vars.direction       = angle;
                 }
                 _dotbot_vars.update_control_loop = (_dotbot_vars.control_mode == ControlAuto);
-
-                size_t length                       = db_protocol_header_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
-                _dotbot_vars.radio_buffer[length++] = DB_PROTOCOL_DOTBOT_DATA;
-                memcpy(&_dotbot_vars.radio_buffer[length], &_dotbot_vars.direction, sizeof(int16_t));
-                length += sizeof(int16_t);
-                memcpy(&_dotbot_vars.radio_buffer[length], &_dotbot_vars.last_location, sizeof(protocol_lh2_location_t));
-                length += sizeof(protocol_lh2_location_t);
-                db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
             }
         }
 
@@ -237,7 +231,26 @@ int main(void) {
         }
 
         if (_dotbot_vars.advertize) {
-            size_t length = db_protocol_advertizement_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS, DotBot, _dotbot_vars.lh2.lh2_calibration_complete);
+            size_t                  length    = db_protocol_dotbot_advertizement_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS, _dotbot_vars.lh2.lh2_calibration_complete);
+            int16_t                 direction = 0xFFFF;
+            protocol_lh2_location_t position  = {
+                 .x = 0xffffffff,
+                 .y = 0xffffffff,
+                 .z = 0xffffffff,
+            };
+            if (_dotbot_vars.lh2.lh2_calibration_complete) {
+                direction  = _dotbot_vars.direction;
+                position.x = _dotbot_vars.last_location.x;
+                position.y = _dotbot_vars.last_location.y;
+                position.z = _dotbot_vars.last_location.z;
+            }
+            memcpy(&_dotbot_vars.radio_buffer[length], &direction, sizeof(int16_t));
+            length += sizeof(int16_t);
+            memcpy(&_dotbot_vars.radio_buffer[length], &position, sizeof(protocol_lh2_location_t));
+            length += sizeof(protocol_lh2_location_t);
+            uint16_t battery_level_mv = db_battery_level_read();
+            memcpy(&_dotbot_vars.radio_buffer[length], &battery_level_mv, sizeof(uint16_t));
+            length += sizeof(uint16_t);
             db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
             _dotbot_vars.advertize = false;
         }
