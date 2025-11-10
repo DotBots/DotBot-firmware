@@ -155,7 +155,7 @@ int main(void) {
             lsm6ds_read_accelerometer(&_sailbot_vars.last_accelerometer);
         }
         if (_sailbot_vars.advertise) {
-            size_t length = db_protocol_advertizement_to_buffer(_sailbot_vars.radio_buffer, DB_GATEWAY_ADDRESS, SailBot, false);
+            size_t length = db_protocol_advertizement_to_buffer(_sailbot_vars.radio_buffer, DB_GATEWAY_ADDRESS, SailBot);
             db_tdma_client_tx(_sailbot_vars.radio_buffer, length);
 
             _sailbot_vars.advertise = false;
