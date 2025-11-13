@@ -113,7 +113,7 @@ int main(void) {
         }
 
         if (_dotbot_vars.advertise) {
-            size_t length = db_protocol_advertizement_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS, LH2_mini_mote, false);
+            size_t length = db_protocol_advertizement_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS, LH2_mini_mote);
             db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
             _dotbot_vars.advertise = false;
         }
