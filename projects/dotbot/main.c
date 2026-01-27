@@ -43,13 +43,20 @@
 #define DB_BUFFER_MAX_BYTES       (255U)   ///< Max bytes in UART receive buffer
 #define DB_DIRECTION_THRESHOLD    (50)     ///< Threshold to update the direction (50mm)
 #define DB_DIRECTION_INVALID      (-1000)  ///< Invalid angle e.g out of [0, 360] range
-#define DB_MAX_SPEED              (60)     ///< Max speed in autonomous control mode
-#if defined(BOARD_DOTBOT_V2) || defined(BOARD_DOTBOT_V3)
+#if defined(BOARD_DOTBOT_V3)
+#define DB_MAX_SPEED            (60)   ///< Max speed in autonomous control mode
 #define DB_REDUCE_SPEED_FACTOR  (0.7)  ///< Reduction factor applied to speed when close to target or error angle is too large
 #define DB_REDUCE_SPEED_ANGLE   (25)   ///< Max angle amplitude where speed reduction factor is applied
 #define DB_ANGULAR_SPEED_FACTOR (35)   ///< Constant applied to the normalized angle to target error
 #define DB_ANGULAR_SIDE_FACTOR  (-1)   ///< Angular side factor
+#elif defined(BOARD_DOTBOT_V2)
+#define DB_MAX_SPEED            (70)   ///< Max speed in autonomous control mode
+#define DB_REDUCE_SPEED_FACTOR  (0.8)  ///< Reduction factor applied to speed when close to target or error angle is too large
+#define DB_REDUCE_SPEED_ANGLE   (25)   ///< Max angle amplitude where speed reduction factor is applied
+#define DB_ANGULAR_SPEED_FACTOR (35)   ///< Constant applied to the normalized angle to target error
+#define DB_ANGULAR_SIDE_FACTOR  (-1)   ///< Angular side factor
 #else                                  // BOARD_DOTBOT_V1
+#define DB_MAX_SPEED            (70)   ///< Max speed in autonomous control mode
 #define DB_REDUCE_SPEED_FACTOR  (0.9)  ///< Reduction factor applied to speed when close to target or error angle is too large
 #define DB_REDUCE_SPEED_ANGLE   (20)   ///< Max angle amplitude where speed reduction factor is applied
 #define DB_ANGULAR_SPEED_FACTOR (30)   ///< Constant applied to the normalized angle to target error
@@ -310,13 +317,8 @@ static void _update_control_loop(void) {
             speedReductionFactor = DB_REDUCE_SPEED_FACTOR;
         }
         angular_speed = (int16_t)(((float)error_angle / 180) * DB_ANGULAR_SPEED_FACTOR);
-#if defined(BOARD_DOTBOT_V3)
-        left_speed  = (int16_t)(((DB_MAX_SPEED * speedReductionFactor) + (angular_speed * DB_ANGULAR_SIDE_FACTOR)));
-        right_speed = (int16_t)(((DB_MAX_SPEED * speedReductionFactor) - (angular_speed * DB_ANGULAR_SIDE_FACTOR)));
-#else
-        left_speed  = (int16_t)(((DB_MAX_SPEED * speedReductionFactor) - (angular_speed * DB_ANGULAR_SIDE_FACTOR)));
-        right_speed = (int16_t)(((DB_MAX_SPEED * speedReductionFactor) + (angular_speed * DB_ANGULAR_SIDE_FACTOR)));
-#endif
+        left_speed    = (int16_t)(((DB_MAX_SPEED * speedReductionFactor) - (angular_speed * DB_ANGULAR_SIDE_FACTOR)));
+        right_speed   = (int16_t)(((DB_MAX_SPEED * speedReductionFactor) + (angular_speed * DB_ANGULAR_SIDE_FACTOR)));
         if (left_speed > DB_MAX_SPEED) {
             left_speed = DB_MAX_SPEED;
         }
