@@ -200,18 +200,18 @@ int main(void) {
                 continue;
             }
 
-            float        angle_rad = -1000;
-            coordinate_t location  = {
-                 .x = (uint32_t)(_dotbot_vars.coordinates[0]),
-                 .y = (uint32_t)(_dotbot_vars.coordinates[1]),
+            coordinate_t location = {
+                .x = (uint32_t)(_dotbot_vars.coordinates[0]),
+                .y = (uint32_t)(_dotbot_vars.coordinates[1]),
             };
             coordinate_t last_location = { .x = _control_vars.pos_x, .y = _control_vars.pos_y };
-            compute_angle(&location, &last_location, &angle_rad);
-            int16_t angle = (int16_t)(angle_rad * 180 / M_PI);
+            int16_t      angle         = DB_DIRECTION_INVALID;
+            compute_angle(&last_location, &location, &angle);
+            angle *= -1;  // Invert angle to match the expected direction (0° is north and positive angles are clockwise)
             if (angle != DB_DIRECTION_INVALID) {
                 _control_vars.pos_x     = location.x;
                 _control_vars.pos_y     = location.y;
-                _control_vars.direction = angle_rad;
+                _control_vars.direction = angle;
             }
             _dotbot_vars.update_control_loop = (_dotbot_vars.control_mode == ControlAuto);
         }

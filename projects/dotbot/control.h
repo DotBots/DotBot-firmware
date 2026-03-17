@@ -14,7 +14,7 @@ typedef struct {
 typedef struct {
     uint32_t pos_x;               ///< X coordinate of the robot in mm
     uint32_t pos_y;               ///< Y coordinate of the robot in mm
-    float    direction;           ///< Direction of the robot in radians, in [0, 2 * PI]
+    int16_t  direction;           ///< Direction of the robot in radians, in [0, 2 * PI]
     uint8_t  waypoints_length;    ///< Number of waypoints in the waypoints array
     uint8_t  waypoint_idx;        ///< Index of the current target waypoint in the waypoints array
     uint32_t waypoint_x;          ///< X coordinate of the current target waypoint in mm
@@ -27,11 +27,11 @@ typedef struct {
 /**
  * @brief Compute the angle between the robot's current position and a target position
  *
- * @param next      Pointer to the target coordinate
  * @param origin    Pointer to the robot's current coordinate
- * @param angle     Pointer to the variable where the computed angle will be stored, in radians, in [0, 2 * PI]
+ * @param next      Pointer to the target coordinate
+ * @param angle     Pointer to the variable where the computed angle will be stored, in degrees, in [0, 360], with 0 being north and positive angles being clockwise
  */
-void compute_angle(const coordinate_t *next, const coordinate_t *origin, float *angle);
+void compute_angle(const coordinate_t *origin, const coordinate_t *next, int16_t *angle);
 
 /**
  * @brief Update the robot's control variables based on the current position, direction, and target waypoint
