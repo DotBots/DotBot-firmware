@@ -2,7 +2,10 @@
 #define __CONTROL_H
 
 #include <stdint.h>
-#include <math.h>
+#include <stdbool.h>
+
+#define DB_DIRECTION_INVALID   (-1000)  ///< Invalid angle e.g out of [0, 360] range
+#define DB_DIRECTION_THRESHOLD (50)     ///< Threshold to update the direction (50mm)
 
 /// Coordinate struct
 typedef struct {
@@ -31,7 +34,7 @@ typedef struct {
  * @param next      Pointer to the target coordinate
  * @param angle     Pointer to the variable where the computed angle will be stored, in degrees, in [0, 360], with 0 being north and positive angles being clockwise
  */
-void compute_angle(const coordinate_t *origin, const coordinate_t *next, int16_t *angle);
+bool compute_angle(const coordinate_t *origin, const coordinate_t *next, int16_t *angle);
 
 /**
  * @brief Update the robot's control variables based on the current position, direction, and target waypoint

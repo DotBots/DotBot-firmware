@@ -42,8 +42,6 @@
 #define DB_TIMEOUT_CHECK_DELAY_MS (200U)   ///< 200ms delay between each timeout delay check
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
 #define DB_BUFFER_MAX_BYTES       (255U)   ///< Max bytes in UART receive buffer
-#define DB_DIRECTION_THRESHOLD    (50)     ///< Threshold to update the direction (50mm)
-#define DB_DIRECTION_INVALID      (-1000)  ///< Invalid angle e.g out of [0, 360] range
 
 typedef struct {
     uint32_t                 ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
@@ -79,7 +77,6 @@ static const db_rgbled_pwm_conf_t rgbled_pwm_conf = {
 
 static void _timeout_check(void);
 static void _advertise(void);
-// static void _compute_angle(const protocol_lh2_location_t *next, const protocol_lh2_location_t *origin, float *angle);
 static void _update_control_loop(void);
 static void _update_lh2(void);
 
@@ -121,7 +118,6 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             break;
         case DB_PROTOCOL_LH2_WAYPOINTS:
         {
-            db_motors_set_speed(0, 0);
             _dotbot_vars.control_mode = ControlManual;
             uint16_t threshold        = 0;
             memcpy(&threshold, cmd_ptr, sizeof(uint16_t));
@@ -132,6 +128,9 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             _control_vars.waypoint_idx = 0;
             if (_control_vars.waypoints_length > 0) {
                 _dotbot_vars.control_mode = ControlAuto;
+            } else {
+                db_motors_set_speed(0, 0);
+                _dotbot_vars.control_mode = ControlManual;
             }
         } break;
         case DB_PROTOCOL_LH2_CALIBRATION:
@@ -205,13 +204,11 @@ int main(void) {
                 .y = (uint32_t)(_dotbot_vars.coordinates[1]),
             };
             coordinate_t last_location = { .x = _control_vars.pos_x, .y = _control_vars.pos_y };
-            int16_t      angle         = DB_DIRECTION_INVALID;
-            compute_angle(&last_location, &location, &angle);
-            angle *= -1;  // Invert angle to match the expected direction (0° is north and positive angles are clockwise)
-            if (angle != DB_DIRECTION_INVALID) {
+            int16_t      angle         = _control_vars.direction;
+            if (compute_angle(&last_location, &location, &angle)) {
+                _control_vars.direction = angle;
                 _control_vars.pos_x     = location.x;
                 _control_vars.pos_y     = location.y;
-                _control_vars.direction = angle;
             }
             _dotbot_vars.update_control_loop = (_dotbot_vars.control_mode == ControlAuto);
         }
@@ -236,7 +233,7 @@ int main(void) {
                  .z = 0xffffffff,
             };
             if (calibration_complete) {
-                direction  = (int16_t)(_control_vars.direction * 180 / M_PI) + 90;
+                direction  = _control_vars.direction;
                 position.x = _control_vars.pos_x;
                 position.y = _control_vars.pos_y;
                 position.z = 0;
@@ -260,6 +257,15 @@ static void _update_control_loop(void) {
     _control_vars.waypoint_x = _dotbot_vars.waypoints.points[_control_vars.waypoint_idx].x;
     _control_vars.waypoint_y = _dotbot_vars.waypoints.points[_control_vars.waypoint_idx].y;
     update_control(&_control_vars);
+    db_motors_set_speed(_control_vars.pwm_left, _control_vars.pwm_right);
+
+    if (_control_vars.waypoint_idx >= _control_vars.waypoints_length) {
+        _control_vars.pwm_right    = 0;
+        _control_vars.pwm_left     = 0;
+        _control_vars.waypoint_idx = 0;
+        _dotbot_vars.control_mode  = ControlManual;
+    }
+
     db_motors_set_speed(_control_vars.pwm_left, _control_vars.pwm_right);
 }
 
