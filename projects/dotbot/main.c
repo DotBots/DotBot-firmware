@@ -30,7 +30,7 @@
 #include "log_flash.h"
 #include "tdma_client.h"
 #include "battery.h"
-#include "control.h"
+#include "control_loop.h"
 
 //=========================== defines ==========================================
 
