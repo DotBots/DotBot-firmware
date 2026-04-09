@@ -53,8 +53,7 @@ typedef struct {
     bool                     advertize;                          ///< Whether an advertize packet should be sent
     bool                     update_lh2;                         ///< Whether LH2 data must be processed
     uint64_t                 device_id;                          ///< Device ID of the DotBot
-    db_log_dotbot_data_t     log_data;
-    double                   coordinates[2];  ///< x, y coordinates of the robot
+    double                   coordinates[2];                     ///< x, y coordinates of the robot
 } dotbot_vars_t;
 
 //=========================== variables ========================================
@@ -230,13 +229,11 @@ int main(void) {
             protocol_lh2_location_t position  = {
                  .x = 0xffffffff,
                  .y = 0xffffffff,
-                 .z = 0xffffffff,
             };
             if (calibration_complete) {
                 direction  = _control_vars.direction;
                 position.x = _control_vars.pos_x;
                 position.y = _control_vars.pos_y;
-                position.z = 0;
             }
             memcpy(&_dotbot_vars.radio_buffer[length], &direction, sizeof(int16_t));
             length += sizeof(int16_t);
