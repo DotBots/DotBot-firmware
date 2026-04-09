@@ -251,19 +251,19 @@ int main(void) {
 //=========================== private functions ================================
 
 static void _update_control_loop(void) {
+    if (_control_vars.waypoint_idx >= _control_vars.waypoints_length) {
+        // Guard against stale index before indexing the waypoints array
+        return;
+    }
     _control_vars.waypoint_x = _dotbot_vars.waypoints.points[_control_vars.waypoint_idx].x;
     _control_vars.waypoint_y = _dotbot_vars.waypoints.points[_control_vars.waypoint_idx].y;
     update_control(&_control_vars);
     db_motors_set_speed(_control_vars.pwm_left, _control_vars.pwm_right);
 
-    if (_control_vars.waypoint_idx >= _control_vars.waypoints_length) {
-        _control_vars.pwm_right    = 0;
-        _control_vars.pwm_left     = 0;
+    if (_control_vars.all_done) {
         _control_vars.waypoint_idx = 0;
         _dotbot_vars.control_mode  = ControlManual;
     }
-
-    db_motors_set_speed(_control_vars.pwm_left, _control_vars.pwm_right);
 }
 
 static void _timeout_check(void) {
