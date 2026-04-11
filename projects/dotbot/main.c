@@ -24,6 +24,7 @@
 #include "lh2.h"
 #include "protocol.h"
 #include "motors.h"
+#include "qdec.h"
 #include "radio.h"
 #include "rgbled_pwm.h"
 #include "timer.h"
@@ -37,7 +38,9 @@
 #define DB_RADIO_FREQ             (8U)      ///< Set the frequency to 2408 MHz
 #define RADIO_APP                 (DotBot)  ///< DotBot Radio App
 #define TIMER_DEV                 (0)
-#define DB_LH2_UPDATE_DELAY_MS    (100U)   ///< 100ms delay between each LH2 data refresh
+#define QDEC_LEFT                 (0)      ///< Left wheel QDEC peripheral index
+#define QDEC_RIGHT                (1)      ///< Right wheel QDEC peripheral index
+#define DB_LH2_UPDATE_DELAY_MS    (50U)    ///< 100ms delay between each LH2 data refresh
 #define DB_ADVERTIZEMENT_DELAY_MS (500U)   ///< 500ms delay between each advertizement packet sending
 #define DB_TIMEOUT_CHECK_DELAY_MS (200U)   ///< 200ms delay between each timeout delay check
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
@@ -60,6 +63,16 @@ typedef struct {
 
 static dotbot_vars_t   _dotbot_vars  = { 0 };
 static robot_control_t _control_vars = { 0 };
+
+static const qdec_conf_t _qdec_left_conf = {
+    .pin_a = &db_qdec_left_a_pin,
+    .pin_b = &db_qdec_left_b_pin,
+};
+
+static const qdec_conf_t _qdec_right_conf = {
+    .pin_a = &db_qdec_right_a_pin,
+    .pin_b = &db_qdec_right_b_pin,
+};
 
 #ifdef DB_RGB_LED_PWM_RED_PORT  // Only available on DotBot v2
 static const db_rgbled_pwm_conf_t rgbled_pwm_conf = {
@@ -105,6 +118,8 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             protocol_move_raw_command_t *command = (protocol_move_raw_command_t *)cmd_ptr;
             int16_t                      left    = (int16_t)(100 * ((float)command->left_y / INT8_MAX));
             int16_t                      right   = (int16_t)(100 * ((float)command->right_y / INT8_MAX));
+            _control_vars.pwm_left               = left;
+            _control_vars.pwm_right              = right;
             db_motors_set_speed(left, right);
         } break;
         case DB_PROTOCOL_CMD_RGB_LED:
@@ -124,7 +139,11 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             _control_vars.waypoint_threshold = (uint32_t)threshold;
             _control_vars.waypoints_length   = (uint8_t)*cmd_ptr++;
             memcpy(&_dotbot_vars.waypoints.points, cmd_ptr, _control_vars.waypoints_length * sizeof(protocol_lh2_location_t));
-            _control_vars.waypoint_idx = 0;
+            _control_vars.waypoint_idx  = 0;
+            _control_vars.encoder_left  = 0;
+            _control_vars.encoder_right = 0;
+            db_qdec_read_and_clear(QDEC_LEFT);
+            db_qdec_read_and_clear(QDEC_RIGHT);
             if (_control_vars.waypoints_length > 0) {
                 _dotbot_vars.control_mode = ControlAuto;
             } else {
@@ -155,6 +174,8 @@ int main(void) {
 #endif
     db_battery_level_init();
     db_motors_init();
+    db_qdec_init(QDEC_LEFT, &_qdec_left_conf, NULL, NULL);
+    db_qdec_init(QDEC_RIGHT, &_qdec_right_conf, NULL, NULL);
     db_tdma_client_init(&radio_callback, DB_RADIO_BLE_1MBit, DB_RADIO_FREQ);
 
     // Set an invalid heading since the value is unknown on startup.
@@ -242,6 +263,18 @@ int main(void) {
             uint16_t battery_level_mv = db_battery_level_read();
             memcpy(&_dotbot_vars.radio_buffer[length], &battery_level_mv, sizeof(uint16_t));
             length += sizeof(uint16_t);
+            memcpy(&_dotbot_vars.radio_buffer[length++], &_control_vars.pwm_left, sizeof(int8_t));
+            memcpy(&_dotbot_vars.radio_buffer[length++], &_control_vars.pwm_right, sizeof(int8_t));
+            memcpy(&_dotbot_vars.radio_buffer[length++], &_dotbot_vars.control_mode, sizeof(uint8_t));
+            memcpy(&_dotbot_vars.radio_buffer[length], &_control_vars.encoder_left, sizeof(int32_t));
+            length += sizeof(int32_t);
+            memcpy(&_dotbot_vars.radio_buffer[length], &_control_vars.encoder_right, sizeof(int32_t));
+            length += sizeof(int32_t);
+            memcpy(&_dotbot_vars.radio_buffer[length], &_control_vars.waypoint_x, sizeof(uint32_t));
+            length += sizeof(uint32_t);
+            memcpy(&_dotbot_vars.radio_buffer[length], &_control_vars.waypoint_y, sizeof(uint32_t));
+            length += sizeof(uint32_t);
+            memcpy(&_dotbot_vars.radio_buffer[length++], &_control_vars.waypoint_idx, sizeof(uint8_t));
             db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
             _dotbot_vars.advertize = false;
         }
@@ -255,8 +288,10 @@ static void _update_control_loop(void) {
         // Guard against stale index before indexing the waypoints array
         return;
     }
-    _control_vars.waypoint_x = _dotbot_vars.waypoints.points[_control_vars.waypoint_idx].x;
-    _control_vars.waypoint_y = _dotbot_vars.waypoints.points[_control_vars.waypoint_idx].y;
+    _control_vars.encoder_left  = db_qdec_read_and_clear(QDEC_LEFT);
+    _control_vars.encoder_right = db_qdec_read_and_clear(QDEC_RIGHT);
+    _control_vars.waypoint_x    = _dotbot_vars.waypoints.points[_control_vars.waypoint_idx].x;
+    _control_vars.waypoint_y    = _dotbot_vars.waypoints.points[_control_vars.waypoint_idx].y;
     update_control(&_control_vars);
     db_motors_set_speed(_control_vars.pwm_left, _control_vars.pwm_right);
 
