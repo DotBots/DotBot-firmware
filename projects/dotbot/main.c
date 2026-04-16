@@ -63,6 +63,7 @@ typedef struct {
 
 static dotbot_vars_t   _dotbot_vars  = { 0 };
 static robot_control_t _control_vars = { 0 };
+static void           *_control_ctx  = NULL;
 
 static const qdec_conf_t _qdec_left_conf = {
     .pin_a = &db_qdec_left_a_pin,
@@ -136,15 +137,19 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             uint16_t threshold        = 0;
             memcpy(&threshold, cmd_ptr, sizeof(uint16_t));
             cmd_ptr += sizeof(uint16_t);
-            _control_vars.waypoint_threshold = (uint32_t)threshold;
-            _control_vars.waypoints_length   = (uint8_t)*cmd_ptr++;
-            memcpy(&_dotbot_vars.waypoints.points, cmd_ptr, _control_vars.waypoints_length * sizeof(protocol_lh2_location_t));
-            _control_vars.waypoint_idx  = 0;
+            uint8_t count = (uint8_t)*cmd_ptr++;
+            memcpy(&_dotbot_vars.waypoints.points, cmd_ptr, count * sizeof(protocol_lh2_location_t));
+            coordinate_t waypoints[DB_MAX_WAYPOINTS];
+            for (uint8_t i = 0; i < count; i++) {
+                waypoints[i].x = _dotbot_vars.waypoints.points[i].x;
+                waypoints[i].y = _dotbot_vars.waypoints.points[i].y;
+            }
+            control_loop_set_waypoints(_control_ctx, waypoints, count, (uint32_t)threshold);
             _control_vars.encoder_left  = 0;
             _control_vars.encoder_right = 0;
             db_qdec_read_and_clear(QDEC_LEFT);
             db_qdec_read_and_clear(QDEC_RIGHT);
-            if (_control_vars.waypoints_length > 0) {
+            if (count > 0) {
                 _dotbot_vars.control_mode = ControlAuto;
             } else {
                 db_motors_set_speed(0, 0);
@@ -166,9 +171,6 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
 
 int main(void) {
     db_board_init();
-#ifdef ENABLE_DOTBOT_LOG_DATA
-    db_log_flash_init(LOG_DATA_DOTBOT);
-#endif
 #ifdef DB_RGB_LED_PWM_RED_PORT
     db_rgbled_pwm_init(&rgbled_pwm_conf);
 #endif
@@ -176,6 +178,7 @@ int main(void) {
     db_motors_init();
     db_qdec_init(QDEC_LEFT, &_qdec_left_conf, NULL, NULL);
     db_qdec_init(QDEC_RIGHT, &_qdec_right_conf, NULL, NULL);
+    _control_ctx = control_loop_alloc();
     db_tdma_client_init(&radio_callback, DB_RADIO_BLE_1MBit, DB_RADIO_FREQ);
 
     // Set an invalid heading since the value is unknown on startup.
@@ -236,6 +239,9 @@ int main(void) {
         if (_dotbot_vars.update_control_loop) {
             _update_control_loop();
             _dotbot_vars.update_control_loop = false;
+#if defined(ENABLE_DOTBOT_LOG_DATA)
+            _dotbot_vars.advertize = true;
+#endif
         }
 
         if (_dotbot_vars.advertize) {
@@ -284,20 +290,13 @@ int main(void) {
 //=========================== private functions ================================
 
 static void _update_control_loop(void) {
-    if (_control_vars.waypoint_idx >= _control_vars.waypoints_length) {
-        // Guard against stale index before indexing the waypoints array
-        return;
-    }
     _control_vars.encoder_left  = db_qdec_read_and_clear(QDEC_LEFT);
     _control_vars.encoder_right = db_qdec_read_and_clear(QDEC_RIGHT);
-    _control_vars.waypoint_x    = _dotbot_vars.waypoints.points[_control_vars.waypoint_idx].x;
-    _control_vars.waypoint_y    = _dotbot_vars.waypoints.points[_control_vars.waypoint_idx].y;
-    update_control(&_control_vars);
+    update_control(&_control_vars, _control_ctx);
     db_motors_set_speed(_control_vars.pwm_left, _control_vars.pwm_right);
 
     if (_control_vars.all_done) {
-        _control_vars.waypoint_idx = 0;
-        _dotbot_vars.control_mode  = ControlManual;
+        _dotbot_vars.control_mode = ControlManual;
     }
 }
 
