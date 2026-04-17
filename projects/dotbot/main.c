@@ -296,7 +296,9 @@ static void _update_control_loop(void) {
     db_motors_set_speed(_control_vars.pwm_left, _control_vars.pwm_right);
 
     if (_control_vars.all_done) {
-        _dotbot_vars.control_mode = ControlManual;
+        _dotbot_vars.control_mode   = ControlManual;
+        _control_vars.encoder_left  = 0;
+        _control_vars.encoder_right = 0;
     }
 }
 
