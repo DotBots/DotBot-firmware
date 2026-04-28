@@ -40,11 +40,12 @@
 #define TIMER_DEV                 (0)
 #define QDEC_LEFT                 (0)      ///< Left wheel QDEC peripheral index
 #define QDEC_RIGHT                (1)      ///< Right wheel QDEC peripheral index
-#define DB_LH2_UPDATE_DELAY_MS    (50U)    ///< 100ms delay between each LH2 data refresh
+#define DB_LH2_UPDATE_DELAY_MS    (50U)    ///< 50ms delay between each LH2 data refresh
 #define DB_ADVERTIZEMENT_DELAY_MS (500U)   ///< 500ms delay between each advertizement packet sending
 #define DB_TIMEOUT_CHECK_DELAY_MS (200U)   ///< 200ms delay between each timeout delay check
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
 #define DB_BUFFER_MAX_BYTES       (255U)   ///< Max bytes in UART receive buffer
+#define DB_LH2_OUTLIER_THRESHOLD  (500U)   ///< Max allowed displacement (mm) between two consecutive LH2 fixes
 
 typedef struct {
     uint32_t                 ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
@@ -227,7 +228,13 @@ int main(void) {
                 .y = (uint32_t)(_dotbot_vars.coordinates[1]),
             };
             coordinate_t last_location = { .x = _control_vars.pos_x, .y = _control_vars.pos_y };
-            int16_t      angle         = _control_vars.direction;
+            float        dlx           = (float)location.x - (float)last_location.x;
+            float        dly           = (float)location.y - (float)last_location.y;
+            if (_control_vars.pos_x != 0 && _control_vars.pos_y != 0 &&
+                sqrtf(dlx * dlx + dly * dly) > DB_LH2_OUTLIER_THRESHOLD) {
+                continue;
+            }
+            int16_t angle = _control_vars.direction;
             if (compute_angle(&last_location, &location, &angle)) {
                 _control_vars.direction = angle;
                 _control_vars.pos_x     = location.x;
