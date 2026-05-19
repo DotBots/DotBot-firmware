@@ -11,11 +11,8 @@ set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/cmake/targets/nrf5340-app/nrf5340_app.ld)
 add_executable(cmake_hello main.c)
 
 target_link_libraries(cmake_hello PRIVATE dotbot_libs)
-
-target_include_directories(cmake_hello PRIVATE
-    ${NRFX_MDK_INCLUDE}     # nrf.h + Nordic peripheral headers (still consumer-supplied)
-    ${CMSIS_CORE_INCLUDE}   # core_cm33.h, __WFE, etc.
-)
+# Nordic MDK + ARM CMSIS-Core headers come transitively via dotbot_libs
+# (which inherits from dotbot_nordic) — no need to list them here.
 
 target_compile_definitions(cmake_hello PRIVATE
     NRF5340_XXAA

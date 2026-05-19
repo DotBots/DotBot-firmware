@@ -60,27 +60,10 @@ add_link_options(
     -nostartfiles         # cmake/targets/*/startup.S provides Reset_Handler
 )
 
-# ── Nordic MDK + ARM CMSIS-Core via FetchContent ─────────────────────
-# dotbot-libs sources #include <nrf.h> but don't ship device headers.
-# These FetchContent declarations satisfy that requirement.
-include(FetchContent)
-
-FetchContent_Declare(nrfx
-    GIT_REPOSITORY https://github.com/NordicSemiconductor/nrfx.git
-    GIT_TAG        v3.5.0
-    GIT_SHALLOW    TRUE
-)
-FetchContent_Declare(cmsis_core
-    GIT_REPOSITORY https://github.com/ARM-software/CMSIS_5.git
-    GIT_TAG        5.9.0
-    GIT_SHALLOW    TRUE
-)
-FetchContent_MakeAvailable(nrfx cmsis_core)
-
-set(NRFX_MDK_INCLUDE   ${nrfx_SOURCE_DIR}/mdk                       CACHE INTERNAL "Nordic MDK headers")
-set(CMSIS_CORE_INCLUDE ${cmsis_core_SOURCE_DIR}/CMSIS/Core/Include  CACHE INTERNAL "ARM CMSIS-Core headers")
-
-# ── dotbot-libs ──────────────────────────────────────────────────────
+# ── dotbot-libs (owns Nordic + CMSIS FetchContent) ───────────────────
+# Linking `dotbot_libs` (per-app, below) brings in the Nordic MDK
+# (nrf.h) and ARM CMSIS-Core (core_cm33.h) headers transitively via
+# the dotbot_nordic INTERFACE exported from dotbot-libs/CMakeLists.txt.
 # Default: the bundled git submodule (what CI / fresh-clone sees). For
 # day-to-day dev, override with -DDOTBOT_LIBS=/path/to/local/checkout
 # so you can iterate on both repos without committing+pushing
