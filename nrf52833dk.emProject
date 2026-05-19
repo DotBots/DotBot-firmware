@@ -69,6 +69,7 @@
   <import file_name="dotbot-libs/drv/drv.emProject" />
   <import file_name="projects/projects-dotbot.emProject" />
   <import file_name="projects/projects-gateway.emProject" />
+  <import file_name="projects/projects-lh2-calibration.emProject" />
   <import file_name="projects/projects-log-dump.emProject" />
   <import file_name="projects/projects-sailbot.emProject" />
   <import file_name="projects/projects-xgo.emProject" />

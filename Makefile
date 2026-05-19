@@ -18,6 +18,7 @@ ifeq (nrf5340dk-app,$(BUILD_TARGET))
     dotbot \
     dotbot_gateway \
     dotbot_gateway_lr \
+    lh2_calibration \
     log_dump \
     sailbot \
     lh2_mini_mote_app \
