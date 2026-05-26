@@ -18,6 +18,7 @@ ifeq (nrf5340dk-app,$(BUILD_TARGET))
     dotbot \
     dotbot_gateway \
     dotbot_gateway_lr \
+    lh2_calibration \
     log_dump \
     sailbot \
     lh2_mini_mote_app \
@@ -88,7 +89,7 @@ ifneq (,$(filter nrf5340dk-net,$(BUILD_TARGET)))
   ARTIFACT_PROJECTS := nrf5340_net
 endif
 
-DIRS ?= projects
+DIRS ?= projects apps-sandbox
 SRCS ?= $(foreach dir,$(DIRS),$(shell find $(dir) -name "*.[c|h]"))
 CLANG_FORMAT ?= clang-format
 CLANG_FORMAT_TYPE ?= file

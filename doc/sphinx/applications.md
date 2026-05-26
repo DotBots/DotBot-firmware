@@ -12,6 +12,7 @@ _projects/sailbot
 _projects/log_dump
 _projects/nrf5340_net
 _projects/xgo
+_projects/lh2_calibration
 _projects/lh2_mini_mote_app
 _projects/lh2_mini_mote_test
 ```
