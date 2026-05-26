@@ -13,6 +13,18 @@ ifeq ($(QUIET),1)
   VERBOSE_OPTS =
 endif
 
+# Sandbox (TrustZone non-secure) apps live under apps-sandbox/ and are flashed
+# over the air with swarmit, which consumes a raw .bin. Bare apps live under
+# apps/ and ship as .hex. These mirror linker_output_format in the .emProject
+# solutions (sandbox-*: bin, bare: hex).
+ifneq (,$(filter sandbox-%,$(BUILD_TARGET)))
+  APPS_DIR := apps-sandbox
+  ARTIFACT_FMT := bin
+else
+  APPS_DIR := apps
+  ARTIFACT_FMT := hex
+endif
+
 ifeq (nrf5340dk-app,$(BUILD_TARGET))
   PROJECTS ?= \
     dotbot \
@@ -47,6 +59,8 @@ else ifneq (,$(filter xgo%,$(BUILD_TARGET)))
 else ifneq (,$(filter sandbox-%,$(BUILD_TARGET)))
   # Sandbox (TrustZone non-secure) targets build the apps under apps-sandbox/
   PROJECTS ?= $(shell find apps-sandbox/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/apps-sandbox// | sort)
+  # Release every sandbox app (CI gates the artifact upload to dotbot-v3)
+  ARTIFACT_PROJECTS := $(PROJECTS)
 else
   PROJECTS ?= $(shell find apps/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/apps// | sort)
 endif
@@ -97,9 +111,8 @@ SRCS ?= $(foreach dir,$(DIRS),$(shell find $(dir) -name "*.[c|h]"))
 CLANG_FORMAT ?= clang-format
 CLANG_FORMAT_TYPE ?= file
 
-ARTIFACT_ELF = $(foreach app,$(ARTIFACT_PROJECTS),apps/$(app)/Output/$(BUILD_TARGET)/$(BUILD_CONFIG)/Exe/$(app)-$(BUILD_TARGET).elf)
-ARTIFACT_HEX = $(ARTIFACT_ELF:.elf=.hex)
-ARTIFACTS = $(ARTIFACT_ELF) $(ARTIFACT_HEX)
+ARTIFACT_BASE = $(foreach app,$(ARTIFACT_PROJECTS),$(APPS_DIR)/$(app)/Output/$(BUILD_TARGET)/$(BUILD_CONFIG)/Exe/$(app)-$(BUILD_TARGET))
+ARTIFACTS = $(addsuffix .$(ARTIFACT_FMT),$(ARTIFACT_BASE))
 
 
 .PHONY: $(PROJECTS) $(ARTIFACT_PROJECTS) artifacts docker docker-release format check-format

@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags: '*'
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Bare boards ship .hex, sandbox boards ship .bin (flashed by swarmit).
+        # The output format per target is driven by the Makefile (ARTIFACT_FMT).
+        target: ["dotbot-v2", "dotbot-v3", "sandbox-dotbot-v2", "sandbox-dotbot-v3"]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+      - name: Build release artifacts
+        run: BUILD_TARGET=${{ matrix.target }} BUILD_CONFIG=Release DOCKER_TARGETS="artifacts" make docker
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-${{ matrix.target }}
+          path: artifacts/*
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build-release
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: artifacts-*
+          path: ./artifacts
+          merge-multiple: true
+      - name: Release
+        uses: ncipollo/release-action@v1
+        with:
+          generateReleaseNotes: true
+          artifacts: "artifacts/*"
+          token: ${{ secrets.RELEASE_TOKEN }}
