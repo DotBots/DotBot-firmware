@@ -1,12 +1,19 @@
-name: CI 
+name: CI
 
 on:
   push:
     branches:
       - main
-    tags: '*'
-
+      - develop
+    paths-ignore:
+      - 'apps-sandbox/**'
+      - 'sandbox-*.emProject'
   pull_request:
+    # Sandbox-only changes are covered by build-sandbox.yml; skip the bare
+    # build for them. Shared infra (Makefile, dotbot-libs, ...) still runs both.
+    paths-ignore:
+      - 'apps-sandbox/**'
+      - 'sandbox-*.emProject'
 
 jobs:
   build:
@@ -21,36 +28,15 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: 'true'
+      - name: Deprecation notice
+        if: contains(fromJSON('["dotbot-v1", "freebot-v1.0", "lh2-mini-mote"]'), matrix.target)
+        run: echo "::warning title=Planned deprecation::Board target '${{ matrix.target }}' is planned for deprecation around November 2026."
       - name: Build apps
-        run: BUILD_TARGET=${{ matrix.target }} BUILD_CONFIG=${{ matrix.config }} make docker
-      - name: Build for release and convert elf artifacts to hex
-        if: matrix.config == 'Release'
-        run: BUILD_TARGET=${{ matrix.target }} DOCKER_TARGETS="artifacts" BUILD_CONFIG=${{ matrix.config }} make docker
-      - name: Upload artifact
-        if: matrix.config == 'Release'
-        uses: actions/upload-artifact@v4
-        with:
-          name: artifacts-${{ matrix.target }}
-          path: artifacts/*
-
-  build-sandbox:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        target: ["sandbox-dotbot-v2", "sandbox-dotbot-v3", "sandbox-nrf5340dk"]
-        config: ["Debug", "Release"]
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          submodules: 'true'
-      - name: Build sandbox apps
         run: BUILD_TARGET=${{ matrix.target }} BUILD_CONFIG=${{ matrix.config }} make docker
 
   build-success:
     # this is only run if all builds succeeded
-    needs: [build, build-sandbox]
+    needs: build
     runs-on: ubuntu-latest
     steps:
     - name: build succeeded
@@ -87,80 +73,3 @@ jobs:
   #       uses: actions/checkout@v4
   #     - name: Build docker image
   #       run: docker build -t dotbot .
-
-  release:
-    runs-on: ubuntu-latest
-    # needs: [docker, doc, style, build-success]
-    needs: [doc, style, build-success]
-    if: >-
-      github.event_name == 'push' &&
-      startsWith(github.event.ref, 'refs/tags')
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-      - name: Download DotBot v1 artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: artifacts-dotbot-v1
-          path: ./artifacts
-      - name: Download DotBot v2 artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: artifacts-dotbot-v2
-          path: ./artifacts
-      - name: Download DotBot v3 artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: artifacts-dotbot-v3
-          path: ./artifacts
-      - name: Download Sailbot v1 artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: artifacts-sailbot-v1
-          path: ./artifacts
-      - name: Download nRF52833DK artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: artifacts-nrf52833dk
-          path: ./artifacts
-      - name: Download nRF52840DK artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: artifacts-nrf52840dk
-          path: ./artifacts
-      - name: Download nRF5340DK application artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: artifacts-nrf5340dk-app
-          path: ./artifacts
-      - name: Download nRF5340DK network artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: artifacts-nrf5340dk-net
-          path: ./artifacts
-      - name: Download Freebot artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: artifacts-freebot-v1.0
-          path: ./artifacts
-      - name: Download XGO v1 artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: artifacts-xgo-v1
-          path: ./artifacts
-      - name: Download XGO v2 artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: artifacts-xgo-v2
-          path: ./artifacts
-      - name: Download LH2 mini mote artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: artifacts-lh2-mini-mote
-          path: ./artifacts
-      - name: Release
-        uses: ncipollo/release-action@v1
-        with:
-          generateReleaseNotes: true
-          artifacts: "artifacts/*"
-          token: ${{ secrets.RELEASE_TOKEN }}
