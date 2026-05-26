@@ -70,3 +70,7 @@ Output/
 
 # artifacts
 artifacts/
+
+.cache
+build
+
