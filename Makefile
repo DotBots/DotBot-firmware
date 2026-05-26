@@ -44,6 +44,9 @@ else ifneq (,$(filter xgo%,$(BUILD_TARGET)))
     #
   ARTIFACT_PROJECTS := xgo
   # Bootloader not supported on xgo
+else ifneq (,$(filter sandbox-%,$(BUILD_TARGET)))
+  # Sandbox (TrustZone non-secure) targets build the apps under apps-sandbox/
+  PROJECTS ?= $(shell find apps-sandbox/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/apps-sandbox// | sort)
 else
   PROJECTS ?= $(shell find apps/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/apps// | sort)
 endif
