@@ -67,7 +67,7 @@
     gcc_optimization_level="Level 2 balanced" />
   <import file_name="dotbot-libs/bsp/bsp.emProject" />
   <import file_name="dotbot-libs/drv/drv.emProject" />
-  <import file_name="projects/projects-gateway.emProject" />
-  <import file_name="projects/projects-nrf5340-net.emProject" />
-  <import file_name="projects/projects-log-dump.emProject" />
+  <import file_name="apps/projects-gateway.emProject" />
+  <import file_name="apps/projects-nrf5340-net.emProject" />
+  <import file_name="apps/projects-log-dump.emProject" />
 </solution>

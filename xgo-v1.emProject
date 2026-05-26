@@ -67,5 +67,5 @@
     gcc_optimization_level="Level 2 balanced" />
   <import file_name="dotbot-libs/bsp/bsp.emProject" />
   <import file_name="dotbot-libs/drv/drv.emProject" />
-  <import file_name="projects/projects-xgo.emProject" />
+  <import file_name="apps/projects-xgo.emProject" />
 </solution>

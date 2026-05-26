@@ -45,7 +45,7 @@ else ifneq (,$(filter xgo%,$(BUILD_TARGET)))
   ARTIFACT_PROJECTS := xgo
   # Bootloader not supported on xgo
 else
-  PROJECTS ?= $(shell find projects/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/projects// | sort)
+  PROJECTS ?= $(shell find apps/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/apps// | sort)
 endif
 
 # remove incompatible apps (nrf5340, sailbot gateway) for dotbot (v1, v2) builds
@@ -89,12 +89,12 @@ ifneq (,$(filter nrf5340dk-net,$(BUILD_TARGET)))
   ARTIFACT_PROJECTS := nrf5340_net
 endif
 
-DIRS ?= projects apps-sandbox
+DIRS ?= apps apps-sandbox
 SRCS ?= $(foreach dir,$(DIRS),$(shell find $(dir) -name "*.[c|h]"))
 CLANG_FORMAT ?= clang-format
 CLANG_FORMAT_TYPE ?= file
 
-ARTIFACT_ELF = $(foreach app,$(ARTIFACT_PROJECTS),projects/$(app)/Output/$(BUILD_TARGET)/$(BUILD_CONFIG)/Exe/$(app)-$(BUILD_TARGET).elf)
+ARTIFACT_ELF = $(foreach app,$(ARTIFACT_PROJECTS),apps/$(app)/Output/$(BUILD_TARGET)/$(BUILD_CONFIG)/Exe/$(app)-$(BUILD_TARGET).elf)
 ARTIFACT_HEX = $(ARTIFACT_ELF:.elf=.hex)
 ARTIFACTS = $(ARTIFACT_ELF) $(ARTIFACT_HEX)
 
