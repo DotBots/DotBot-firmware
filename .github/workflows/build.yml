@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: 'true'
-      - name: Build projects
+      - name: Build apps
         run: BUILD_TARGET=${{ matrix.target }} BUILD_CONFIG=${{ matrix.config }} make docker
       - name: Build for release and convert elf artifacts to hex
         if: matrix.config == 'Release'
@@ -33,9 +33,24 @@ jobs:
           name: artifacts-${{ matrix.target }}
           path: artifacts/*
 
+  build-sandbox:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ["sandbox-dotbot-v2", "sandbox-dotbot-v3", "sandbox-nrf5340dk"]
+        config: ["Debug", "Release"]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+      - name: Build sandbox apps
+        run: BUILD_TARGET=${{ matrix.target }} BUILD_CONFIG=${{ matrix.config }} make docker
+
   build-success:
     # this is only run if all builds succeeded
-    needs: build
+    needs: [build, build-sandbox]
     runs-on: ubuntu-latest
     steps:
     - name: build succeeded

@@ -1,10 +1,10 @@
 <!DOCTYPE CrossStudio_Project_File>
-<solution Name="projects-nrf5340-net" target="8" version="2">
-  <project Name="nrf5340_net">
+<solution Name="apps-log-dump" target="8" version="2">
+  <project Name="log_dump">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_radio(bsp);00bsp_rng(bsp);00drv_tdma_client(drv);00drv_tdma_server(drv);"
-      project_directory="nrf5340_net"
+      project_dependencies="00drv_log_flash(drv);00bsp_timer_hf(bsp)"
+      project_directory="log_dump"
       project_type="Executable" />
     <folder Name="Setup">
       <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/Setup/$(Target)_flash_placement.xml" />

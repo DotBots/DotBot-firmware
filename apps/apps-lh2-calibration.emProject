@@ -1,10 +1,10 @@
 <!DOCTYPE CrossStudio_Project_File>
-<solution Name="projects-freebot-v1.0" target="8" version="2">
-  <project Name="freebot">
+<solution Name="apps-lh2-calibration" target="8" version="2">
+  <project Name="lh2_calibration">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_timer(bsp);00drv_dotbot_hdlc(drv);00drv_dotbot_protocol(drv);00bsp_radio(bsp);00bsp_pwm(bsp);00drv_tdma_client(drv)"
-      project_directory="freebot"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_lh2(bsp);00drv_dotbot_hdlc(drv);00bsp_uart(bsp);00bsp_timer(bsp)"
+      project_directory="lh2_calibration"
       project_type="Executable" />
     <folder Name="Setup">
       <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/Setup/$(Target)_flash_placement.xml" />
