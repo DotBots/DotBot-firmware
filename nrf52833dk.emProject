@@ -67,11 +67,11 @@
     gcc_optimization_level="Level 2 balanced" />
   <import file_name="dotbot-libs/bsp/bsp.emProject" />
   <import file_name="dotbot-libs/drv/drv.emProject" />
-  <import file_name="apps/projects-dotbot.emProject" />
-  <import file_name="apps/projects-gateway.emProject" />
-  <import file_name="apps/projects-lh2-calibration.emProject" />
-  <import file_name="apps/projects-log-dump.emProject" />
-  <import file_name="apps/projects-sailbot.emProject" />
-  <import file_name="apps/projects-xgo.emProject" />
-  <import file_name="apps/projects-lh2-minimote.emProject" />
+  <import file_name="apps/apps-dotbot.emProject" />
+  <import file_name="apps/apps-gateway.emProject" />
+  <import file_name="apps/apps-lh2-calibration.emProject" />
+  <import file_name="apps/apps-log-dump.emProject" />
+  <import file_name="apps/apps-sailbot.emProject" />
+  <import file_name="apps/apps-xgo.emProject" />
+  <import file_name="apps/apps-lh2-minimote.emProject" />
 </solution>
