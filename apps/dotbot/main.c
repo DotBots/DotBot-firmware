@@ -264,17 +264,11 @@ int main(void) {
                     calibration_complete |= (1 << i);
                 }
             }
-            // Frame is [21B mari-shaped header][1B payload-type tag][advertisement payload].
-            // The payload-type tag (DB_PROTOCOL_DOTBOT_ADVERTISEMENT) and the
-            // bytes after it are unchanged from the legacy wire format — only
-            // the framing header changed.
-            size_t length                       = db_frame_header_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
-            _dotbot_vars.radio_buffer[length++] = DB_PROTOCOL_DOTBOT_ADVERTISEMENT;
-            _dotbot_vars.radio_buffer[length++] = calibration_complete;
-            int16_t                 direction   = 0xFFFF;
-            protocol_lh2_location_t position    = {
-                   .x = 0xffffffff,
-                   .y = 0xffffffff,
+            size_t                  length    = db_protocol_dotbot_advertizement_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS, calibration_complete);
+            int16_t                 direction = 0xFFFF;
+            protocol_lh2_location_t position  = {
+                 .x = 0xffffffff,
+                 .y = 0xffffffff,
             };
             if (calibration_complete) {
                 direction  = _control_vars.direction;

@@ -157,9 +157,7 @@ int main(void) {
             lsm6ds_read_accelerometer(&_sailbot_vars.last_accelerometer);
         }
         if (_sailbot_vars.advertise) {
-            size_t length                        = db_frame_header_to_buffer(_sailbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
-            _sailbot_vars.radio_buffer[length++] = DB_PROTOCOL_ADVERTISEMENT;
-            _sailbot_vars.radio_buffer[length++] = SailBot;
+            size_t length = db_protocol_advertizement_to_buffer(_sailbot_vars.radio_buffer, DB_GATEWAY_ADDRESS, SailBot);
             db_radio_disable();
             db_radio_tx(_sailbot_vars.radio_buffer, length);
             db_radio_rx();
@@ -319,7 +317,7 @@ static void _send_data(const nmea_gprmc_t *data, uint16_t heading, uint16_t wind
     int32_t latitude  = (int32_t)(data->latitude * 1e6);
     int32_t longitude = (int32_t)(data->longitude * 1e6);
 
-    size_t length                        = db_frame_header_to_buffer(_sailbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
+    size_t length                        = db_protocol_header_to_buffer(_sailbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
     _sailbot_vars.radio_buffer[length++] = DB_PROTOCOL_SAILBOT_DATA;
 
     // define the offsets based on the order of the data

@@ -167,12 +167,7 @@ int main(void) {
         bool send_command = (command.left_y != 0) || (command.right_y != 0) || (command.left_y == 0 && command.left_y != prev_left) || (command.right_y == 0 && command.right_y != prev_right);
         if (send_command) {
 
-            // Build the same wire format the dotbot app expects:
-            // [21B mari-shaped header][1B payload-type tag][MoveRaw payload].
-            size_t tx_len                      = db_frame_header_to_buffer(_gw_vars.radio_tx_buffer, DB_BROADCAST_ADDRESS);
-            _gw_vars.radio_tx_buffer[tx_len++] = DB_PROTOCOL_CMD_MOVE_RAW;
-            memcpy(&_gw_vars.radio_tx_buffer[tx_len], &command, sizeof(command));
-            tx_len += sizeof(command);
+            size_t tx_len = db_protocol_cmd_move_raw_to_buffer(_gw_vars.radio_tx_buffer, DB_BROADCAST_ADDRESS, &command);
             db_radio_disable();
             db_radio_tx(_gw_vars.radio_tx_buffer, tx_len);
             db_radio_rx();

@@ -290,9 +290,7 @@ int main(void) {
         }
 
         if (_xgo_vars.advertize) {
-            size_t length                    = db_frame_header_to_buffer(_xgo_vars.radio_buffer, DB_GATEWAY_ADDRESS);
-            _xgo_vars.radio_buffer[length++] = DB_PROTOCOL_ADVERTISEMENT;
-            _xgo_vars.radio_buffer[length++] = XGO;
+            size_t length = db_protocol_advertizement_to_buffer(_xgo_vars.radio_buffer, DB_GATEWAY_ADDRESS, XGO);
             db_radio_disable();
             db_radio_tx(_xgo_vars.radio_buffer, length);
             db_radio_rx();

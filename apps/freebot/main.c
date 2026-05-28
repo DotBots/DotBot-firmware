@@ -128,9 +128,7 @@ int main(void) {
 
         if (_freebot_vars.advertize) {
             // db_gpio_toggle(&db_led1);
-            size_t length                        = db_frame_header_to_buffer(_freebot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
-            _freebot_vars.radio_buffer[length++] = DB_PROTOCOL_ADVERTISEMENT;
-            _freebot_vars.radio_buffer[length++] = DotBot;
+            size_t length = db_protocol_advertizement_to_buffer(_freebot_vars.radio_buffer, DB_GATEWAY_ADDRESS, DotBot);
             db_radio_disable();
             db_radio_tx(_freebot_vars.radio_buffer, length);
             db_radio_rx();
