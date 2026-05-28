@@ -24,12 +24,11 @@
 #include "radio.h"
 #include "timer.h"
 // Include DRV headers
-#include "tdma_client.h"
+#include "frame.h"
 
 //=========================== defines ==========================================
 
 #define TIMER_DEV                 (0)
-#define DB_RADIO_FREQ             (8)      //< Set the frequency to 2408 MHz
 #define DB_ADVERTIZEMENT_DELAY_MS (500U)   ///< 500ms delay between each advertizement packet sending
 #define DB_TIMEOUT_CHECK_DELAY_MS (200U)   ///< 200ms delay between each timeout delay check
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
@@ -70,22 +69,25 @@ void        _motors_set(int16_t m1_speed, int16_t m2_speed, int16_t m3_speed, in
 //=========================== callbacks ========================================
 
 static void _radio_callback(uint8_t *pkt, uint8_t len) {
-    (void)len;
+    if (len < sizeof(db_frame_header_t) + 1) {
+        return;
+    }
 
     _freebot_vars.ts_last_packet_received = db_timer_ticks(TIMER_DEV);
-    uint8_t           *ptk_ptr            = pkt;
-    protocol_header_t *header             = (protocol_header_t *)ptk_ptr;
-    // Check destination address matches
-    if (header->dst != DB_BROADCAST_ADDRESS && header->dst != _freebot_vars.device_id) {
+    db_frame_header_t *header             = (db_frame_header_t *)pkt;
+    // Drop frames addressed elsewhere
+    if (header->dst != DB_FRAME_DST_BROADCAST && header->dst != _freebot_vars.device_id) {
         return;
     }
 
-    // Check version is supported
-    if (header->version != DB_FIRMWARE_VERSION) {
+    // Drop wrong version / wrong upper-layer protocol
+    if (header->version != DB_FRAME_VERSION ||
+        header->type != DB_FRAME_TYPE_DATA ||
+        header->next_proto != DB_FRAME_NEXT_PROTO) {
         return;
     }
 
-    uint8_t *cmd_ptr = ptk_ptr + sizeof(protocol_header_t);
+    uint8_t *cmd_ptr = pkt + sizeof(db_frame_header_t);
     // parse received packet and update the motors' speeds
     switch ((uint8_t)*cmd_ptr++) {
         case DB_PROTOCOL_CMD_MOVE_RAW:
@@ -105,7 +107,10 @@ static void _radio_callback(uint8_t *pkt, uint8_t len) {
 //=========================== main =============================================
 
 int main(void) {
-    db_tdma_client_init(&_radio_callback, DB_RADIO_BLE_1MBit, DB_RADIO_FREQ);
+    db_radio_init(&_radio_callback, DB_RADIO_BLE_1MBit);
+    db_radio_set_network_address(DB_FRAME_ACCESS_ADDR);
+    db_radio_set_frequency(DB_FRAME_DEFAULT_FREQ);
+    db_radio_rx();
 
     // db_gpio_init(&db_led1, DB_GPIO_OUT);
     //  Retrieve the device id once at startup
@@ -124,7 +129,9 @@ int main(void) {
         if (_freebot_vars.advertize) {
             // db_gpio_toggle(&db_led1);
             size_t length = db_protocol_advertizement_to_buffer(_freebot_vars.radio_buffer, DB_GATEWAY_ADDRESS, DotBot);
-            db_tdma_client_tx(_freebot_vars.radio_buffer, length);
+            db_radio_disable();
+            db_radio_tx(_freebot_vars.radio_buffer, length);
+            db_radio_rx();
             _freebot_vars.advertize = false;
         }
     }

@@ -29,13 +29,13 @@
 #include "timer_hf.h"
 #include "timer.h"
 // Include DRV headers
+#include "frame.h"
 #include "ism330.h"
-#include "tdma_client.h"
+#include "radio.h"
 
 //=========================== defines ==========================================
 
 #define TIMER_DEV                 (0)
-#define DB_RADIO_FREQ             (28)       //< Set the frequency to 2408 MHz
 #define DB_LH2_UPDATE_DELAY_US    (100000U)  ///< 100ms delay between each LH2 data refresh
 #define IMU_COLOR_DELAY_US        (100000U)  ///< 100ms delay between each IMU color update
 #define DB_ADVERTISEMENT_DELAY_US (500000U)  ///< 500ms delay between each advertizement packet sending
@@ -82,7 +82,10 @@ static void _update_color(void);
 int main(void) {
     db_board_init();
     _dotbot_vars.advertise = false;
-    db_tdma_client_init(&radio_callback, DB_RADIO_BLE_1MBit, DB_RADIO_FREQ);
+    db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);
+    db_radio_set_network_address(DB_FRAME_ACCESS_ADDR);
+    db_radio_set_frequency(DB_FRAME_DEFAULT_FREQ);
+    db_radio_rx();
 
     // Retrieve the device id once at startup
     _dotbot_vars.device_id = db_device_id();
@@ -131,7 +134,9 @@ int main(void) {
                     length += sizeof(protocol_lh2_processed_packet_t);
 
                     // Send through radio
-                    db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
+                    db_radio_disable();
+                    db_radio_tx(_dotbot_vars.radio_buffer, length);
+                    db_radio_rx();
 
                     // Mark the data as already sent
                     _dotbot_vars.lh2.data_ready[sweep][basestation] = DB_LH2_NO_NEW_DATA;
@@ -148,7 +153,9 @@ int main(void) {
 
         if (_dotbot_vars.advertise) {
             size_t length = db_protocol_advertizement_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS, LH2_mini_mote);
-            db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
+            db_radio_disable();
+            db_radio_tx(_dotbot_vars.radio_buffer, length);
+            db_radio_rx();
             _dotbot_vars.advertise = false;
         }
     }
@@ -231,22 +238,25 @@ static void _set_rgb_led(void) {
 //=========================== callbacks ========================================
 
 static void radio_callback(uint8_t *pkt, uint8_t len) {
-    (void)len;
+    if (len < sizeof(db_frame_header_t) + 1) {
+        return;
+    }
 
     _dotbot_vars.ts_last_packet_received = db_timer_hf_now(TIMER_DEV);
-    uint8_t                 *ptk_ptr     = pkt;
-    const protocol_header_t *header      = (const protocol_header_t *)ptk_ptr;
-    // Check destination address matches
-    if (header->dst != DB_BROADCAST_ADDRESS && header->dst != _dotbot_vars.device_id) {
+    const db_frame_header_t *header      = (const db_frame_header_t *)pkt;
+    // Drop frames addressed elsewhere
+    if (header->dst != DB_FRAME_DST_BROADCAST && header->dst != _dotbot_vars.device_id) {
         return;
     }
 
-    // Check version is supported
-    if (header->version != DB_FIRMWARE_VERSION) {
+    // Drop wrong version / wrong upper-layer protocol
+    if (header->version != DB_FRAME_VERSION ||
+        header->type != DB_FRAME_TYPE_DATA ||
+        header->next_proto != DB_FRAME_NEXT_PROTO) {
         return;
     }
 
-    uint8_t *cmd_ptr = ptk_ptr + sizeof(protocol_header_t);
+    uint8_t *cmd_ptr = pkt + sizeof(db_frame_header_t);
     // parse received packet and update the motors' speeds
     switch ((uint8_t)*cmd_ptr++) {
 

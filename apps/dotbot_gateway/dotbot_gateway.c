@@ -6,12 +6,20 @@
 // Include BSP headers
 #include "board.h"
 #include "board_config.h"
+#include "frame.h"
 #include "gpio.h"
 #include "hdlc.h"
 #include "protocol.h"
+#include "radio.h"
 #include "timer.h"
 #include "uart.h"
-#include "tdma_server.h"
+
+/// MarilibEdge UART event type for in-band data frames. Mirrors
+/// `MARI_EDGE_DATA` from `mari/firmware/mari/models.h` (= 3). The gateway
+/// wraps every received bare-radio frame with this byte before HDLC-
+/// encoding, so PyDotBot's MarilibEdge adapter parses it identically to
+/// a real Mari gateway's emit.
+#define DB_EDGE_EVENT_DATA (3)
 
 //=========================== defines ==========================================
 
@@ -24,7 +32,6 @@
 #define DB_UART_INDEX (0)  ///< Index of UART peripheral to use
 #endif
 #define DB_RADIO_QUEUE_SIZE (8U)                             ///< Size of the radio queue (must by a power of 2)
-#define DB_RADIO_FREQ       (8U)                             //< Set the frequency to 2408 MHz
 #define DB_UART_QUEUE_SIZE  ((DB_BUFFER_MAX_BYTES + 1) * 2)  ///< Size of the UART queue size (must by a power of 2)
 #define RADIO_APP           (DotBot)                         // DotBot Radio App
 
@@ -126,8 +133,13 @@ int main(void) {
 
     db_board_init();
 
-    // Configure Radio as transmitter
-    db_tdma_server_init(&_radio_callback, DOTBOT_GW_RADIO_MODE, DB_RADIO_FREQ);
+    // Configure Radio in bare mode (matches the dotbot app's RF settings).
+    // PHY mode comes from the variant's conf.h (1MBit for the standard
+    // gateway, LR125Kbit for dotbot_gateway_lr — paired with sailbot).
+    db_radio_init(&_radio_callback, DOTBOT_GW_RADIO_MODE);
+    db_radio_set_network_address(DB_FRAME_ACCESS_ADDR);
+    db_radio_set_frequency(DB_FRAME_DEFAULT_FREQ);
+    db_radio_rx();
     // Initialize the gateway context
     _gw_vars.buttons             = 0x0000;
     _gw_vars.radio_queue.current = 0;
@@ -155,8 +167,10 @@ int main(void) {
         bool send_command = (command.left_y != 0) || (command.right_y != 0) || (command.left_y == 0 && command.left_y != prev_left) || (command.right_y == 0 && command.right_y != prev_right);
         if (send_command) {
 
-            db_protocol_cmd_move_raw_to_buffer(_gw_vars.radio_tx_buffer, DB_BROADCAST_ADDRESS, &command);
-            db_tdma_server_tx(_gw_vars.radio_tx_buffer, sizeof(protocol_header_t) + sizeof(protocol_move_raw_command_t) + sizeof(uint8_t));
+            size_t tx_len = db_protocol_cmd_move_raw_to_buffer(_gw_vars.radio_tx_buffer, DB_BROADCAST_ADDRESS, &command);
+            db_radio_disable();
+            db_radio_tx(_gw_vars.radio_tx_buffer, tx_len);
+            db_radio_rx();
 
             prev_left  = command.left_y;
             prev_right = command.right_y;
@@ -166,7 +180,14 @@ int main(void) {
 
         while (_gw_vars.radio_queue.current != _gw_vars.radio_queue.last) {
             db_gpio_clear(&db_led2);
-            size_t frame_len = db_hdlc_encode(_gw_vars.radio_queue.packets[_gw_vars.radio_queue.current].buffer, _gw_vars.radio_queue.packets[_gw_vars.radio_queue.current].length, _gw_vars.hdlc_tx_buffer);
+            // Wrap the raw bare-radio frame as a MarilibEdge DATA event:
+            // [DB_EDGE_EVENT_DATA (1B)][frame bytes]. The host's MarilibEdge
+            // adapter strips the event byte and parses the rest as a mari Frame.
+            gateway_radio_packet_t *pkt = &_gw_vars.radio_queue.packets[_gw_vars.radio_queue.current];
+            uint8_t                 edge_buf[1 + DB_BUFFER_MAX_BYTES];
+            edge_buf[0] = DB_EDGE_EVENT_DATA;
+            memcpy(&edge_buf[1], pkt->buffer, pkt->length);
+            size_t frame_len = db_hdlc_encode(edge_buf, 1 + pkt->length, _gw_vars.hdlc_tx_buffer);
             db_uart_write(DB_UART_INDEX, _gw_vars.hdlc_tx_buffer, frame_len);
             _gw_vars.radio_queue.current = (_gw_vars.radio_queue.current + 1) & (DB_RADIO_QUEUE_SIZE - 1);
         }
@@ -182,8 +203,14 @@ int main(void) {
                 case DB_HDLC_STATE_READY:
                 {
                     size_t msg_len = db_hdlc_decode(_gw_vars.hdlc_rx_buffer);
-                    if (msg_len) {
-                        db_tdma_server_tx(_gw_vars.hdlc_rx_buffer, msg_len);
+                    // Host frames the TX request as [DB_EDGE_EVENT_DATA (1B)][frame bytes].
+                    // Drop anything that isn't a DATA event; transmit the remainder
+                    // straight onto the bare radio (the wire format already matches
+                    // what dotbots expect — no re-framing).
+                    if (msg_len > 1 && _gw_vars.hdlc_rx_buffer[0] == DB_EDGE_EVENT_DATA) {
+                        db_radio_disable();
+                        db_radio_tx(&_gw_vars.hdlc_rx_buffer[1], msg_len - 1);
+                        db_radio_rx();
                     }
                 } break;
                 default:
