@@ -22,7 +22,7 @@
 #include "timer_hf.h"
 #include "uart.h"
 // Include DRV headers
-#include "tdma_client.h"
+#include "frame.h"
 
 //=========================== defines ==========================================
 
@@ -31,7 +31,6 @@
 #define TIMEOUT_CHECK_DELAY_US     (1000 * 500UL)  ///< 500 ms delay between packet received timeout checks
 
 #define XGO_RADIO_BUFFER_MAX_BYTES (255U)
-#define XGO_RADIO_FREQ             (8)  //< Set the frequency to 2408 MHz
 #define XGO_UART_BAUDRATE          (115200U)
 #define XGO_UART_MAX_BYTES         (64U)
 
@@ -203,23 +202,26 @@ static void _advertize(void) {
 }
 
 static void _radio_callback(uint8_t *pkt, uint8_t len) {
-    (void)len;
+    if (len < sizeof(db_frame_header_t) + 1) {
+        return;
+    }
 
     _xgo_vars.packet_received = true;
 
-    uint8_t                 *ptk_ptr = pkt;
-    const protocol_header_t *header  = (const protocol_header_t *)ptk_ptr;
-    // Check destination address is matching
-    if (header->dst != DB_BROADCAST_ADDRESS && header->dst != _xgo_vars.device_id) {
+    const db_frame_header_t *header = (const db_frame_header_t *)pkt;
+    // Drop frames addressed elsewhere
+    if (header->dst != DB_FRAME_DST_BROADCAST && header->dst != _xgo_vars.device_id) {
         return;
     }
 
-    // Check version is supported
-    if (header->version != DB_FIRMWARE_VERSION) {
+    // Drop wrong version / wrong upper-layer protocol
+    if (header->version != DB_FRAME_VERSION ||
+        header->type != DB_FRAME_TYPE_DATA ||
+        header->next_proto != DB_FRAME_NEXT_PROTO) {
         return;
     }
 
-    uint8_t *cmd_ptr = ptk_ptr + sizeof(protocol_header_t);
+    uint8_t *cmd_ptr = pkt + sizeof(db_frame_header_t);
     // parse received packet and execute the command
     switch ((uint8_t)*cmd_ptr++) {
         case DB_PROTOCOL_CMD_MOVE_RAW:
@@ -266,7 +268,10 @@ static void _radio_callback(uint8_t *pkt, uint8_t len) {
 //=========================== main =============================================
 
 int main(void) {
-    db_tdma_client_init(&_radio_callback, DB_RADIO_BLE_1MBit, XGO_RADIO_FREQ);
+    db_radio_init(&_radio_callback, DB_RADIO_BLE_1MBit);
+    db_radio_set_network_address(DB_FRAME_ACCESS_ADDR);
+    db_radio_set_frequency(DB_FRAME_DEFAULT_FREQ);
+    db_radio_rx();
 
     // Retrieve the device id once at startup
     _xgo_vars.device_id = db_device_id();
@@ -285,8 +290,12 @@ int main(void) {
         }
 
         if (_xgo_vars.advertize) {
-            size_t length = db_protocol_advertizement_to_buffer(_xgo_vars.radio_buffer, DB_GATEWAY_ADDRESS, XGO);
-            db_tdma_client_tx(_xgo_vars.radio_buffer, length);
+            size_t length                    = db_frame_header_to_buffer(_xgo_vars.radio_buffer, DB_GATEWAY_ADDRESS);
+            _xgo_vars.radio_buffer[length++] = DB_PROTOCOL_ADVERTISEMENT;
+            _xgo_vars.radio_buffer[length++] = XGO;
+            db_radio_disable();
+            db_radio_tx(_xgo_vars.radio_buffer, length);
+            db_radio_rx();
             _xgo_vars.advertize = false;
         }
 
