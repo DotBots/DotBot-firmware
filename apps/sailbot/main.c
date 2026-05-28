@@ -34,7 +34,7 @@
 #include "as5048b.h"
 
 // Include DRV headers
-#include "tdma_client.h"
+#include "frame.h"
 
 //=========================== defines =========================================
 
@@ -42,7 +42,6 @@
 #define CONTROL_LOOP_PERIOD_MS      (1000)  ///< control loop period
 #define WAYPOINT_DISTANCE_THRESHOLD (10)    ///< in meters
 
-#define DB_RADIO_FREQ             (8)      //< Set the frequency to 2408 MHz
 #define SAIL_TRIM_ANGLE_UNIT_STEP (10)     ///< unit step increase/decrease when trimming the sails
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
 #define TIMEOUT_CHECK_DELAY_MS    (200)    ///< 200 ms delay between packet received timeout checks
@@ -120,7 +119,10 @@ int main(void) {
     _sailbot_vars.sail_trim            = 50;
 
     // Configure Radio as a receiver
-    db_tdma_client_init(&radio_callback, DB_RADIO_BLE_LR125Kbit, DB_RADIO_FREQ);
+    db_radio_init(&radio_callback, DB_RADIO_BLE_LR125Kbit);
+    db_radio_set_network_address(DB_FRAME_ACCESS_ADDR);
+    db_radio_set_frequency(DB_FRAME_DEFAULT_FREQ);
+    db_radio_rx();
 
     // Init the IMU chips
     imu_init(NULL, NULL);
@@ -155,8 +157,12 @@ int main(void) {
             lsm6ds_read_accelerometer(&_sailbot_vars.last_accelerometer);
         }
         if (_sailbot_vars.advertise) {
-            size_t length = db_protocol_advertizement_to_buffer(_sailbot_vars.radio_buffer, DB_GATEWAY_ADDRESS, SailBot);
-            db_tdma_client_tx(_sailbot_vars.radio_buffer, length);
+            size_t length                        = db_frame_header_to_buffer(_sailbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
+            _sailbot_vars.radio_buffer[length++] = DB_PROTOCOL_ADVERTISEMENT;
+            _sailbot_vars.radio_buffer[length++] = SailBot;
+            db_radio_disable();
+            db_radio_tx(_sailbot_vars.radio_buffer, length);
+            db_radio_rx();
 
             _sailbot_vars.advertise = false;
         }
@@ -185,25 +191,28 @@ int main(void) {
  *
  */
 void radio_callback(uint8_t *packet, uint8_t length) {
-    (void)length;
-    uint8_t                 *ptk_ptr = packet;
-    const protocol_header_t *header  = (const protocol_header_t *)ptk_ptr;
+    if (length < sizeof(db_frame_header_t) + 1) {
+        return;
+    }
+    const db_frame_header_t *header = (const db_frame_header_t *)packet;
 
     // timestamp the arrival of the packet
     _sailbot_vars.ts_last_packet_received = db_timer_ticks(TIMER_DEV);
 
-    // Check destination address matches
-    if (header->dst != DB_BROADCAST_ADDRESS && header->dst != db_device_id()) {
+    // Drop frames addressed elsewhere
+    if (header->dst != DB_FRAME_DST_BROADCAST && header->dst != db_device_id()) {
         return;
     }
 
-    // Check version is compatible
-    if (header->version != DB_FIRMWARE_VERSION) {
+    // Drop wrong version / wrong upper-layer protocol
+    if (header->version != DB_FRAME_VERSION ||
+        header->type != DB_FRAME_TYPE_DATA ||
+        header->next_proto != DB_FRAME_NEXT_PROTO) {
         return;
     }
 
     // Process the command received
-    uint8_t *cmd_ptr = ptk_ptr + sizeof(protocol_header_t);
+    uint8_t *cmd_ptr = packet + sizeof(db_frame_header_t);
     switch ((uint8_t)*cmd_ptr++) {
         case DB_PROTOCOL_CMD_MOVE_RAW:
         {
@@ -310,7 +319,7 @@ static void _send_data(const nmea_gprmc_t *data, uint16_t heading, uint16_t wind
     int32_t latitude  = (int32_t)(data->latitude * 1e6);
     int32_t longitude = (int32_t)(data->longitude * 1e6);
 
-    size_t length                        = db_protocol_header_to_buffer(_sailbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
+    size_t length                        = db_frame_header_to_buffer(_sailbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
     _sailbot_vars.radio_buffer[length++] = DB_PROTOCOL_SAILBOT_DATA;
 
     // define the offsets based on the order of the data
@@ -337,7 +346,9 @@ static void _send_data(const nmea_gprmc_t *data, uint16_t heading, uint16_t wind
 
     length += heading_size + latitude_size + longitude_size + wind_angle_size + rudder_angle_size + sail_trim_size;
 
-    db_tdma_client_tx(_sailbot_vars.radio_buffer, length);
+    db_radio_disable();
+    db_radio_tx(_sailbot_vars.radio_buffer, length);
+    db_radio_rx();
 }
 
 static int8_t map_error_to_rudder_angle(float error) {
