@@ -29,13 +29,12 @@
 #include "rgbled_pwm.h"
 #include "timer.h"
 #include "log_flash.h"
-#include "tdma_client.h"
+#include "frame.h"
 #include "battery.h"
 #include "control_loop.h"
 
 //=========================== defines ==========================================
 
-#define DB_RADIO_FREQ             (8U)      ///< Set the frequency to 2408 MHz
 #define RADIO_APP                 (DotBot)  ///< DotBot Radio App
 #define TIMER_DEV                 (0)
 #define QDEC_LEFT                 (0)      ///< Left wheel QDEC peripheral index
@@ -97,22 +96,26 @@ static void _update_lh2(void);
 //=========================== callbacks ========================================
 
 static void radio_callback(uint8_t *pkt, uint8_t len) {
-    (void)len;
+    if (len < sizeof(db_frame_header_t) + 1) {
+        return;
+    }
 
     _dotbot_vars.ts_last_packet_received = db_timer_ticks(TIMER_DEV);
-    uint8_t           *ptk_ptr           = pkt;
-    protocol_header_t *header            = (protocol_header_t *)ptk_ptr;
-    // Check destination address matches
-    if (header->dst != DB_BROADCAST_ADDRESS && header->dst != _dotbot_vars.device_id) {
+    db_frame_header_t *header            = (db_frame_header_t *)pkt;
+
+    // Drop frames addressed elsewhere
+    if (header->dst != DB_FRAME_DST_BROADCAST && header->dst != _dotbot_vars.device_id) {
         return;
     }
 
-    // Check version is supported
-    if (header->version != DB_FIRMWARE_VERSION) {
+    // Drop wrong version / wrong upper-layer protocol
+    if (header->version != DB_FRAME_VERSION ||
+        header->type != DB_FRAME_TYPE_DATA ||
+        header->next_proto != DB_FRAME_NEXT_PROTO) {
         return;
     }
 
-    uint8_t *cmd_ptr = ptk_ptr + sizeof(protocol_header_t);
+    uint8_t *cmd_ptr = pkt + sizeof(db_frame_header_t);
     // parse received packet and update the motors' speeds
     switch ((uint8_t)*cmd_ptr++) {
         case DB_PROTOCOL_CMD_MOVE_RAW:
@@ -180,7 +183,10 @@ int main(void) {
     db_qdec_init(QDEC_LEFT, &_qdec_left_conf, NULL, NULL);
     db_qdec_init(QDEC_RIGHT, &_qdec_right_conf, NULL, NULL);
     _control_ctx = control_loop_alloc();
-    db_tdma_client_init(&radio_callback, DB_RADIO_BLE_1MBit, DB_RADIO_FREQ);
+    db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);
+    db_radio_set_network_address(DB_FRAME_ACCESS_ADDR);
+    db_radio_set_frequency(DB_FRAME_DEFAULT_FREQ);
+    db_radio_rx();
 
     // Set an invalid heading since the value is unknown on startup.
     // Control loop is stopped
@@ -258,11 +264,17 @@ int main(void) {
                     calibration_complete |= (1 << i);
                 }
             }
-            size_t                  length    = db_protocol_dotbot_advertizement_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS, calibration_complete);
-            int16_t                 direction = 0xFFFF;
-            protocol_lh2_location_t position  = {
-                 .x = 0xffffffff,
-                 .y = 0xffffffff,
+            // Frame is [21B mari-shaped header][1B payload-type tag][advertisement payload].
+            // The payload-type tag (DB_PROTOCOL_DOTBOT_ADVERTISEMENT) and the
+            // bytes after it are unchanged from the legacy wire format — only
+            // the framing header changed.
+            size_t length                       = db_frame_header_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS);
+            _dotbot_vars.radio_buffer[length++] = DB_PROTOCOL_DOTBOT_ADVERTISEMENT;
+            _dotbot_vars.radio_buffer[length++] = calibration_complete;
+            int16_t                 direction   = 0xFFFF;
+            protocol_lh2_location_t position    = {
+                   .x = 0xffffffff,
+                   .y = 0xffffffff,
             };
             if (calibration_complete) {
                 direction  = _control_vars.direction;
@@ -288,7 +300,9 @@ int main(void) {
             memcpy(&_dotbot_vars.radio_buffer[length], &_control_vars.waypoint_y, sizeof(uint32_t));
             length += sizeof(uint32_t);
             memcpy(&_dotbot_vars.radio_buffer[length++], &_control_vars.waypoint_idx, sizeof(uint8_t));
-            db_tdma_client_tx(_dotbot_vars.radio_buffer, length);
+            db_radio_disable();
+            db_radio_tx(_dotbot_vars.radio_buffer, length);
+            db_radio_rx();
             _dotbot_vars.advertize = false;
         }
     }
