@@ -134,7 +134,9 @@ int main(void) {
     db_board_init();
 
     // Configure Radio in bare mode (matches the dotbot app's RF settings).
-    db_radio_init(&_radio_callback, DB_RADIO_BLE_1MBit);
+    // PHY mode comes from the variant's conf.h (1MBit for the standard
+    // gateway, LR125Kbit for dotbot_gateway_lr — paired with sailbot).
+    db_radio_init(&_radio_callback, DOTBOT_GW_RADIO_MODE);
     db_radio_set_network_address(DB_FRAME_ACCESS_ADDR);
     db_radio_set_frequency(DB_FRAME_DEFAULT_FREQ);
     db_radio_rx();
