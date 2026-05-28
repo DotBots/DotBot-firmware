@@ -3,7 +3,7 @@
   <project Name="xgo">
     <configuration
       Name="Common"
-      project_dependencies="00bsp_uart(bsp);00drv_dotbot_hdlc(drv);00drv_dotbot_protocol(drv);00bsp_radio(bsp);00bsp_timer_hf(bsp);00drv_tdma_client(drv)"
+      project_dependencies="00bsp_uart(bsp);00drv_dotbot_hdlc(drv);00drv_dotbot_protocol(drv);00bsp_radio(bsp);00bsp_timer_hf(bsp)"
       project_directory="xgo"
       project_type="Executable" />
     <folder Name="Setup">
