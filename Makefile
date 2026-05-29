@@ -74,7 +74,7 @@ endif
 
 ifneq (,$(filter dotbot-v2 dotbot-v3,$(BUILD_TARGET)))
   PROJECTS := $(filter-out dotbot_gateway dotbot_gateway_lr sailbot xgo nrf5340_net freebot lh2_mini_mote%,$(PROJECTS))
-  ARTIFACT_PROJECTS := dotbot
+  ARTIFACT_PROJECTS := dotbot lh2_calibration
 endif
 
 # remove incompatible apps (nrf5340, sailbot, gateway, dotbot) for lh2-mini-mote builds
