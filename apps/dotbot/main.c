@@ -52,9 +52,9 @@ typedef struct {
     uint8_t                  radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
     protocol_control_mode_t  control_mode;                       ///< Remote control mode
     protocol_lh2_waypoints_t waypoints;                          ///< List of waypoints
-    bool                     update_control_loop;                ///< Whether the control loop need an update
-    bool                     advertize;                          ///< Whether an advertize packet should be sent
-    bool                     update_lh2;                         ///< Whether LH2 data must be processed
+    volatile bool            update_control_loop;                ///< Whether the control loop need an update
+    volatile bool            advertize;                          ///< Whether an advertize packet should be sent
+    volatile bool            update_lh2;                         ///< Whether LH2 data must be processed
     uint64_t                 device_id;                          ///< Device ID of the DotBot
     double                   coordinates[2];                     ///< x, y coordinates of the robot
 } dotbot_vars_t;
