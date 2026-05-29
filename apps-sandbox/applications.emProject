@@ -1,11 +1,11 @@
 <!DOCTYPE CrossStudio_Project_File>
 <solution Name="applications" target="8" version="2">
-  <project Name="dotbot">
+  <project Name="dotbot-sandbox">
     <configuration
       Name="Common"
       linker_additional_files="$(ProjectDir)/../cmse_implib$(LIB)"
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00drv_dotbot_control_loop(drv);00drv_dotbot_protocol(drv);00drv_rgbled_pwm(drv);00drv_motors(drv)"
-      project_directory="dotbot"
+      project_directory="dotbot-sandbox"
       project_type="Executable" />
     <folder Name="Setup">
       <file file_name="$(ProjectDir)/../$(Target)_flash_placement.xml" />
