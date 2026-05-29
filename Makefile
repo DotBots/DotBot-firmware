@@ -12,6 +12,7 @@ VERBOSE_OPTS ?= -verbose -echo
 ifeq ($(QUIET),1)
   VERBOSE_OPTS =
 endif
+BUILD_MODE ?= -rebuild
 
 # Sandbox (TrustZone non-secure) apps live under apps-sandbox/ and are flashed
 # over the air with swarmit, which consumes a raw .bin. Bare apps live under
@@ -121,7 +122,7 @@ all: $(PROJECTS)
 
 $(PROJECTS):
 	@echo "\e[1mBuilding project $@\e[0m"
-	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -project $@ -config $(BUILD_CONFIG) $(PACKAGES_DIR_OPT) -rebuild $(VERBOSE_OPTS)
+	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -project $@ -config $(BUILD_CONFIG) $(PACKAGES_DIR_OPT) $(BUILD_MODE) $(VERBOSE_OPTS)
 	@echo "\e[1mDone\e[0m\n"
 
 list-projects:
