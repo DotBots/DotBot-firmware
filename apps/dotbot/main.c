@@ -142,6 +142,9 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             memcpy(&threshold, cmd_ptr, sizeof(uint16_t));
             cmd_ptr += sizeof(uint16_t);
             uint8_t count = (uint8_t)*cmd_ptr++;
+            if (count > DB_MAX_WAYPOINTS) {
+                count = DB_MAX_WAYPOINTS;
+            }
             memcpy(&_dotbot_vars.waypoints.points, cmd_ptr, count * sizeof(protocol_lh2_location_t));
             coordinate_t waypoints[DB_MAX_WAYPOINTS];
             for (uint8_t i = 0; i < count; i++) {
