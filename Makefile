@@ -129,6 +129,47 @@ list-projects:
 	@echo "\e[1mAvailable projects:\e[0m"
 	@echo $(PROJECTS) | tr ' ' '\n'
 
+# Source of truth for valid BUILD_TARGET values. Used by tooling that
+# wants to validate target names without parsing the ifeq cascade above
+# (see dotbot CLI's `dotbot fw targets` / `dotbot swarm fw targets`).
+BARE_TARGETS = dotbot-v1 dotbot-v2 dotbot-v3 \
+               nrf52833dk nrf52840dk \
+               nrf5340dk-app nrf5340dk-net \
+               sailbot-v1 freebot-v1.0 \
+               lh2-mini-mote \
+               xgo-v1 xgo-v2
+SANDBOX_TARGETS = sandbox-dotbot-v2 sandbox-dotbot-v3 sandbox-nrf5340dk
+
+list-targets:
+	@echo $(BARE_TARGETS) $(SANDBOX_TARGETS) | tr ' ' '\n'
+
+help:
+	@echo "DotBot-firmware Makefile"
+	@echo ""
+	@echo "Usage:  BUILD_TARGET=<target> BUILD_CONFIG=<Debug|Release> make [project|target]"
+	@echo ""
+	@echo "Variables:"
+	@echo "  BUILD_TARGET   e.g. dotbot-v3, sandbox-dotbot-v3, nrf5340dk-app"
+	@echo "  BUILD_CONFIG   Debug | Release    (default: Debug)"
+	@echo "  BUILD_MODE     -build | -rebuild  (default: -rebuild)"
+	@echo "  QUIET          0 | 1              (default: 0)"
+	@echo "  SEGGER_DIR     Path to SES install root"
+	@echo ""
+	@echo "Targets:"
+	@echo "  all            Build every app available for BUILD_TARGET (default)"
+	@echo "  <project>      Build a single project (see 'make list-projects')"
+	@echo "  artifacts      Build canonical apps + copy outputs to artifacts/"
+	@echo "  clean          SES clean for current BUILD_TARGET + BUILD_CONFIG"
+	@echo "  distclean      clean + rm artifacts/"
+	@echo "  list-projects  List projects available for current BUILD_TARGET"
+	@echo "  list-targets   List valid BUILD_TARGET values (bare + sandbox)"
+	@echo "  format         clang-format in place"
+	@echo "  check-format   clang-format --dry-run"
+	@echo "  docker         Run a target inside the aabadie/dotbot:latest container"
+	@echo "  doc            Build Sphinx HTML docs"
+	@echo ""
+	@echo "Run 'make list-projects BUILD_TARGET=<target>' to see what builds where."
+
 clean:
 	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -config $(BUILD_CONFIG) -clean $(VERBOSE_OPTS)
 
