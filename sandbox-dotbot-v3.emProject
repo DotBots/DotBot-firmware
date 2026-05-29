@@ -49,7 +49,7 @@
     linker_printf_fp_enabled="Float"
     linker_printf_width_precision_supported="Yes"
     linker_section_placement_file="$(ProjectDir)/../$(Target)_flash_placement.xml"
-    macros="BuildTarget=dotbot-v3;DeviceFamily=nRF;Target=nRF5340_xxAA_Application;Placement=Flash"
+    macros="BuildTarget=sandbox-dotbot-v3;DeviceFamily=nRF;Target=nRF5340_xxAA_Application;Placement=Flash"
     project_type="Executable"
     target_reset_script="Reset();"
     target_script_file="$(ProjectDir)/../../dotbot-libs/nRF/Scripts/nRF_Target.js"

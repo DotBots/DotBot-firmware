@@ -12,6 +12,7 @@ VERBOSE_OPTS ?= -verbose -echo
 ifeq ($(QUIET),1)
   VERBOSE_OPTS =
 endif
+BUILD_MODE ?= -rebuild
 
 # Sandbox (TrustZone non-secure) apps live under apps-sandbox/ and are flashed
 # over the air with swarmit, which consumes a raw .bin. Bare apps live under
@@ -73,7 +74,7 @@ endif
 
 ifneq (,$(filter dotbot-v2 dotbot-v3,$(BUILD_TARGET)))
   PROJECTS := $(filter-out dotbot_gateway dotbot_gateway_lr sailbot xgo nrf5340_net freebot lh2_mini_mote%,$(PROJECTS))
-  ARTIFACT_PROJECTS := dotbot
+  ARTIFACT_PROJECTS := dotbot lh2_calibration
 endif
 
 # remove incompatible apps (nrf5340, sailbot, gateway, dotbot) for lh2-mini-mote builds
@@ -121,12 +122,52 @@ all: $(PROJECTS)
 
 $(PROJECTS):
 	@echo "\e[1mBuilding project $@\e[0m"
-	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -project $@ -config $(BUILD_CONFIG) $(PACKAGES_DIR_OPT) -rebuild $(VERBOSE_OPTS)
+	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -project $@ -config $(BUILD_CONFIG) $(PACKAGES_DIR_OPT) $(BUILD_MODE) $(VERBOSE_OPTS)
 	@echo "\e[1mDone\e[0m\n"
 
 list-projects:
 	@echo "\e[1mAvailable projects:\e[0m"
 	@echo $(PROJECTS) | tr ' ' '\n'
+
+# Source of truth for valid BUILD_TARGET values. Derived from the
+# .emProject files at the repo root so adding/removing a target is just
+# adding/removing the .emProject — no parallel list to maintain. Used
+# by tooling that validates target names without parsing the ifeq
+# cascade above (see dotbot CLI's `dotbot fw targets` /
+# `dotbot swarm fw targets`).
+_EMPROJECTS = $(sort $(patsubst %.emProject,%,$(notdir $(wildcard *.emProject))))
+BARE_TARGETS    = $(filter-out sandbox-%,$(_EMPROJECTS))
+SANDBOX_TARGETS = $(filter sandbox-%,$(_EMPROJECTS))
+
+list-targets:
+	@echo $(BARE_TARGETS) $(SANDBOX_TARGETS) | tr ' ' '\n'
+
+help:
+	@echo "DotBot-firmware Makefile"
+	@echo ""
+	@echo "Usage:  BUILD_TARGET=<target> BUILD_CONFIG=<Debug|Release> make [project|target]"
+	@echo ""
+	@echo "Variables:"
+	@echo "  BUILD_TARGET   e.g. dotbot-v3, sandbox-dotbot-v3, nrf5340dk-app"
+	@echo "  BUILD_CONFIG   Debug | Release    (default: Debug)"
+	@echo "  BUILD_MODE     -build | -rebuild  (default: -rebuild)"
+	@echo "  QUIET          0 | 1              (default: 0)"
+	@echo "  SEGGER_DIR     Path to SES install root"
+	@echo ""
+	@echo "Targets:"
+	@echo "  all            Build every app available for BUILD_TARGET (default)"
+	@echo "  <project>      Build a single project (see 'make list-projects')"
+	@echo "  artifacts      Build canonical apps + copy outputs to artifacts/"
+	@echo "  clean          SES clean for current BUILD_TARGET + BUILD_CONFIG"
+	@echo "  distclean      clean + rm artifacts/"
+	@echo "  list-projects  List projects available for current BUILD_TARGET"
+	@echo "  list-targets   List valid BUILD_TARGET values (bare + sandbox)"
+	@echo "  format         clang-format in place"
+	@echo "  check-format   clang-format --dry-run"
+	@echo "  docker         Run a target inside the aabadie/dotbot:latest container"
+	@echo "  doc            Build Sphinx HTML docs"
+	@echo ""
+	@echo "Run 'make list-projects BUILD_TARGET=<target>' to see what builds where."
 
 clean:
 	"$(SEGGER_DIR)/bin/emBuild" $(PROJECT_FILE) -config $(BUILD_CONFIG) -clean $(VERBOSE_OPTS)
