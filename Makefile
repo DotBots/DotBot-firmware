@@ -129,16 +129,15 @@ list-projects:
 	@echo "\e[1mAvailable projects:\e[0m"
 	@echo $(PROJECTS) | tr ' ' '\n'
 
-# Source of truth for valid BUILD_TARGET values. Used by tooling that
-# wants to validate target names without parsing the ifeq cascade above
-# (see dotbot CLI's `dotbot fw targets` / `dotbot swarm fw targets`).
-BARE_TARGETS = dotbot-v1 dotbot-v2 dotbot-v3 \
-               nrf52833dk nrf52840dk \
-               nrf5340dk-app nrf5340dk-net \
-               sailbot-v1 freebot-v1.0 \
-               lh2-mini-mote \
-               xgo-v1 xgo-v2
-SANDBOX_TARGETS = sandbox-dotbot-v2 sandbox-dotbot-v3 sandbox-nrf5340dk
+# Source of truth for valid BUILD_TARGET values. Derived from the
+# .emProject files at the repo root so adding/removing a target is just
+# adding/removing the .emProject — no parallel list to maintain. Used
+# by tooling that validates target names without parsing the ifeq
+# cascade above (see dotbot CLI's `dotbot fw targets` /
+# `dotbot swarm fw targets`).
+_EMPROJECTS = $(sort $(patsubst %.emProject,%,$(notdir $(wildcard *.emProject))))
+BARE_TARGETS    = $(filter-out sandbox-%,$(_EMPROJECTS))
+SANDBOX_TARGETS = $(filter sandbox-%,$(_EMPROJECTS))
 
 list-targets:
 	@echo $(BARE_TARGETS) $(SANDBOX_TARGETS) | tr ' ' '\n'
