@@ -51,9 +51,9 @@ typedef struct {
     position_2d_t            last_position;                      ///< Last computed LH2 location received
     protocol_control_mode_t  control_mode;                       ///< Remote control mode
     protocol_lh2_waypoints_t waypoints;                          ///< List of waypoints
-    bool                     update_control_loop;                ///< Whether the control loop need an update
-    bool                     advertize;                          ///< Whether an advertize packet should be sent
-    bool                     update_position;                    ///< Whether position must be updated
+    volatile bool            update_control_loop;                ///< Whether the control loop need an update
+    volatile bool            advertize;                          ///< Whether an advertize packet should be sent
+    volatile bool            update_position;                    ///< Whether position must be updated
     uint64_t                 device_id;                          ///< Device ID of the DotBot
 } dotbot_vars_t;
 
@@ -128,6 +128,9 @@ static void _rx_data_callback(const uint8_t *pkt, size_t len) {
             memcpy(&threshold, cmd_ptr, sizeof(uint16_t));
             cmd_ptr += sizeof(uint16_t);
             uint8_t count = (uint8_t)*cmd_ptr++;
+            if (count > DB_MAX_WAYPOINTS) {
+                count = DB_MAX_WAYPOINTS;
+            }
             memcpy(&_dotbot_vars.waypoints.points, cmd_ptr, count * sizeof(protocol_lh2_location_t));
             coordinate_t waypoints[DB_MAX_WAYPOINTS];
             for (uint8_t i = 0; i < count; i++) {
