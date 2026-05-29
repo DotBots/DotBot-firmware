@@ -112,7 +112,14 @@ SRCS ?= $(foreach dir,$(DIRS),$(shell find $(dir) -name "*.[c|h]"))
 CLANG_FORMAT ?= clang-format
 CLANG_FORMAT_TYPE ?= file
 
-ARTIFACT_BASE = $(foreach app,$(ARTIFACT_PROJECTS),$(APPS_DIR)/$(app)/Output/$(BUILD_TARGET)/$(BUILD_CONFIG)/Exe/$(app)-$(BUILD_TARGET))
+# SES's `$(BuildTarget)` macro inside the .emProject files is hardcoded
+# to the bare board name (e.g. sandbox-dotbot-v3.emProject sets
+# BuildTarget=dotbot-v3), so on-disk Output dirs use the bare board name
+# regardless of `sandbox-` prefix. _OUTPUT_TARGET mirrors that — strips
+# the prefix for the artifact path lookup. Without this, `make artifacts
+# BUILD_TARGET=sandbox-*` silently references paths that don't exist.
+_OUTPUT_TARGET = $(patsubst sandbox-%,%,$(BUILD_TARGET))
+ARTIFACT_BASE = $(foreach app,$(ARTIFACT_PROJECTS),$(APPS_DIR)/$(app)/Output/$(_OUTPUT_TARGET)/$(BUILD_CONFIG)/Exe/$(app)-$(_OUTPUT_TARGET))
 ARTIFACTS = $(addsuffix .$(ARTIFACT_FMT),$(ARTIFACT_BASE))
 
 
