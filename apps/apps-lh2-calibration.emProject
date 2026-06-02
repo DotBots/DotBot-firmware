@@ -6,6 +6,9 @@
       project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_lh2(bsp);00drv_dotbot_hdlc(drv);00bsp_uart(bsp);00bsp_timer(bsp)"
       project_directory="lh2_calibration"
       project_type="Executable" />
+    <configuration
+      Name="Release"
+      gcc_optimization_level="None" />
     <folder Name="Setup">
       <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/Setup/$(Target)_flash_placement.xml" />
       <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/Setup/$(Target)_MemoryMap.xml">
