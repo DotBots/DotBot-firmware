@@ -10,9 +10,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Bare boards ship .hex, sandbox boards ship .bin (flashed by swarmit).
-        # The output format per target is driven by the Makefile (ARTIFACT_FMT).
-        target: ["dotbot-v2", "dotbot-v3", "sandbox-dotbot-v2", "sandbox-dotbot-v3"]
+        # Release everything `dotbot fw artifacts` (bare .hex) and
+        # `dotbot fw artifacts --sandbox` (sandbox .bin) can build, so one tag
+        # carries every image the testbed flows fetch: bare dotbot + nrf5340_net
+        # netcore, lh2_calibration, the sandbox apps, and the gateways. Bare
+        # targets mirror build.yml, sandbox targets build-sandbox.yml - both
+        # CI-proven via the same `make docker`. Output format per target is
+        # driven by the Makefile (ARTIFACT_FMT: bare -> .hex, sandbox -> .bin).
+        target:
+          - dotbot-v2
+          - dotbot-v3
+          - nrf52840dk
+          - nrf5340dk-app
+          - nrf5340dk-net
+          - sandbox-dotbot-v2
+          - sandbox-dotbot-v3
+          - sandbox-nrf5340dk
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
