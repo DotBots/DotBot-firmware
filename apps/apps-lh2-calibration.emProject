@@ -1,0 +1,30 @@
+<!DOCTYPE CrossStudio_Project_File>
+<solution Name="apps-lh2-calibration" target="8" version="2">
+  <project Name="lh2_calibration">
+    <configuration
+      Name="Common"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_dotbot_lh2(bsp);00drv_dotbot_hdlc(drv);00bsp_uart(bsp);00bsp_timer(bsp)"
+      project_directory="lh2_calibration"
+      project_type="Executable" />
+    <configuration
+      Name="Release"
+      gcc_optimization_level="None" />
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/Setup/$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/Setup/$(Target)_MemoryMap.xml">
+        <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
+      </file>
+    </folder>
+    <folder Name="Source">
+      <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
+      <file file_name="main.c" />
+    </folder>
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/System/cpu.c" />
+    </folder>
+  </project>
+</solution>

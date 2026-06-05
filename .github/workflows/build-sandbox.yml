@@ -1,0 +1,45 @@
+name: CI sandbox
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'apps-sandbox/**'
+      - 'sandbox-*.emProject'
+      - 'Makefile'
+      - 'dotbot-libs'
+      - '.github/workflows/build-sandbox.yml'
+  pull_request:
+    # Only run when sandbox apps or shared build infra change.
+    paths:
+      - 'apps-sandbox/**'
+      - 'sandbox-*.emProject'
+      - 'Makefile'
+      - 'dotbot-libs'
+      - '.github/workflows/build-sandbox.yml'
+
+jobs:
+  build-sandbox:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ["sandbox-dotbot-v2", "sandbox-dotbot-v3", "sandbox-nrf5340dk"]
+        config: ["Release"]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+      - name: Build sandbox apps
+        run: BUILD_TARGET=${{ matrix.target }} BUILD_CONFIG=${{ matrix.config }} make docker
+
+  style:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Check style
+        run: make check-format

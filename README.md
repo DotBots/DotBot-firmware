@@ -35,6 +35,19 @@ To clone the repository use the following command:
 git clone --recurse-submodules https://github.com/DotBots/DotBot-firmware
 ```
 
+## Repository layout
+
+Applications live in two top-level directories, split by execution context:
+
+- `apps/` — **bare-metal** applications that own the whole chip.
+- `apps-sandbox/` — applications that run as ARM TrustZone **non-secure**
+  images inside the [SwarmIT](https://github.com/DotBots/swarmit) sandbox.
+
+Each board has a SEGGER Embedded Studio solution at the repository root.
+Unprefixed solutions (e.g. `dotbot-v3.emProject`) build the bare-metal
+applications; `sandbox-` solutions (e.g. `sandbox-dotbot-v3.emProject`) build
+the sandboxed ones.
+
 ## Building firmwares
 
 The source code of the different applications available in this repository can be built using
