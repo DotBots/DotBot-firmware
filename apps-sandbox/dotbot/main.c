@@ -24,6 +24,7 @@
 #include "gpio.h"
 #include "protocol.h"
 #include "motors.h"
+#include "qdec.h"
 #include "rgbled_pwm.h"
 #include "timer.h"
 #include "control_loop.h"
@@ -33,6 +34,8 @@
 #define DB_RADIO_FREQ               (8U)      ///< Set the frequency to 2408 MHz
 #define RADIO_APP                   (DotBot)  ///< DotBot Radio App
 #define TIMER_DEV                   (0)
+#define QDEC_LEFT                   (0)      ///< Left wheel QDEC peripheral index
+#define QDEC_RIGHT                  (1)      ///< Right wheel QDEC peripheral index
 #define DB_POSITION_UPDATE_DELAY_MS (100U)   ///< 100ms delay between each LH2 position updates
 #define DB_ADVERTIZEMENT_DELAY_MS   (500U)   ///< 500ms delay between each advertisement packet sending
 #define DB_TIMEOUT_CHECK_DELAY_MS   (200U)   ///< 200ms delay between each timeout delay check
@@ -88,12 +91,26 @@ static const db_rgbled_pwm_conf_t rgbled_pwm_conf = {
 };
 #endif
 
+#ifdef DB_QDEC_LEFT_A_PORT  // Boards that carry wheel quadrature encoders
+static const qdec_conf_t _qdec_left_conf = {
+    .pin_a = &db_qdec_left_a_pin,
+    .pin_b = &db_qdec_left_b_pin,
+};
+
+static const qdec_conf_t _qdec_right_conf = {
+    .pin_a = &db_qdec_right_a_pin,
+    .pin_b = &db_qdec_right_b_pin,
+};
+#endif
+
 //=========================== prototypes =======================================
 
 static void _timeout_check(void);
 static void _advertise(void);
 static void _update_control_loop(void);
 static void _position_update(void);
+static void _encoders_init(void);
+static void _encoders_read(int32_t *left, int32_t *right);
 
 //=========================== callbacks ========================================
 
@@ -138,6 +155,9 @@ static void _rx_data_callback(const uint8_t *pkt, size_t len) {
                 waypoints[i].y = _dotbot_vars.waypoints.points[i].y;
             }
             control_loop_set_waypoints(_control_ctx, waypoints, count, (uint32_t)threshold);
+            // Drain whatever the wheels accumulated while idle, so the first
+            // control step of the new batch integrates only its own motion.
+            _encoders_read(&_control_vars.encoder_left, &_control_vars.encoder_right);
             _control_vars.encoder_left  = 0;
             _control_vars.encoder_right = 0;
             if (count > 0) {
@@ -160,6 +180,7 @@ int main(void) {
     db_rgbled_pwm_init(&rgbled_pwm_conf);
 #endif
     db_motors_init();
+    _encoders_init();
     db_gpio_init(&db_led1, DB_GPIO_OUT);
     _control_ctx = control_loop_alloc();
 
@@ -248,12 +269,34 @@ int main(void) {
 //=========================== private functions ================================
 
 static void _update_control_loop(void) {
+    _encoders_read(&_control_vars.encoder_left, &_control_vars.encoder_right);
     update_control(&_control_vars, _control_ctx);
     db_motors_set_speed(_control_vars.pwm_left, _control_vars.pwm_right);
 
     if (_control_vars.all_done) {
-        _dotbot_vars.control_mode = ControlManual;
+        _dotbot_vars.control_mode   = ControlManual;
+        _control_vars.encoder_left  = 0;
+        _control_vars.encoder_right = 0;
     }
+}
+
+// Wheel odometry. On a board without quadrature encoders the counts stay at
+// zero, which the control loop reads as "unavailable".
+static void _encoders_init(void) {
+#ifdef DB_QDEC_LEFT_A_PORT
+    db_qdec_init(QDEC_LEFT, &_qdec_left_conf, NULL, NULL);
+    db_qdec_init(QDEC_RIGHT, &_qdec_right_conf, NULL, NULL);
+#endif
+}
+
+static void _encoders_read(int32_t *left, int32_t *right) {
+#ifdef DB_QDEC_LEFT_A_PORT
+    *left  = db_qdec_read_and_clear(QDEC_LEFT);
+    *right = db_qdec_read_and_clear(QDEC_RIGHT);
+#else
+    *left  = 0;
+    *right = 0;
+#endif
 }
 
 static void _timeout_check(void) {
