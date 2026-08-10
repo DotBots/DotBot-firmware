@@ -254,12 +254,18 @@ int main(void) {
             swarmit_get_battery_level(&battery_level);
             memcpy(&_dotbot_vars.radio_buffer[length], &battery_level, sizeof(uint16_t));
             length += sizeof(uint16_t);
-            // pwm_left, pwm_right, mode, encoder_left, encoder_right,
-            // waypoint_x, waypoint_y, waypoint_idx — zeroed placeholders
-            // until plumbed in, kept to satisfy PyDotBot's full
-            // DOTBOT_ADVERTISEMENT layout.
-            memset(&_dotbot_vars.radio_buffer[length], 0, 20);
-            length += 20;
+            memcpy(&_dotbot_vars.radio_buffer[length++], &_control_vars.pwm_left, sizeof(int8_t));
+            memcpy(&_dotbot_vars.radio_buffer[length++], &_control_vars.pwm_right, sizeof(int8_t));
+            memcpy(&_dotbot_vars.radio_buffer[length++], &_dotbot_vars.control_mode, sizeof(uint8_t));
+            memcpy(&_dotbot_vars.radio_buffer[length], &_control_vars.encoder_left, sizeof(int32_t));
+            length += sizeof(int32_t);
+            memcpy(&_dotbot_vars.radio_buffer[length], &_control_vars.encoder_right, sizeof(int32_t));
+            length += sizeof(int32_t);
+            memcpy(&_dotbot_vars.radio_buffer[length], &_control_vars.waypoint_x, sizeof(uint32_t));
+            length += sizeof(uint32_t);
+            memcpy(&_dotbot_vars.radio_buffer[length], &_control_vars.waypoint_y, sizeof(uint32_t));
+            length += sizeof(uint32_t);
+            memcpy(&_dotbot_vars.radio_buffer[length++], &_control_vars.waypoint_idx, sizeof(uint8_t));
             swarmit_send_raw_data(_dotbot_vars.radio_buffer, length);
             _dotbot_vars.advertize = false;
         }
