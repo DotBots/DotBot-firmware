@@ -4,7 +4,7 @@
     <configuration
       Name="Common"
       linker_additional_files="$(ProjectDir)/../cmse_implib$(LIB)"
-      project_dependencies="00bsp_dotbot_board(bsp);00bsp_timer(bsp);00drv_dotbot_control_loop(drv);00drv_dotbot_protocol(drv);00drv_rgbled_pwm(drv);00drv_motors(drv)"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_qdec(bsp);00bsp_timer(bsp);00drv_dotbot_control_loop(drv);00drv_dotbot_protocol(drv);00drv_rgbled_pwm(drv);00drv_motors(drv)"
       project_directory="dotbot"
       project_type="Executable" />
     <folder Name="Setup">
