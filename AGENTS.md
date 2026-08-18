@@ -128,10 +128,28 @@ the secure side appends to its STATUS frame), not to read both - so don't
 ### Host side, for reference (PyDotBot)
 
 The examples confirm the model: ORCA demos loop at ~5 Hz and feed each step as a
-fresh **waypoint** (never `move_raw`); multi-step demos are batch-gated (send
-≤12 waypoints, poll AUTO->MANUAL for "done"). Host position is **REST-polled**
-(`GET /controller/dotbots`), never WS-pushed - the WS channel is command-egress
-only. Teleop (`dotbot/keyboard.py`, `joystick.py`) is pure `move_raw` at ~20 Hz.
+fresh **waypoint** (never `move_raw`); multi-step demos are batch-gated (send a
+batch, watch AUTO->MANUAL for "done"). The protocol allows `DB_MAX_WAYPOINTS`
+(16) per packet; the examples send fewer, since a full packet is ~149 bytes.
+
+Robot state leaves the controller **two ways, both in use**:
+
+- **Pushed** over the `/controller/ws/status` WebSocket. Every advertisement
+  carrying a new position raises an `UPDATE` notification whose payload is the
+  full `DotBotModel`, including `lh2_position` and `mode`. This is what keeps
+  the dashboard live.
+- **Polled** via `GET /controller/dotbots`. This is what the Python examples
+  use when they batch waypoints and wait for "done".
+
+A second WebSocket, `/controller/ws/dotbots`, runs the other way: it is command
+**ingress**, accepting RGB LED, `move_raw` and waypoint messages.
+
+Note what none of that changes: **the robot never signals arrival.** It
+advertises state every 500 ms, and the host infers "done" from the `mode` field
+having flipped AUTO->MANUAL. The arrival event is synthesised host-side; nothing
+on the wire announces it.
+
+Teleop (`dotbot/keyboard.py`, `joystick.py`) is pure `move_raw` at ~20 Hz.
 
 ### Key files
 
