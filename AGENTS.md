@@ -132,18 +132,14 @@ fresh **waypoint** (never `move_raw`); multi-step demos are batch-gated (send a
 batch, watch AUTO->MANUAL for "done"). The protocol allows `DB_MAX_WAYPOINTS`
 (16) per packet; the examples send fewer, since a full packet is ~149 bytes.
 
-The part that binds **this** repo: **nothing on the wire announces arrival.**
-The bot advertises state every 500 ms and never says "done"; the host infers it
-from the `mode` field having flipped AUTO->MANUAL. So the AUTO->MANUAL
-transition in `radio_callback()` is a published interface, not an internal
-detail - changing when it fires breaks every host-side waypoint sequencer.
-
-How the controller then exposes that state (pushed over a WebSocket, polled over
-REST, or both) is PyDotBot's business and is documented there, under "Controller
-surface" in its `AGENTS.md`. Don't restate it here; this file had its own copy
-and had it backwards for months.
-
 Teleop (`dotbot/keyboard.py`, `joystick.py`) is pure `move_raw` at ~20 Hz.
+
+Nothing on the wire announces arrival: the bot advertises state every 500 ms and
+the host infers "done" from `mode` flipping AUTO->MANUAL. Host-side waypoint
+sequencers depend on when that transition fires in `radio_callback()`.
+
+For how the controller exposes robot state, see "Controller surface" in
+PyDotBot's `AGENTS.md`.
 
 ### Key files
 
