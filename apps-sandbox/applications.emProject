@@ -24,6 +24,30 @@
       <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/System/cpu.c" />
     </folder>
   </project>
+  <project Name="dotbot-next">
+    <configuration
+      Name="Common"
+      linker_additional_files="$(ProjectDir)/../cmse_implib$(LIB)"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_qdec(bsp);00bsp_timer(bsp);00drv_dotbot_protocol(drv);00drv_rgbled_pwm(drv);00drv_motors(drv)"
+      project_directory="dotbot-next"
+      project_type="Executable" />
+    <folder Name="Setup">
+      <file file_name="$(ProjectDir)/../$(Target)_flash_placement.xml" />
+      <file file_name="$(ProjectDir)/../$(Target)_MemoryMap.xml">
+        <configuration Name="Common" file_type="Memory Map" />
+      </file>
+      <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/Scripts/nRF_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
+      </file>
+    </folder>
+    <folder Name="Source">
+      <file file_name="main.c" />
+    </folder>
+    <folder Name="System">
+      <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/System/$(Target)_system_init.c" />
+      <file file_name="$(ProjectDir)/../../dotbot-libs/nRF/System/cpu.c" />
+    </folder>
+  </project>
   <project Name="dotbot-simple">
     <configuration
       Name="Common"
