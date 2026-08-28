@@ -68,12 +68,19 @@ typedef struct {
     position_2d_t position;                 ///< Last solve accepted from the secure side
     uint32_t      fix_sequence;             ///< Sequence of the last solve seen; 0 before the first
     bool          has_position;             ///< False until the first in-bounds solve
-    int32_t       encoder_left;             ///< Counts accumulated since the last advertisement
-    int32_t       encoder_right;            ///< Counts accumulated since the last advertisement
+    uint32_t      encoder_total_left;       ///< Counts since boot; wraps, and deltas are taken modulo 2^32
+    uint32_t      encoder_total_right;      ///< Counts since boot; wraps, and deltas are taken modulo 2^32
     int8_t        pwm_left;                 ///< Last commanded duty, reported back for telemetry
     int8_t        pwm_right;                ///< Last commanded duty, reported back for telemetry
     uint32_t      max_tick_backlog;         ///< Worst number of ticks the main loop fell behind
 } bench_vars_t;
+
+/// One consumer's position in the encoder totals. Each consumer keeps its own,
+/// so reading counts does not take them from anybody else.
+typedef struct {
+    uint32_t left;   ///< Left total at this consumer's last read
+    uint32_t right;  ///< Right total at this consumer's last read
+} encoder_cursor_t;
 
 //============================= swarmit ========================================
 
@@ -90,6 +97,9 @@ void     swarmit_localization_handle_isr(void);
 //=========================== variables ========================================
 
 static bench_vars_t _vars = { 0 };
+
+/// The advertisement's own cursor into the encoder totals.
+static encoder_cursor_t _advertisement_encoders = { 0 };
 
 static volatile uint32_t _tick_count    = 0;  ///< Written by the tick callback only
 static uint32_t          _tick_serviced = 0;  ///< Read and written by the main loop only
@@ -123,6 +133,7 @@ static void _tick(void);
 static void _service_tick(uint32_t tick);
 static void _encoders_init(void);
 static void _encoders_accumulate(void);
+static void _encoders_delta(encoder_cursor_t *cursor, int32_t *left, int32_t *right);
 static void _position_poll(void);
 static void _timeout_check(void);
 static void _advertise(void);
@@ -222,13 +233,25 @@ static void _encoders_init(void) {
 #endif
 }
 
-/// Reads are destructive, so counts are accumulated here and cleared when
-/// reported. On a board without encoders the totals stay at zero.
+/// The hardware read is destructive, so the tick drains it into totals that are
+/// never cleared. Consumers take deltas against their own cursor instead, which
+/// is what lets telemetry and an estimator both see every count. On a board
+/// without encoders the totals stay at zero.
 static void _encoders_accumulate(void) {
 #ifdef DB_QDEC_LEFT_A_PORT
-    _vars.encoder_left += db_qdec_read_and_clear(QDEC_LEFT);
-    _vars.encoder_right += db_qdec_read_and_clear(QDEC_RIGHT);
+    _vars.encoder_total_left += (uint32_t)db_qdec_read_and_clear(QDEC_LEFT);
+    _vars.encoder_total_right += (uint32_t)db_qdec_read_and_clear(QDEC_RIGHT);
 #endif
+}
+
+/// Counts since this cursor last read, leaving the totals for other consumers.
+static void _encoders_delta(encoder_cursor_t *cursor, int32_t *left, int32_t *right) {
+    uint32_t total_left  = _vars.encoder_total_left;
+    uint32_t total_right = _vars.encoder_total_right;
+    *left                = (int32_t)(total_left - cursor->left);
+    *right               = (int32_t)(total_right - cursor->right);
+    cursor->left         = total_left;
+    cursor->right        = total_right;
 }
 
 /// swarmit_keep_alive() is what runs the solve and republishes shared data, so
@@ -299,10 +322,9 @@ static void _advertise(void) {
     buf[length++] = (uint8_t)_vars.pwm_right;
     buf[length++] = (uint8_t)ControlManual;
 
-    int32_t encoder_left  = _vars.encoder_left;
-    int32_t encoder_right = _vars.encoder_right;
-    _vars.encoder_left    = 0;
-    _vars.encoder_right   = 0;
+    int32_t encoder_left;
+    int32_t encoder_right;
+    _encoders_delta(&_advertisement_encoders, &encoder_left, &encoder_right);
     memcpy(&buf[length], &encoder_left, sizeof(int32_t));
     length += sizeof(int32_t);
     memcpy(&buf[length], &encoder_right, sizeof(int32_t));
