@@ -66,6 +66,7 @@ typedef struct {
     uint8_t       radio_buffer[DB_BUFFER_MAX_BYTES];
     uint32_t      ts_last_packet_received;  ///< RTC ticks at the last command received
     position_2d_t position;                 ///< Last solve accepted from the secure side
+    uint32_t      fix_sequence;             ///< Sequence of the last solve seen; 0 before the first
     bool          has_position;             ///< False until the first in-bounds solve
     int32_t       encoder_left;             ///< Counts accumulated since the last advertisement
     int32_t       encoder_right;            ///< Counts accumulated since the last advertisement
@@ -79,12 +80,12 @@ typedef struct {
 typedef void (*ipc_isr_cb_t)(const uint8_t *, size_t);
 
 // Swarmit NSC callable functions
-void swarmit_keep_alive(void);
-void swarmit_send_raw_data(const uint8_t *packet, uint8_t length);
-void swarmit_ipc_isr(ipc_isr_cb_t cb);
-void swarmit_localization_get_position(position_2d_t *position);
-void swarmit_get_battery_level(uint16_t *battery_level);
-void swarmit_localization_handle_isr(void);
+void     swarmit_keep_alive(void);
+void     swarmit_send_raw_data(const uint8_t *packet, uint8_t length);
+void     swarmit_ipc_isr(ipc_isr_cb_t cb);
+uint32_t swarmit_localization_get_fix(position_2d_t *position);
+void     swarmit_get_battery_level(uint16_t *battery_level);
+void     swarmit_localization_handle_isr(void);
 
 //=========================== variables ========================================
 
@@ -237,8 +238,15 @@ static void _encoders_accumulate(void) {
 static void _position_poll(void) {
     swarmit_keep_alive();
 
-    position_2d_t solve = { 0 };
-    swarmit_localization_get_position(&solve);
+    position_2d_t solve    = { 0 };
+    uint32_t      sequence = swarmit_localization_get_fix(&solve);
+
+    // An unchanged sequence is the previous solve read a second time. Comparing
+    // coordinates instead reads a stationary robot as having no new fix.
+    if (sequence == _vars.fix_sequence) {
+        return;
+    }
+    _vars.fix_sequence = sequence;
 
     if (solve.x > POSITION_INVALID_MM || solve.y > POSITION_INVALID_MM) {
         return;
@@ -324,6 +332,8 @@ static void _advertise(void) {
 
     memcpy(&buf[length], &position, sizeof(protocol_lh2_location_t));
     length += sizeof(protocol_lh2_location_t);
+    memcpy(&buf[length], &_vars.fix_sequence, sizeof(uint32_t));
+    length += sizeof(uint32_t);
     buf[length++] = (uint8_t)_vars.has_position;
     memcpy(&buf[length], &encoder_left, sizeof(int32_t));
     length += sizeof(int32_t);
