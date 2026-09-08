@@ -128,10 +128,18 @@ the secure side appends to its STATUS frame), not to read both - so don't
 ### Host side, for reference (PyDotBot)
 
 The examples confirm the model: ORCA demos loop at ~5 Hz and feed each step as a
-fresh **waypoint** (never `move_raw`); multi-step demos are batch-gated (send
-≤12 waypoints, poll AUTO->MANUAL for "done"). Host position is **REST-polled**
-(`GET /controller/dotbots`), never WS-pushed - the WS channel is command-egress
-only. Teleop (`dotbot/keyboard.py`, `joystick.py`) is pure `move_raw` at ~20 Hz.
+fresh **waypoint** (never `move_raw`); multi-step demos are batch-gated (send a
+batch, watch AUTO->MANUAL for "done"). The protocol allows `DB_MAX_WAYPOINTS`
+(16) per packet; the examples send fewer, since a full packet is ~149 bytes.
+
+Teleop (`dotbot/keyboard.py`, `joystick.py`) is pure `move_raw` at ~20 Hz.
+
+Nothing on the wire announces arrival: the bot advertises state every 500 ms and
+the host infers "done" from `mode` flipping AUTO->MANUAL. Host-side waypoint
+sequencers depend on when that transition fires in `radio_callback()`.
+
+For how the controller exposes robot state, see "Controller surface" in
+PyDotBot's `AGENTS.md`.
 
 ### Key files
 
