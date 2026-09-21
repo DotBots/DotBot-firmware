@@ -34,14 +34,19 @@
 #define DB_RADIO_FREQ               (8U)      ///< Set the frequency to 2408 MHz
 #define RADIO_APP                   (DotBot)  ///< DotBot Radio App
 #define TIMER_DEV                   (0)
-#define QDEC_LEFT                   (0)      ///< Left wheel QDEC peripheral index
-#define QDEC_RIGHT                  (1)      ///< Right wheel QDEC peripheral index
-#define DB_POSITION_UPDATE_DELAY_MS (100U)   ///< 100ms delay between each LH2 position updates
-#define DB_ADVERTIZEMENT_DELAY_MS   (500U)   ///< 500ms delay between each advertisement packet sending
-#define DB_TIMEOUT_CHECK_DELAY_MS   (200U)   ///< 200ms delay between each timeout delay check
-#define TIMEOUT_CHECK_DELAY_TICKS   (17000)  ///< ~500 ms delay between packet received timeout checks
-#define DB_BUFFER_MAX_BYTES         (255U)   ///< Max bytes in UART receive buffer
-#define DB_LH2_OUTLIER_THRESHOLD    (500U)   ///< Max allowed displacement (mm) between two consecutive LH2 fixes
+#define QDEC_LEFT                   (0)     ///< Left wheel QDEC peripheral index
+#define QDEC_RIGHT                  (1)     ///< Right wheel QDEC peripheral index
+#define DB_POSITION_UPDATE_DELAY_MS (100U)  ///< 100ms delay between each LH2 position updates
+/// Adverts take this share of the node's uplink budget, and the rest is left
+/// for the net core's STATUS frame
+#define ADVERT_BUDGET_PERCENT     (50U)
+#define ADVERT_PERIOD_MIN_MS      (100U)   ///< Floor, and the advert timer's period
+#define ADVERT_PERIOD_MAX_MS      (1000U)  ///< Ceiling, however small the budget
+#define ADVERT_PERIOD_DEF_MS      (500U)   ///< While not joined, when the budget reads 0
+#define DB_TIMEOUT_CHECK_DELAY_MS (200U)   ///< 200ms delay between each timeout delay check
+#define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
+#define DB_BUFFER_MAX_BYTES       (255U)   ///< Max bytes in UART receive buffer
+#define DB_LH2_OUTLIER_THRESHOLD  (500U)   ///< Max allowed displacement (mm) between two consecutive LH2 fixes
 
 typedef struct {
     uint32_t x;  ///< X coordinate in mm
@@ -70,9 +75,10 @@ void swarmit_keep_alive(void);
 void swarmit_send_raw_data(const uint8_t *packet, uint8_t length);
 void swarmit_ipc_isr(ipc_isr_cb_t cb);
 
-void swarmit_localization_get_position(position_2d_t *position);
-void swarmit_get_battery_level(uint16_t *battery_level);
-void swarmit_localization_handle_isr(void);
+void     swarmit_localization_get_position(position_2d_t *position);
+void     swarmit_get_battery_level(uint16_t *battery_level);
+void     swarmit_localization_handle_isr(void);
+uint16_t swarmit_get_uplink_budget(void);
 
 //=========================== variables ========================================
 
@@ -103,14 +109,18 @@ static const qdec_conf_t _qdec_right_conf = {
 };
 #endif
 
+static volatile uint32_t _advert_period     = ADVERT_PERIOD_DEF_MS;  ///< Written by the main loop
+static volatile uint32_t _advert_elapsed_ms = 0;                     ///< Advert timer callback only
+
 //=========================== prototypes =======================================
 
-static void _timeout_check(void);
-static void _advertise(void);
-static void _update_control_loop(void);
-static void _position_update(void);
-static void _encoders_init(void);
-static void _encoders_read(int32_t *left, int32_t *right);
+static void     _timeout_check(void);
+static void     _advertise(void);
+static uint32_t _advert_period_ms(void);
+static void     _update_control_loop(void);
+static void     _position_update(void);
+static void     _encoders_init(void);
+static void     _encoders_read(int32_t *left, int32_t *right);
 
 //=========================== callbacks ========================================
 
@@ -197,7 +207,7 @@ int main(void) {
     db_timer_init(TIMER_DEV);
     db_timer_set_periodic_ms(TIMER_DEV, 0, DB_TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
     db_timer_set_periodic_ms(TIMER_DEV, 1, DB_POSITION_UPDATE_DELAY_MS, &_position_update);
-    db_timer_set_periodic_ms(TIMER_DEV, 2, DB_ADVERTIZEMENT_DELAY_MS, &_advertise);
+    db_timer_set_periodic_ms(TIMER_DEV, 2, ADVERT_PERIOD_MIN_MS, &_advertise);
 
     while (1) {
         __WFE();
@@ -268,6 +278,7 @@ int main(void) {
             memcpy(&_dotbot_vars.radio_buffer[length++], &_control_vars.waypoint_idx, sizeof(uint8_t));
             swarmit_send_raw_data(_dotbot_vars.radio_buffer, length);
             _dotbot_vars.advertize = false;
+            _advert_period         = _advert_period_ms();
         }
     }
 }
@@ -312,9 +323,33 @@ static void _timeout_check(void) {
     }
 }
 
+/// Runs at the floor period and flags an advert once the derived period has
+/// passed. The period is read from the budget in the main loop, not here.
 static void _advertise(void) {
+    _advert_elapsed_ms += ADVERT_PERIOD_MIN_MS;
+    if (_advert_elapsed_ms < _advert_period) {
+        return;
+    }
+    _advert_elapsed_ms = 0;
     db_gpio_toggle(&db_led1);
     _dotbot_vars.advertize = true;
+}
+
+/// Derived from the node's uplink budget after every advert, so a gateway on
+/// another schedule changes the rate within one period
+static uint32_t _advert_period_ms(void) {
+    uint32_t budget = swarmit_get_uplink_budget();
+    if (budget == 0) {
+        return ADVERT_PERIOD_DEF_MS;
+    }
+    uint32_t period_ms = 10000000U / (ADVERT_BUDGET_PERCENT * budget);
+    if (period_ms < ADVERT_PERIOD_MIN_MS) {
+        return ADVERT_PERIOD_MIN_MS;
+    }
+    if (period_ms > ADVERT_PERIOD_MAX_MS) {
+        return ADVERT_PERIOD_MAX_MS;
+    }
+    return period_ms;
 }
 
 static void _position_update(void) {
