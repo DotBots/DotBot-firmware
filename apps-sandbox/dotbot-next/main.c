@@ -257,7 +257,8 @@ static void _rx_data_callback(const uint8_t *pkt, size_t len) {
         return;
     }
     memcpy(_rx_buffer, pkt, len);
-    _rx_length  = len;
+    _rx_length = len;
+    __DMB();  // the buffer is complete before the flag says so
     _rx_pending = true;
 }
 
@@ -320,6 +321,7 @@ static void _rx_process(void) {
     if (!_rx_pending) {
         return;
     }
+    __DMB();  // read the buffer only after seeing the flag
     uint8_t packet[RX_MAILBOX_BYTES];
     size_t  length = _rx_length;
     memcpy(packet, _rx_buffer, length);
