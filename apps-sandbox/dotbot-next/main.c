@@ -289,7 +289,7 @@ static void _timeout_check(void) {
 }
 
 static void _set_motors(int16_t left, int16_t right) {
-    db_motors_set_speed(left, right);
+    db_motors_set_pwm(left, right);
     _vars.pwm_left  = (int8_t)left;
     _vars.pwm_right = (int8_t)right;
 }

@@ -63,19 +63,19 @@ int main(void) {
     db_timer_delay_ms(1, 1000);
 
     // Spin
-    db_motors_set_speed(-70, 70);
+    db_motors_set_pwm(-70, 70);
     db_timer_delay_ms(TIMER_DEV, 2000);
 
     // Stop
-    db_motors_set_speed(0, 0);
+    db_motors_set_pwm(0, 0);
     db_timer_delay_ms(TIMER_DEV, 1000);
 
     // Spin back
-    db_motors_set_speed(70, -70);
+    db_motors_set_pwm(70, -70);
     db_timer_delay_ms(TIMER_DEV, 2000);
 
     // Stop
-    db_motors_set_speed(0, 0);
+    db_motors_set_pwm(0, 0);
     db_timer_delay_ms(TIMER_DEV, 1000);
 
     // Blink for 2 seconds

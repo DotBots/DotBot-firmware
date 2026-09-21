@@ -106,7 +106,7 @@ static void _rx_data_callback(const uint8_t *pkt, size_t len) {
             protocol_move_raw_command_t *command = (protocol_move_raw_command_t *)cmd_ptr;
             int16_t                      left    = (int16_t)(100 * ((float)command->left_y / INT8_MAX));
             int16_t                      right   = (int16_t)(100 * ((float)command->right_y / INT8_MAX));
-            db_motors_set_speed(left, right);
+            db_motors_set_pwm(left, right);
         } break;
         case DB_PROTOCOL_CMD_RGB_LED:
         {
@@ -157,7 +157,7 @@ int main(void) {
 static void _timeout_check(void) {
     uint32_t ticks = db_timer_ticks(TIMER_DEV);
     if (ticks > _dotbot_vars.ts_last_packet_received + TIMEOUT_CHECK_DELAY_TICKS) {
-        db_motors_set_speed(0, 0);
+        db_motors_set_pwm(0, 0);
     }
 }
 

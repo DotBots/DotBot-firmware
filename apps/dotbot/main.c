@@ -125,7 +125,7 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             int16_t                      right   = (int16_t)(100 * ((float)command->right_y / INT8_MAX));
             _control_vars.pwm_left               = left;
             _control_vars.pwm_right              = right;
-            db_motors_set_speed(left, right);
+            db_motors_set_pwm(left, right);
         } break;
         case DB_PROTOCOL_CMD_RGB_LED:
         {
@@ -133,7 +133,7 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             db_rgbled_pwm_set_color(command->r, command->g, command->b);
         } break;
         case DB_PROTOCOL_CONTROL_MODE:
-            db_motors_set_speed(0, 0);
+            db_motors_set_pwm(0, 0);
             break;
         case DB_PROTOCOL_LH2_WAYPOINTS:
         {
@@ -159,7 +159,7 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
             if (count > 0) {
                 _dotbot_vars.control_mode = ControlAuto;
             } else {
-                db_motors_set_speed(0, 0);
+                db_motors_set_pwm(0, 0);
                 _dotbot_vars.control_mode = ControlManual;
             }
         } break;
@@ -314,7 +314,7 @@ static void _update_control_loop(void) {
     _control_vars.encoder_left  = db_qdec_read_and_clear(QDEC_LEFT);
     _control_vars.encoder_right = db_qdec_read_and_clear(QDEC_RIGHT);
     update_control(&_control_vars, _control_ctx);
-    db_motors_set_speed(_control_vars.pwm_left, _control_vars.pwm_right);
+    db_motors_set_pwm(_control_vars.pwm_left, _control_vars.pwm_right);
 
     if (_control_vars.all_done) {
         _dotbot_vars.control_mode   = ControlManual;
@@ -326,7 +326,7 @@ static void _update_control_loop(void) {
 static void _timeout_check(void) {
     uint32_t ticks = db_timer_ticks(TIMER_DEV);
     if (_dotbot_vars.control_mode != ControlAuto && ticks > _dotbot_vars.ts_last_packet_received + TIMEOUT_CHECK_DELAY_TICKS) {
-        db_motors_set_speed(0, 0);
+        db_motors_set_pwm(0, 0);
     }
 }
 
