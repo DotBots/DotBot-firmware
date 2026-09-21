@@ -2,8 +2,8 @@
  * @file
  * @defgroup project_dotbot_next    DotBot control application, rebuilt
  * @ingroup projects
- * @brief Sandboxed DotBot app: keepalive, position, encoders, telemetry and
- * direct motor commands.
+ * @brief Sandboxed DotBot app: keepalive, position, encoders, telemetry,
+ * direct motor commands and the per-wheel speed loop.
  *
  * @copyright Inria, 2026
  */
@@ -22,6 +22,7 @@
 #include "qdec.h"
 #include "rgbled_pwm.h"
 #include "timer.h"
+#include "wheel_control.h"
 
 //=========================== defines ==========================================
 
@@ -33,7 +34,16 @@
 #define TICK_MS            (10U)
 #define TICKS_PER_POSITION (10U)  ///< 100 ms, and the rate a new solve is published at
 #define TICKS_PER_TIMEOUT  (20U)  ///< 200 ms
-#define TICKS_PER_ADVERT   (50U)  ///< 500 ms
+
+#define TICKS_PER_ADVERT (50U)  ///< 500 ms
+
+_Static_assert(TICK_MS == DB_WHEEL_CONTROL_TICK_MS, "the wheel loop's dt assumes this tick");
+
+/// Largest wheel speed a command may set, in mm/s
+#define WHEEL_SPEED_MAX_MM_S (800)
+
+/// Room for the largest command this app accepts, header byte included
+#define RX_MAILBOX_BYTES (16U)
 
 #define DB_BUFFER_MAX_BYTES (255U)
 #define TIMEOUT_STOP_TICKS  (17000U)  ///< ~500 ms of RTC ticks without a command
@@ -53,6 +63,13 @@
 #define DB_PROTOCOL_BENCH_TELEMETRY (13)
 #endif
 
+/// Who writes the motors. Exactly one writer per mode.
+typedef enum {
+    DRIVE_IDLE,      ///< Nothing commanded; motors coast
+    DRIVE_RAW,       ///< MOVE_RAW writes duty directly and the wheel loop is off
+    DRIVE_VELOCITY,  ///< The wheel loop is the only writer
+} drive_mode_t;
+
 typedef struct {
     uint32_t x;  ///< X coordinate in mm
     uint32_t y;  ///< Y coordinate in mm
@@ -68,6 +85,9 @@ typedef struct {
     bool          has_position;             ///< False until the first in-bounds solve
     uint32_t      encoder_total_left;       ///< Counts since boot; wraps, and deltas are taken modulo 2^32
     uint32_t      encoder_total_right;      ///< Counts since boot; wraps, and deltas are taken modulo 2^32
+    uint32_t      double_total_left;        ///< Double transitions since boot, already credited in the totals
+    uint32_t      double_total_right;       ///< Double transitions since boot, already credited in the totals
+    drive_mode_t  drive_mode;               ///< Which writer owns the motors
     int8_t        pwm_left;                 ///< Last commanded duty, reported back for telemetry
     int8_t        pwm_right;                ///< Last commanded duty, reported back for telemetry
     uint32_t      max_tick_backlog;         ///< Worst number of ticks the main loop fell behind
@@ -104,6 +124,55 @@ static uint32_t          _tick_serviced = 0;  ///< Read and written by the main 
 static uint32_t          _tick_position = 0;  ///< Tick of the last position poll, main loop only
 static uint32_t          _tick_timeout  = 0;  ///< Tick of the last timeout check, main loop only
 static uint32_t          _tick_advert   = 0;  ///< Tick of the last advertisement, main loop only
+static uint32_t          _tick_wheel    = 0;  ///< Tick of the last wheel step, main loop only
+
+/// The wheel loop's own cursor into the encoder totals
+static encoder_cursor_t _wheel_encoders = { 0 };
+
+/// Feedforward from an open-loop duty sweep of one v3 on the office floor
+/// (breakaway 42-44, rolling at about 36 + 0.11..0.15 duty per mm/s); kp and ki
+/// are first guesses against that plant.
+static const db_wheel_control_conf_t _wheel_conf = {
+    .kp                = 0.5f,
+    .ki                = 5.0f,
+    .u_breakaway       = 44.0f,
+    .kick_ramp         = 0.5f,
+    .u_run             = 36.0f,
+    .k_run             = 0.13f,
+    .i_zone            = 40.0f,
+    .pwm_max           = 75.0f,
+    .pwm_slew_per_tick = 40.0f,
+};
+static db_wheel_control_t _wheel_left;
+static db_wheel_control_t _wheel_right;
+
+/// Commands arrive in the IPC interrupt and are applied on the next tick, so
+/// the main loop is the only writer of the drive state and the motors.
+static uint8_t       _rx_buffer[RX_MAILBOX_BYTES];
+static size_t        _rx_length  = 0;
+static volatile bool _rx_pending = false;
+
+#if defined(DB_BENCH_TRACE)
+/// One tick while anything drives the motors, read back over the debugger
+typedef struct __attribute__((packed)) {
+    uint32_t tick;            ///< Serviced tick
+    int16_t  setpoint_left;   ///< mm/s
+    int16_t  setpoint_right;  ///< mm/s
+    int16_t  counts_left;     ///< Credited counts over this step
+    int16_t  counts_right;    ///< Credited counts over this step
+    int8_t   pwm_left;        ///< Duty written
+    int8_t   pwm_right;       ///< Duty written
+    uint8_t  elapsed;         ///< Ticks this step covered
+    uint8_t  mode;            ///< drive_mode_t at this step
+} wheel_trace_t;
+
+#define TRACE_LENGTH     (1000U)  ///< 10 s of steps
+#define TRACE_TAIL_TICKS (100U)   ///< Keep recording this long after the loop stops
+
+__attribute__((used)) static wheel_trace_t _trace[TRACE_LENGTH];
+__attribute__((used)) static uint32_t      _trace_count = 0;
+static uint32_t                            _trace_tail  = 0;
+#endif
 
 #ifdef DB_RGB_LED_PWM_RED_PORT
 static const db_rgbled_pwm_conf_t _rgbled_pwm_conf = {
@@ -139,6 +208,9 @@ static void _position_poll(void);
 static void _timeout_check(void);
 static void _advertise(void);
 static void _set_motors(int16_t left, int16_t right);
+static void _rx_process(void);
+static void _drive_stop(void);
+static void _wheel_service(uint32_t tick);
 
 /// Elapsed rather than a multiple, since the main loop drops its backlog and
 /// can step over any given tick.
@@ -157,32 +229,15 @@ static inline uint32_t _ticks_since(uint32_t then) {
 //=========================== callbacks ========================================
 
 static void _rx_data_callback(const uint8_t *pkt, size_t len) {
-    (void)len;
-
     _vars.ts_last_packet_received = db_timer_ticks(TIMER_DEV);
-    uint8_t *cmd_ptr              = (uint8_t *)pkt;
 
-    switch ((uint8_t)*cmd_ptr++) {
-        case DB_PROTOCOL_CMD_MOVE_RAW:
-        {
-            protocol_move_raw_command_t *command = (protocol_move_raw_command_t *)cmd_ptr;
-            int16_t                      left    = (int16_t)(100 * ((float)command->left_y / INT8_MAX));
-            int16_t                      right   = (int16_t)(100 * ((float)command->right_y / INT8_MAX));
-            _set_motors(left, right);
-        } break;
-        case DB_PROTOCOL_CMD_RGB_LED:
-        {
-#ifdef DB_RGB_LED_PWM_RED_PORT
-            protocol_rgbled_command_t *command = (protocol_rgbled_command_t *)cmd_ptr;
-            db_rgbled_pwm_set_color(command->r, command->g, command->b);
-#endif
-        } break;
-        case DB_PROTOCOL_CONTROL_MODE:
-            _set_motors(0, 0);
-            break;
-        default:
-            break;
+    // One command per tick is plenty; a second one before the tick is dropped
+    if (_rx_pending || len == 0 || len > sizeof(_rx_buffer)) {
+        return;
     }
+    memcpy(_rx_buffer, pkt, len);
+    _rx_length  = len;
+    _rx_pending = true;
 }
 
 //=========================== main =============================================
@@ -194,6 +249,8 @@ int main(void) {
 #endif
     db_motors_init();
     _encoders_init();
+    db_wheel_control_init(&_wheel_left, &_wheel_conf);
+    db_wheel_control_init(&_wheel_right, &_wheel_conf);
     db_gpio_init(&db_led1, DB_GPIO_OUT);
 
     db_timer_init(TIMER_DEV);
@@ -223,7 +280,9 @@ static void _tick(void) {
 }
 
 static void _service_tick(uint32_t tick) {
+    _rx_process();
     _encoders_accumulate();
+    _wheel_service(tick);
 
     if (_due(&_tick_position, tick, TICKS_PER_POSITION)) {
         _position_poll();
@@ -234,6 +293,123 @@ static void _service_tick(uint32_t tick) {
     if (_due(&_tick_advert, tick, TICKS_PER_ADVERT)) {
         _advertise();
     }
+}
+
+static void _rx_process(void) {
+    if (!_rx_pending) {
+        return;
+    }
+    uint8_t packet[RX_MAILBOX_BYTES];
+    size_t  length = _rx_length;
+    memcpy(packet, _rx_buffer, length);
+    _rx_pending = false;
+
+    const uint8_t *payload = &packet[1];
+    switch (packet[0]) {
+        case DB_PROTOCOL_CMD_MOVE_RAW:
+        {
+            if (length < 1 + sizeof(protocol_move_raw_command_t)) {
+                break;
+            }
+            protocol_move_raw_command_t command;
+            memcpy(&command, payload, sizeof(command));
+#if defined(DB_BENCH_TRACE)
+            if (_vars.drive_mode == DRIVE_IDLE) {
+                _trace_count = 0;
+            }
+#endif
+            _vars.drive_mode = DRIVE_RAW;
+            db_wheel_control_reset(&_wheel_left);
+            db_wheel_control_reset(&_wheel_right);
+            _set_motors((int16_t)(100 * ((float)command.left_y / INT8_MAX)), (int16_t)(100 * ((float)command.right_y / INT8_MAX)));
+        } break;
+        case DB_PROTOCOL_CMD_WHEEL_VELOCITY:
+        {
+            if (length < 1 + sizeof(protocol_wheel_velocity_command_t)) {
+                break;
+            }
+            protocol_wheel_velocity_command_t command;
+            memcpy(&command, payload, sizeof(command));
+            if (_vars.drive_mode != DRIVE_VELOCITY) {
+                db_wheel_control_reset(&_wheel_left);
+                db_wheel_control_reset(&_wheel_right);
+#if defined(DB_BENCH_TRACE)
+                if (_vars.drive_mode == DRIVE_IDLE) {
+                    _trace_count = 0;
+                }
+#endif
+                _vars.drive_mode = DRIVE_VELOCITY;
+            }
+            int16_t left  = command.left_mm_s;
+            int16_t right = command.right_mm_s;
+            left          = (left > WHEEL_SPEED_MAX_MM_S) ? WHEEL_SPEED_MAX_MM_S : ((left < -WHEEL_SPEED_MAX_MM_S) ? -WHEEL_SPEED_MAX_MM_S : left);
+            right         = (right > WHEEL_SPEED_MAX_MM_S) ? WHEEL_SPEED_MAX_MM_S : ((right < -WHEEL_SPEED_MAX_MM_S) ? -WHEEL_SPEED_MAX_MM_S : right);
+            db_wheel_control_set_setpoint(&_wheel_left, left);
+            db_wheel_control_set_setpoint(&_wheel_right, right);
+        } break;
+        case DB_PROTOCOL_CMD_RGB_LED:
+        {
+#ifdef DB_RGB_LED_PWM_RED_PORT
+            if (length < 1 + sizeof(protocol_rgbled_command_t)) {
+                break;
+            }
+            protocol_rgbled_command_t command;
+            memcpy(&command, payload, sizeof(command));
+            db_rgbled_pwm_set_color(command.r, command.g, command.b);
+#endif
+        } break;
+        case DB_PROTOCOL_CONTROL_MODE:
+            _drive_stop();
+            break;
+        default:
+            break;
+    }
+}
+
+static void _drive_stop(void) {
+    _vars.drive_mode = DRIVE_IDLE;
+    db_wheel_control_reset(&_wheel_left);
+    db_wheel_control_reset(&_wheel_right);
+    _set_motors(0, 0);
+}
+
+/// Runs on every tick so the cursor never lags, and writes the motors only
+/// while the loop owns them
+static void _wheel_service(uint32_t tick) {
+    uint32_t elapsed = tick - _tick_wheel;
+    _tick_wheel      = tick;
+    int32_t left;
+    int32_t right;
+    _encoders_delta(&_wheel_encoders, &left, &right);
+
+    if (_vars.drive_mode == DRIVE_VELOCITY) {
+        int8_t pwm_left  = db_wheel_control_step(&_wheel_left, left, elapsed);
+        int8_t pwm_right = db_wheel_control_step(&_wheel_right, right, elapsed);
+        _set_motors(pwm_left, pwm_right);
+    }
+
+#if defined(DB_BENCH_TRACE)
+    if (_vars.drive_mode != DRIVE_IDLE) {
+        _trace_tail = TRACE_TAIL_TICKS;
+    } else if (_trace_tail > 0) {
+        _trace_tail--;
+    } else {
+        return;
+    }
+    if (_trace_count < TRACE_LENGTH) {
+        _trace[_trace_count++] = (wheel_trace_t){
+            .tick           = tick,
+            .setpoint_left  = (int16_t)_wheel_left.setpoint,
+            .setpoint_right = (int16_t)_wheel_right.setpoint,
+            .counts_left    = (int16_t)left,
+            .counts_right   = (int16_t)right,
+            .pwm_left       = _vars.pwm_left,
+            .pwm_right      = _vars.pwm_right,
+            .elapsed        = (uint8_t)elapsed,
+            .mode           = (uint8_t)_vars.drive_mode,
+        };
+    }
+#endif
 }
 
 static void _encoders_init(void) {
@@ -247,8 +423,14 @@ static void _encoders_init(void) {
 /// never cleared; consumers take deltas against their own cursor.
 static void _encoders_accumulate(void) {
 #ifdef DB_QDEC_LEFT_A_PORT
-    _vars.encoder_total_left += (uint32_t)db_qdec_read_and_clear(QDEC_LEFT);
-    _vars.encoder_total_right += (uint32_t)db_qdec_read_and_clear(QDEC_RIGHT);
+    uint32_t dbl_left;
+    uint32_t dbl_right;
+    int32_t  acc_left  = db_qdec_read_and_clear_dbl(QDEC_LEFT, &dbl_left);
+    int32_t  acc_right = db_qdec_read_and_clear_dbl(QDEC_RIGHT, &dbl_right);
+    _vars.encoder_total_left += (uint32_t)db_wheel_control_counts(acc_left, dbl_left);
+    _vars.encoder_total_right += (uint32_t)db_wheel_control_counts(acc_right, dbl_right);
+    _vars.double_total_left += dbl_left;
+    _vars.double_total_right += dbl_right;
 #endif
 }
 
@@ -282,9 +464,10 @@ static void _position_poll(void) {
     _vars.has_position = true;
 }
 
+/// Unconditional: raw and velocity driving both stop when the host goes silent.
 static void _timeout_check(void) {
     if (_ticks_since(_vars.ts_last_packet_received) > TIMEOUT_STOP_TICKS) {
-        _set_motors(0, 0);
+        _drive_stop();
     }
 }
 
