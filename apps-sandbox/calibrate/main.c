@@ -91,6 +91,7 @@ static struct {
     uint8_t          copy;
     uint8_t          chunk;
     uint32_t         next_send_tick;
+    uint32_t         keep_alive_tick;  ///< Tick of the last watchdog reload
 } _app;
 
 static lh2_raw_sample_t _drain[16];
@@ -118,6 +119,18 @@ static void _on_press(void *ctx) {
 static void _enter(capture_state_t state) {
     _app.state      = state;
     _app.state_tick = _tick_count;
+}
+
+static void _keep_alive(void) {
+    swarmit_keep_alive();
+    _app.keep_alive_tick = _tick_count;
+}
+
+// Elapsed rather than a multiple of the tick: a backlog serviced at once can step over a multiple
+static void _keep_alive_if_due(void) {
+    if (_tick_count - _app.keep_alive_tick >= KEEP_ALIVE_TICKS) {
+        _keep_alive();
+    }
 }
 
 static uint32_t _elapsed_ms(void) {
@@ -226,23 +239,19 @@ static void _service(void) {
     uint32_t ms = _elapsed_ms();
     switch (_app.state) {
         case STATE_IDLE:
-            if (_tick_count % KEEP_ALIVE_TICKS == 0) {
-                swarmit_keep_alive();
-            }
+            _keep_alive_if_due();
             if (_pressed) {
                 _enter(STATE_COUNTDOWN);
             }
             break;
         case STATE_COUNTDOWN:
-            if (_tick_count % KEEP_ALIVE_TICKS == 0) {
-                swarmit_keep_alive();
-            }
+            _keep_alive_if_due();
             if (ms < 990U) {
                 _led_set(_blinks_on(ms));
                 break;
             }
             // The last reload before the window: keep_alive drains the counts the window reads
-            swarmit_keep_alive();
+            _keep_alive();
             memset(_app.reads, 0, sizeof(_app.reads));
             _app.station_count = 0;
             swarmit_localization_get_raw_counts(_drain, sizeof(_drain) / sizeof(_drain[0]));
@@ -253,7 +262,7 @@ static void _service(void) {
             if (!_window_full() && ms < WINDOW_TIMEOUT_MS) {
                 break;
             }
-            swarmit_keep_alive();
+            _keep_alive();
             _led_set(false);
             if (_capture_clean()) {
                 _app.copy           = 0;
@@ -265,9 +274,7 @@ static void _service(void) {
             }
             break;
         case STATE_SEND:
-            if (_tick_count % KEEP_ALIVE_TICKS == 0) {
-                swarmit_keep_alive();
-            }
+            _keep_alive_if_due();
             _led_set(_blinks_on(ms));
             if ((int32_t)(_tick_count - _app.next_send_tick) < 0) {
                 break;
@@ -283,9 +290,7 @@ static void _service(void) {
             }
             break;
         case STATE_CAPTURED:
-            if (_tick_count % KEEP_ALIVE_TICKS == 0) {
-                swarmit_keep_alive();
-            }
+            _keep_alive_if_due();
             if (ms < 990U) {
                 _led_set(_blinks_on(ms));
                 break;
@@ -295,9 +300,7 @@ static void _service(void) {
             _enter(STATE_IDLE);
             break;
         case STATE_REFUSED:
-            if (_tick_count % KEEP_ALIVE_TICKS == 0) {
-                swarmit_keep_alive();
-            }
+            _keep_alive_if_due();
             if (ms < 2000U) {
                 _led_set((ms % 1000U) < 500U);
                 break;
@@ -318,7 +321,7 @@ static void _rx(const uint8_t *pkt, size_t len) {
 
 int main(void) {
     db_board_init();
-    swarmit_keep_alive();
+    _keep_alive();
 
     db_gpio_init(&_led, DB_GPIO_OUT);
     _led_set(false);

@@ -103,6 +103,7 @@ static encoder_cursor_t _advertisement_encoders = { 0 };
 
 static volatile uint32_t _tick_count    = 0;  ///< Written by the tick callback only
 static uint32_t          _tick_serviced = 0;  ///< Read and written by the main loop only
+static uint32_t          _tick_position = 0;  ///< Tick of the last position poll, main loop only
 
 #ifdef DB_RGB_LED_PWM_RED_PORT
 static const db_rgbled_pwm_conf_t _rgbled_pwm_conf = {
@@ -215,7 +216,10 @@ static void _tick(void) {
 static void _service_tick(uint32_t tick) {
     _encoders_accumulate();
 
-    if (tick % TICKS_PER_POSITION == 0) {
+    // Elapsed rather than a multiple: this poll is the watchdog reload, and a
+    // dropped backlog can step over a multiple of the period
+    if (tick - _tick_position >= TICKS_PER_POSITION) {
+        _tick_position = tick;
         _position_poll();
     }
     if (tick % TICKS_PER_TIMEOUT == 0) {
