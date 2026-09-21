@@ -35,7 +35,12 @@
 #define TICKS_PER_POSITION (10U)  ///< 100 ms, and the rate a new solve is published at
 #define TICKS_PER_TIMEOUT  (20U)  ///< 200 ms
 
-#define TICKS_PER_ADVERT (50U)  ///< 500 ms
+/// Adverts take this share of the node's uplink budget, and the rest is left
+/// for the net core's STATUS frame
+#define ADVERT_BUDGET_PERCENT (50U)
+#define ADVERT_PERIOD_MIN_MS  (100U)   ///< Floor, however large the budget
+#define ADVERT_PERIOD_MAX_MS  (1000U)  ///< Ceiling, however small the budget
+#define ADVERT_PERIOD_DEF_MS  (500U)   ///< While not joined, when the budget reads 0
 
 _Static_assert(TICK_MS == DB_WHEEL_CONTROL_TICK_MS, "the wheel loop's dt assumes this tick");
 
@@ -111,6 +116,7 @@ void     swarmit_ipc_isr(ipc_isr_cb_t cb);
 uint32_t swarmit_localization_get_fix(position_2d_t *position);
 void     swarmit_get_battery_level(uint16_t *battery_level);
 void     swarmit_localization_handle_isr(void);
+uint16_t swarmit_get_uplink_budget(void);
 
 //=========================== variables ========================================
 
@@ -199,18 +205,19 @@ static const qdec_conf_t _qdec_right_conf = {
 
 //=========================== prototypes =======================================
 
-static void _tick(void);
-static void _service_tick(uint32_t tick);
-static void _encoders_init(void);
-static void _encoders_accumulate(void);
-static void _encoders_delta(encoder_cursor_t *cursor, int32_t *left, int32_t *right);
-static void _position_poll(void);
-static void _timeout_check(void);
-static void _advertise(void);
-static void _set_motors(int16_t left, int16_t right);
-static void _rx_process(void);
-static void _drive_stop(void);
-static void _wheel_service(uint32_t tick);
+static void     _tick(void);
+static void     _service_tick(uint32_t tick);
+static void     _encoders_init(void);
+static void     _encoders_accumulate(void);
+static void     _encoders_delta(encoder_cursor_t *cursor, int32_t *left, int32_t *right);
+static void     _position_poll(void);
+static void     _timeout_check(void);
+static void     _advertise(void);
+static uint32_t _advert_period_ticks(void);
+static void     _set_motors(int16_t left, int16_t right);
+static void     _rx_process(void);
+static void     _drive_stop(void);
+static void     _wheel_service(uint32_t tick);
 
 /// Elapsed rather than a multiple, since the main loop drops its backlog and
 /// can step over any given tick.
@@ -290,7 +297,7 @@ static void _service_tick(uint32_t tick) {
     if (_due(&_tick_timeout, tick, TICKS_PER_TIMEOUT)) {
         _timeout_check();
     }
-    if (_due(&_tick_advert, tick, TICKS_PER_ADVERT)) {
+    if (_due(&_tick_advert, tick, _advert_period_ticks())) {
         _advertise();
     }
 }
@@ -410,6 +417,26 @@ static void _wheel_service(uint32_t tick) {
         };
     }
 #endif
+}
+
+/// Derived from the node's uplink budget at every advert, so a gateway on
+/// another schedule changes the rate within one period
+static uint32_t _advert_period_ticks(void) {
+    uint32_t budget    = swarmit_get_uplink_budget();
+    uint32_t period_ms = ADVERT_PERIOD_DEF_MS;
+    if (budget > 0) {
+        period_ms = 10000000U / (ADVERT_BUDGET_PERCENT * budget);
+        if (period_ms < ADVERT_PERIOD_MIN_MS) {
+            period_ms = ADVERT_PERIOD_MIN_MS;
+        } else if (period_ms > ADVERT_PERIOD_MAX_MS) {
+            period_ms = ADVERT_PERIOD_MAX_MS;
+        }
+    }
+#if defined(DB_BENCH_TELEMETRY)
+    // Each advert is two frames
+    period_ms *= 2;
+#endif
+    return period_ms / TICK_MS;
 }
 
 static void _encoders_init(void) {
