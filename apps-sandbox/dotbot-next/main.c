@@ -178,6 +178,20 @@ typedef struct __attribute__((packed)) {
 __attribute__((used)) static wheel_trace_t _trace[TRACE_LENGTH];
 __attribute__((used)) static uint32_t      _trace_count = 0;
 static uint32_t                            _trace_tail  = 0;
+
+/// Every new solve the secure side publishes, in a ring, whatever the drive
+/// mode: fix rate and jitter come from the sequence against the tick
+typedef struct __attribute__((packed)) {
+    uint32_t tick;      ///< Serviced tick the solve was read on
+    uint32_t sequence;  ///< Fix sequence
+    uint32_t x;         ///< mm, as reported, before the bounds check
+    uint32_t y;         ///< mm, as reported, before the bounds check
+} fix_trace_t;
+
+#define FIX_TRACE_LENGTH (3000U)  ///< 5 minutes at 10 Hz
+
+__attribute__((used)) static fix_trace_t _fix_trace[FIX_TRACE_LENGTH];
+__attribute__((used)) static uint32_t    _fix_trace_count = 0;  ///< Total written; the ring index is this modulo the length
 #endif
 
 #ifdef DB_RGB_LED_PWM_RED_PORT
@@ -483,6 +497,16 @@ static void _position_poll(void) {
         return;
     }
     _vars.fix_sequence = sequence;
+
+#if defined(DB_BENCH_TRACE)
+    _fix_trace[_fix_trace_count % FIX_TRACE_LENGTH] = (fix_trace_t){
+        .tick     = _tick_serviced,
+        .sequence = sequence,
+        .x        = solve.x,
+        .y        = solve.y,
+    };
+    _fix_trace_count++;
+#endif
 
     if (solve.x > POSITION_INVALID_MM || solve.y > POSITION_INVALID_MM) {
         return;
