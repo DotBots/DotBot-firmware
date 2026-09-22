@@ -6,8 +6,10 @@
  *
  * A press on the user button (P1.09) runs a countdown on mcu-led3 (P1.06),
  * then takes CAPTURE_READS raw-count reads per visible station with the LED
- * solid. A still capture is sent three times as log events and acknowledged
- * with three blinks; a moving one is refused with a slow pulse and not sent.
+ * solid. A still capture is acknowledged with three blinks and sent three
+ * times as log events, paced to half the node's uplink budget so a burst
+ * never outruns the net core's TX queue; a moving one is refused with a slow
+ * pulse and not sent.
  *
  * @copyright Inria, 2026
  */
@@ -33,7 +35,9 @@
 #define STILLNESS_SPREAD_MAX (40U)                                ///< Largest max - min of a station's counts over the reads
 #define COUNT_MAX            (1U << 17)                           ///< Counts are indexes into a 17-bit LFSR sequence
 #define COPIES               (3U)                                 ///< Each capture is sent this many times
-#define SEND_SPACING_TICKS   (2U)                                 ///< Between two log events, so the net core drains the first
+#define SEND_SPACING_TICKS   (2U)                                 ///< Least between two log events, so the net core drains the first
+#define UNJOINED_SPACING     (100U)                               ///< Between two log events while the uplink budget reads 0
+#define BUDGET_SHARE_PCT     (50U)                                ///< Share of the uplink budget a capture's log events may use
 #define RECORD_SIZE          (9U)                                 ///< [lh_index:1][count1:4 LE][count2:4 LE]
 #define LOG_SIZE_MAX         (127U)                               ///< swarmit_log_data refuses anything longer
 #define CAPTURE_TAG          (0xCBU)                              ///< First byte of a button capture's log event
@@ -66,11 +70,12 @@ typedef enum {
 
 typedef void (*ipc_isr_cb_t)(const uint8_t *, size_t);
 
-void    swarmit_keep_alive(void);
-void    swarmit_ipc_isr(ipc_isr_cb_t cb);
-void    swarmit_log_data(uint8_t *data, size_t length);
-uint8_t swarmit_localization_get_raw_counts(lh2_raw_sample_t *samples, uint8_t max);
-void    swarmit_localization_handle_isr(void);
+void     swarmit_keep_alive(void);
+void     swarmit_ipc_isr(ipc_isr_cb_t cb);
+void     swarmit_log_data(uint8_t *data, size_t length);
+uint16_t swarmit_get_uplink_budget(void);
+uint8_t  swarmit_localization_get_raw_counts(lh2_raw_sample_t *samples, uint8_t max);
+void     swarmit_localization_handle_isr(void);
 
 //=========================== variables ========================================
 
@@ -232,7 +237,18 @@ static void _send_chunk(uint8_t chunk) {
 
 // Three blinks over about a second: 100 ms on, 230 ms off
 static bool _blinks_on(uint32_t ms) {
-    return (ms % 330U) < 100U;
+    return ms < 990U && (ms % 330U) < 100U;
+}
+
+// The budget is in uplink packets per second x 100 and can change with the schedule
+static uint32_t _send_spacing_ticks(void) {
+    uint32_t budget_cpps = swarmit_get_uplink_budget();
+    if (budget_cpps == 0) {
+        return UNJOINED_SPACING;
+    }
+    uint32_t share   = budget_cpps * BUDGET_SHARE_PCT * TICK_MS;
+    uint32_t spacing = (100U * 100U * 1000U + share - 1U) / share;
+    return spacing < SEND_SPACING_TICKS ? SEND_SPACING_TICKS : spacing;
 }
 
 static void _service(void) {
@@ -280,7 +296,7 @@ static void _service(void) {
                 break;
             }
             _send_chunk(_app.chunk);
-            _app.next_send_tick = _tick_count + SEND_SPACING_TICKS;
+            _app.next_send_tick = _tick_count + _send_spacing_ticks();
             if (++_app.chunk == _chunk_count()) {
                 _app.chunk = 0;
                 if (++_app.copy == COPIES) {
