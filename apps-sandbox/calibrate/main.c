@@ -42,6 +42,12 @@
 #define LOG_SIZE_MAX         (127U)                               ///< swarmit_log_data refuses anything longer
 #define CAPTURE_TAG          (0xCBU)                              ///< First byte of a button capture's log event
 #define CHUNK_RECORDS        ((LOG_SIZE_MAX - 2U) / RECORD_SIZE)  ///< 13
+#define BLINK_PERIOD_MS      (330U)                               ///< One blink of the countdown and the acknowledgement
+#define BLINK_ON_MS          (100U)
+#define BLINK_COUNT          (3U)
+#define BLINK_SEQUENCE_MS    (BLINK_COUNT * BLINK_PERIOD_MS)
+#define REFUSE_PULSE_MS      (1000U)  ///< One on/off pulse of the refusal
+#define REFUSE_DURATION_MS   (2000U)
 
 // A log event is [CAPTURE_TAG][header][records], the header being ppppp ccc:
 // p = press counter mod 32, c = chunk index. The last chunk of a capture
@@ -238,9 +244,8 @@ static void _send_chunk(uint8_t chunk) {
     swarmit_log_data(_log, length);
 }
 
-// Three blinks over about a second: 100 ms on, 230 ms off
 static bool _blinks_on(uint32_t ms) {
-    return ms < 990U && (ms % 330U) < 100U;
+    return ms < BLINK_SEQUENCE_MS && (ms % BLINK_PERIOD_MS) < BLINK_ON_MS;
 }
 
 // The budget is in uplink packets per second x 100 and can change with the schedule
@@ -265,7 +270,7 @@ static void _service(void) {
             break;
         case STATE_COUNTDOWN:
             _keep_alive_if_due();
-            if (ms < 990U) {
+            if (ms < BLINK_SEQUENCE_MS) {
                 _led_set(_blinks_on(ms));
                 break;
             }
@@ -310,7 +315,7 @@ static void _service(void) {
             break;
         case STATE_CAPTURED:
             _keep_alive_if_due();
-            if (ms < 990U) {
+            if (ms < BLINK_SEQUENCE_MS) {
                 _led_set(_blinks_on(ms));
                 break;
             }
@@ -320,8 +325,8 @@ static void _service(void) {
             break;
         case STATE_REFUSED:
             _keep_alive_if_due();
-            if (ms < 2000U) {
-                _led_set((ms % 1000U) < 500U);
+            if (ms < REFUSE_DURATION_MS) {
+                _led_set((ms % REFUSE_PULSE_MS) < REFUSE_PULSE_MS / 2U);
                 break;
             }
             _led_set(false);
