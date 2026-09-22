@@ -25,29 +25,32 @@
 
 //=========================== defines ==========================================
 
-#define TIMER_DEV            (0)
-#define TICK_MS              (10U)
-#define KEEP_ALIVE_TICKS     (10U)                                ///< Watchdog reload period outside the capture window
-#define CAPTURE_READS        (25U)                                ///< Reads per station in one capture
-#define STATIONS_MAX         (4U)                                 ///< Stations kept per capture; 4 x 25 records fit 8 chunks
-#define WINDOW_PRESENCE_MS   (100U)                               ///< A station seen within this much of the window is visible
-#define WINDOW_TIMEOUT_MS    (800U)                               ///< Under the ~1 s watchdog, with no keep_alive inside
-#define STILLNESS_SPREAD_MAX (40U)                                ///< Largest max - min of a station's counts over the reads
-#define COUNT_MAX            (1U << 17)                           ///< Counts are indexes into a 17-bit LFSR sequence
-#define COPIES               (3U)                                 ///< Each capture is sent this many times
-#define SEND_SPACING_TICKS   (2U)                                 ///< Least between two log events, so the net core drains the first
-#define UNJOINED_SPACING     (100U)                               ///< Between two log events while the uplink budget reads 0
-#define BUDGET_SHARE_PCT     (50U)                                ///< Share of the uplink budget a capture's log events may use
-#define RECORD_SIZE          (9U)                                 ///< [lh_index:1][count1:4 LE][count2:4 LE]
-#define LOG_SIZE_MAX         (127U)                               ///< swarmit_log_data refuses anything longer
-#define CAPTURE_TAG          (0xCBU)                              ///< First byte of a button capture's log event
-#define CHUNK_RECORDS        ((LOG_SIZE_MAX - 2U) / RECORD_SIZE)  ///< 13
-#define BLINK_PERIOD_MS      (330U)                               ///< One blink of the countdown and the acknowledgement
-#define BLINK_ON_MS          (100U)
-#define BLINK_COUNT          (3U)
-#define BLINK_SEQUENCE_MS    (BLINK_COUNT * BLINK_PERIOD_MS)
-#define REFUSE_PULSE_MS      (1000U)  ///< One on/off pulse of the refusal
-#define REFUSE_DURATION_MS   (2000U)
+#define TIMER_DEV              (0)
+#define TICK_MS                (10U)
+#define KEEP_ALIVE_TICKS       (10U)       ///< Watchdog reload period outside the capture window
+#define CAPTURE_READS          (25U)       ///< Reads per station in one capture
+#define STATIONS_MAX           (4U)        ///< Stations kept per capture; 4 x 25 records fit 8 chunks
+#define WINDOW_PRESENCE_MS     (100U)      ///< A station seen within this much of the window is visible
+#define WINDOW_TIMEOUT_MS      (800U)      ///< Under the ~1 s watchdog, with no keep_alive inside
+#define STILLNESS_SPREAD_MAX   (40U)       ///< Largest max - min of a station's counts over the reads
+#define COUNT_MAX              (1U << 17)  ///< Counts are indexes into a 17-bit LFSR sequence
+#define COPIES                 (3U)        ///< Each capture is sent this many times
+#define SEND_SPACING_TICKS     (2U)        ///< Least between two log events, so the net core drains the first
+#define UNJOINED_SPACING_TICKS (100U)      ///< Between two log events while the uplink budget reads 0
+#define BUDGET_SHARE_PCT       (50U)       ///< Share of the uplink budget a capture's log events may use
+#define BUDGET_SCALE           (100U)      ///< The uplink budget is in packets per second x 100
+#define PCT                    (100U)
+#define MS_PER_S               (1000U)
+#define RECORD_SIZE            (9U)                                 ///< [lh_index:1][count1:4 LE][count2:4 LE]
+#define LOG_SIZE_MAX           (127U)                               ///< swarmit_log_data refuses anything longer
+#define CAPTURE_TAG            (0xCBU)                              ///< First byte of a button capture's log event
+#define CHUNK_RECORDS          ((LOG_SIZE_MAX - 2U) / RECORD_SIZE)  ///< 13
+#define BLINK_PERIOD_MS        (330U)                               ///< One blink of the countdown and the acknowledgement
+#define BLINK_ON_MS            (100U)
+#define BLINK_COUNT            (3U)
+#define BLINK_SEQUENCE_MS      (BLINK_COUNT * BLINK_PERIOD_MS)
+#define REFUSE_PULSE_MS        (1000U)  ///< One on/off pulse of the refusal
+#define REFUSE_DURATION_MS     (2000U)
 
 // A log event is [CAPTURE_TAG][header][records], the header being ppppp ccc:
 // p = press counter mod 32, c = chunk index. The last chunk of a capture
@@ -248,14 +251,15 @@ static bool _blinks_on(uint32_t ms) {
     return ms < BLINK_SEQUENCE_MS && (ms % BLINK_PERIOD_MS) < BLINK_ON_MS;
 }
 
-// The budget is in uplink packets per second x 100 and can change with the schedule
+// The budget can change with the schedule, so it is read before every event
 static uint32_t _send_spacing_ticks(void) {
     uint32_t budget_cpps = swarmit_get_uplink_budget();
     if (budget_cpps == 0) {
-        return UNJOINED_SPACING;
+        return UNJOINED_SPACING_TICKS;
     }
+    // Ticks between events at BUDGET_SHARE_PCT of the budget, rounded up
     uint32_t share   = budget_cpps * BUDGET_SHARE_PCT * TICK_MS;
-    uint32_t spacing = (100U * 100U * 1000U + share - 1U) / share;
+    uint32_t spacing = (BUDGET_SCALE * PCT * MS_PER_S + share - 1U) / share;
     return spacing < SEND_SPACING_TICKS ? SEND_SPACING_TICKS : spacing;
 }
 
