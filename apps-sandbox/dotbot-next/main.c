@@ -104,6 +104,8 @@ static encoder_cursor_t _advertisement_encoders = { 0 };
 static volatile uint32_t _tick_count    = 0;  ///< Written by the tick callback only
 static uint32_t          _tick_serviced = 0;  ///< Read and written by the main loop only
 static uint32_t          _tick_position = 0;  ///< Tick of the last position poll, main loop only
+static uint32_t          _tick_timeout  = 0;  ///< Tick of the last timeout check, main loop only
+static uint32_t          _tick_advert   = 0;  ///< Tick of the last advertisement, main loop only
 
 #ifdef DB_RGB_LED_PWM_RED_PORT
 static const db_rgbled_pwm_conf_t _rgbled_pwm_conf = {
@@ -139,6 +141,16 @@ static void _position_poll(void);
 static void _timeout_check(void);
 static void _advertise(void);
 static void _set_motors(int16_t left, int16_t right);
+
+/// Elapsed rather than a multiple, since the main loop drops its backlog and
+/// can step over any given tick.
+static inline bool _due(uint32_t *last, uint32_t tick, uint32_t period) {
+    if (tick - *last < period) {
+        return false;
+    }
+    *last = tick;
+    return true;
+}
 
 static inline uint32_t _ticks_since(uint32_t then) {
     return (db_timer_ticks(TIMER_DEV) - then) & DB_RTC_COUNTER_MASK;
@@ -216,16 +228,13 @@ static void _tick(void) {
 static void _service_tick(uint32_t tick) {
     _encoders_accumulate();
 
-    // Elapsed rather than a multiple: this poll is the watchdog reload, and a
-    // dropped backlog can step over a multiple of the period
-    if (tick - _tick_position >= TICKS_PER_POSITION) {
-        _tick_position = tick;
+    if (_due(&_tick_position, tick, TICKS_PER_POSITION)) {
         _position_poll();
     }
-    if (tick % TICKS_PER_TIMEOUT == 0) {
+    if (_due(&_tick_timeout, tick, TICKS_PER_TIMEOUT)) {
         _timeout_check();
     }
-    if (tick % TICKS_PER_ADVERT == 0) {
+    if (_due(&_tick_advert, tick, TICKS_PER_ADVERT)) {
         _advertise();
     }
 }
