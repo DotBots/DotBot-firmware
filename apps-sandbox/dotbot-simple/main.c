@@ -66,18 +66,9 @@ typedef struct {
 typedef void (*ipc_isr_cb_t)(const uint8_t *, size_t);
 
 // Swarmit NSC callbable functions
-/// Result of a swarmit call that hands a frame to the network core; mirrors
-/// swarmit_result_t in the bootloader's cmse_implib.h.
-typedef enum {
-    SWARMIT_OK             = 0,  ///< handed to the network core (not a delivery guarantee)
-    SWARMIT_ERR_ARG        = 1,  ///< pointer or length refused at the secure boundary
-    SWARMIT_ERR_TIMEOUT    = 2,  ///< the network core did not ack within the IPC timeout
-    SWARMIT_ERR_NOT_JOINED = 3,  ///< dropped by the network core: the bot is not joined
-} swarmit_result_t;
-
 void swarmit_keep_alive(void);
 
-swarmit_result_t swarmit_send_raw_data(const uint8_t *packet, uint8_t length);
+void swarmit_send_raw_data(const uint8_t *packet, uint8_t length);
 void swarmit_ipc_isr(ipc_isr_cb_t cb);
 void swarmit_localization_handle_isr(void);
 
@@ -155,8 +146,7 @@ int main(void) {
             size_t length                       = 0;
             _dotbot_vars.radio_buffer[length++] = DB_PROTOCOL_ADVERTISEMENT;
             _dotbot_vars.radio_buffer[length++] = DotBot;
-            // Periodic frame: a refused or dropped one is replaced by the next.
-            (void)swarmit_send_raw_data(_dotbot_vars.radio_buffer, length);
+            swarmit_send_raw_data(_dotbot_vars.radio_buffer, length);
             _dotbot_vars.advertize = false;
         }
     }
