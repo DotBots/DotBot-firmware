@@ -291,6 +291,34 @@ static void _set_motors(int16_t left, int16_t right) {
     _vars.pwm_right = (int8_t)right;
 }
 
+static void _put(uint8_t *buf, size_t *length, const void *value, size_t size) {
+    memcpy(&buf[*length], value, size);
+    *length += size;
+}
+
+#if defined(DB_BENCH_TELEMETRY)
+/// Resets the worst tick backlog it reports.
+static void _send_bench_telemetry(const protocol_lh2_location_t *position, int32_t encoder_left, int32_t encoder_right) {
+    size_t   length = 0;
+    uint8_t *buf    = _vars.radio_buffer;
+
+    buf[length++]  = DB_PROTOCOL_BENCH_TELEMETRY;
+    uint32_t ticks = db_timer_ticks(TIMER_DEV);
+    _put(buf, &length, &ticks, sizeof(ticks));
+    _put(buf, &length, &_tick_serviced, sizeof(_tick_serviced));
+    _put(buf, &length, &_vars.max_tick_backlog, sizeof(_vars.max_tick_backlog));
+    _vars.max_tick_backlog = 0;
+
+    _put(buf, &length, position, sizeof(*position));
+    _put(buf, &length, &_vars.fix_sequence, sizeof(_vars.fix_sequence));
+    buf[length++] = (uint8_t)_vars.has_position;
+    _put(buf, &length, &encoder_left, sizeof(encoder_left));
+    _put(buf, &length, &encoder_right, sizeof(encoder_right));
+
+    swarmit_send_raw_data(buf, (uint8_t)length);
+}
+#endif
+
 /// Layout of DB_PROTOCOL_DOTBOT_ADVERTISEMENT; keep in step with apps-sandbox/dotbot.
 /// Fields this app does not own carry their unknown-value sentinels.
 static void _advertise(void) {
@@ -303,20 +331,17 @@ static void _advertise(void) {
     buf[length++] = 0xff;  // calibrated bitmask, unknown
 
     int16_t direction = DIRECTION_INVALID;
-    memcpy(&buf[length], &direction, sizeof(int16_t));
-    length += sizeof(int16_t);
+    _put(buf, &length, &direction, sizeof(direction));
 
     protocol_lh2_location_t position = {
         .x = _vars.has_position ? _vars.position.x : 0,
         .y = _vars.has_position ? _vars.position.y : 0,
     };
-    memcpy(&buf[length], &position, sizeof(protocol_lh2_location_t));
-    length += sizeof(protocol_lh2_location_t);
+    _put(buf, &length, &position, sizeof(position));
 
     uint16_t battery_level = 0;
     swarmit_get_battery_level(&battery_level);
-    memcpy(&buf[length], &battery_level, sizeof(uint16_t));
-    length += sizeof(uint16_t);
+    _put(buf, &length, &battery_level, sizeof(battery_level));
 
     buf[length++] = (uint8_t)_vars.pwm_left;
     buf[length++] = (uint8_t)_vars.pwm_right;
@@ -325,44 +350,18 @@ static void _advertise(void) {
     int32_t encoder_left;
     int32_t encoder_right;
     _encoders_delta(&_advertisement_encoders, &encoder_left, &encoder_right);
-    memcpy(&buf[length], &encoder_left, sizeof(int32_t));
-    length += sizeof(int32_t);
-    memcpy(&buf[length], &encoder_right, sizeof(int32_t));
-    length += sizeof(int32_t);
+    _put(buf, &length, &encoder_left, sizeof(encoder_left));
+    _put(buf, &length, &encoder_right, sizeof(encoder_right));
 
     uint32_t waypoint = 0;
-    memcpy(&buf[length], &waypoint, sizeof(uint32_t));
-    length += sizeof(uint32_t);
-    memcpy(&buf[length], &waypoint, sizeof(uint32_t));
-    length += sizeof(uint32_t);
+    _put(buf, &length, &waypoint, sizeof(waypoint));
+    _put(buf, &length, &waypoint, sizeof(waypoint));
     buf[length++] = 0;  // waypoint index
 
     swarmit_send_raw_data(buf, (uint8_t)length);
 
 #if defined(DB_BENCH_TELEMETRY)
-    length        = 0;
-    buf[length++] = DB_PROTOCOL_BENCH_TELEMETRY;
-
-    uint32_t ticks = db_timer_ticks(TIMER_DEV);
-    memcpy(&buf[length], &ticks, sizeof(uint32_t));
-    length += sizeof(uint32_t);
-    memcpy(&buf[length], &_tick_serviced, sizeof(uint32_t));
-    length += sizeof(uint32_t);
-    memcpy(&buf[length], &_vars.max_tick_backlog, sizeof(uint32_t));
-    length += sizeof(uint32_t);
-    _vars.max_tick_backlog = 0;
-
-    memcpy(&buf[length], &position, sizeof(protocol_lh2_location_t));
-    length += sizeof(protocol_lh2_location_t);
-    memcpy(&buf[length], &_vars.fix_sequence, sizeof(uint32_t));
-    length += sizeof(uint32_t);
-    buf[length++] = (uint8_t)_vars.has_position;
-    memcpy(&buf[length], &encoder_left, sizeof(int32_t));
-    length += sizeof(int32_t);
-    memcpy(&buf[length], &encoder_right, sizeof(int32_t));
-    length += sizeof(int32_t);
-
-    swarmit_send_raw_data(buf, (uint8_t)length);
+    _send_bench_telemetry(&position, encoder_left, encoder_right);
 #endif
 }
 
