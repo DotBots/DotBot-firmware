@@ -2,11 +2,8 @@
  * @file
  * @defgroup project_dotbot_next    DotBot control application, rebuilt
  * @ingroup projects
- * @brief The sandboxed DotBot application, rebuilt in layers.
- *
- * Successor to apps-sandbox/dotbot, built up one layer at a time rather than
- * edited in place. At this stage it carries keepalive, position, encoders,
- * telemetry and direct motor commands, and no control layer above them.
+ * @brief Sandboxed DotBot app: keepalive, position, encoders, telemetry and
+ * direct motor commands.
  *
  * @copyright Inria, 2026
  */
@@ -47,13 +44,11 @@
 /// Coordinates above this are the secure side reporting no usable solve.
 #define POSITION_INVALID_MM (100000U)
 
-/// Heading is not estimated here. The advertisement field carries the same
-/// sentinel the control loop uses for "unknown", so hosts need no special case.
+/// Heading is not estimated here; this is the advertisement's "unknown" value.
 #define DIRECTION_INVALID (-1000)
 
 #if defined(DB_BENCH_TELEMETRY)
-/// Bench-only frame. Deliberately not added to protocol_data_type_t: it must not
-/// exist in a shipped target. 13 is the one gap in that enum; see the README.
+/// Bench-only frame type; keep it out of protocol_data_type_t, where 13 is unused.
 #define DB_PROTOCOL_BENCH_TELEMETRY (13)
 #endif
 
@@ -209,8 +204,7 @@ int main(void) {
         if (missed == 0) {
             continue;
         }
-        // Drop the backlog rather than working through it: a late tick is more
-        // useful reported than replayed. The worst case is telemetered.
+        // The backlog is dropped, not replayed; the worst case is telemetered
         if (missed - 1 > _vars.max_tick_backlog) {
             _vars.max_tick_backlog = missed - 1;
         }
@@ -247,9 +241,7 @@ static void _encoders_init(void) {
 }
 
 /// The hardware read is destructive, so the tick drains it into totals that are
-/// never cleared. Consumers take deltas against their own cursor instead, which
-/// is what lets telemetry and an estimator both see every count. On a board
-/// without encoders the totals stay at zero.
+/// never cleared; consumers take deltas against their own cursor.
 static void _encoders_accumulate(void) {
 #ifdef DB_QDEC_LEFT_A_PORT
     _vars.encoder_total_left += (uint32_t)db_qdec_read_and_clear(QDEC_LEFT);
@@ -267,18 +259,14 @@ static void _encoders_delta(encoder_cursor_t *cursor, int32_t *left, int32_t *ri
     cursor->right        = total_right;
 }
 
-/// swarmit_keep_alive() is what runs the solve and republishes shared data, so
-/// this call sets the position rate and must immediately precede the read.
-/// Takes the solve exactly as reported: no displacement gate, no heading
-/// derivation, both belong above this layer.
+/// swarmit_keep_alive() runs the solve; call it immediately before reading the fix.
 static void _position_poll(void) {
     swarmit_keep_alive();
 
     position_2d_t solve    = { 0 };
     uint32_t      sequence = swarmit_localization_get_fix(&solve);
 
-    // An unchanged sequence is the previous solve read a second time. Comparing
-    // coordinates instead reads a stationary robot as having no new fix.
+    // An unchanged sequence is the previous solve read a second time
     if (sequence == _vars.fix_sequence) {
         return;
     }
@@ -291,7 +279,6 @@ static void _position_poll(void) {
     _vars.has_position = true;
 }
 
-/// Unconditional: this app has no autonomous mode, so silence always means stop.
 static void _timeout_check(void) {
     if (_ticks_since(_vars.ts_last_packet_received) > TIMEOUT_STOP_TICKS) {
         _set_motors(0, 0);
@@ -304,8 +291,8 @@ static void _set_motors(int16_t left, int16_t right) {
     _vars.pwm_right = (int8_t)right;
 }
 
-/// Byte-for-byte the layout apps-sandbox/dotbot emits, so the host parser is
-/// unchanged. Fields this app does not own carry their unknown-value sentinels.
+/// Layout of DB_PROTOCOL_DOTBOT_ADVERTISEMENT; keep in step with apps-sandbox/dotbot.
+/// Fields this app does not own carry their unknown-value sentinels.
 static void _advertise(void) {
     db_gpio_toggle(&db_led1);
 
@@ -313,7 +300,7 @@ static void _advertise(void) {
     uint8_t *buf    = _vars.radio_buffer;
 
     buf[length++] = DB_PROTOCOL_DOTBOT_ADVERTISEMENT;
-    buf[length++] = 0xff;  // calibrated bitmask; the secure side exposes no per-LH state over NSC
+    buf[length++] = 0xff;  // calibrated bitmask, unknown
 
     int16_t direction = DIRECTION_INVALID;
     memcpy(&buf[length], &direction, sizeof(int16_t));
