@@ -85,8 +85,17 @@ typedef struct {
 typedef void (*ipc_isr_cb_t)(const uint8_t *, size_t);
 
 // Swarmit NSC callable functions
+/// Result of a swarmit call that hands a frame to the network core; mirrors
+/// swarmit_result_t in the bootloader's cmse_implib.h.
+typedef enum {
+    SWARMIT_OK             = 0,  ///< handed to the network core (not a delivery guarantee)
+    SWARMIT_ERR_ARG        = 1,  ///< pointer or length refused at the secure boundary
+    SWARMIT_ERR_TIMEOUT    = 2,  ///< the network core did not ack within the IPC timeout
+    SWARMIT_ERR_NOT_JOINED = 3,  ///< dropped by the network core: the bot is not joined
+} swarmit_result_t;
+
 void     swarmit_keep_alive(void);
-void     swarmit_send_raw_data(const uint8_t *packet, uint8_t length);
+swarmit_result_t swarmit_send_raw_data(const uint8_t *packet, uint8_t length);
 void     swarmit_ipc_isr(ipc_isr_cb_t cb);
 uint32_t swarmit_localization_get_fix(position_2d_t *position);
 void     swarmit_get_battery_level(uint16_t *battery_level);
@@ -318,7 +327,7 @@ static void _send_bench_telemetry(const protocol_lh2_location_t *position, int32
     _put(buf, &length, &encoder_left, sizeof(encoder_left));
     _put(buf, &length, &encoder_right, sizeof(encoder_right));
 
-    swarmit_send_raw_data(buf, (uint8_t)length);
+    (void)swarmit_send_raw_data(buf, (uint8_t)length);
 }
 #endif
 
@@ -361,7 +370,8 @@ static void _advertise(void) {
     _put(buf, &length, &waypoint, sizeof(waypoint));
     buf[length++] = 0;  // waypoint index
 
-    swarmit_send_raw_data(buf, (uint8_t)length);
+    // Periodic frame: a refused or dropped one is replaced by the next.
+    (void)swarmit_send_raw_data(buf, (uint8_t)length);
 
 #if defined(DB_BENCH_TELEMETRY)
     _send_bench_telemetry(&position, encoder_left, encoder_right);
