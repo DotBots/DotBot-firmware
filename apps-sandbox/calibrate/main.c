@@ -109,7 +109,7 @@ static struct {
 } _app;
 
 static lh2_raw_sample_t _drain[16];
-static uint8_t __attribute__((aligned(4))) _log[LOG_SIZE_MAX];
+static uint8_t          _log[LOG_SIZE_MAX] __attribute__((aligned(4)));
 
 //=========================== private ==========================================
 
