@@ -7,7 +7,7 @@
  * A press on the user button (P1.09) runs a countdown on mcu-led3 (P1.06),
  * then takes CAPTURE_READS raw-count reads per visible station with the LED
  * solid. A still capture is acknowledged with three blinks and sent three
- * times as log events, paced to half the node's uplink budget; a moving one
+ * times as log events, paced to the node's uplink interval; a moving one
  * is refused with a slow pulse and not sent.
  *
  * @copyright Inria, 2026
@@ -35,11 +35,8 @@
 #define COUNT_MAX              (1U << 17)  ///< Counts are indexes into a 17-bit LFSR sequence
 #define COPIES                 (3U)        ///< Each capture is sent this many times
 #define SEND_SPACING_TICKS     (2U)        ///< Least between two log events, so the net core drains the first
-#define UNJOINED_SPACING_TICKS (100U)      ///< Between two log events while the uplink budget reads 0
-#define BUDGET_SHARE_PCT       (50U)       ///< Share of the uplink budget a capture's log events may use
-#define BUDGET_SCALE           (100U)      ///< The uplink budget is in packets per second x 100
-#define PCT                    (100U)
-#define MS_PER_S               (1000U)
+#define UNJOINED_SPACING_TICKS (100U)      ///< Between two log events while the uplink interval reads 0
+#define US_PER_TICK            (TICK_MS * 1000U)
 #define RECORD_SIZE            (9U)                                 ///< [lh_index:1][count1:4 LE][count2:4 LE]
 #define LOG_SIZE_MAX           (127U)                               ///< swarmit_log_data refuses anything longer
 #define CAPTURE_TAG            (0xCBU)                              ///< First byte of a button capture's log event
@@ -85,7 +82,7 @@ typedef void (*ipc_isr_cb_t)(const uint8_t *, size_t);
 void     swarmit_keep_alive(void);
 void     swarmit_ipc_isr(ipc_isr_cb_t cb);
 void     swarmit_log_data(uint8_t *data, size_t length);
-uint16_t swarmit_get_uplink_budget(void);
+uint32_t swarmit_get_uplink_interval_us(void);
 uint8_t  swarmit_localization_get_raw_counts(lh2_raw_sample_t *samples, uint8_t max);
 void     swarmit_localization_handle_isr(void);
 
@@ -256,15 +253,14 @@ static bool _blinks_on(uint32_t ms) {
     return ms < BLINK_SEQUENCE_MS && (ms % BLINK_PERIOD_MS) < BLINK_ON_MS;
 }
 
-// The budget can change with the schedule, so it is read before every event
+// The interval can change with the schedule, so it is read before every event
 static uint32_t _send_spacing_ticks(void) {
-    uint32_t budget_cpps = swarmit_get_uplink_budget();
-    if (budget_cpps == 0) {
+    uint32_t interval_us = swarmit_get_uplink_interval_us();
+    if (interval_us == 0) {
         return UNJOINED_SPACING_TICKS;
     }
-    // Ticks between events at BUDGET_SHARE_PCT of the budget, rounded up
-    uint32_t share   = budget_cpps * BUDGET_SHARE_PCT * TICK_MS;
-    uint32_t spacing = (BUDGET_SCALE * PCT * MS_PER_S + share - 1U) / share;
+    // At least one uplink interval between events, rounded up to the tick
+    uint32_t spacing = (interval_us + US_PER_TICK - 1U) / US_PER_TICK;
     return spacing < SEND_SPACING_TICKS ? SEND_SPACING_TICKS : spacing;
 }
 
