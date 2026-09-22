@@ -193,14 +193,16 @@ static bool _window_full(void) {
     return true;
 }
 
-static uint32_t _spread(const lh2_raw_sample_t *samples, bool second) {
-    uint32_t lo = UINT32_MAX, hi = 0;
+/// The larger of the two sweeps' max - min over a station's reads
+static uint32_t _spread(const lh2_raw_sample_t *samples) {
+    uint32_t lo1 = UINT32_MAX, hi1 = 0, lo2 = UINT32_MAX, hi2 = 0;
     for (uint8_t r = 0; r < CAPTURE_READS; r++) {
-        uint32_t v = second ? samples[r].count2 : samples[r].count1;
-        lo         = v < lo ? v : lo;
-        hi         = v > hi ? v : hi;
+        lo1 = samples[r].count1 < lo1 ? samples[r].count1 : lo1;
+        hi1 = samples[r].count1 > hi1 ? samples[r].count1 : hi1;
+        lo2 = samples[r].count2 < lo2 ? samples[r].count2 : lo2;
+        hi2 = samples[r].count2 > hi2 ? samples[r].count2 : hi2;
     }
-    return hi - lo;
+    return hi1 - lo1 > hi2 - lo2 ? hi1 - lo1 : hi2 - lo2;
 }
 
 static bool _capture_clean(void) {
@@ -215,7 +217,7 @@ static bool _capture_clean(void) {
                 return false;
             }
         }
-        if (_spread(_app.samples[s], false) > STILLNESS_SPREAD_MAX || _spread(_app.samples[s], true) > STILLNESS_SPREAD_MAX) {
+        if (_spread(_app.samples[s]) > STILLNESS_SPREAD_MAX) {
             return false;
         }
     }
@@ -224,6 +226,13 @@ static bool _capture_clean(void) {
 
 static uint8_t _chunk_count(void) {
     return (uint8_t)((_app.station_count * CAPTURE_READS) / CHUNK_RECORDS + 1);
+}
+
+static size_t _put_u32_le(uint8_t *buf, size_t at, uint32_t value) {
+    for (uint8_t shift = 0; shift < 32; shift += 8) {
+        buf[at++] = (uint8_t)(value >> shift);
+    }
+    return at;
 }
 
 // Records go out read by read, each read listing every station in the same order
@@ -237,12 +246,8 @@ static void _send_chunk(uint8_t chunk) {
     for (uint32_t k = first; k < last; k++) {
         const lh2_raw_sample_t *sample = &_app.samples[k % _app.station_count][k / _app.station_count];
         _log[length++]                 = sample->lh_index;
-        for (uint8_t shift = 0; shift < 32; shift += 8) {
-            _log[length++] = (uint8_t)(sample->count1 >> shift);
-        }
-        for (uint8_t shift = 0; shift < 32; shift += 8) {
-            _log[length++] = (uint8_t)(sample->count2 >> shift);
-        }
+        length                         = _put_u32_le(_log, length, sample->count1);
+        length                         = _put_u32_le(_log, length, sample->count2);
     }
     swarmit_log_data(_log, length);
 }
