@@ -7,9 +7,8 @@
  * A press on the user button (P1.09) runs a countdown on mcu-led3 (P1.06),
  * then takes CAPTURE_READS raw-count reads per visible station with the LED
  * solid. A still capture is acknowledged with three blinks and sent three
- * times as log events, paced to half the node's uplink budget so a burst
- * never outruns the net core's TX queue; a moving one is refused with a slow
- * pulse and not sent.
+ * times as log events, paced to half the node's uplink budget; a moving one
+ * is refused with a slow pulse and not sent.
  *
  * @copyright Inria, 2026
  */
