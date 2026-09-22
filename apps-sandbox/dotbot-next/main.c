@@ -10,6 +10,7 @@
 
 #include <nrf.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 // Include BSP headers
@@ -56,6 +57,8 @@ typedef struct {
     uint32_t x;  ///< X coordinate in mm
     uint32_t y;  ///< Y coordinate in mm
 } position_2d_t;
+_Static_assert(sizeof(position_2d_t) == 8, "must match the bootloader's layout");
+_Static_assert(offsetof(position_2d_t, y) == 4, "must match the bootloader's layout");
 
 typedef struct {
     uint8_t       radio_buffer[DB_BUFFER_MAX_BYTES];

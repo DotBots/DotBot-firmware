@@ -56,6 +56,9 @@ typedef struct {
     uint8_t  _pad[3];
 } lh2_raw_sample_t;
 _Static_assert(sizeof(lh2_raw_sample_t) == 12, "must match the bootloader's layout");
+_Static_assert(offsetof(lh2_raw_sample_t, count1) == 0, "must match the bootloader's layout");
+_Static_assert(offsetof(lh2_raw_sample_t, count2) == 4, "must match the bootloader's layout");
+_Static_assert(offsetof(lh2_raw_sample_t, lh_index) == 8, "must match the bootloader's layout");
 
 typedef enum {
     STATE_IDLE,
