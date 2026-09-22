@@ -54,7 +54,8 @@
 // A log event is [CAPTURE_TAG][header][records], the header being ppppp ccc:
 // p = press counter mod 32, c = chunk index. The last chunk of a capture
 // carries fewer than CHUNK_RECORDS records, so a capture whose record count is
-// a multiple of CHUNK_RECORDS ends with an empty chunk.
+// a multiple of CHUNK_RECORDS ends with an empty chunk. PyDotBot's
+// dotbot/tests/lh2_button_fixture.py pins this layout; change both together.
 _Static_assert(STATIONS_MAX *CAPTURE_READS / CHUNK_RECORDS < 8, "chunk index must fit 3 bits");
 
 typedef struct {
