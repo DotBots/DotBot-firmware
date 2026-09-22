@@ -167,9 +167,6 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
         {
             puts("Received calibration data");
             protocol_lh2_homography_t *homography_from_packet = (protocol_lh2_homography_t *)cmd_ptr;
-            if (homography_from_packet->basestation_index >= LH2_BASESTATION_COUNT) {
-                break;
-            }
             // The matrix sits at an odd offset in the packet; the driver reads it as aligned floats
             float homography_matrix[3][3];
             memcpy(homography_matrix, homography_from_packet->homography_matrix, sizeof(homography_matrix));
