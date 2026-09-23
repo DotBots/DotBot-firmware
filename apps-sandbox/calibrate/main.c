@@ -7,7 +7,7 @@
  * A press on the user button (P1.09) runs a countdown on mcu-led3 (P1.06),
  * then takes CAPTURE_READS raw-count reads per visible station with the LED
  * solid. A still capture is acknowledged with three blinks and sent three
- * times as log events, paced to the node's uplink interval; a moving one
+ * times as log events, paced to the node's minimum TX interval; a moving one
  * is refused with a slow pulse and not sent.
  *
  * @copyright Inria, 2026
@@ -35,7 +35,7 @@
 #define COUNT_MAX              (1U << 17)  ///< Counts are indexes into a 17-bit LFSR sequence
 #define COPIES                 (3U)        ///< Each capture is sent this many times
 #define SEND_SPACING_TICKS     (2U)        ///< Least between two log events, so the net core drains the first
-#define UNJOINED_SPACING_TICKS (100U)      ///< Between two log events while the uplink interval reads 0
+#define UNJOINED_SPACING_TICKS (100U)      ///< Between two log events while the minimum TX interval reads 0
 #define US_PER_TICK            (TICK_MS * 1000U)
 #define RECORD_SIZE            (9U)                                 ///< [lh_index:1][count1:4 LE][count2:4 LE]
 #define LOG_SIZE_MAX           (127U)                               ///< swarmit_log_data refuses anything longer
@@ -82,7 +82,7 @@ typedef void (*ipc_isr_cb_t)(const uint8_t *, size_t);
 void     swarmit_keep_alive(void);
 void     swarmit_ipc_isr(ipc_isr_cb_t cb);
 void     swarmit_log_data(uint8_t *data, size_t length);
-uint32_t swarmit_get_uplink_interval_us(void);
+uint32_t swarmit_get_min_tx_interval_us(void);
 uint8_t  swarmit_localization_get_raw_counts(lh2_raw_sample_t *samples, uint8_t max);
 void     swarmit_localization_handle_isr(void);
 
@@ -255,12 +255,12 @@ static bool _blinks_on(uint32_t ms) {
 
 // The interval can change with the schedule, so it is read before every event
 static uint32_t _send_spacing_ticks(void) {
-    uint32_t interval_us = swarmit_get_uplink_interval_us();
-    if (interval_us == 0) {
+    uint32_t min_tx_interval_us = swarmit_get_min_tx_interval_us();
+    if (min_tx_interval_us == 0) {
         return UNJOINED_SPACING_TICKS;
     }
-    // At least one uplink interval between events, rounded up to the tick
-    uint32_t spacing = (interval_us + US_PER_TICK - 1U) / US_PER_TICK;
+    // At least one minimum TX interval between events, rounded up to the tick
+    uint32_t spacing = (min_tx_interval_us + US_PER_TICK - 1U) / US_PER_TICK;
     return spacing < SEND_SPACING_TICKS ? SEND_SPACING_TICKS : spacing;
 }
 
