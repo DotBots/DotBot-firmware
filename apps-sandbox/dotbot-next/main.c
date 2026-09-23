@@ -66,6 +66,8 @@ _Static_assert(TICK_MS == DB_WHEEL_CONTROL_TICK_MS, "the wheel loop's dt assumes
 #if defined(DB_BENCH_TELEMETRY)
 /// Bench-only frame type; keep it out of protocol_data_type_t, where 13 is unused.
 #define DB_PROTOCOL_BENCH_TELEMETRY (13)
+#define TELEMETRY_STEPS             (24U)  ///< Steps one frame carries, the newest kept
+#define TELEMETRY_FIXES             (4U)   ///< New solves one frame carries, the newest kept
 #endif
 
 /// Who writes the motors. Exactly one writer per mode.
@@ -192,6 +194,34 @@ typedef struct __attribute__((packed)) {
 
 __attribute__((used)) static fix_trace_t _fix_trace[FIX_TRACE_LENGTH];
 __attribute__((used)) static uint32_t    _fix_trace_count = 0;  ///< Total written; the ring index is this modulo the length
+#endif
+
+#if defined(DB_BENCH_TELEMETRY)
+/// One wheel step, as the telemetry frame carries it
+typedef struct __attribute__((packed)) {
+    int8_t counts_left;     ///< Credited counts over this step, saturated
+    int8_t counts_right;    ///< Credited counts over this step, saturated
+    int8_t pwm_left;        ///< Duty written
+    int8_t pwm_right;       ///< Duty written
+    int8_t setpoint_left;   ///< In units of 10 mm/s
+    int8_t setpoint_right;  ///< In units of 10 mm/s
+} telemetry_step_t;
+
+/// One new solve, as the telemetry frame carries it
+typedef struct __attribute__((packed)) {
+    uint16_t tick;      ///< Low 16 bits of the serviced tick the solve was read on
+    uint16_t sequence;  ///< Low 16 bits of the fix sequence
+    uint16_t x;         ///< mm, before the bounds check, saturated
+    uint16_t y;         ///< mm, before the bounds check, saturated
+} telemetry_fix_t;
+
+static telemetry_step_t _telemetry_steps[TELEMETRY_STEPS];
+static uint32_t         _telemetry_step_count = 0;  ///< Steps recorded; the ring index is this modulo the length
+static uint32_t         _telemetry_step_sent  = 0;  ///< Step count at the last frame
+static uint32_t         _telemetry_step_tick  = 0;  ///< Serviced tick of the newest step
+static telemetry_fix_t  _telemetry_fixes[TELEMETRY_FIXES];
+static uint32_t         _telemetry_fix_count = 0;  ///< Solves recorded; the ring index is this modulo the length
+static uint32_t         _telemetry_fix_sent  = 0;  ///< Solve count at the last frame
 #endif
 
 #ifdef DB_RGB_LED_PWM_RED_PORT
@@ -396,6 +426,12 @@ static void _drive_stop(void) {
     _set_motors(0, 0);
 }
 
+#if defined(DB_BENCH_TELEMETRY)
+static inline int8_t _saturate_i8(int32_t value) {
+    return (value > INT8_MAX) ? INT8_MAX : ((value < INT8_MIN) ? INT8_MIN : (int8_t)value);
+}
+#endif
+
 /// Runs on every tick so the cursor never lags, and writes the motors only
 /// while the loop owns them
 static void _wheel_service(uint32_t tick) {
@@ -410,6 +446,19 @@ static void _wheel_service(uint32_t tick) {
         int8_t pwm_right = db_wheel_control_step(&_wheel_right, right, elapsed);
         _set_motors(pwm_left, pwm_right);
     }
+
+#if defined(DB_BENCH_TELEMETRY)
+    _telemetry_steps[_telemetry_step_count % TELEMETRY_STEPS] = (telemetry_step_t){
+        .counts_left    = _saturate_i8(left),
+        .counts_right   = _saturate_i8(right),
+        .pwm_left       = _vars.pwm_left,
+        .pwm_right      = _vars.pwm_right,
+        .setpoint_left  = _saturate_i8((int32_t)_wheel_left.setpoint / 10),
+        .setpoint_right = _saturate_i8((int32_t)_wheel_right.setpoint / 10),
+    };
+    _telemetry_step_count++;
+    _telemetry_step_tick = tick;
+#endif
 
 #if defined(DB_BENCH_TRACE)
     if (_vars.drive_mode != DRIVE_IDLE) {
@@ -509,6 +558,15 @@ static void _position_poll(void) {
     };
     _fix_trace_count++;
 #endif
+#if defined(DB_BENCH_TELEMETRY)
+    _telemetry_fixes[_telemetry_fix_count % TELEMETRY_FIXES] = (telemetry_fix_t){
+        .tick     = (uint16_t)_tick_serviced,
+        .sequence = (uint16_t)sequence,
+        .x        = (solve.x > UINT16_MAX) ? UINT16_MAX : (uint16_t)solve.x,
+        .y        = (solve.y > UINT16_MAX) ? UINT16_MAX : (uint16_t)solve.y,
+    };
+    _telemetry_fix_count++;
+#endif
 
     if (solve.x > POSITION_INVALID_MM || solve.y > POSITION_INVALID_MM) {
         return;
@@ -536,23 +594,44 @@ static void _put(uint8_t *buf, size_t *length, const void *value, size_t size) {
 }
 
 #if defined(DB_BENCH_TELEMETRY)
-/// Resets the worst tick backlog it reports.
-static void _send_bench_telemetry(const protocol_lh2_location_t *position, int32_t encoder_left, int32_t encoder_right) {
+static inline uint8_t _saturate_u8(uint32_t value) {
+    return (value > UINT8_MAX) ? UINT8_MAX : (uint8_t)value;
+}
+
+/// Every step and every new solve since the previous frame, newest kept when
+/// there are more than a frame holds; resets the worst tick backlog it reports.
+/// Layout: type, newest step tick (u32), steps carried, steps dropped, backlog,
+/// drive mode, encoder totals (i32 x 2), solves carried, solves dropped, then
+/// the steps oldest first, then the solves oldest first.
+static void _send_bench_telemetry(void) {
     size_t   length = 0;
     uint8_t *buf    = _vars.radio_buffer;
 
-    buf[length++]  = DB_PROTOCOL_BENCH_TELEMETRY;
-    uint32_t ticks = db_timer_ticks(TIMER_DEV);
-    _put(buf, &length, &ticks, sizeof(ticks));
-    _put(buf, &length, &_tick_serviced, sizeof(_tick_serviced));
-    _put(buf, &length, &_vars.max_tick_backlog, sizeof(_vars.max_tick_backlog));
-    _vars.max_tick_backlog = 0;
+    uint32_t steps     = _telemetry_step_count - _telemetry_step_sent;
+    uint32_t steps_out = (steps > TELEMETRY_STEPS) ? TELEMETRY_STEPS : steps;
+    uint32_t fixes     = _telemetry_fix_count - _telemetry_fix_sent;
+    uint32_t fixes_out = (fixes > TELEMETRY_FIXES) ? TELEMETRY_FIXES : fixes;
 
-    _put(buf, &length, position, sizeof(*position));
-    _put(buf, &length, &_vars.fix_sequence, sizeof(_vars.fix_sequence));
-    buf[length++] = (uint8_t)_vars.has_position;
-    _put(buf, &length, &encoder_left, sizeof(encoder_left));
-    _put(buf, &length, &encoder_right, sizeof(encoder_right));
+    buf[length++] = DB_PROTOCOL_BENCH_TELEMETRY;
+    _put(buf, &length, &_telemetry_step_tick, sizeof(_telemetry_step_tick));
+    buf[length++]          = (uint8_t)steps_out;
+    buf[length++]          = _saturate_u8(steps - steps_out);
+    buf[length++]          = _saturate_u8(_vars.max_tick_backlog);
+    _vars.max_tick_backlog = 0;
+    buf[length++]          = (uint8_t)_vars.drive_mode;
+    _put(buf, &length, &_vars.encoder_total_left, sizeof(_vars.encoder_total_left));
+    _put(buf, &length, &_vars.encoder_total_right, sizeof(_vars.encoder_total_right));
+    buf[length++] = (uint8_t)fixes_out;
+    buf[length++] = _saturate_u8(fixes - fixes_out);
+
+    for (uint32_t i = _telemetry_step_count - steps_out; i != _telemetry_step_count; i++) {
+        _put(buf, &length, &_telemetry_steps[i % TELEMETRY_STEPS], sizeof(telemetry_step_t));
+    }
+    for (uint32_t i = _telemetry_fix_count - fixes_out; i != _telemetry_fix_count; i++) {
+        _put(buf, &length, &_telemetry_fixes[i % TELEMETRY_FIXES], sizeof(telemetry_fix_t));
+    }
+    _telemetry_step_sent = _telemetry_step_count;
+    _telemetry_fix_sent  = _telemetry_fix_count;
 
     swarmit_send_raw_data(buf, (uint8_t)length);
 }
@@ -600,7 +679,7 @@ static void _advertise(void) {
     swarmit_send_raw_data(buf, (uint8_t)length);
 
 #if defined(DB_BENCH_TELEMETRY)
-    _send_bench_telemetry(&position, encoder_left, encoder_right);
+    _send_bench_telemetry();
 #endif
 }
 

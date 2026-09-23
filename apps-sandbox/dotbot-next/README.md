@@ -54,14 +54,16 @@ zero, control mode is manual. Encoder counts are totals since the previous
 advertisement rather than since the previous control step, which is the same field
 carrying the only meaning available here.
 
-**Bench telemetry** is a second frame behind `DB_BENCH_TELEMETRY`, carrying the
-RTC counter, the serviced tick number, the worst tick backlog, the raw solve, its
-fix sequence, and the encoder totals. The sequence is what makes fix rate and fix
-jitter measurable from the frames alone: its difference between two frames divided
-by the tick difference is the rate. The frame is deliberately absent from
-`protocol_data_type_t`: it must not exist in a shipped target, so it claims value
-13 by local convention only. Do not register that value in the shared enum without
-moving this first.
+**Bench telemetry** is a second frame behind `DB_BENCH_TELEMETRY`, sent after
+each advertisement. It carries every 10 ms wheel step since the previous frame
+(credited counts, duty, setpoints in units of 10 mm/s), every new solve since the
+previous frame (tick, fix sequence, raw coordinates), the encoder totals since
+boot, the drive mode and the worst tick backlog. Steps and solves beyond what one
+frame holds (24 and 4) are dropped oldest first and the drop is counted, and the
+totals make a lost frame cost resolution but not distance. The frame is
+deliberately absent from `protocol_data_type_t`: it must not exist in a shipped
+target, so it claims value 13 by local convention only. Do not register that
+value in the shared enum without moving this first.
 
 ## Behaviour carried over deliberately
 
