@@ -37,12 +37,12 @@
 #define QDEC_LEFT                   (0)     ///< Left wheel QDEC peripheral index
 #define QDEC_RIGHT                  (1)     ///< Right wheel QDEC peripheral index
 #define DB_POSITION_UPDATE_DELAY_MS (100U)  ///< 100ms delay between each LH2 position updates
-/// Adverts take this share of the node's uplink budget, and the rest is left
-/// for the net core's STATUS frame
-#define ADVERT_BUDGET_PERCENT     (50U)
+/// Adverts take this share of the node's transmit slots, one per minimum TX
+/// interval, and the rest is left for the net core's STATUS frame
+#define ADVERT_TX_SHARE_PERCENT   (50U)
 #define ADVERT_PERIOD_MIN_MS      (100U)   ///< Floor, and the advert timer's period
-#define ADVERT_PERIOD_MAX_MS      (1000U)  ///< Ceiling, however small the budget
-#define ADVERT_PERIOD_DEF_MS      (500U)   ///< While not joined, when the budget reads 0
+#define ADVERT_PERIOD_MAX_MS      (1000U)  ///< Ceiling, however long the interval
+#define ADVERT_PERIOD_DEF_MS      (500U)   ///< While not joined, when the interval reads 0
 #define DB_TIMEOUT_CHECK_DELAY_MS (200U)   ///< 200ms delay between each timeout delay check
 #define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
 #define DB_BUFFER_MAX_BYTES       (255U)   ///< Max bytes in UART receive buffer
@@ -78,7 +78,7 @@ void swarmit_ipc_isr(ipc_isr_cb_t cb);
 void     swarmit_localization_get_position(position_2d_t *position);
 void     swarmit_get_battery_level(uint16_t *battery_level);
 void     swarmit_localization_handle_isr(void);
-uint16_t swarmit_get_uplink_budget(void);
+uint32_t swarmit_get_min_tx_interval_us(void);
 
 //=========================== variables ========================================
 
@@ -335,14 +335,14 @@ static void _advertise(void) {
     _dotbot_vars.advertize = true;
 }
 
-/// Derived from the node's uplink budget after every advert, so a gateway on
-/// another schedule changes the rate within one period
+/// Derived from the node's minimum TX interval after every advert, so a
+/// gateway on another schedule changes the rate within one period
 static uint32_t _advert_period_ms(void) {
-    uint32_t budget = swarmit_get_uplink_budget();
-    if (budget == 0) {
+    uint32_t min_tx_interval_us = swarmit_get_min_tx_interval_us();
+    if (min_tx_interval_us == 0) {
         return ADVERT_PERIOD_DEF_MS;
     }
-    uint32_t period_ms = 10000000U / (ADVERT_BUDGET_PERCENT * budget);
+    uint32_t period_ms = (min_tx_interval_us / 1000U) * 100U / ADVERT_TX_SHARE_PERCENT;
     if (period_ms < ADVERT_PERIOD_MIN_MS) {
         return ADVERT_PERIOD_MIN_MS;
     }
