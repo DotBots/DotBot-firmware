@@ -137,16 +137,16 @@ static uint32_t          _tick_wheel    = 0;  ///< Tick of the last wheel step, 
 /// The wheel loop's own cursor into the encoder totals
 static encoder_cursor_t _wheel_encoders = { 0 };
 
-/// Feedforward from an open-loop duty sweep of one v3 on the office floor
-/// (breakaway 42-44, rolling at about 36 + 0.11..0.15 duty per mm/s); kp and ki
-/// are first guesses against that plant.
+/// Feedforward from an untethered open-loop duty sweep of one v3 on the office
+/// carpet (breakaway 37-45, rolling at 32 + 0.088..0.097 duty per mm/s for
+/// either wheel and direction); kp and ki from closed-loop holds on it.
 static const db_wheel_control_conf_t _wheel_conf = {
-    .kp                = 0.5f,
+    .kp                = 0.25f,
     .ki                = 5.0f,
     .u_breakaway       = 44.0f,
     .kick_ramp         = 0.5f,
-    .u_run             = 36.0f,
-    .k_run             = 0.13f,
+    .u_run             = 32.0f,
+    .k_run             = 0.093f,
     .i_zone            = 40.0f,
     .pwm_max           = 75.0f,
     .pwm_slew_per_tick = 40.0f,
