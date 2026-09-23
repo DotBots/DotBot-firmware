@@ -145,17 +145,17 @@ static uint32_t          _tick_wheel    = 0;  ///< Tick of the last wheel step, 
 static encoder_cursor_t _wheel_encoders = { 0 };
 
 /// Feedforward from an untethered open-loop duty sweep of one v3 on the office
-/// carpet (breakaway 37-45, rolling at 32 + 0.088..0.097 duty per mm/s for
+/// carpet (breakaway 37-45, rolling at 32 + 0.092..0.101 duty per mm/s for
 /// either wheel and direction); ki from closed-loop holds, kp from step
 /// responses. Full duty, and no slew limit short of it.
 static const db_wheel_control_conf_t _wheel_conf = {
-    .kp                = 0.5f,
-    .ki                = 5.0f,
+    .kp                = 0.52f,
+    .ki                = 5.2f,
     .u_breakaway       = 44.0f,
     .kick_ramp         = 0.5f,
     .u_run             = 32.0f,
-    .k_run             = 0.093f,
-    .i_zone            = 40.0f,
+    .k_run             = 0.097f,
+    .i_zone            = 38.0f,
     .pwm_max           = 100.0f,
     .pwm_slew_per_tick = 100.0f,
 };
