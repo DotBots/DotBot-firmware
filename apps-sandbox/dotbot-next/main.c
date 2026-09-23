@@ -63,6 +63,11 @@ _Static_assert(TICK_MS == DB_WHEEL_CONTROL_TICK_MS, "the wheel loop's dt assumes
 /// Heading is not estimated here; this is the advertisement's "unknown" value.
 #define DIRECTION_INVALID (-1000)
 
+#if defined(DB_BENCH_TELEMETRY) || defined(DB_BENCH_TRACE)
+/// Duty the bench records carry for a braked motor, outside [-100, 100]
+#define PWM_BRAKED (INT8_MIN)
+#endif
+
 #if defined(DB_BENCH_TELEMETRY)
 /// Bench-only frame type; keep it out of protocol_data_type_t, where 13 is unused.
 #define DB_PROTOCOL_BENCH_TELEMETRY (13)
@@ -72,7 +77,7 @@ _Static_assert(TICK_MS == DB_WHEEL_CONTROL_TICK_MS, "the wheel loop's dt assumes
 
 /// Who writes the motors. Exactly one writer per mode.
 typedef enum {
-    DRIVE_IDLE,      ///< Nothing commanded; motors coast
+    DRIVE_IDLE,      ///< Nothing commanded; the wheel loop at zero brakes a turning wheel, else coasts
     DRIVE_RAW,       ///< MOVE_RAW writes duty directly and the wheel loop is off
     DRIVE_VELOCITY,  ///< The wheel loop is the only writer
 } drive_mode_t;
@@ -97,6 +102,8 @@ typedef struct {
     drive_mode_t  drive_mode;               ///< Which writer owns the motors
     int8_t        pwm_left;                 ///< Last commanded duty, reported back for telemetry
     int8_t        pwm_right;                ///< Last commanded duty, reported back for telemetry
+    bool          brake_left;               ///< Left motor shorted, its duty ignored
+    bool          brake_right;              ///< Right motor shorted, its duty ignored
     uint32_t      max_tick_backlog;         ///< Worst number of ticks the main loop fell behind
 } bench_vars_t;
 
@@ -169,8 +176,8 @@ typedef struct __attribute__((packed)) {
     int16_t  setpoint_right;  ///< mm/s
     int16_t  counts_left;     ///< Credited counts over this step
     int16_t  counts_right;    ///< Credited counts over this step
-    int8_t   pwm_left;        ///< Duty written
-    int8_t   pwm_right;       ///< Duty written
+    int8_t   pwm_left;        ///< Duty written, PWM_BRAKED while braked
+    int8_t   pwm_right;       ///< Duty written, PWM_BRAKED while braked
     uint8_t  elapsed;         ///< Ticks this step covered
     uint8_t  mode;            ///< drive_mode_t at this step
 } wheel_trace_t;
@@ -202,8 +209,8 @@ __attribute__((used)) static uint32_t    _fix_trace_count = 0;  ///< Total writt
 typedef struct __attribute__((packed)) {
     int8_t counts_left;     ///< Credited counts over this step, saturated
     int8_t counts_right;    ///< Credited counts over this step, saturated
-    int8_t pwm_left;        ///< Duty written
-    int8_t pwm_right;       ///< Duty written
+    int8_t pwm_left;        ///< Duty written, PWM_BRAKED while braked
+    int8_t pwm_right;       ///< Duty written, PWM_BRAKED while braked
     int8_t setpoint_left;   ///< In units of 10 mm/s
     int8_t setpoint_right;  ///< In units of 10 mm/s
 } telemetry_step_t;
@@ -259,7 +266,7 @@ static void     _position_poll(void);
 static void     _timeout_check(void);
 static void     _advertise(void);
 static uint32_t _advert_period_ticks(void);
-static void     _set_motors(int16_t left, int16_t right);
+static void     _set_motors(int16_t left, int16_t right, bool brake_left, bool brake_right);
 static void     _rx_process(void);
 static void     _drive_stop(void);
 static void     _wheel_service(uint32_t tick);
@@ -375,7 +382,7 @@ static void _rx_process(void) {
             _vars.drive_mode = DRIVE_RAW;
             db_wheel_control_reset(&_wheel_left);
             db_wheel_control_reset(&_wheel_right);
-            _set_motors((int16_t)(100 * ((float)command.left_y / INT8_MAX)), (int16_t)(100 * ((float)command.right_y / INT8_MAX)));
+            _set_motors((int16_t)(100 * ((float)command.left_y / INT8_MAX)), (int16_t)(100 * ((float)command.right_y / INT8_MAX)), false, false);
         } break;
         case DB_PROTOCOL_CMD_WHEEL_VELOCITY:
         {
@@ -420,11 +427,13 @@ static void _rx_process(void) {
     }
 }
 
+/// Brakes both motors; from the next tick the wheel loop releases each one once
+/// its wheel stands
 static void _drive_stop(void) {
     _vars.drive_mode = DRIVE_IDLE;
     db_wheel_control_reset(&_wheel_left);
     db_wheel_control_reset(&_wheel_right);
-    _set_motors(0, 0);
+    _set_motors(0, 0, true, true);
 }
 
 #if defined(DB_BENCH_TELEMETRY)
@@ -433,8 +442,15 @@ static inline int8_t _saturate_i8(int32_t value) {
 }
 #endif
 
+#if defined(DB_BENCH_TELEMETRY) || defined(DB_BENCH_TRACE)
+static inline int8_t _pwm_recorded(int8_t pwm, bool brake) {
+    return brake ? PWM_BRAKED : pwm;
+}
+#endif
+
 /// Runs on every tick so the cursor never lags, and writes the motors only
-/// while the loop owns them
+/// while the loop owns them: driving by velocity, and after a stop, where its
+/// zero setpoints brake the wheels until they stand
 static void _wheel_service(uint32_t tick) {
     uint32_t elapsed = tick - _tick_wheel;
     _tick_wheel      = tick;
@@ -442,18 +458,18 @@ static void _wheel_service(uint32_t tick) {
     int32_t right;
     _encoders_delta(&_wheel_encoders, &left, &right);
 
-    if (_vars.drive_mode == DRIVE_VELOCITY) {
+    if (_vars.drive_mode != DRIVE_RAW) {
         int8_t pwm_left  = db_wheel_control_step(&_wheel_left, left, elapsed);
         int8_t pwm_right = db_wheel_control_step(&_wheel_right, right, elapsed);
-        _set_motors(pwm_left, pwm_right);
+        _set_motors(pwm_left, pwm_right, _wheel_left.brake, _wheel_right.brake);
     }
 
 #if defined(DB_BENCH_TELEMETRY)
     _telemetry_steps[_telemetry_step_count % TELEMETRY_STEPS] = (telemetry_step_t){
         .counts_left    = _saturate_i8(left),
         .counts_right   = _saturate_i8(right),
-        .pwm_left       = _vars.pwm_left,
-        .pwm_right      = _vars.pwm_right,
+        .pwm_left       = _pwm_recorded(_vars.pwm_left, _vars.brake_left),
+        .pwm_right      = _pwm_recorded(_vars.pwm_right, _vars.brake_right),
         .setpoint_left  = _saturate_i8((int32_t)_wheel_left.setpoint / 10),
         .setpoint_right = _saturate_i8((int32_t)_wheel_right.setpoint / 10),
     };
@@ -476,8 +492,8 @@ static void _wheel_service(uint32_t tick) {
             .setpoint_right = (int16_t)_wheel_right.setpoint,
             .counts_left    = (int16_t)left,
             .counts_right   = (int16_t)right,
-            .pwm_left       = _vars.pwm_left,
-            .pwm_right      = _vars.pwm_right,
+            .pwm_left       = _pwm_recorded(_vars.pwm_left, _vars.brake_left),
+            .pwm_right      = _pwm_recorded(_vars.pwm_right, _vars.brake_right),
             .elapsed        = (uint8_t)elapsed,
             .mode           = (uint8_t)_vars.drive_mode,
         };
@@ -576,17 +592,19 @@ static void _position_poll(void) {
     _vars.has_position = true;
 }
 
-/// Unconditional: raw and velocity driving both stop when the host goes silent.
+/// Raw and velocity driving both stop when the host goes silent.
 static void _timeout_check(void) {
-    if (_ticks_since(_vars.ts_last_packet_received) > TIMEOUT_STOP_TICKS) {
+    if (_vars.drive_mode != DRIVE_IDLE && _ticks_since(_vars.ts_last_packet_received) > TIMEOUT_STOP_TICKS) {
         _drive_stop();
     }
 }
 
-static void _set_motors(int16_t left, int16_t right) {
-    db_motors_set_pwm(left, right);
-    _vars.pwm_left  = (int8_t)left;
-    _vars.pwm_right = (int8_t)right;
+static void _set_motors(int16_t left, int16_t right, bool brake_left, bool brake_right) {
+    db_motors_set_pwm_brake(left, right, brake_left, brake_right);
+    _vars.pwm_left    = brake_left ? 0 : (int8_t)left;
+    _vars.pwm_right   = brake_right ? 0 : (int8_t)right;
+    _vars.brake_left  = brake_left;
+    _vars.brake_right = brake_right;
 }
 
 static void _put(uint8_t *buf, size_t *length, const void *value, size_t size) {
