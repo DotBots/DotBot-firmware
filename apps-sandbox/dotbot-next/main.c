@@ -173,7 +173,6 @@ static db_wheel_control_t _wheel_left;
 static db_wheel_control_t _wheel_right;
 
 static const db_pose_estimator_conf_t _estimator_conf = {
-    .track_mm                   = DB_TRACK_EFFECTIVE,
     .lever_mm                   = DB_LH2_LEVER_ARM_EFFECTIVE,
     .lever_angle_deg            = DB_LH2_LEVER_ANGLE,
     .r_pos_mm2                  = DB_POSE_ESTIMATOR_R_POS_MM2,
@@ -182,6 +181,7 @@ static const db_pose_estimator_conf_t _estimator_conf = {
     .q_heading_turn_deg2_per_mm = DB_POSE_ESTIMATOR_Q_HEADING_TURN_DEG2_PER_MM,
     .turn_speed_ref_mm_s        = DB_POSE_ESTIMATOR_TURN_SPEED_REF_MM_S,
     .gate                       = DB_POSE_ESTIMATOR_GATE,
+    .fix_age_ticks              = DB_POSE_ESTIMATOR_FIX_AGE_TICKS,
     .timeout_ticks              = DB_POSE_ESTIMATOR_TIMEOUT_TICKS,
     .seed_fixes                 = DB_POSE_ESTIMATOR_SEED_FIXES,
     .seed_tolerance_mm          = DB_POSE_ESTIMATOR_SEED_TOLERANCE_MM,
