@@ -35,12 +35,12 @@
 #define TICKS_PER_POSITION (10U)  ///< 100 ms, and the rate a new solve is published at
 #define TICKS_PER_TIMEOUT  (20U)  ///< 200 ms
 
-/// Adverts take this share of the node's uplink budget, and the rest is left
-/// for the net core's STATUS frame
-#define ADVERT_BUDGET_PERCENT (50U)
-#define ADVERT_PERIOD_MIN_MS  (100U)   ///< Floor, however large the budget
-#define ADVERT_PERIOD_MAX_MS  (1000U)  ///< Ceiling, however small the budget
-#define ADVERT_PERIOD_DEF_MS  (500U)   ///< While not joined, when the budget reads 0
+/// Adverts take this share of the node's transmit slots, one per minimum TX
+/// interval, and the rest is left for the net core's STATUS frame
+#define ADVERT_TX_SHARE_PERCENT (50U)
+#define ADVERT_PERIOD_MIN_MS    (100U)   ///< Floor, however short the interval
+#define ADVERT_PERIOD_MAX_MS    (1000U)  ///< Ceiling, however long the interval
+#define ADVERT_PERIOD_DEF_MS    (500U)   ///< While not joined, when the interval reads 0
 
 _Static_assert(TICK_MS == DB_WHEEL_CONTROL_TICK_MS, "the wheel loop's dt assumes this tick");
 
@@ -116,7 +116,7 @@ void     swarmit_ipc_isr(ipc_isr_cb_t cb);
 uint32_t swarmit_localization_get_fix(position_2d_t *position);
 void     swarmit_get_battery_level(uint16_t *battery_level);
 void     swarmit_localization_handle_isr(void);
-uint16_t swarmit_get_uplink_budget(void);
+uint32_t swarmit_get_min_tx_interval_us(void);
 
 //=========================== variables ========================================
 
@@ -435,13 +435,13 @@ static void _wheel_service(uint32_t tick) {
 #endif
 }
 
-/// Derived from the node's uplink budget at every advert, so a gateway on
+/// Derived from the node's minimum TX interval at every advert, so a gateway on
 /// another schedule changes the rate within one period
 static uint32_t _advert_period_ticks(void) {
-    uint32_t budget    = swarmit_get_uplink_budget();
-    uint32_t period_ms = ADVERT_PERIOD_DEF_MS;
-    if (budget > 0) {
-        period_ms = 10000000U / (ADVERT_BUDGET_PERCENT * budget);
+    uint32_t min_tx_interval_us = swarmit_get_min_tx_interval_us();
+    uint32_t period_ms          = ADVERT_PERIOD_DEF_MS;
+    if (min_tx_interval_us > 0) {
+        period_ms = (min_tx_interval_us / 1000U) * 100U / ADVERT_TX_SHARE_PERCENT;
         if (period_ms < ADVERT_PERIOD_MIN_MS) {
             period_ms = ADVERT_PERIOD_MIN_MS;
         } else if (period_ms > ADVERT_PERIOD_MAX_MS) {
