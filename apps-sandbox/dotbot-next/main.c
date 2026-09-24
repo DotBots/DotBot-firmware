@@ -66,6 +66,8 @@ _Static_assert(TICK_MS == DB_WHEEL_CONTROL_TICK_MS, "the wheel loop's dt assumes
 #if defined(DB_BENCH_TELEMETRY) || defined(DB_BENCH_TRACE)
 /// Duty the bench records carry for a braked motor, outside [-100, 100]
 #define PWM_BRAKED (INT8_MIN)
+/// Duty the bench records carry for a wheel the loop has stalled, outside [-100, 100]
+#define PWM_STALLED (INT8_MIN + 1)
 #endif
 
 #if defined(DB_BENCH_TELEMETRY)
@@ -158,6 +160,8 @@ static const db_wheel_control_conf_t _wheel_conf = {
     .i_zone            = 38.0f,
     .pwm_max           = 100.0f,
     .pwm_slew_per_tick = 100.0f,
+    .stall_pwm         = 80.0f,
+    .stall_ms          = 500U,
 };
 static db_wheel_control_t _wheel_left;
 static db_wheel_control_t _wheel_right;
@@ -176,8 +180,8 @@ typedef struct __attribute__((packed)) {
     int16_t  setpoint_right;  ///< mm/s
     int16_t  counts_left;     ///< Credited counts over this step
     int16_t  counts_right;    ///< Credited counts over this step
-    int8_t   pwm_left;        ///< Duty written, PWM_BRAKED while braked
-    int8_t   pwm_right;       ///< Duty written, PWM_BRAKED while braked
+    int8_t   pwm_left;        ///< Duty written, PWM_BRAKED while braked, PWM_STALLED while stalled
+    int8_t   pwm_right;       ///< Duty written, PWM_BRAKED while braked, PWM_STALLED while stalled
     uint8_t  elapsed;         ///< Ticks this step covered
     uint8_t  mode;            ///< drive_mode_t at this step
 } wheel_trace_t;
@@ -209,8 +213,8 @@ __attribute__((used)) static uint32_t    _fix_trace_count = 0;  ///< Total writt
 typedef struct __attribute__((packed)) {
     int8_t counts_left;     ///< Credited counts over this step, saturated
     int8_t counts_right;    ///< Credited counts over this step, saturated
-    int8_t pwm_left;        ///< Duty written, PWM_BRAKED while braked
-    int8_t pwm_right;       ///< Duty written, PWM_BRAKED while braked
+    int8_t pwm_left;        ///< Duty written, PWM_BRAKED while braked, PWM_STALLED while stalled
+    int8_t pwm_right;       ///< Duty written, PWM_BRAKED while braked, PWM_STALLED while stalled
     int8_t setpoint_left;   ///< In units of 10 mm/s
     int8_t setpoint_right;  ///< In units of 10 mm/s
 } telemetry_step_t;
@@ -443,8 +447,8 @@ static inline int8_t _saturate_i8(int32_t value) {
 #endif
 
 #if defined(DB_BENCH_TELEMETRY) || defined(DB_BENCH_TRACE)
-static inline int8_t _pwm_recorded(int8_t pwm, bool brake) {
-    return brake ? PWM_BRAKED : pwm;
+static inline int8_t _pwm_recorded(int8_t pwm, bool brake, bool stalled) {
+    return brake ? PWM_BRAKED : (stalled ? PWM_STALLED : pwm);
 }
 #endif
 
@@ -468,8 +472,8 @@ static void _wheel_service(uint32_t tick) {
     _telemetry_steps[_telemetry_step_count % TELEMETRY_STEPS] = (telemetry_step_t){
         .counts_left    = _saturate_i8(left),
         .counts_right   = _saturate_i8(right),
-        .pwm_left       = _pwm_recorded(_vars.pwm_left, _vars.brake_left),
-        .pwm_right      = _pwm_recorded(_vars.pwm_right, _vars.brake_right),
+        .pwm_left       = _pwm_recorded(_vars.pwm_left, _vars.brake_left, _wheel_left.stalled),
+        .pwm_right      = _pwm_recorded(_vars.pwm_right, _vars.brake_right, _wheel_right.stalled),
         .setpoint_left  = _saturate_i8((int32_t)_wheel_left.setpoint / 10),
         .setpoint_right = _saturate_i8((int32_t)_wheel_right.setpoint / 10),
     };
@@ -492,8 +496,8 @@ static void _wheel_service(uint32_t tick) {
             .setpoint_right = (int16_t)_wheel_right.setpoint,
             .counts_left    = (int16_t)left,
             .counts_right   = (int16_t)right,
-            .pwm_left       = _pwm_recorded(_vars.pwm_left, _vars.brake_left),
-            .pwm_right      = _pwm_recorded(_vars.pwm_right, _vars.brake_right),
+            .pwm_left       = _pwm_recorded(_vars.pwm_left, _vars.brake_left, _wheel_left.stalled),
+            .pwm_right      = _pwm_recorded(_vars.pwm_right, _vars.brake_right, _wheel_right.stalled),
             .elapsed        = (uint8_t)elapsed,
             .mode           = (uint8_t)_vars.drive_mode,
         };
