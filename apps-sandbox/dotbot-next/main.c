@@ -520,6 +520,16 @@ static void _rx_process(void) {
                 .y_mm         = (float)point.y,
                 .threshold_mm = (float)threshold,
             };
+#if defined(DB_BENCH_TELEMETRY)
+            // Bench only, until the protocol carries one: a second point sets
+            // the final heading, facing from the first point toward it
+            if (count >= 2 && length >= 1 + sizeof(uint16_t) + 1 + 2 * sizeof(protocol_lh2_location_t)) {
+                protocol_lh2_location_t toward;
+                memcpy(&toward, &payload[sizeof(threshold) + 1 + sizeof(point)], sizeof(toward));
+                target.has_final_heading = true;
+                target.final_heading_deg = atan2f(-((float)toward.x - (float)point.x), (float)toward.y - (float)point.y) * 180.0f / (float)M_PI;
+            }
+#endif
             if (_vars.drive_mode != DRIVE_WAYPOINT) {
                 _enter_drive_mode(DRIVE_WAYPOINT);
             }
