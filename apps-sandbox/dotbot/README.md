@@ -24,13 +24,14 @@ moves. Its constants are provisional until measured on the floor.
 
 ## Driving
 
-Three drive modes, each with exactly one writer of the motors:
+Four drive modes, each with exactly one writer of the motors:
 
 | Mode | Entered by | Motors |
 |---|---|---|
 | idle | boot, `CONTROL_MODE`, the command timeout | the wheel loop at a zero setpoint: brakes a turning wheel, then lets it coast once it stands |
 | raw | `CMD_MOVE_RAW` | the command's duty, the wheel loop off |
 | velocity | `CMD_WHEEL_VELOCITY` | the wheel loop, toward per-wheel setpoints in mm/s clamped to ±700 |
+| waypoint | a non-empty `LH2_WAYPOINTS` batch | the steering, through the wheel loop's setpoints, or both motors braked while it holds |
 
 The wheel loop (`drv/wheel_control` in DotBot-libs) runs every 10 ms tick. A zero
 setpoint shorts the motor while the wheel still turns, so a stop does not coast
@@ -40,9 +41,13 @@ records carry its duty as `-127`. The ±700 mm/s clamp keeps a count longer than
 the QDEC's 128 us sample period.
 
 Commands arrive in the IPC interrupt and are applied on the next tick; a newer
-command replaces one not yet applied. Only `CMD_MOVE_RAW` and
-`CMD_WHEEL_VELOCITY` refresh the command timeout, so a host that keeps sending
-other packets still stops a driving robot by going quiet on drive commands.
+command replaces one not yet applied. Only `CMD_MOVE_RAW`, `CMD_WHEEL_VELOCITY`
+and `LH2_WAYPOINTS` refresh the command timeout, so a host that keeps sending
+other packets still stops a raw or velocity drive by going quiet on drive
+commands. A waypoint batch is not under the command timeout: it needs no
+resending, and the steering stops it on arrival, on losing its heading and on
+its own turn, progress, hold and settle timeouts. An empty batch,
+`CONTROL_MODE`, or a raw or velocity command stops it.
 
 ## Structure
 
@@ -79,8 +84,9 @@ bench instrument that number is data.
 **Advertisement** fields are those of the standard DotBot advertisement, so
 host-side parsing is unchanged. Heading and position are the estimator's while
 it tracks; otherwise heading is the unknown-value sentinel `-1000` and position is
-the last solve. Fields this application does not own carry unknown values:
-waypoints and waypoint index are zero, control mode is manual. Encoder counts are totals since the previous
+the last solve. The calibration bitmask is unknown (`0xff`). Control mode is
+automatic while a batch is active, and the waypoint fields give the point being
+driven to, followed by the waypoint report. Encoder counts are totals since the previous
 advertisement rather than since the previous control step, which is the same field
 carrying the only meaning available here.
 
@@ -115,7 +121,7 @@ is recorded here so the next rewrite does not have to rediscover them.
 
 | Change | Reason |
 |---|---|
-| The command timeout is unconditional | In the previous sandbox app it was skipped in automatic mode, so an autonomously driving robot has no deadman at all. This application has no autonomous mode, so silence always means stop, and the exemption should not be reintroduced without a replacement. |
+| The command timeout covers every host-driven mode | In the previous sandbox app it was skipped in automatic mode, so an autonomously driving robot had no deadman at all. Here only a waypoint batch is exempt, and it has a replacement: the steering ends the batch on its own timeouts and on losing its heading. |
 | Timeout arithmetic uses a masked difference | `db_timer_ticks()` returns a 24-bit counter that wraps every 512 s. A plain `now > then + delay` comparison is false for the entire pass after a wrap, so a robot whose last command arrived just before the rollover keeps its last commanded speed. |
 | No displacement gate on incoming fixes | The gate in the previous sandbox app (and still in `apps/dotbot`) is anchored on the last accepted fix and only an accepted fix moves the anchor, so once the anchor is stale by more than the threshold, every fix that could correct it is rejected. Rejecting outliers belongs where the uncertainty is tracked, not against a self-referential anchor. |
 | Freshness read from a sequence, not from the coordinates | The previous sandbox app could only compare coordinate values, which reads a stationary robot as having no new fix and a re-read of one solve as a measurement in its own right. |
