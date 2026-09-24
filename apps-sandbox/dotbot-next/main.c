@@ -291,12 +291,13 @@ static inline uint32_t _ticks_since(uint32_t then) {
 
 //=========================== callbacks ========================================
 
+/// The newest command replaces one the main loop has not applied yet
 static void _rx_data_callback(const uint8_t *pkt, size_t len) {
-    _vars.ts_last_packet_received = db_timer_ticks(TIMER_DEV);
-
-    // One command per tick is plenty; a second one before the tick is dropped
-    if (_rx_pending || len == 0 || len > sizeof(_rx_buffer)) {
+    if (len == 0 || len > sizeof(_rx_buffer)) {
         return;
+    }
+    if (pkt[0] == DB_PROTOCOL_CMD_MOVE_RAW || pkt[0] == DB_PROTOCOL_CMD_WHEEL_VELOCITY) {
+        _vars.ts_last_packet_received = db_timer_ticks(TIMER_DEV);
     }
     memcpy(_rx_buffer, pkt, len);
     _rx_length = len;
@@ -363,11 +364,16 @@ static void _rx_process(void) {
     if (!_rx_pending) {
         return;
     }
+    // Masked so the IPC interrupt cannot replace the buffer mid-copy
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
     __DMB();  // read the buffer only after seeing the flag
     uint8_t packet[RX_MAILBOX_BYTES];
     size_t  length = _rx_length;
     memcpy(packet, _rx_buffer, length);
+    __DMB();  // the copy is complete before the flag frees the buffer
     _rx_pending = false;
+    __set_PRIMASK(primask);
 
     const uint8_t *payload = &packet[1];
     switch (packet[0]) {
