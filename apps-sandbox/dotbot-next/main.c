@@ -3,7 +3,8 @@
  * @defgroup project_dotbot_next    DotBot control application, rebuilt
  * @ingroup projects
  * @brief Sandboxed DotBot app: keepalive, position, encoders, telemetry,
- * direct motor commands, the per-wheel speed loop and the pose estimator.
+ * direct motor commands, the per-wheel speed loop, the pose estimator and
+ * steering to a single waypoint.
  *
  * @copyright Inria, 2026
  */
@@ -24,6 +25,7 @@
 #include "protocol.h"
 #include "qdec.h"
 #include "rgbled_pwm.h"
+#include "steering.h"
 #include "timer.h"
 #include "wheel_control.h"
 
@@ -47,13 +49,16 @@
 
 _Static_assert(TICK_MS == DB_WHEEL_CONTROL_TICK_MS, "the wheel loop's dt assumes this tick");
 _Static_assert(TICK_MS == DB_POSE_ESTIMATOR_TICK_MS, "the estimator's timeout assumes this tick");
+_Static_assert(TICK_MS == DB_STEERING_TICK_MS, "the steering's timeouts assume this tick");
+_Static_assert(DB_STEERING_PERIOD_TICKS == TICKS_PER_POSITION, "steering runs once per position poll, after it");
 
 /// Largest wheel speed a command may set, in mm/s. A count then takes 135 us,
 /// just over the QDEC's default 128 us sample period.
 #define WHEEL_SPEED_MAX_MM_S (700)
 
-/// Room for the largest command this app accepts, header byte included
-#define RX_MAILBOX_BYTES (16U)
+/// Room for the largest command this app accepts, header byte included: a full
+/// waypoint batch, threshold and count first
+#define RX_MAILBOX_BYTES (1U + sizeof(uint16_t) + 1U + DB_MAX_WAYPOINTS * sizeof(protocol_lh2_location_t))
 
 #define DB_BUFFER_MAX_BYTES (255U)
 #define TIMEOUT_STOP_TICKS  (17000U)  ///< ~500 ms of RTC ticks without a command
@@ -87,6 +92,7 @@ typedef enum {
     DRIVE_IDLE,      ///< Nothing commanded; the wheel loop at zero brakes a turning wheel, else coasts
     DRIVE_RAW,       ///< MOVE_RAW writes duty directly and the wheel loop is off
     DRIVE_VELOCITY,  ///< The wheel loop is the only writer
+    DRIVE_WAYPOINT,  ///< The steering sets the wheel loop's setpoints, or holds the motors braked
 } drive_mode_t;
 
 typedef struct {
@@ -171,6 +177,34 @@ static const db_wheel_control_conf_t _wheel_conf = {
 };
 static db_wheel_control_t _wheel_left;
 static db_wheel_control_t _wheel_right;
+
+static const db_steering_conf_t _steering_conf = {
+    .lever_mm         = DB_LH2_LEVER_ARM_EFFECTIVE,
+    .v_max_mm_s       = DB_STEERING_V_MAX_MM_S,
+    .approach_per_s   = DB_STEERING_APPROACH_PER_S,
+    .runon_s          = DB_STEERING_RUNON_S,
+    .spin_mm_s        = DB_STEERING_SPIN_MM_S,
+    .spin_min_mm_s    = DB_STEERING_SPIN_MIN_MM_S,
+    .heading_kp       = DB_STEERING_HEADING_KP,
+    .heading_kd       = DB_STEERING_HEADING_KD,
+    .align_enter_deg  = DB_STEERING_ALIGN_ENTER_DEG,
+    .align_exit_deg   = DB_STEERING_ALIGN_EXIT_DEG,
+    .full_speed_deg   = DB_STEERING_FULL_SPEED_DEG,
+    .final_tol_deg    = DB_STEERING_FINAL_TOL_DEG,
+    .near_mm          = DB_STEERING_NEAR_MM,
+    .bearing_min_mm   = DB_STEERING_BEARING_MIN_MM,
+    .lookahead_s      = DB_STEERING_LOOKAHEAD_S,
+    .arrival_min_mm   = DB_STEERING_ARRIVAL_MIN_MM,
+    .no_heading_ticks = DB_STEERING_NO_HEADING_TICKS,
+    .turn_ticks       = DB_STEERING_TURN_TICKS,
+    .progress_ticks   = DB_STEERING_PROGRESS_TICKS,
+    .progress_mm      = DB_STEERING_PROGRESS_MM,
+    .hold_ticks       = DB_STEERING_HOLD_TICKS,
+};
+/// Read over the debugger for its state and failure reason
+__attribute__((used)) static db_steering_t _steering;
+static uint32_t                            _tick_steering  = 0;      ///< Tick of the last steering step, main loop only
+static bool                                _steering_brake = false;  ///< The steering holds the motors braked
 
 static const db_pose_estimator_conf_t _estimator_conf = {
     .lever_mm                     = DB_LH2_LEVER_ARM_EFFECTIVE,
@@ -311,6 +345,8 @@ static void     _rx_process(void);
 static void     _drive_stop(void);
 static void     _wheel_service(uint32_t tick);
 static void     _estimator_service(uint32_t tick);
+static void     _steering_service(uint32_t tick);
+static void     _enter_drive_mode(drive_mode_t mode);
 
 /// Elapsed rather than a multiple, since the main loop drops its backlog and
 /// can step over any given tick.
@@ -333,7 +369,7 @@ static void _rx_data_callback(const uint8_t *pkt, size_t len) {
     if (len == 0 || len > sizeof(_rx_buffer)) {
         return;
     }
-    if (pkt[0] == DB_PROTOCOL_CMD_MOVE_RAW || pkt[0] == DB_PROTOCOL_CMD_WHEEL_VELOCITY) {
+    if (pkt[0] == DB_PROTOCOL_CMD_MOVE_RAW || pkt[0] == DB_PROTOCOL_CMD_WHEEL_VELOCITY || pkt[0] == DB_PROTOCOL_LH2_WAYPOINTS) {
         _vars.ts_last_packet_received = db_timer_ticks(TIMER_DEV);
     }
     memcpy(_rx_buffer, pkt, len);
@@ -354,6 +390,7 @@ int main(void) {
     db_wheel_control_init(&_wheel_left, &_wheel_conf);
     db_wheel_control_init(&_wheel_right, &_wheel_conf);
     db_pose_estimator_init(&_estimator, &_estimator_conf);
+    db_steering_init(&_steering, &_steering_conf);
     db_gpio_init(&db_led1, DB_GPIO_OUT);
 
     _advert_period = _advert_period_ticks();
@@ -392,6 +429,9 @@ static void _service_tick(uint32_t tick) {
     if (_due(&_tick_position, tick, TICKS_PER_POSITION)) {
         _position_poll();
     }
+    if (_due(&_tick_steering, tick, DB_STEERING_PERIOD_TICKS)) {
+        _steering_service(tick);
+    }
     if (_due(&_tick_timeout, tick, TICKS_PER_TIMEOUT)) {
         _timeout_check();
     }
@@ -425,14 +465,7 @@ static void _rx_process(void) {
             }
             protocol_move_raw_command_t command;
             memcpy(&command, payload, sizeof(command));
-#if defined(DB_BENCH_TRACE)
-            if (_vars.drive_mode == DRIVE_IDLE) {
-                _trace_count = 0;
-            }
-#endif
-            _vars.drive_mode = DRIVE_RAW;
-            db_wheel_control_reset(&_wheel_left);
-            db_wheel_control_reset(&_wheel_right);
+            _enter_drive_mode(DRIVE_RAW);
             _set_motors((int16_t)(100 * ((float)command.left_y / INT8_MAX)), (int16_t)(100 * ((float)command.right_y / INT8_MAX)), false, false);
         } break;
         case DB_PROTOCOL_CMD_WHEEL_VELOCITY:
@@ -443,14 +476,7 @@ static void _rx_process(void) {
             protocol_wheel_velocity_command_t command;
             memcpy(&command, payload, sizeof(command));
             if (_vars.drive_mode != DRIVE_VELOCITY) {
-                db_wheel_control_reset(&_wheel_left);
-                db_wheel_control_reset(&_wheel_right);
-#if defined(DB_BENCH_TRACE)
-                if (_vars.drive_mode == DRIVE_IDLE) {
-                    _trace_count = 0;
-                }
-#endif
-                _vars.drive_mode = DRIVE_VELOCITY;
+                _enter_drive_mode(DRIVE_VELOCITY);
             }
             int16_t left  = command.left_mm_s;
             int16_t right = command.right_mm_s;
@@ -470,6 +496,36 @@ static void _rx_process(void) {
             db_rgbled_pwm_set_color(command.r, command.g, command.b);
 #endif
         } break;
+        case DB_PROTOCOL_LH2_WAYPOINTS:
+        {
+            // threshold (u16, mm), count (u8), then the points. Only the first
+            // point is steered to; the rest of the batch is ignored.
+            if (length < 1 + sizeof(uint16_t) + 1) {
+                break;
+            }
+            uint16_t threshold;
+            memcpy(&threshold, payload, sizeof(threshold));
+            uint8_t count = payload[sizeof(threshold)];
+            if (count == 0) {
+                _drive_stop();
+                break;
+            }
+            if (length < 1 + sizeof(uint16_t) + 1 + sizeof(protocol_lh2_location_t)) {
+                break;
+            }
+            protocol_lh2_location_t point;
+            memcpy(&point, &payload[sizeof(threshold) + 1], sizeof(point));
+            db_steering_target_t target = {
+                .x_mm         = (float)point.x,
+                .y_mm         = (float)point.y,
+                .threshold_mm = (float)threshold,
+            };
+            if (_vars.drive_mode != DRIVE_WAYPOINT) {
+                _enter_drive_mode(DRIVE_WAYPOINT);
+            }
+            _steering_brake = false;
+            db_steering_set_target(&_steering, &target);
+        } break;
         case DB_PROTOCOL_CONTROL_MODE:
             _drive_stop();
             break;
@@ -481,10 +537,25 @@ static void _rx_process(void) {
 /// Brakes both motors; from the next tick the wheel loop releases each one once
 /// its wheel stands
 static void _drive_stop(void) {
-    _vars.drive_mode = DRIVE_IDLE;
+    _enter_drive_mode(DRIVE_IDLE);
+    _set_motors(0, 0, true, true);
+}
+
+/// Hands the motors to a new writer: the wheel loop starts from zero and the
+/// steering drops its target unless it is the new writer
+static void _enter_drive_mode(drive_mode_t mode) {
+#if defined(DB_BENCH_TRACE)
+    if (_vars.drive_mode == DRIVE_IDLE && mode != DRIVE_IDLE) {
+        _trace_count = 0;
+    }
+#endif
+    if (mode != DRIVE_WAYPOINT) {
+        db_steering_stop(&_steering);
+    }
+    _steering_brake  = false;
+    _vars.drive_mode = mode;
     db_wheel_control_reset(&_wheel_left);
     db_wheel_control_reset(&_wheel_right);
-    _set_motors(0, 0, true, true);
 }
 
 #if defined(DB_BENCH_TELEMETRY)
@@ -509,7 +580,9 @@ static void _wheel_service(uint32_t tick) {
     int32_t right;
     _encoders_delta(&_wheel_encoders, &left, &right);
 
-    if (_vars.drive_mode != DRIVE_RAW) {
+    if (_steering_brake) {
+        _set_motors(0, 0, true, true);
+    } else if (_vars.drive_mode != DRIVE_RAW) {
         int8_t pwm_left  = db_wheel_control_step(&_wheel_left, left, elapsed);
         int8_t pwm_right = db_wheel_control_step(&_wheel_right, right, elapsed);
         _set_motors(pwm_left, pwm_right, _wheel_left.brake, _wheel_right.brake);
@@ -560,6 +633,49 @@ static void _estimator_service(uint32_t tick) {
     int32_t right;
     _encoders_delta(&_estimator_encoders, &left, &right);
     db_pose_estimator_predict(&_estimator, left, right, elapsed);
+}
+
+static db_steering_pose_status_t _steering_pose_status(db_pose_estimator_status_t status) {
+    switch (status) {
+        case DB_POSE_ESTIMATOR_TRACKING:
+            return DB_STEERING_POSE_TRACKING;
+        case DB_POSE_ESTIMATOR_LOST:
+            return DB_STEERING_POSE_LOST;
+        default:
+            return DB_STEERING_POSE_SEEDING;
+    }
+}
+
+/// Once per position poll, right after it, while steering owns the wheel loop.
+/// A brake from the steering holds both motors shorted until the next command.
+static void _steering_service(uint32_t tick) {
+    static uint32_t last    = 0;
+    uint32_t        elapsed = tick - last;
+    last                    = tick;
+    if (_vars.drive_mode != DRIVE_WAYPOINT) {
+        return;
+    }
+    db_steering_pose_t pose = {
+        .status      = _steering_pose_status(_estimator.status),
+        .x_mm        = _estimator.x,
+        .y_mm        = _estimator.y,
+        .heading_deg = _estimator.theta * 180.0f / (float)M_PI,
+    };
+    db_steering_output_t out;
+    db_steering_step(&_steering, &pose, elapsed, &out);
+    if (out.brake) {
+        if (!_steering_brake) {
+            db_wheel_control_reset(&_wheel_left);
+            db_wheel_control_reset(&_wheel_right);
+            _steering_brake = true;
+        }
+        return;
+    }
+    _steering_brake = false;
+    float left      = fmaxf(-WHEEL_SPEED_MAX_MM_S, fminf(WHEEL_SPEED_MAX_MM_S, out.left_mm_s));
+    float right     = fmaxf(-WHEEL_SPEED_MAX_MM_S, fminf(WHEEL_SPEED_MAX_MM_S, out.right_mm_s));
+    db_wheel_control_set_setpoint(&_wheel_left, left);
+    db_wheel_control_set_setpoint(&_wheel_right, right);
 }
 
 /// From the node's minimum TX interval, so a gateway on another schedule changes
@@ -654,9 +770,11 @@ static void _position_poll(void) {
     db_pose_estimator_update(&_estimator, (float)solve.x, (float)solve.y);
 }
 
-/// Raw and velocity driving both stop when the host goes silent.
+/// Raw and velocity driving both stop when the host goes silent. A waypoint
+/// needs no resending: the steering stops on arrival, on losing its pose and
+/// on its own timeouts.
 static void _timeout_check(void) {
-    if (_vars.drive_mode != DRIVE_IDLE && _ticks_since(_vars.ts_last_packet_received) > TIMEOUT_STOP_TICKS) {
+    if (_vars.drive_mode != DRIVE_IDLE && _vars.drive_mode != DRIVE_WAYPOINT && _ticks_since(_vars.ts_last_packet_received) > TIMEOUT_STOP_TICKS) {
         _drive_stop();
     }
 }
@@ -682,10 +800,11 @@ static inline uint8_t _saturate_u8(uint32_t value) {
 /// Every step and every new solve since the previous frame, newest kept when
 /// there are more than a frame holds; resets the worst tick backlog it reports.
 /// Layout: type, newest step tick (u32), steps carried, steps dropped, backlog,
-/// drive mode, encoder totals (i32 x 2), solves carried, solves dropped, then
-/// the steps oldest first, then the solves oldest first, then the estimator:
-/// status, the last gated fix's squared distance x 10 (u16, saturated), and
-/// its kidnap and re-anchor counts (u8 each, wrapping).
+/// drive mode in the low nibble with the steering state in the high one,
+/// encoder totals (i32 x 2), solves carried, solves dropped, then the steps
+/// oldest first, then the solves oldest first, then the estimator: status, the
+/// last gated fix's squared distance x 10 (u16, saturated), and its kidnap and
+/// re-anchor counts (u8 each, wrapping).
 static void _send_bench_telemetry(void) {
     size_t   length = 0;
     uint8_t *buf    = _vars.radio_buffer;
@@ -701,7 +820,7 @@ static void _send_bench_telemetry(void) {
     buf[length++]          = _saturate_u8(steps - steps_out);
     buf[length++]          = _saturate_u8(_vars.max_tick_backlog);
     _vars.max_tick_backlog = 0;
-    buf[length++]          = (uint8_t)_vars.drive_mode;
+    buf[length++]          = (uint8_t)(_vars.drive_mode | (_steering.state << 4));
     _put(buf, &length, &_vars.encoder_total_left, sizeof(_vars.encoder_total_left));
     _put(buf, &length, &_vars.encoder_total_right, sizeof(_vars.encoder_total_right));
     buf[length++] = (uint8_t)fixes_out;
@@ -764,7 +883,7 @@ static void _advertise(void) {
 
     buf[length++] = (uint8_t)_vars.pwm_left;
     buf[length++] = (uint8_t)_vars.pwm_right;
-    buf[length++] = (uint8_t)ControlManual;
+    buf[length++] = (uint8_t)(db_steering_active(&_steering) ? ControlAuto : ControlManual);
 
     int32_t encoder_left;
     int32_t encoder_right;
@@ -772,10 +891,16 @@ static void _advertise(void) {
     _put(buf, &length, &encoder_left, sizeof(encoder_left));
     _put(buf, &length, &encoder_right, sizeof(encoder_right));
 
-    uint32_t waypoint = 0;
-    _put(buf, &length, &waypoint, sizeof(waypoint));
-    _put(buf, &length, &waypoint, sizeof(waypoint));
-    buf[length++] = 0;  // waypoint index
+    // The target, and index 1 once it is reached, as after the last waypoint of a batch
+    uint32_t waypoint_x = 0;
+    uint32_t waypoint_y = 0;
+    if (_steering.state != DB_STEERING_IDLE) {
+        waypoint_x = (uint32_t)lroundf(_steering.target.x_mm);
+        waypoint_y = (uint32_t)lroundf(_steering.target.y_mm);
+    }
+    _put(buf, &length, &waypoint_x, sizeof(waypoint_x));
+    _put(buf, &length, &waypoint_y, sizeof(waypoint_y));
+    buf[length++] = (_steering.state == DB_STEERING_ARRIVED) ? 1 : 0;
 
     swarmit_send_raw_data(buf, (uint8_t)length);
 
