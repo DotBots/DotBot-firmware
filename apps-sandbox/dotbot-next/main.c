@@ -201,6 +201,11 @@ static const db_steering_conf_t _steering_conf = {
     .progress_ticks        = DB_STEERING_PROGRESS_TICKS,
     .progress_mm           = DB_STEERING_PROGRESS_MM,
     .hold_ticks            = DB_STEERING_HOLD_TICKS,
+    .recover               = DB_STEERING_RECOVER_DRIVE,
+    .recover_mm            = DB_STEERING_RECOVER_MM,
+    .recover_mm_s          = DB_STEERING_RECOVER_MM_S,
+    .bounds_mm             = { 0, 0, 10000.0f, 10000.0f },  // the LH2 calibration's validity rectangle
+    .bounds_margin_mm      = DB_STEERING_BOUNDS_MARGIN_MM,
 };
 /// Read over the debugger for its state and failure reason
 __attribute__((used)) static db_steering_t _steering;
@@ -507,6 +512,14 @@ static void _rx_process(void) {
             uint16_t threshold;
             memcpy(&threshold, payload, sizeof(threshold));
             uint8_t count = payload[sizeof(threshold)];
+#if defined(DB_BENCH_TELEMETRY)
+            // Bench only: a threshold of 0xFFFF drops the estimator's pose, as a
+            // kidnap does, to exercise the steering's heading recovery
+            if (threshold == UINT16_MAX) {
+                db_pose_estimator_init(&_estimator, &_estimator_conf);
+                break;
+            }
+#endif
             if (count == 0) {
                 _drive_stop();
                 break;
