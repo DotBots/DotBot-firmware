@@ -683,7 +683,9 @@ static inline uint8_t _saturate_u8(uint32_t value) {
 /// there are more than a frame holds; resets the worst tick backlog it reports.
 /// Layout: type, newest step tick (u32), steps carried, steps dropped, backlog,
 /// drive mode, encoder totals (i32 x 2), solves carried, solves dropped, then
-/// the steps oldest first, then the solves oldest first.
+/// the steps oldest first, then the solves oldest first, then the estimator:
+/// status, the last gated fix's squared distance x 10 (u16, saturated), and
+/// its kidnap and re-anchor counts (u8 each, wrapping).
 static void _send_bench_telemetry(void) {
     size_t   length = 0;
     uint8_t *buf    = _vars.radio_buffer;
@@ -713,6 +715,13 @@ static void _send_bench_telemetry(void) {
     }
     _telemetry_step_sent = _telemetry_step_count;
     _telemetry_fix_sent  = _telemetry_fix_count;
+
+    buf[length++]  = (uint8_t)_estimator.status;
+    float    d2    = _estimator.last_d2 * 10.0f;
+    uint16_t d2x10 = (d2 >= (float)UINT16_MAX) ? UINT16_MAX : (uint16_t)d2;
+    _put(buf, &length, &d2x10, sizeof(d2x10));
+    buf[length++] = (uint8_t)_estimator.kidnaps;
+    buf[length++] = (uint8_t)_estimator.reanchors;
 
     swarmit_send_raw_data(buf, (uint8_t)length);
 }
