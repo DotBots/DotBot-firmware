@@ -186,6 +186,8 @@ static const db_pose_estimator_conf_t _estimator_conf = {
     .seed_fixes                 = DB_POSE_ESTIMATOR_SEED_FIXES,
     .seed_tolerance_mm          = DB_POSE_ESTIMATOR_SEED_TOLERANCE_MM,
     .acquire_mm                 = DB_POSE_ESTIMATOR_ACQUIRE_MM,
+    .kidnap_fixes               = DB_POSE_ESTIMATOR_KIDNAP_FIXES,
+    .kidnap_still_mm            = DB_POSE_ESTIMATOR_KIDNAP_STILL_MM,
 };
 /// Read over the debugger for its counters and covariance
 __attribute__((used)) static db_pose_estimator_t _estimator;
