@@ -406,6 +406,7 @@ static uint32_t _advert_period_ticks(void);
 static void     _set_motors(int16_t left, int16_t right, bool brake_left, bool brake_right);
 static void     _rx_process(void);
 static void     _drive_stop(void);
+static void     _note_abort(protocol_waypoints_abort_t reason);
 static void     _wheel_service(uint32_t tick);
 static void     _estimator_service(uint32_t tick);
 static void     _steering_service(uint32_t tick);
@@ -532,7 +533,7 @@ static void _rx_process(void) {
             }
             protocol_move_raw_command_t command;
             memcpy(&command, payload, sizeof(command));
-            _abort_reason = DB_WAYPOINTS_ABORT_DIRECT;
+            _note_abort(DB_WAYPOINTS_ABORT_DIRECT);
             _enter_drive_mode(DRIVE_RAW);
             _set_motors((int16_t)(100 * ((float)command.left_y / INT8_MAX)), (int16_t)(100 * ((float)command.right_y / INT8_MAX)), false, false);
         } break;
@@ -544,7 +545,7 @@ static void _rx_process(void) {
             protocol_wheel_velocity_command_t command;
             memcpy(&command, payload, sizeof(command));
             if (_vars.drive_mode != DRIVE_VELOCITY) {
-                _abort_reason = DB_WAYPOINTS_ABORT_DIRECT;
+                _note_abort(DB_WAYPOINTS_ABORT_DIRECT);
                 _enter_drive_mode(DRIVE_VELOCITY);
             }
             int16_t left  = command.left_mm_s;
@@ -589,7 +590,7 @@ static void _rx_process(void) {
             }
             _batch_id = batch_id;
             if (path.count == 0) {
-                _abort_reason = DB_WAYPOINTS_ABORT_STOP;
+                _note_abort(DB_WAYPOINTS_ABORT_STOP);
                 _drive_stop();
                 break;
             }
@@ -613,11 +614,18 @@ static void _rx_process(void) {
             db_steering_set_max_speed(&_steering, (float)v);
         } break;
         case DB_PROTOCOL_CONTROL_MODE:
-            _abort_reason = DB_WAYPOINTS_ABORT_CONTROL_MODE;
+            _note_abort(DB_WAYPOINTS_ABORT_CONTROL_MODE);
             _drive_stop();
             break;
         default:
             break;
+    }
+}
+
+/// Records what stops a batch in progress; later commands leave the reason as it is
+static void _note_abort(protocol_waypoints_abort_t reason) {
+    if (db_steering_active(&_steering)) {
+        _abort_reason = reason;
     }
 }
 
@@ -751,8 +759,17 @@ static void _steering_apply(const db_steering_output_t *out) {
         return;
     }
     _steering_brake = false;
-    float left      = fmaxf(-WHEEL_SPEED_MAX_MM_S, fminf(WHEEL_SPEED_MAX_MM_S, out->left_mm_s));
-    float right     = fmaxf(-WHEEL_SPEED_MAX_MM_S, fminf(WHEEL_SPEED_MAX_MM_S, out->right_mm_s));
+    // Past the wheel limit, both wheels give up the excess, so the turn is kept
+    float left   = out->left_mm_s;
+    float right  = out->right_mm_s;
+    float excess = fmaxf(fabsf(left), fabsf(right)) - WHEEL_SPEED_MAX_MM_S;
+    if (excess > 0) {
+        float shift = (left + right >= 0) ? excess : -excess;
+        left -= shift;
+        right -= shift;
+    }
+    left  = fmaxf(-WHEEL_SPEED_MAX_MM_S, fminf(WHEEL_SPEED_MAX_MM_S, left));
+    right = fmaxf(-WHEEL_SPEED_MAX_MM_S, fminf(WHEEL_SPEED_MAX_MM_S, right));
     db_wheel_control_set_setpoint(&_wheel_left, left);
     db_wheel_control_set_setpoint(&_wheel_right, right);
 }
