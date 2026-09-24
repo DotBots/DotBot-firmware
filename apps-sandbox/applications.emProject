@@ -100,7 +100,7 @@
     <configuration
       Name="Common"
       linker_additional_files="$(ProjectDir)/../cmse_implib$(LIB)"
-      project_dependencies="00bsp_timer(bsp);00drv_move(drv)"
+      project_dependencies="00bsp_dotbot_board(bsp);00bsp_gpio(bsp);00bsp_qdec(bsp);00bsp_timer(bsp);00drv_motors(drv);00drv_wheel_control(drv)"
       project_directory="move"
       project_type="Executable" />
     <folder Name="Setup">
