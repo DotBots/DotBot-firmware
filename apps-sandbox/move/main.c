@@ -87,6 +87,7 @@ static db_wheel_control_t _wheel_left;
 static db_wheel_control_t _wheel_right;
 static db_wheel_goal_t    _goal;
 static volatile uint32_t  _tick_count = 0;
+static bool               _stalled    = false;  ///< a wheel stalled, the square is over
 
 //=========================== callbacks ========================================
 
@@ -104,19 +105,24 @@ static void _move_start(const move_t *move) {
     }
 }
 
-/// One tick of the speed loop; true once the goal is done and both wheels stand
-static bool _move_step(void) {
+/// One step of the speed loop over the ticks elapsed since the previous one;
+/// true once the goal is done and both wheels stand. A stalled wheel ends the goal.
+static bool _move_step(uint32_t elapsed) {
     uint32_t dbl_left;
     uint32_t dbl_right;
     int32_t  left  = db_wheel_control_counts(db_qdec_read_and_clear_dbl(QDEC_LEFT, &dbl_left), dbl_left);
     int32_t  right = db_wheel_control_counts(db_qdec_read_and_clear_dbl(QDEC_RIGHT, &dbl_right), dbl_right);
-    float    setpoint_left;
-    float    setpoint_right;
-    bool     driving = db_wheel_goal_step(&_goal, left, right, &setpoint_left, &setpoint_right);
+    if (_wheel_left.stalled || _wheel_right.stalled) {
+        _stalled = true;
+        db_wheel_goal_start(&_goal, 0, 0, 0);
+    }
+    float setpoint_left;
+    float setpoint_right;
+    bool  driving = db_wheel_goal_step(&_goal, left, right, &setpoint_left, &setpoint_right);
     db_wheel_control_set_setpoint(&_wheel_left, setpoint_left);
     db_wheel_control_set_setpoint(&_wheel_right, setpoint_right);
-    int8_t pwm_left  = db_wheel_control_step(&_wheel_left, left, 1);
-    int8_t pwm_right = db_wheel_control_step(&_wheel_right, right, 1);
+    int8_t pwm_left  = db_wheel_control_step(&_wheel_left, left, elapsed);
+    int8_t pwm_right = db_wheel_control_step(&_wheel_right, right, elapsed);
     db_motors_set_pwm_brake(pwm_left, pwm_right, _wheel_left.brake, _wheel_right.brake);
     return !driving && !_wheel_left.brake && !_wheel_right.brake;
 }
@@ -134,40 +140,48 @@ int main(void) {
     db_timer_init(TIMER_DEV);
     db_timer_set_periodic_ms(TIMER_DEV, 0, DB_WHEEL_CONTROL_TICK_MS, &_tick);
 
-    size_t   next     = 0;
-    uint32_t serviced = 0;
-    uint32_t standing = 0;
-    bool     done     = false;
+    size_t   next       = 0;
+    uint32_t serviced   = 0;
+    uint32_t keep_alive = 0;
+    uint32_t blink      = 0;
+    uint32_t standing   = 0;
+    bool     done       = false;
     _move_start(&_moves[next]);
 
     while (1) {
         __WFE();
-        while (serviced != _tick_count) {
-            serviced++;
-            if (serviced % TICKS_PER_KEEP_ALIVE == 0) {
-                swarmit_keep_alive();
-            }
-            if (done) {
-                if (serviced % TICKS_PER_BLINK == 0) {
-                    db_gpio_toggle(&db_led1);
-                }
-                continue;
-            }
-            if (!_move_step()) {
-                standing = 0;
-                continue;
-            }
-            if (++standing < PAUSE_TICKS) {
-                continue;
-            }
-            standing = 0;
-            if (++next >= sizeof(_moves) / sizeof(_moves[0])) {
-                done = true;
-                db_motors_coast();
-                continue;
-            }
-            _move_start(&_moves[next]);
+        uint32_t now     = _tick_count;
+        uint32_t elapsed = now - serviced;
+        if (elapsed == 0) {
+            continue;
         }
+        serviced = now;
+        if (now - keep_alive >= TICKS_PER_KEEP_ALIVE) {
+            keep_alive = now;
+            swarmit_keep_alive();
+        }
+        if (done) {
+            if (now - blink >= TICKS_PER_BLINK) {
+                blink = now;
+                db_gpio_toggle(&db_led1);
+            }
+            continue;
+        }
+        if (!_move_step(elapsed)) {
+            standing = 0;
+            continue;
+        }
+        standing += elapsed;
+        if (standing < PAUSE_TICKS) {
+            continue;
+        }
+        standing = 0;
+        if (_stalled || ++next >= sizeof(_moves) / sizeof(_moves[0])) {
+            done = true;
+            db_motors_coast();
+            continue;
+        }
+        _move_start(&_moves[next]);
     }
 }
 
