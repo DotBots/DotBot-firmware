@@ -142,6 +142,7 @@ static uint32_t          _tick_serviced = 0;  ///< Read and written by the main 
 static uint32_t          _tick_position = 0;  ///< Tick of the last position poll, main loop only
 static uint32_t          _tick_timeout  = 0;  ///< Tick of the last timeout check, main loop only
 static uint32_t          _tick_advert   = 0;  ///< Tick of the last advertisement, main loop only
+static uint32_t          _advert_period = 0;  ///< Ticks between advertisements, re-derived at each one
 static uint32_t          _tick_wheel    = 0;  ///< Tick of the last wheel step, main loop only
 
 /// The wheel loop's own cursor into the encoder totals
@@ -319,6 +320,7 @@ int main(void) {
     db_wheel_control_init(&_wheel_right, &_wheel_conf);
     db_gpio_init(&db_led1, DB_GPIO_OUT);
 
+    _advert_period = _advert_period_ticks();
     db_timer_init(TIMER_DEV);
     db_timer_set_periodic_ms(TIMER_DEV, 0, TICK_MS, &_tick);
 
@@ -356,7 +358,8 @@ static void _service_tick(uint32_t tick) {
     if (_due(&_tick_timeout, tick, TICKS_PER_TIMEOUT)) {
         _timeout_check();
     }
-    if (_due(&_tick_advert, tick, _advert_period_ticks())) {
+    if (_due(&_tick_advert, tick, _advert_period)) {
+        _advert_period = _advert_period_ticks();
         _advertise();
     }
 }
@@ -512,8 +515,8 @@ static void _wheel_service(uint32_t tick) {
 #endif
 }
 
-/// Derived from the node's minimum TX interval at every advert, so a gateway on
-/// another schedule changes the rate within one period
+/// From the node's minimum TX interval, so a gateway on another schedule changes
+/// the rate within one period
 static uint32_t _advert_period_ticks(void) {
     uint32_t min_tx_interval_us = swarmit_get_min_tx_interval_us();
     uint32_t period_ms          = ADVERT_PERIOD_DEF_MS;
