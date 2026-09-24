@@ -44,8 +44,9 @@
 
 _Static_assert(TICK_MS == DB_WHEEL_CONTROL_TICK_MS, "the wheel loop's dt assumes this tick");
 
-/// Largest wheel speed a command may set, in mm/s
-#define WHEEL_SPEED_MAX_MM_S (800)
+/// Largest wheel speed a command may set, in mm/s. A count then takes 135 us,
+/// just over the QDEC's default 128 us sample period.
+#define WHEEL_SPEED_MAX_MM_S (700)
 
 /// Room for the largest command this app accepts, header byte included
 #define RX_MAILBOX_BYTES (16U)
