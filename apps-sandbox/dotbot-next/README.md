@@ -21,7 +21,10 @@ midpoint and the heading. It predicts on every tick from the encoders and takes
 each new solve as a position-only measurement of the photodiode, a lever arm ahead
 of the axle. It acquires its initial heading passively, from a chain of
 consistent solves once the robot has moved, so nothing has to drive a calibration
-manoeuvre first. Its constants are provisional until measured on the floor.
+manoeuvre first. A robot moved by hand with its wheels still is recognised within
+three fixes: the estimator drops its pose, the advertisement falls back to the
+last solve with the unknown heading, and the heading comes back once the robot
+moves. Its constants are provisional until measured on the floor.
 
 ## Driving
 
