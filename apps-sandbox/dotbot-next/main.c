@@ -207,6 +207,38 @@ static const db_steering_conf_t _steering_conf = {
     .bounds_mm             = { 0, 0, 10000.0f, 10000.0f },  // the LH2 calibration's validity rectangle
     .bounds_margin_mm      = DB_STEERING_BOUNDS_MARGIN_MM,
 };
+#if defined(DB_BENCH_TELEMETRY)
+/// The same with the spin recovery, selected by a bench command
+static const db_steering_conf_t _steering_conf_spin = {
+    .lever_mm              = DB_LH2_LEVER_ARM_EFFECTIVE,
+    .v_max_mm_s            = DB_STEERING_V_MAX_MM_S,
+    .approach_per_s        = DB_STEERING_APPROACH_PER_S,
+    .runon_s               = DB_STEERING_RUNON_S,
+    .spin_mm_s             = DB_STEERING_SPIN_MM_S,
+    .spin_min_mm_s         = DB_STEERING_SPIN_MIN_MM_S,
+    .heading_kp            = DB_STEERING_HEADING_KP,
+    .heading_kd            = DB_STEERING_HEADING_KD,
+    .align_enter_deg       = DB_STEERING_ALIGN_ENTER_DEG,
+    .align_exit_deg        = DB_STEERING_ALIGN_EXIT_DEG,
+    .full_speed_deg        = DB_STEERING_FULL_SPEED_DEG,
+    .final_tol_deg         = DB_STEERING_FINAL_TOL_DEG,
+    .near_mm               = DB_STEERING_NEAR_MM,
+    .bearing_min_mm        = DB_STEERING_BEARING_MIN_MM,
+    .lookahead_s           = DB_STEERING_LOOKAHEAD_S,
+    .arrival_min_mm        = DB_STEERING_ARRIVAL_MIN_MM,
+    .no_heading_turn_ticks = DB_STEERING_NO_HEADING_TURN_TICKS,
+    .no_heading_ticks      = DB_STEERING_NO_HEADING_TICKS,
+    .turn_ticks            = DB_STEERING_TURN_TICKS,
+    .progress_ticks        = DB_STEERING_PROGRESS_TICKS,
+    .progress_mm           = DB_STEERING_PROGRESS_MM,
+    .hold_ticks            = DB_STEERING_HOLD_TICKS,
+    .recover               = DB_STEERING_RECOVER_SPIN,
+    .recover_mm            = DB_STEERING_RECOVER_MM,
+    .recover_mm_s          = DB_STEERING_RECOVER_MM_S,
+    .bounds_mm             = { 0, 0, 10000.0f, 10000.0f },  // the LH2 calibration's validity rectangle
+    .bounds_margin_mm      = DB_STEERING_BOUNDS_MARGIN_MM,
+};
+#endif
 /// Read over the debugger for its state and failure reason
 __attribute__((used)) static db_steering_t _steering;
 static uint32_t                            _tick_steering  = 0;      ///< Tick of the last steering step, main loop only
@@ -514,11 +546,14 @@ static void _rx_process(void) {
             uint8_t count = payload[sizeof(threshold)];
 #if defined(DB_BENCH_TELEMETRY)
             // Bench only: a threshold of 0xFFFF drops the estimator's pose, as a
-            // kidnap does, to exercise the steering's heading recovery
-            if (threshold == UINT16_MAX) {
+            // kidnap does, to exercise the steering's heading recovery; 0xFFFE
+            // does the same with the spin recovery, until the next waypoint
+            if (threshold >= UINT16_MAX - 1) {
+                _steering.conf = (threshold == UINT16_MAX) ? &_steering_conf : &_steering_conf_spin;
                 db_pose_estimator_init(&_estimator, &_estimator_conf);
                 break;
             }
+            _steering.conf = &_steering_conf;
 #endif
             if (count == 0) {
                 _drive_stop();
