@@ -13,7 +13,7 @@ jobs:
         # Release everything `dotbot fw artifacts` (bare .hex) and
         # `dotbot fw artifacts --sandbox` (sandbox .bin) can build, so one tag
         # carries every image the testbed flows fetch: bare dotbot + nrf5340_net
-        # netcore, lh2_calibration, the sandbox apps, and the gateways. Bare
+        # netcore, the sandbox apps (calibrate included), and the gateways. Bare
         # targets mirror build.yml, sandbox targets build-sandbox.yml - both
         # CI-proven via the same `make docker`. Output format per target is
         # driven by the Makefile (ARTIFACT_FMT: bare -> .hex, sandbox -> .bin).
