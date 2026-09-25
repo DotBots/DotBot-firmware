@@ -13,14 +13,15 @@ fork/PR flow) come from the agentic workspace this repo is checked out into.
   / `dotbot_gateway_lr` (nRF DK as a radio gateway), `sailbot`, `freebot`, `xgo`,
   `lh2_calibration` (the LH2 calibration firmware), `lh2_mini_mote_*`, `nrf5340_net`
   (network-core image), `log_dump`.
-- **`apps-sandbox/`** - the same robot apps built as **TrustZone non-secure
+- **`apps-sandbox/`** - robot apps built as **TrustZone non-secure
   images** that run *inside* the SwarmIT sandbox (`dotbot`, `dotbot-simple`,
   `move`, `motors`, `rgbled`, `spin`). They link against `cmse_implib.a` (the
   Non-Secure-Callable import lib produced by `swarmit`). Absorbed from the old
   `dotbot-swarmit` repo.
 - **`dotbot-libs/`** - submodule (`DotBots/DotBot-libs`): BSP + drivers. The
-  **control loop math lives here** (`dotbot-libs/drv/control_loop/`), shared by
-  bare and sandbox builds. `swarmit` pins the *same* `dotbot-libs`, so the
+  **control loop math lives here**: the bare app's `drv/control_loop/`, the
+  sandbox app's `drv/wheel_control/`, `drv/pose_estimator/` and `drv/steering/`.
+  `swarmit` pins the *same* `dotbot-libs`, so the
   `control_loop.c` you read here is byte-identical to the copy under
   `swarmit/dotbot-libs/`.
 - **`*.emProject`** - one SES solution per target/board: `dotbot-v1/v2/v3`,
@@ -34,6 +35,14 @@ This is the single most load-bearing, least-obvious thing in the repo, and it
 spans three repos. It is a **two-tier layered control loop**: a fast loop on the
 bot, a slow loop on the Python host. Getting the tiers and rates wrong is the
 root of most "why doesn't the robot go where I told it" confusion.
+
+**Two apps, two loops.** The bare `apps/dotbot` runs the PD heading loop in
+`dotbot-libs/drv/control_loop/` described below. The sandbox `apps-sandbox/dotbot`
+does not use `control_loop` at all: it runs a 10 ms per-wheel speed loop
+(`drv/wheel_control`), a pose estimator on the encoders and LH2
+(`drv/pose_estimator`) and onboard waypoint steering (`drv/steering`), and adds a
+waypoint report to its advertisement. Its `README.md` is the reference for it;
+the steering-law and AUTO/MANUAL sections below are the bare app's.
 
 ### Who closes which loop
 
@@ -54,13 +63,13 @@ keyboard driving of a single bot.
 
 | Rate | Bare (`apps/dotbot/main.c`) | Sandbox (`apps-sandbox/dotbot/main.c`) |
 |---|---|---|
-| Inner control step (`update_control` + motor write) | **~250 ms** - gated on the LH2 trigger, `5 * DB_LH2_UPDATE_DELAY_MS` (50) on RTC ch1 (`main.c:42,206,252`) | **~100 ms** - `DB_POSITION_UPDATE_DELAY_MS` (100) on RTC ch1 (`main.c:36,178,211`) |
-| On-bot LH2 position refresh | ~250 ms (same trigger; computed app-side via `db_lh2_calculate_position`) | ~100 ms (read from the secure side via NSC `swarmit_localization_get_position`; the bot can't touch LH2 directly) |
-| App advertisement (position/telemetry UP the radio) | **500 ms** - `DB_ADVERTIZEMENT_DELAY_MS` (RTC ch2) | **500 ms** - same constant |
+| Inner control step | **~250 ms** `update_control` - gated on the LH2 trigger, `5 * DB_LH2_UPDATE_DELAY_MS` (50) on RTC ch1 | **10 ms** wheel speed loop and estimator predict (`TICK_MS`); steering every 100 ms |
+| On-bot LH2 position refresh | ~250 ms (same trigger; computed app-side via `db_lh2_calculate_position`) | ~100 ms (read from the secure side via NSC `swarmit_localization_get_fix`, with its fix sequence; the bot can't touch LH2 directly) |
+| App advertisement (position/telemetry UP the radio) | **500 ms** - `DB_ADVERTIZEMENT_DELAY_MS` (RTC ch2) | **100-1000 ms**, from the node's minimum TX interval (500 ms while not joined) |
 | Manual-command deadman (stops motors if no packet) | ~520 ms (`17000` RTC ticks / 32768) | ~520 ms |
 | swarmit netcore STATUS frame | n/a | **~1 s** - `mr_timer_hf_set_periodic_us(..., 1000000, _send_status)` in `swarmit/device/network_core/Source/main.c` |
 
-The control step is **event-gated on a fresh valid LH2 fix and runs in AUTO mode
+In the bare app the control step is **event-gated on a fresh valid LH2 fix and runs in AUTO mode
 only** - so the real rate is "at most once per trigger," skipped on a missed
 fix. Both bare and sandbox use the RTC (`dotbot-libs/bsp/nrf/timer.c`), not a
 high-frequency timer, for these periods.
@@ -76,14 +85,13 @@ In `dotbot-libs/drv/control_loop/control_loop.c`, `update_control()`. It is
 an IMU. Two compile-time variants change *only* the target point, not the rate
 or the PD math:
 
-- **`DOTBOT_CONTROL_LOOP_USE_PURE_PURSUIT`** - defined in the **sandbox**
-  `.emProject`s. Aims at a lookahead point `1.5 * threshold` along the current
-  segment instead of the raw next waypoint -> smoother curves.
+- **`DOTBOT_CONTROL_LOOP_USE_PURE_PURSUIT`** - aims at a lookahead point
+  `1.5 * threshold` along the current segment instead of the raw next waypoint.
+  Not defined in any firmware build.
 - **`DOTBOT_CONTROL_LOOP_USE_EKF`** - a 3-state `[x,y,theta]` EKF fusing encoder
   odometry + LH2. **Not enabled in any firmware** - only in PyDotBot's host-side
-  sim build (`PyDotBot/utils/control_loop`, default off). The sandbox app has no
-  QDEC/encoders at all, so even if enabled its predict step would get zero
-  odometry. Bare dotbot enables **neither** -> plain PD toward the raw waypoint.
+  sim build (`PyDotBot/utils/control_loop`, default off). Bare dotbot enables
+  **neither** -> plain PD toward the raw waypoint.
 
 ### AUTO vs MANUAL mode (what the host polls)
 
@@ -144,9 +152,12 @@ PyDotBot's `AGENTS.md`.
 ### Key files
 
 - `apps/dotbot/main.c` - bare app: timers, `radio_callback`, `_update_control_loop`.
-- `apps-sandbox/dotbot/main.c` - sandbox app: NSC position read, `swarmit_keep_alive`.
-- `dotbot-libs/drv/control_loop/control_loop.c` + `control_loop.h` - the PD /
-  pure-pursuit / EKF math (shared, byte-identical across checkouts).
+- `apps-sandbox/dotbot/main.c` + `README.md` - sandbox app: the tick scheduler,
+  NSC fix read, `swarmit_keep_alive`, the wheel loop, estimator and steering.
+- `dotbot-libs/drv/control_loop/control_loop.c` + `control_loop.h` - the bare
+  app's PD / pure-pursuit / EKF math, also built host-side by PyDotBot's simulator.
+- `dotbot-libs/drv/wheel_control/`, `drv/pose_estimator/`, `drv/steering/` - the
+  sandbox app's layers, each with a host test (`make test` in DotBot-libs).
 - `swarmit/device/network_core/Source/main.c` - the `_send_status` (0x10) path.
 
 ## Build / run / test
@@ -198,8 +209,6 @@ table - note e.g. **dotbot-v2 is an nRF5340**, not nRF52833; the truth is each
 
 - Don't add work to the LH2/control ISRs or the timer callbacks - the inner loop
   is timing-sensitive; latency there desyncs the control step.
-- Don't enable `DOTBOT_CONTROL_LOOP_USE_EKF` in a firmware build expecting it to
-  work in the sandbox (no encoders there).
 - Don't "fix" the two-namespace position split here unilaterally - it's a
   cross-repo (PyDotBot + swarmit adapter) decision; see the control-loop section.
 - Don't run `make docker` locally (CI-only; slow under QEMU).
