@@ -3,11 +3,12 @@
  * @defgroup project_dotbot_next    DotBot control application, rebuilt
  * @ingroup projects
  * @brief Sandboxed DotBot app: keepalive, position, encoders, telemetry,
- * direct motor commands and the per-wheel speed loop.
+ * direct motor commands, the per-wheel speed loop and the pose estimator.
  *
  * @copyright Inria, 2026
  */
 
+#include <math.h>
 #include <nrf.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -16,8 +17,10 @@
 // Include BSP headers
 #include "board.h"
 #include "board_config.h"
+#include "geometry.h"
 #include "gpio.h"
 #include "motors.h"
+#include "pose_estimator.h"
 #include "protocol.h"
 #include "qdec.h"
 #include "rgbled_pwm.h"
@@ -43,6 +46,7 @@
 #define ADVERT_PERIOD_DEF_MS    (500U)   ///< While not joined, when the interval reads 0
 
 _Static_assert(TICK_MS == DB_WHEEL_CONTROL_TICK_MS, "the wheel loop's dt assumes this tick");
+_Static_assert(TICK_MS == DB_POSE_ESTIMATOR_TICK_MS, "the estimator's timeout assumes this tick");
 
 /// Largest wheel speed a command may set, in mm/s. A count then takes 135 us,
 /// just over the QDEC's default 128 us sample period.
@@ -61,7 +65,7 @@ _Static_assert(TICK_MS == DB_WHEEL_CONTROL_TICK_MS, "the wheel loop's dt assumes
 /// Coordinates above this are the secure side reporting no usable solve.
 #define POSITION_INVALID_MM (100000U)
 
-/// Heading is not estimated here; this is the advertisement's "unknown" value.
+/// The advertisement's "unknown" heading, sent while the estimator is not tracking
 #define DIRECTION_INVALID (-1000)
 
 #if defined(DB_BENCH_TELEMETRY) || defined(DB_BENCH_TRACE)
@@ -167,6 +171,36 @@ static const db_wheel_control_conf_t _wheel_conf = {
 };
 static db_wheel_control_t _wheel_left;
 static db_wheel_control_t _wheel_right;
+
+static const db_pose_estimator_conf_t _estimator_conf = {
+    .lever_mm                     = DB_LH2_LEVER_ARM_EFFECTIVE,
+    .lever_angle_deg              = DB_LH2_LEVER_ANGLE,
+    .r_pos_mm2                    = DB_POSE_ESTIMATOR_R_POS_MM2,
+    .q_pos_mm2_per_mm             = DB_POSE_ESTIMATOR_Q_POS_MM2_PER_MM,
+    .q_heading_roll_deg2_per_mm   = DB_POSE_ESTIMATOR_Q_HEADING_ROLL_DEG2_PER_MM,
+    .q_heading_turn_deg2_per_mm   = DB_POSE_ESTIMATOR_Q_HEADING_TURN_DEG2_PER_MM,
+    .turn_speed_ref_mm_s          = DB_POSE_ESTIMATOR_TURN_SPEED_REF_MM_S,
+    .gate                         = DB_POSE_ESTIMATOR_GATE,
+    .fix_age_ticks                = DB_POSE_ESTIMATOR_FIX_AGE_TICKS,
+    .timeout_ticks                = DB_POSE_ESTIMATOR_TIMEOUT_TICKS,
+    .seed_fixes                   = DB_POSE_ESTIMATOR_SEED_FIXES,
+    .seed_tolerance_mm            = DB_POSE_ESTIMATOR_SEED_TOLERANCE_MM,
+    .acquire_mm                   = DB_POSE_ESTIMATOR_ACQUIRE_MM,
+    .kidnap_fixes                 = DB_POSE_ESTIMATOR_KIDNAP_FIXES,
+    .kidnap_still_mm              = DB_POSE_ESTIMATOR_KIDNAP_STILL_MM,
+    .kidnap_settle_ticks          = DB_POSE_ESTIMATOR_KIDNAP_SETTLE_TICKS,
+    .still_mm_s                   = DB_POSE_ESTIMATOR_STILL_MM_S,
+    .reanchor_mm                  = DB_POSE_ESTIMATOR_REANCHOR_MM,
+    .reanchor_heading_var_deg2    = DB_POSE_ESTIMATOR_REANCHOR_HEADING_VAR_DEG2,
+    .q_pos_slip_mm2_per_mm_s      = DB_POSE_ESTIMATOR_Q_POS_SLIP_MM2_PER_MM_S,
+    .q_heading_slip_deg2_per_mm_s = DB_POSE_ESTIMATOR_Q_HEADING_SLIP_DEG2_PER_MM_S,
+    .slip_deadband_mm_s           = DB_POSE_ESTIMATOR_SLIP_DEADBAND_MM_S,
+    .speed_tau_ms                 = DB_POSE_ESTIMATOR_SPEED_TAU_MS,
+};
+/// Read over the debugger for its counters and covariance
+__attribute__((used)) static db_pose_estimator_t _estimator;
+static encoder_cursor_t                          _estimator_encoders = { 0 };  ///< The estimator's own cursor into the encoder totals
+static uint32_t                                  _tick_estimator     = 0;      ///< Tick of the last predict, main loop only
 
 /// Commands arrive in the IPC interrupt and are applied on the next tick, so
 /// the main loop is the only writer of the drive state and the motors.
@@ -276,6 +310,7 @@ static void     _set_motors(int16_t left, int16_t right, bool brake_left, bool b
 static void     _rx_process(void);
 static void     _drive_stop(void);
 static void     _wheel_service(uint32_t tick);
+static void     _estimator_service(uint32_t tick);
 
 /// Elapsed rather than a multiple, since the main loop drops its backlog and
 /// can step over any given tick.
@@ -318,6 +353,7 @@ int main(void) {
     _encoders_init();
     db_wheel_control_init(&_wheel_left, &_wheel_conf);
     db_wheel_control_init(&_wheel_right, &_wheel_conf);
+    db_pose_estimator_init(&_estimator, &_estimator_conf);
     db_gpio_init(&db_led1, DB_GPIO_OUT);
 
     _advert_period = _advert_period_ticks();
@@ -351,6 +387,7 @@ static void _service_tick(uint32_t tick) {
     _rx_process();
     _encoders_accumulate();
     _wheel_service(tick);
+    _estimator_service(tick);
 
     if (_due(&_tick_position, tick, TICKS_PER_POSITION)) {
         _position_poll();
@@ -515,6 +552,16 @@ static void _wheel_service(uint32_t tick) {
 #endif
 }
 
+/// Every tick, whatever drives the motors, so the pose follows any motion
+static void _estimator_service(uint32_t tick) {
+    uint32_t elapsed = tick - _tick_estimator;
+    _tick_estimator  = tick;
+    int32_t left;
+    int32_t right;
+    _encoders_delta(&_estimator_encoders, &left, &right);
+    db_pose_estimator_predict(&_estimator, left, right, elapsed);
+}
+
 /// From the node's minimum TX interval, so a gateway on another schedule changes
 /// the rate within one period
 static uint32_t _advert_period_ticks(void) {
@@ -604,6 +651,7 @@ static void _position_poll(void) {
     }
     _vars.position     = solve;
     _vars.has_position = true;
+    db_pose_estimator_update(&_estimator, (float)solve.x, (float)solve.y);
 }
 
 /// Raw and velocity driving both stop when the host goes silent.
@@ -635,7 +683,9 @@ static inline uint8_t _saturate_u8(uint32_t value) {
 /// there are more than a frame holds; resets the worst tick backlog it reports.
 /// Layout: type, newest step tick (u32), steps carried, steps dropped, backlog,
 /// drive mode, encoder totals (i32 x 2), solves carried, solves dropped, then
-/// the steps oldest first, then the solves oldest first.
+/// the steps oldest first, then the solves oldest first, then the estimator:
+/// status, the last gated fix's squared distance x 10 (u16, saturated), and
+/// its kidnap and re-anchor counts (u8 each, wrapping).
 static void _send_bench_telemetry(void) {
     size_t   length = 0;
     uint8_t *buf    = _vars.radio_buffer;
@@ -666,6 +716,13 @@ static void _send_bench_telemetry(void) {
     _telemetry_step_sent = _telemetry_step_count;
     _telemetry_fix_sent  = _telemetry_fix_count;
 
+    buf[length++]  = (uint8_t)_estimator.status;
+    float    d2    = _estimator.last_d2 * 10.0f;
+    uint16_t d2x10 = (d2 >= (float)UINT16_MAX) ? UINT16_MAX : (uint16_t)d2;
+    _put(buf, &length, &d2x10, sizeof(d2x10));
+    buf[length++] = (uint8_t)_estimator.kidnaps;
+    buf[length++] = (uint8_t)_estimator.reanchors;
+
     swarmit_send_raw_data(buf, (uint8_t)length);
 }
 #endif
@@ -682,12 +739,23 @@ static void _advertise(void) {
     buf[length++] = 0xff;  // calibrated bitmask, unknown
 
     int16_t direction = DIRECTION_INVALID;
+    float   heading;
+    if (db_pose_estimator_heading_deg(&_estimator, &heading)) {
+        direction = (int16_t)lroundf(heading);
+    }
     _put(buf, &length, &direction, sizeof(direction));
 
+    // The photodiode position: the estimator's while it tracks, else the last solve
     protocol_lh2_location_t position = {
         .x = _vars.has_position ? _vars.position.x : 0,
         .y = _vars.has_position ? _vars.position.y : 0,
     };
+    float sensor_x;
+    float sensor_y;
+    if (db_pose_estimator_sensor(&_estimator, &sensor_x, &sensor_y) && sensor_x >= 0 && sensor_y >= 0) {
+        position.x = (uint32_t)lroundf(sensor_x);
+        position.y = (uint32_t)lroundf(sensor_y);
+    }
     _put(buf, &length, &position, sizeof(position));
 
     uint16_t battery_level = 0;

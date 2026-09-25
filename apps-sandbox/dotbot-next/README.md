@@ -2,9 +2,9 @@
 
 Successor to `apps-sandbox/dotbot`, built up one layer at a time rather than
 edited in place. It stays joined, polls the position the secure side solves,
-samples the wheel encoders, runs a per-wheel speed loop, advertises in the same
-format as `apps-sandbox/dotbot`, and accepts direct motor commands and wheel
-velocity commands. That is all it does.
+samples the wheel encoders, runs a per-wheel speed loop and a pose estimator,
+advertises in the same format as `apps-sandbox/dotbot`, and accepts direct motor
+commands and wheel velocity commands. That is all it does.
 
 It exists for two reasons. It is an instrument for measuring the plant and the
 position source before any control layer sits on top of them, and it is the base
@@ -13,9 +13,18 @@ below it.
 
 ## What it does not do
 
-No state estimator, no steering law, no waypoint sequencing, no heading state, no
-displacement gate on incoming fixes. Those are added later, deliberately, and each
-one has to earn its place against a measurement taken with this build.
+No steering law and no waypoint sequencing. Those are added later, deliberately,
+and each one has to earn its place against a measurement taken with this build.
+
+The pose estimator (`drv/pose_estimator` in DotBot-libs) tracks the wheel-axle
+midpoint and the heading. It predicts on every tick from the encoders and takes
+each new solve as a position-only measurement of the photodiode, a lever arm ahead
+of the axle. It acquires its initial heading passively, from a chain of
+consistent solves once the robot has moved, so nothing has to drive a calibration
+manoeuvre first. A robot moved by hand with its wheels still is recognised within
+three fixes: the estimator drops its pose, the advertisement falls back to the
+last solve with the unknown heading, and the heading comes back once the robot
+moves. Its constants are provisional until measured on the floor.
 
 ## Driving
 
@@ -42,9 +51,10 @@ other packets still stops a driving robot by going quiet on drive commands.
 ## Structure
 
 **One periodic tick.** `TICK_MS` (10 ms) drives a single RTC0 channel and every
-slower activity divides it down: the wheel loop runs every tick, position at
-100 ms, command timeout at 200 ms. The advertisement period follows the node's
-minimum TX interval, between 100 and 1000 ms, and is 500 ms while not joined. The alternative, one channel per period, uses all three
+slower activity divides it down: the wheel loop and the estimator's predict run
+every tick, position at 100 ms, command timeout at 200 ms. The advertisement
+period follows the node's minimum TX interval, between 100 and 1000 ms, and is
+500 ms while not joined. The alternative, one channel per period, uses all three
 usable RTC0 channels and leaves nothing for the encoder sampling rate a velocity
 loop needs.
 
@@ -60,8 +70,8 @@ cadence is bounded above by the watchdog timeout as well.
 number of the solve it came from. The secure side advances that sequence by one
 per published solve, so an unchanged sequence means the same measurement read
 twice. The alternative, comparing coordinates, cannot tell a re-read from a robot
-that has genuinely not moved, and the estimator this application grows into must
-not run an update twice on one measurement. `swarmit_localization_get_position()`
+that has genuinely not moved, and the estimator must not run an update twice on
+one measurement. `swarmit_localization_get_position()`
 still exists and still has its original signature; this application does not call
 it.
 
@@ -71,9 +81,10 @@ worst backlog seen. A late tick is more useful reported than replayed, and on a
 bench instrument that number is data.
 
 **Advertisement is byte-identical** to the one `apps-sandbox/dotbot` emits, so
-host-side parsing is unchanged. Fields this application does not own carry
-unknown-value sentinels: heading is `-1000`, waypoints and waypoint index are
-zero, control mode is manual. Encoder counts are totals since the previous
+host-side parsing is unchanged. Heading and position are the estimator's while
+it tracks; otherwise heading is the unknown-value sentinel `-1000` and position is
+the last solve. Fields this application does not own carry unknown values:
+waypoints and waypoint index are zero, control mode is manual. Encoder counts are totals since the previous
 advertisement rather than since the previous control step, which is the same field
 carrying the only meaning available here.
 
