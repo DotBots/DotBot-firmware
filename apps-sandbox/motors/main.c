@@ -43,22 +43,22 @@ int main(void) {
     while (1) {
         // Move forward
         for (uint8_t speed = 50; speed < 80; speed++) {
-            db_motors_set_speed(speed, speed);
+            db_motors_set_pwm(speed, speed);
             db_timer_delay_ms(TIMER_DEV, 30);
         }
 
         // Move backward
         for (uint8_t speed = 50; speed < 80; speed++) {
-            db_motors_set_speed(speed * -1, speed * -1);
+            db_motors_set_pwm(speed * -1, speed * -1);
             db_timer_delay_ms(TIMER_DEV, 30);
         }
 
         // Spin
-        db_motors_set_speed(-70, 70);
+        db_motors_set_pwm(-70, 70);
         db_timer_delay_ms(TIMER_DEV, 500);
 
         // Spin back
-        db_motors_set_speed(70, -70);
+        db_motors_set_pwm(70, -70);
         db_timer_delay_ms(TIMER_DEV, 500);
     }
 }

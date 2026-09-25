@@ -34,14 +34,19 @@
 #define DB_RADIO_FREQ               (8U)      ///< Set the frequency to 2408 MHz
 #define RADIO_APP                   (DotBot)  ///< DotBot Radio App
 #define TIMER_DEV                   (0)
-#define QDEC_LEFT                   (0)      ///< Left wheel QDEC peripheral index
-#define QDEC_RIGHT                  (1)      ///< Right wheel QDEC peripheral index
-#define DB_POSITION_UPDATE_DELAY_MS (100U)   ///< 100ms delay between each LH2 position updates
-#define DB_ADVERTIZEMENT_DELAY_MS   (500U)   ///< 500ms delay between each advertisement packet sending
-#define DB_TIMEOUT_CHECK_DELAY_MS   (200U)   ///< 200ms delay between each timeout delay check
-#define TIMEOUT_CHECK_DELAY_TICKS   (17000)  ///< ~500 ms delay between packet received timeout checks
-#define DB_BUFFER_MAX_BYTES         (255U)   ///< Max bytes in UART receive buffer
-#define DB_LH2_OUTLIER_THRESHOLD    (500U)   ///< Max allowed displacement (mm) between two consecutive LH2 fixes
+#define QDEC_LEFT                   (0)     ///< Left wheel QDEC peripheral index
+#define QDEC_RIGHT                  (1)     ///< Right wheel QDEC peripheral index
+#define DB_POSITION_UPDATE_DELAY_MS (100U)  ///< 100ms delay between each LH2 position updates
+/// Adverts take this share of the node's transmit slots, one per minimum TX
+/// interval, and the rest is left for the net core's STATUS frame
+#define ADVERT_TX_SHARE_PERCENT   (50U)
+#define ADVERT_PERIOD_MIN_MS      (100U)   ///< Floor, and the advert timer's period
+#define ADVERT_PERIOD_MAX_MS      (1000U)  ///< Ceiling, however long the interval
+#define ADVERT_PERIOD_DEF_MS      (500U)   ///< While not joined, when the interval reads 0
+#define DB_TIMEOUT_CHECK_DELAY_MS (200U)   ///< 200ms delay between each timeout delay check
+#define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
+#define DB_BUFFER_MAX_BYTES       (255U)   ///< Max bytes in UART receive buffer
+#define DB_LH2_OUTLIER_THRESHOLD  (500U)   ///< Max allowed displacement (mm) between two consecutive LH2 fixes
 
 typedef struct {
     uint32_t x;  ///< X coordinate in mm
@@ -70,9 +75,10 @@ void swarmit_keep_alive(void);
 void swarmit_send_raw_data(const uint8_t *packet, uint8_t length);
 void swarmit_ipc_isr(ipc_isr_cb_t cb);
 
-void swarmit_localization_get_position(position_2d_t *position);
-void swarmit_get_battery_level(uint16_t *battery_level);
-void swarmit_localization_handle_isr(void);
+void     swarmit_localization_get_position(position_2d_t *position);
+void     swarmit_get_battery_level(uint16_t *battery_level);
+void     swarmit_localization_handle_isr(void);
+uint32_t swarmit_get_min_tx_interval_us(void);
 
 //=========================== variables ========================================
 
@@ -103,14 +109,18 @@ static const qdec_conf_t _qdec_right_conf = {
 };
 #endif
 
+static volatile uint32_t _advert_period     = ADVERT_PERIOD_DEF_MS;  ///< Written by the main loop
+static volatile uint32_t _advert_elapsed_ms = 0;                     ///< Advert timer callback only
+
 //=========================== prototypes =======================================
 
-static void _timeout_check(void);
-static void _advertise(void);
-static void _update_control_loop(void);
-static void _position_update(void);
-static void _encoders_init(void);
-static void _encoders_read(int32_t *left, int32_t *right);
+static void     _timeout_check(void);
+static void     _advertise(void);
+static uint32_t _advert_period_ms(void);
+static void     _update_control_loop(void);
+static void     _position_update(void);
+static void     _encoders_init(void);
+static void     _encoders_read(int32_t *left, int32_t *right);
 
 //=========================== callbacks ========================================
 
@@ -128,7 +138,7 @@ static void _rx_data_callback(const uint8_t *pkt, size_t len) {
             int16_t                      right   = (int16_t)(100 * ((float)command->right_y / INT8_MAX));
             _control_vars.pwm_left               = left;
             _control_vars.pwm_right              = right;
-            db_motors_set_speed(left, right);
+            db_motors_set_pwm(left, right);
         } break;
         case DB_PROTOCOL_CMD_RGB_LED:
         {
@@ -136,7 +146,7 @@ static void _rx_data_callback(const uint8_t *pkt, size_t len) {
             db_rgbled_pwm_set_color(command->r, command->g, command->b);
         } break;
         case DB_PROTOCOL_CONTROL_MODE:
-            db_motors_set_speed(0, 0);
+            db_motors_set_pwm(0, 0);
             break;
         case DB_PROTOCOL_LH2_WAYPOINTS:
         {
@@ -163,7 +173,7 @@ static void _rx_data_callback(const uint8_t *pkt, size_t len) {
             if (count > 0) {
                 _dotbot_vars.control_mode = ControlAuto;
             } else {
-                db_motors_set_speed(0, 0);
+                db_motors_set_pwm(0, 0);
                 _dotbot_vars.control_mode = ControlManual;
             }
         } break;
@@ -197,7 +207,7 @@ int main(void) {
     db_timer_init(TIMER_DEV);
     db_timer_set_periodic_ms(TIMER_DEV, 0, DB_TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
     db_timer_set_periodic_ms(TIMER_DEV, 1, DB_POSITION_UPDATE_DELAY_MS, &_position_update);
-    db_timer_set_periodic_ms(TIMER_DEV, 2, DB_ADVERTIZEMENT_DELAY_MS, &_advertise);
+    db_timer_set_periodic_ms(TIMER_DEV, 2, ADVERT_PERIOD_MIN_MS, &_advertise);
 
     while (1) {
         __WFE();
@@ -268,6 +278,7 @@ int main(void) {
             memcpy(&_dotbot_vars.radio_buffer[length++], &_control_vars.waypoint_idx, sizeof(uint8_t));
             swarmit_send_raw_data(_dotbot_vars.radio_buffer, length);
             _dotbot_vars.advertize = false;
+            _advert_period         = _advert_period_ms();
         }
     }
 }
@@ -277,7 +288,7 @@ int main(void) {
 static void _update_control_loop(void) {
     _encoders_read(&_control_vars.encoder_left, &_control_vars.encoder_right);
     update_control(&_control_vars, _control_ctx);
-    db_motors_set_speed(_control_vars.pwm_left, _control_vars.pwm_right);
+    db_motors_set_pwm(_control_vars.pwm_left, _control_vars.pwm_right);
 
     if (_control_vars.all_done) {
         _dotbot_vars.control_mode   = ControlManual;
@@ -308,13 +319,37 @@ static void _encoders_read(int32_t *left, int32_t *right) {
 static void _timeout_check(void) {
     uint32_t ticks = db_timer_ticks(TIMER_DEV);
     if (_dotbot_vars.control_mode != ControlAuto && ticks > _dotbot_vars.ts_last_packet_received + TIMEOUT_CHECK_DELAY_TICKS) {
-        db_motors_set_speed(0, 0);
+        db_motors_set_pwm(0, 0);
     }
 }
 
+/// Runs at the floor period and flags an advert once the derived period has
+/// passed. The period is read from the budget in the main loop, not here.
 static void _advertise(void) {
+    _advert_elapsed_ms += ADVERT_PERIOD_MIN_MS;
+    if (_advert_elapsed_ms < _advert_period) {
+        return;
+    }
+    _advert_elapsed_ms = 0;
     db_gpio_toggle(&db_led1);
     _dotbot_vars.advertize = true;
+}
+
+/// Derived from the node's minimum TX interval after every advert, so a
+/// gateway on another schedule changes the rate within one period
+static uint32_t _advert_period_ms(void) {
+    uint32_t min_tx_interval_us = swarmit_get_min_tx_interval_us();
+    if (min_tx_interval_us == 0) {
+        return ADVERT_PERIOD_DEF_MS;
+    }
+    uint32_t period_ms = (min_tx_interval_us / 1000U) * 100U / ADVERT_TX_SHARE_PERCENT;
+    if (period_ms < ADVERT_PERIOD_MIN_MS) {
+        return ADVERT_PERIOD_MIN_MS;
+    }
+    if (period_ms > ADVERT_PERIOD_MAX_MS) {
+        return ADVERT_PERIOD_MAX_MS;
+    }
+    return period_ms;
 }
 
 static void _position_update(void) {

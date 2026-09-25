@@ -1,10 +1,10 @@
 # DotBot control application, rebuilt
 
 Successor to `apps-sandbox/dotbot`, built up one layer at a time rather than
-edited in place. At this stage it carries no control loop. It stays joined, polls the
-position the secure side solves, samples the wheel encoders, advertises in the
-same format as `apps-sandbox/dotbot`, and accepts direct motor commands. That is
-all it does.
+edited in place. It stays joined, polls the position the secure side solves,
+samples the wheel encoders, runs a per-wheel speed loop, advertises in the same
+format as `apps-sandbox/dotbot`, and accepts direct motor commands and wheel
+velocity commands. That is all it does.
 
 It exists for two reasons. It is an instrument for measuring the plant and the
 position source before any control layer sits on top of them, and it is the base
@@ -17,11 +17,34 @@ No state estimator, no steering law, no waypoint sequencing, no heading state, n
 displacement gate on incoming fixes. Those are added later, deliberately, and each
 one has to earn its place against a measurement taken with this build.
 
+## Driving
+
+Three drive modes, each with exactly one writer of the motors:
+
+| Mode | Entered by | Motors |
+|---|---|---|
+| idle | boot, `CONTROL_MODE`, the command timeout | the wheel loop at a zero setpoint: brakes a turning wheel, then lets it coast once it stands |
+| raw | `CMD_MOVE_RAW` | the command's duty, the wheel loop off |
+| velocity | `CMD_WHEEL_VELOCITY` | the wheel loop, toward per-wheel setpoints in mm/s clamped to ±700 |
+
+The wheel loop (`drv/wheel_control` in DotBot-libs) runs every 10 ms tick. A zero
+setpoint shorts the motor while the wheel still turns, so a stop does not coast
+on. A wheel held at 80 duty or more with no encoder counts for 500 ms is stalled:
+its motor coasts until the setpoint changes or the drive stops, and the bench
+records carry its duty as `-127`. The ±700 mm/s clamp keeps a count longer than
+the QDEC's 128 us sample period.
+
+Commands arrive in the IPC interrupt and are applied on the next tick; a newer
+command replaces one not yet applied. Only `CMD_MOVE_RAW` and
+`CMD_WHEEL_VELOCITY` refresh the command timeout, so a host that keeps sending
+other packets still stops a driving robot by going quiet on drive commands.
+
 ## Structure
 
 **One periodic tick.** `TICK_MS` (10 ms) drives a single RTC0 channel and every
-slower activity divides it down: position at 100 ms, command timeout at 200 ms,
-advertisement at 500 ms. The alternative, one channel per period, uses all three
+slower activity divides it down: the wheel loop runs every tick, position at
+100 ms, command timeout at 200 ms. The advertisement period follows the node's
+minimum TX interval, between 100 and 1000 ms, and is 500 ms while not joined. The alternative, one channel per period, uses all three
 usable RTC0 channels and leaves nothing for the encoder sampling rate a velocity
 loop needs.
 
@@ -54,14 +77,17 @@ zero, control mode is manual. Encoder counts are totals since the previous
 advertisement rather than since the previous control step, which is the same field
 carrying the only meaning available here.
 
-**Bench telemetry** is a second frame behind `DB_BENCH_TELEMETRY`, carrying the
-RTC counter, the serviced tick number, the worst tick backlog, the raw solve, its
-fix sequence, and the encoder totals. The sequence is what makes fix rate and fix
-jitter measurable from the frames alone: its difference between two frames divided
-by the tick difference is the rate. The frame is deliberately absent from
-`protocol_data_type_t`: it must not exist in a shipped target, so it claims value
-13 by local convention only. Do not register that value in the shared enum without
-moving this first.
+**Bench telemetry** is a second frame behind `DB_BENCH_TELEMETRY`, sent after
+each advertisement. It carries every 10 ms wheel step since the previous frame
+(credited counts, duty with `-128` for braked and `-127` for stalled, setpoints in
+units of 10 mm/s), every new solve since the
+previous frame (tick, fix sequence, raw coordinates), the encoder totals since
+boot, the drive mode and the worst tick backlog. Steps and solves beyond what one
+frame holds (24 and 4) are dropped oldest first and the drop is counted, and the
+totals make a lost frame cost resolution but not distance. The frame is
+deliberately absent from `protocol_data_type_t`: it must not exist in a shipped
+target, so it claims value 13 by local convention only. Do not register that
+value in the shared enum without moving this first.
 
 ## Behaviour carried over deliberately
 
