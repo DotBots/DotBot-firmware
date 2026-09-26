@@ -58,13 +58,13 @@ else ifneq (,$(filter xgo%,$(BUILD_TARGET)))
   # Bootloader not supported on xgo
 else ifneq (,$(filter sandbox-%,$(BUILD_TARGET)))
   # Sandbox (TrustZone non-secure) targets build the apps under apps-sandbox/
-  PROJECTS ?= $(shell find apps-sandbox/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/apps-sandbox// | sort)
+  PROJECTS ?= $(shell sed -n 's/.*<project Name="\([^"]*\)".*/\1/p' apps-sandbox/applications.emProject | sort)
   # Release every sandbox app
   ARTIFACT_PROJECTS := $(PROJECTS)
 else
   # lh2_calibration is the legacy cabled calibration app: kept in the tree,
   # left out of the default builds (PROJECTS=lh2_calibration still builds it)
-  PROJECTS ?= $(filter-out lh2_calibration,$(shell find apps/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/apps// | sort))
+  PROJECTS ?= $(filter-out lh2_calibration,$(shell sed -n 's/.*<project Name="\([^"]*\)".*/\1/p' apps/apps-*.emProject | sort))
 endif
 
 # remove incompatible apps (nrf5340, sailbot gateway) for dotbot (v1, v2) builds
