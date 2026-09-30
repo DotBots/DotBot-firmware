@@ -183,7 +183,8 @@ table - note e.g. **dotbot-v2 is an nRF5340**, not nRF52833; the truth is each
 ## Don't
 
 - Don't add work to the ISRs or the timer callbacks - both apps keep them to a
-  counter or a mailbox copy and run the control in the main loop.
+  counter, a mailbox copy or setting the RGB LED, and run the control in the
+  main loop.
 - Don't "fix" the two-namespace position split here unilaterally - it's a
   cross-repo (PyDotBot + swarmit adapter) decision; see the control-loop section.
 - Don't run `make docker` locally (CI-only; slow under QEMU).
