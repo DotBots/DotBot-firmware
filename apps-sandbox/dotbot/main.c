@@ -194,6 +194,7 @@ static void _encoders_init(void);
 static void _encoders_read(int32_t *left, int32_t *right);
 static void _position_read(db_control_input_t *in);
 static void _rx_process(void);
+static void _set_led(const uint8_t *command, size_t length);
 static void _advert_period_update(void);
 static void _advertise(void);
 #if defined(DB_BENCH_TELEMETRY) || defined(DB_BENCH_TRACE)
@@ -202,9 +203,14 @@ static void _bench_record_step(uint32_t tick, uint32_t elapsed, const db_control
 
 //=========================== callbacks ========================================
 
-/// The newest command replaces one the main loop has not applied yet
+/// Runs in the IPC interrupt: the LED is set here, and the newest other
+/// command replaces one the main loop has not applied yet
 static void _rx_data_callback(const uint8_t *pkt, size_t len) {
     if (len == 0 || len > sizeof(_rx_buffer)) {
+        return;
+    }
+    if (pkt[0] == DB_PROTOCOL_CMD_RGB_LED) {
+        _set_led(pkt, len);
         return;
     }
     memcpy(_rx_buffer, pkt, len);
@@ -318,16 +324,6 @@ static void _rx_process(void) {
     _rx_pending = false;
     __set_PRIMASK(primask);
 
-    if (packet[0] == DB_PROTOCOL_CMD_RGB_LED) {
-#ifdef DB_RGB_LED_PWM_RED_PORT
-        if (length >= 1 + sizeof(protocol_rgbled_command_t)) {
-            protocol_rgbled_command_t command;
-            memcpy(&command, &packet[1], sizeof(command));
-            db_rgbled_pwm_set_color(command.r, command.g, command.b);
-        }
-#endif
-        return;
-    }
 #if defined(DB_BENCH_TELEMETRY)
     if (packet[0] == DB_PROTOCOL_LH2_WAYPOINTS && _bench_waypoints(&packet[1], length - 1)) {
         return;
@@ -530,6 +526,21 @@ static void _send_bench_telemetry(void) {
     swarmit_send_raw_data(buf, (uint8_t)length);
 }
 #endif
+
+/// command is the type byte followed by its payload
+static void _set_led(const uint8_t *command, size_t length) {
+#ifdef DB_RGB_LED_PWM_RED_PORT
+    protocol_rgbled_command_t color;
+    if (length < 1 + sizeof(color)) {
+        return;
+    }
+    memcpy(&color, &command[1], sizeof(color));
+    db_rgbled_pwm_set_color(color.r, color.g, color.b);
+#else
+    (void)command;
+    (void)length;
+#endif
+}
 
 static void _advertise(void) {
     _advert_period_update();

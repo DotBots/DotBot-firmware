@@ -47,7 +47,8 @@ records carry its duty as `-127`. The ±700 mm/s clamp keeps a count longer than
 the QDEC's 128 us sample period.
 
 Commands arrive in the IPC interrupt and are applied on the next tick; a newer
-command replaces one not yet applied. Only `CMD_MOVE_RAW`, `CMD_WHEEL_VELOCITY`
+command replaces one not yet applied. `CMD_RGB_LED` is the exception: the
+interrupt sets the LED at once. Only `CMD_MOVE_RAW`, `CMD_WHEEL_VELOCITY`
 and `LH2_WAYPOINTS` refresh the command timeout, so a host that keeps sending
 other packets still stops a raw or velocity drive by going quiet on drive
 commands. A waypoint batch is not under the command timeout: it needs no
@@ -119,9 +120,10 @@ one measurement. `swarmit_localization_get_position()`
 still exists and still has its original signature; this application does not call
 it.
 
-The IPC interrupt only copies a command into a one-slot mailbox and the main
-loop hands it to `db_control_rx()`, so the main loop is the only caller of the
-core. The RGB LED command is handled in the app, since the core has no LED.
+The IPC interrupt copies a command into a one-slot mailbox and the main loop
+hands it to `db_control_rx()`, so the main loop is the only caller of the core.
+The RGB LED command never enters the mailbox: the interrupt sets the LED
+itself, since the core has no LED and nothing else writes it.
 
 The tick callback only increments a counter. The main loop compares it against
 what it has serviced, drops any backlog rather than replaying it, and records the
