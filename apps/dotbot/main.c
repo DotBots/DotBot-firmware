@@ -138,6 +138,7 @@ static void _tick(void);
 static void _service_tick(uint32_t elapsed);
 static void _rx_process(void);
 static void _apply_command(const uint8_t *command, size_t length);
+static void _set_led(const uint8_t *command, size_t length);
 static void _set_speed(int16_t left_mm_s, int16_t right_mm_s);
 static void _set_raw(int8_t left, int8_t right);
 static void _write_motors(int8_t left, int8_t right, bool brake_left, bool brake_right);
@@ -145,8 +146,9 @@ static void _advertise(void);
 
 //=========================== callbacks ========================================
 
-/// Runs in the radio interrupt: keep the command for the main loop, which is
-/// the only place the motors and the speed loop are touched
+/// Runs in the radio interrupt: the LED is set here, other commands are kept
+/// for the main loop, which is the only place the motors and the speed loop
+/// are touched
 static void _radio_callback(uint8_t *packet, uint8_t length) {
     if (length < sizeof(db_frame_header_t) + 1) {
         return;
@@ -160,9 +162,15 @@ static void _radio_callback(uint8_t *packet, uint8_t length) {
         header->next_proto != DB_FRAME_NEXT_PROTO) {
         return;
     }
+    const uint8_t *command        = packet + sizeof(db_frame_header_t);
+    size_t         command_length = length - sizeof(db_frame_header_t);
+    if (command[0] == DB_PROTOCOL_CMD_RGB_LED) {
+        _set_led(command, command_length);
+        return;
+    }
     // A newer command replaces one the main loop has not applied yet
-    _dotbot_vars.rx_length = length - sizeof(db_frame_header_t);
-    memcpy(_dotbot_vars.rx_buffer, packet + sizeof(db_frame_header_t), _dotbot_vars.rx_length);
+    _dotbot_vars.rx_length = command_length;
+    memcpy(_dotbot_vars.rx_buffer, command, command_length);
     _dotbot_vars.rx_pending = true;
 }
 
@@ -253,10 +261,10 @@ static void _rx_process(void) {
     _apply_command(command, length);
 }
 
-/// command is the type byte followed by its payload
+/// command is the type byte followed by its payload; every command applied
+/// here is a driving one, so it restarts the deadman
 static void _apply_command(const uint8_t *command, size_t length) {
     const uint8_t *payload = &command[1];
-    bool           driving = true;  // a driving command restarts the deadman
     switch (command[0]) {
         case DB_PROTOCOL_CMD_WHEEL_VELOCITY:
         {
@@ -280,24 +288,25 @@ static void _apply_command(const uint8_t *command, size_t length) {
         case DB_PROTOCOL_CONTROL_MODE:
             _set_speed(0, 0);
             break;
-        case DB_PROTOCOL_CMD_RGB_LED:
-        {
-            driving = false;
-#ifdef DB_RGB_LED_PWM_RED_PORT
-            protocol_rgbled_command_t color;
-            if (length < 1 + sizeof(color)) {
-                return;
-            }
-            memcpy(&color, payload, sizeof(color));
-            db_rgbled_pwm_set_color(color.r, color.g, color.b);
-#endif
-        } break;
         default:
             return;
     }
-    if (driving) {
-        _dotbot_vars.tick_command = _dotbot_vars.tick_serviced;
+    _dotbot_vars.tick_command = _dotbot_vars.tick_serviced;
+}
+
+/// command is the type byte followed by its payload
+static void _set_led(const uint8_t *command, size_t length) {
+#ifdef DB_RGB_LED_PWM_RED_PORT
+    protocol_rgbled_command_t color;
+    if (length < 1 + sizeof(color)) {
+        return;
     }
+    memcpy(&color, &command[1], sizeof(color));
+    db_rgbled_pwm_set_color(color.r, color.g, color.b);
+#else
+    (void)command;
+    (void)length;
+#endif
 }
 
 static int16_t _clamp_speed(int16_t mm_s) {

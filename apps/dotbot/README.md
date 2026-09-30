@@ -39,7 +39,9 @@ host holds a speed by resending it.
 
 A 10 ms timer tick paces everything. On each tick the main loop:
 
-1. applies the latest command the radio interrupt stored;
+1. applies the latest driving command the radio interrupt stored (the radio
+   interrupt sets the LED itself, so a colour is never replaced by a driving
+   command that follows it within a tick);
 2. reads the wheel encoders (`bsp/qdec`);
 3. steps the speed loop (`drv/wheel_control`), one PI controller per wheel that
    turns a setpoint in mm/s and the encoder counts into a motor duty, and
