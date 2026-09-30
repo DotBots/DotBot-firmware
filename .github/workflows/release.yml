@@ -10,8 +10,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Release everything `dotbot fw artifacts` (bare .hex) and
-        # `dotbot fw artifacts --sandbox` (sandbox .bin) can build, so one tag
+        # Release everything `dotbot fw build dotbot-firmware --bare` (bare .hex)
+        # and `dotbot fw build dotbot-firmware` (sandbox .bin) build, so one tag
         # carries every image the testbed flows fetch: bare dotbot + nrf5340_net
         # netcore, the sandbox apps (calibrate included), and the gateways. Bare
         # targets mirror build.yml, sandbox targets build-sandbox.yml - both
