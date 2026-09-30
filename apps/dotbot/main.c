@@ -96,7 +96,7 @@ typedef struct {
 
 static dotbot_vars_t _dotbot_vars = { 0 };
 
-/// DotBot v3 speed loop gains, the ones apps-sandbox/dotbot runs; keep them in step
+/// DotBot v3 speed loop gains, as in drv/dotbot_control (the sandbox app); keep them in step
 static const db_wheel_control_conf_t _wheel_conf = {
     .kp                = 0.52f,
     .ki                = 5.2f,
