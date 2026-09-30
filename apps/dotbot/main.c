@@ -2,68 +2,114 @@
  * @file
  * @defgroup project_dotbot    DotBot application
  * @ingroup projects
- * @brief This is the radio-controlled DotBot app
+ * @brief Radio-controlled DotBot: wheel speeds, motor duty and the RGB LED
  *
- * The remote control can be either a keyboard, a joystick or buttons on the gateway
- * itself
+ * Commands come over the radio from a gateway running dotbot_gateway:
+ * - WHEEL_VELOCITY sets a speed per wheel in mm/s, which a speed loop holds
+ *   using the wheel encoders (drv/wheel_control);
+ * - MOVE_RAW sets the motor duty directly, as a joystick or keyboard does;
+ * - RGB_LED sets the LED colour;
+ * - CONTROL_MODE stops the motors.
  *
- * @author Said Alvarado-Marin <said-alexander.alvarado-marin@inria.fr>
- * @author Alexandre Abadie <alexandre.abadie@inria.fr>
- * @copyright Inria, 2022
+ * The motors stop when no driving command has arrived for DEADMAN_TICKS. The
+ * robot advertises its battery, motor duty and encoder counts every
+ * ADVERTISEMENT_TICKS.
+ *
+ * @copyright Inria, 2022-2026
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
 #include <nrf.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 // Include BSP headers
 #include "board.h"
 #include "board_config.h"
 #include "device.h"
-#include "lh2.h"
-#include "protocol.h"
-#include "motors.h"
 #include "qdec.h"
 #include "radio.h"
-#include "rgbled_pwm.h"
 #include "timer.h"
-#include "log_flash.h"
-#include "frame.h"
+// Include DRV headers
 #include "battery.h"
-#include "control_loop.h"
+#include "frame.h"
+#include "motors.h"
+#include "protocol.h"
+#include "rgbled_pwm.h"
+#include "wheel_control.h"
 
 //=========================== defines ==========================================
 
-#define RADIO_APP                 (DotBot)  ///< DotBot Radio App
-#define TIMER_DEV                 (0)
-#define QDEC_LEFT                 (0)      ///< Left wheel QDEC peripheral index
-#define QDEC_RIGHT                (1)      ///< Right wheel QDEC peripheral index
-#define DB_LH2_UPDATE_DELAY_MS    (50U)    ///< 50ms delay between each LH2 data refresh
-#define DB_ADVERTIZEMENT_DELAY_MS (500U)   ///< 500ms delay between each advertizement packet sending
-#define DB_TIMEOUT_CHECK_DELAY_MS (200U)   ///< 200ms delay between each timeout delay check
-#define TIMEOUT_CHECK_DELAY_TICKS (17000)  ///< ~500 ms delay between packet received timeout checks
-#define DB_BUFFER_MAX_BYTES       (255U)   ///< Max bytes in UART receive buffer
-#define DB_LH2_OUTLIER_THRESHOLD  (500U)   ///< Max allowed displacement (mm) between two consecutive LH2 fixes
+#define TIMER_DEV           (0)
+#define QDEC_LEFT           (0)                         ///< Left wheel QDEC peripheral index
+#define QDEC_RIGHT          (1)                         ///< Right wheel QDEC peripheral index
+#define TICK_MS             (DB_WHEEL_CONTROL_TICK_MS)  ///< 10 ms, the period of the speed loop
+#define ADVERTISEMENT_TICKS (50U)                       ///< 500 ms between advertisements
+#define DEADMAN_TICKS       (52U)                       ///< ~520 ms without a driving command stops the motors
+#define SPEED_MAX_MM_S      (700)                       ///< Largest wheel speed a command may set
+#define DIRECTION_NONE      (-1000)                     ///< Heading in the advertisement: this app has none
+#define POSITION_NONE       (0xFFFFFFFF)                ///< Position in the advertisement: this app has none
+#define CALIBRATION_UNKNOWN (0xFF)                      ///< LH2 calibration bitmask in the advertisement: not applicable
+#define BUFFER_MAX_BYTES    (255U)
+
+/// Who writes the motors
+typedef enum {
+    DRIVE_SPEED,  ///< The speed loop, toward the wheel setpoints; a stop is a zero setpoint
+    DRIVE_RAW,    ///< MOVE_RAW duty, the speed loop off
+} drive_mode_t;
+
+/// What follows the calibration byte of DB_PROTOCOL_DOTBOT_ADVERTISEMENT
+typedef struct __attribute__((packed)) {
+    int16_t                 direction;       ///< Heading, deg
+    protocol_lh2_location_t position;        ///< mm
+    uint16_t                battery;         ///< mV
+    int8_t                  pwm_left;        ///< Last duty written
+    int8_t                  pwm_right;       ///< Last duty written
+    uint8_t                 mode;            ///< protocol_control_mode_t
+    int32_t                 encoder_left;    ///< Counts since the previous advertisement
+    int32_t                 encoder_right;   ///< Counts since the previous advertisement
+    protocol_lh2_location_t waypoint;        ///< Point being driven to, mm
+    uint8_t                 waypoint_index;  ///< Index of that point
+} advertisement_t;
+_Static_assert(sizeof(advertisement_t) == 32, "advertisement_t is a wire format");
 
 typedef struct {
-    uint32_t                 ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
-    db_lh2_t                 lh2;                                ///< LH2 device descriptor
-    uint8_t                  radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
-    protocol_control_mode_t  control_mode;                       ///< Remote control mode
-    protocol_lh2_waypoints_t waypoints;                          ///< List of waypoints
-    volatile bool            update_control_loop;                ///< Whether the control loop need an update
-    volatile bool            advertize;                          ///< Whether an advertize packet should be sent
-    volatile bool            update_lh2;                         ///< Whether LH2 data must be processed
-    uint64_t                 device_id;                          ///< Device ID of the DotBot
-    double                   coordinates[2];                     ///< x, y coordinates of the robot
+    volatile uint32_t  tick;                         ///< Ticks since boot, written by the timer callback only
+    uint32_t           tick_serviced;                ///< Last tick the main loop ran
+    uint32_t           tick_command;                 ///< Tick of the last driving command
+    uint32_t           tick_advertisement;           ///< Tick of the last advertisement
+    uint8_t            rx_buffer[BUFFER_MAX_BYTES];  ///< Command received, type byte first
+    size_t             rx_length;                    ///< Bytes in rx_buffer
+    volatile bool      rx_pending;                   ///< A command waits in rx_buffer
+    uint8_t            tx_buffer[BUFFER_MAX_BYTES];  ///< Advertisement being sent
+    uint64_t           device_id;                    ///< This robot's address
+    drive_mode_t       drive_mode;                   ///< Who writes the motors
+    int8_t             pwm_left;                     ///< Last duty written, 0 while braked
+    int8_t             pwm_right;                    ///< Last duty written, 0 while braked
+    int32_t            encoder_left;                 ///< Counts since the last advertisement
+    int32_t            encoder_right;                ///< Counts since the last advertisement
+    db_wheel_control_t wheel_left;                   ///< Left wheel speed loop
+    db_wheel_control_t wheel_right;                  ///< Right wheel speed loop
 } dotbot_vars_t;
 
 //=========================== variables ========================================
 
-static dotbot_vars_t   _dotbot_vars  = { 0 };
-static robot_control_t _control_vars = { 0 };
-static void           *_control_ctx  = NULL;
+static dotbot_vars_t _dotbot_vars = { 0 };
+
+/// DotBot v3 speed loop gains, as in drv/dotbot_control (the sandbox app); keep them in step
+static const db_wheel_control_conf_t _wheel_conf = {
+    .kp                = 0.52f,
+    .ki                = 5.2f,
+    .u_breakaway       = 44.0f,
+    .kick_ramp         = 0.5f,
+    .u_run             = 32.0f,
+    .k_run             = 0.097f,
+    .i_zone            = 38.0f,
+    .pwm_max           = 100.0f,
+    .pwm_slew_per_tick = 100.0f,
+    .stall_pwm         = 80.0f,
+    .stall_ms          = 500U,
+};
 
 static const qdec_conf_t _qdec_left_conf = {
     .pin_a = &db_qdec_left_a_pin,
@@ -75,8 +121,8 @@ static const qdec_conf_t _qdec_right_conf = {
     .pin_b = &db_qdec_right_b_pin,
 };
 
-#ifdef DB_RGB_LED_PWM_RED_PORT  // Only available on DotBot v2
-static const db_rgbled_pwm_conf_t rgbled_pwm_conf = {
+#ifdef DB_RGB_LED_PWM_RED_PORT  // Not every board has the RGB LED
+static const db_rgbled_pwm_conf_t _rgbled_pwm_conf = {
     .pwm  = 1,
     .pins = {
         { .port = DB_RGB_LED_PWM_RED_PORT, .pin = DB_RGB_LED_PWM_RED_PIN },
@@ -88,93 +134,48 @@ static const db_rgbled_pwm_conf_t rgbled_pwm_conf = {
 
 //=========================== prototypes =======================================
 
-static void _timeout_check(void);
+static void _tick(void);
+static void _service_tick(uint32_t elapsed);
+static void _rx_process(void);
+static void _apply_command(const uint8_t *command, size_t length);
+static void _set_led(const uint8_t *command, size_t length);
+static void _set_speed(int16_t left_mm_s, int16_t right_mm_s);
+static void _set_raw(int8_t left, int8_t right);
+static void _write_motors(int8_t left, int8_t right, bool brake_left, bool brake_right);
 static void _advertise(void);
-static void _update_control_loop(void);
-static void _update_lh2(void);
 
 //=========================== callbacks ========================================
 
-static void radio_callback(uint8_t *pkt, uint8_t len) {
-    if (len < sizeof(db_frame_header_t) + 1) {
+/// Runs in the radio interrupt: the LED is set here, other commands are kept
+/// for the main loop, which is the only place the motors and the speed loop
+/// are touched
+static void _radio_callback(uint8_t *packet, uint8_t length) {
+    if (length < sizeof(db_frame_header_t) + 1) {
         return;
     }
-
-    _dotbot_vars.ts_last_packet_received = db_timer_ticks(TIMER_DEV);
-    db_frame_header_t *header            = (db_frame_header_t *)pkt;
-
-    // Drop frames addressed elsewhere
+    const db_frame_header_t *header = (const db_frame_header_t *)packet;
     if (header->dst != DB_FRAME_DST_BROADCAST && header->dst != _dotbot_vars.device_id) {
         return;
     }
-
-    // Drop wrong version / wrong upper-layer protocol
     if (header->version != DB_FRAME_VERSION ||
         header->type != DB_FRAME_TYPE_DATA ||
         header->next_proto != DB_FRAME_NEXT_PROTO) {
         return;
     }
-
-    uint8_t *cmd_ptr = pkt + sizeof(db_frame_header_t);
-    // parse received packet and update the motors' speeds
-    switch ((uint8_t)*cmd_ptr++) {
-        case DB_PROTOCOL_CMD_MOVE_RAW:
-        {
-            protocol_move_raw_command_t *command = (protocol_move_raw_command_t *)cmd_ptr;
-            int16_t                      left    = (int16_t)(100 * ((float)command->left_y / INT8_MAX));
-            int16_t                      right   = (int16_t)(100 * ((float)command->right_y / INT8_MAX));
-            _control_vars.pwm_left               = left;
-            _control_vars.pwm_right              = right;
-            db_motors_set_pwm(left, right);
-        } break;
-        case DB_PROTOCOL_CMD_RGB_LED:
-        {
-            protocol_rgbled_command_t *command = (protocol_rgbled_command_t *)cmd_ptr;
-            db_rgbled_pwm_set_color(command->r, command->g, command->b);
-        } break;
-        case DB_PROTOCOL_CONTROL_MODE:
-            db_motors_set_pwm(0, 0);
-            break;
-        case DB_PROTOCOL_LH2_WAYPOINTS:
-        {
-            _dotbot_vars.control_mode = ControlManual;
-            uint16_t threshold        = 0;
-            memcpy(&threshold, cmd_ptr, sizeof(uint16_t));
-            cmd_ptr += sizeof(uint16_t);
-            uint8_t count = (uint8_t)*cmd_ptr++;
-            if (count > DB_MAX_WAYPOINTS) {
-                count = DB_MAX_WAYPOINTS;
-            }
-            memcpy(&_dotbot_vars.waypoints.points, cmd_ptr, count * sizeof(protocol_lh2_location_t));
-            coordinate_t waypoints[DB_MAX_WAYPOINTS];
-            for (uint8_t i = 0; i < count; i++) {
-                waypoints[i].x = _dotbot_vars.waypoints.points[i].x;
-                waypoints[i].y = _dotbot_vars.waypoints.points[i].y;
-            }
-            control_loop_set_waypoints(_control_ctx, waypoints, count, (uint32_t)threshold);
-            _control_vars.encoder_left  = 0;
-            _control_vars.encoder_right = 0;
-            db_qdec_read_and_clear(QDEC_LEFT);
-            db_qdec_read_and_clear(QDEC_RIGHT);
-            if (count > 0) {
-                _dotbot_vars.control_mode = ControlAuto;
-            } else {
-                db_motors_set_pwm(0, 0);
-                _dotbot_vars.control_mode = ControlManual;
-            }
-        } break;
-        case DB_PROTOCOL_LH2_CALIBRATION:
-        {
-            puts("Received calibration data");
-            protocol_lh2_homography_t *homography_from_packet = (protocol_lh2_homography_t *)cmd_ptr;
-            // The matrix sits at an odd offset in the packet; the driver reads it as aligned floats
-            float homography_matrix[3][3];
-            memcpy(homography_matrix, homography_from_packet->homography_matrix, sizeof(homography_matrix));
-            db_lh2_store_homography(&_dotbot_vars.lh2, homography_from_packet->basestation_index, homography_matrix);
-        } break;
-        default:
-            break;
+    const uint8_t *command        = packet + sizeof(db_frame_header_t);
+    size_t         command_length = length - sizeof(db_frame_header_t);
+    if (command[0] == DB_PROTOCOL_CMD_RGB_LED) {
+        _set_led(command, command_length);
+        return;
     }
+    // A newer command replaces one the main loop has not applied yet
+    _dotbot_vars.rx_length = command_length;
+    memcpy(_dotbot_vars.rx_buffer, command, command_length);
+    _dotbot_vars.rx_pending = true;
+}
+
+static void _tick(void) {
+    _dotbot_vars.tick++;
 }
 
 //=========================== main =============================================
@@ -182,158 +183,190 @@ static void radio_callback(uint8_t *pkt, uint8_t len) {
 int main(void) {
     db_board_init();
 #ifdef DB_RGB_LED_PWM_RED_PORT
-    db_rgbled_pwm_init(&rgbled_pwm_conf);
+    db_rgbled_pwm_init(&_rgbled_pwm_conf);
 #endif
     db_battery_level_init();
     db_motors_init();
     db_qdec_init(QDEC_LEFT, &_qdec_left_conf, NULL, NULL);
     db_qdec_init(QDEC_RIGHT, &_qdec_right_conf, NULL, NULL);
-    _control_ctx = control_loop_alloc();
-    db_radio_init(&radio_callback, DB_RADIO_BLE_1MBit);
+    db_wheel_control_init(&_dotbot_vars.wheel_left, &_wheel_conf);
+    db_wheel_control_init(&_dotbot_vars.wheel_right, &_wheel_conf);
+    _dotbot_vars.drive_mode = DRIVE_SPEED;
+    _dotbot_vars.device_id  = db_device_id();
+
+    db_radio_init(&_radio_callback, DB_RADIO_BLE_1MBit);
     db_radio_set_network_address(DB_FRAME_ACCESS_ADDR);
     db_radio_set_frequency(DB_FRAME_DEFAULT_FREQ);
     db_radio_rx();
 
-    // Set an invalid heading since the value is unknown on startup.
-    // Control loop is stopped
-    _control_vars.direction          = DB_DIRECTION_INVALID;
-    _dotbot_vars.update_control_loop = false;
-    _dotbot_vars.advertize           = false;
-    _dotbot_vars.update_lh2          = false;
-
-    // Retrieve the device id once at startup
-    _dotbot_vars.device_id = db_device_id();
-
     db_timer_init(TIMER_DEV);
-    db_timer_set_periodic_ms(TIMER_DEV, 0, DB_TIMEOUT_CHECK_DELAY_MS, &_timeout_check);
-    db_timer_set_periodic_ms(TIMER_DEV, 1, 5 * DB_LH2_UPDATE_DELAY_MS, &_update_lh2);
-    db_timer_set_periodic_ms(TIMER_DEV, 2, DB_ADVERTIZEMENT_DELAY_MS, &_advertise);
-    db_lh2_init(&_dotbot_vars.lh2, &db_lh2_d, &db_lh2_e);
-    db_lh2_start();
+    db_timer_set_periodic_ms(TIMER_DEV, 0, TICK_MS, &_tick);
 
     while (1) {
         __WFE();
 
-        // Process available lighthouse data
-        db_lh2_process_location(&_dotbot_vars.lh2);
-
-        if (_dotbot_vars.update_lh2) {
-            _dotbot_vars.update_lh2 = false;
-            db_lh2_stop();
-            for (uint8_t lh_index = 0; lh_index < LH2_BASESTATION_COUNT; lh_index++) {
-                if (_dotbot_vars.lh2.lh2_calibration_complete[lh_index] && _dotbot_vars.lh2.data_ready[0][lh_index] == DB_LH2_PROCESSED_DATA_AVAILABLE && _dotbot_vars.lh2.data_ready[1][lh_index] == DB_LH2_PROCESSED_DATA_AVAILABLE) {
-                    db_lh2_calculate_position(_dotbot_vars.lh2.locations[0][lh_index].lfsr_counts, _dotbot_vars.lh2.locations[1][lh_index].lfsr_counts, lh_index, _dotbot_vars.coordinates);
-                    _dotbot_vars.lh2.data_ready[0][lh_index] = DB_LH2_NO_NEW_DATA;
-                    _dotbot_vars.lh2.data_ready[1][lh_index] = DB_LH2_NO_NEW_DATA;
-                    break;
-                }
-            }
-            db_lh2_start();
-
-            if (_dotbot_vars.coordinates[0] < 0 || _dotbot_vars.coordinates[1] < 0 || _dotbot_vars.coordinates[0] > 100000 || _dotbot_vars.coordinates[1] > 100000) {
-                // Invalid coordinates, do not update direction and upload position
-                continue;
-            }
-
-            coordinate_t location = {
-                .x = (uint32_t)(_dotbot_vars.coordinates[0]),
-                .y = (uint32_t)(_dotbot_vars.coordinates[1]),
-            };
-            coordinate_t last_location = { .x = _control_vars.pos_x, .y = _control_vars.pos_y };
-            float        dlx           = (float)location.x - (float)last_location.x;
-            float        dly           = (float)location.y - (float)last_location.y;
-            if (_control_vars.pos_x != 0 && _control_vars.pos_y != 0 &&
-                sqrtf(dlx * dlx + dly * dly) > DB_LH2_OUTLIER_THRESHOLD) {
-                continue;
-            }
-            int16_t angle = _control_vars.direction;
-            if (compute_angle(&last_location, &location, &angle)) {
-                _control_vars.direction = angle;
-                _control_vars.pos_x     = location.x;
-                _control_vars.pos_y     = location.y;
-            }
-            _dotbot_vars.update_control_loop = (_dotbot_vars.control_mode == ControlAuto);
+        uint32_t now     = _dotbot_vars.tick;
+        uint32_t elapsed = now - _dotbot_vars.tick_serviced;
+        if (elapsed == 0) {
+            continue;
         }
-
-        if (_dotbot_vars.update_control_loop) {
-            _update_control_loop();
-            _dotbot_vars.update_control_loop = false;
-#if defined(ENABLE_DOTBOT_LOG_DATA)
-            _dotbot_vars.advertize = true;
-#endif
-        }
-
-        if (_dotbot_vars.advertize) {
-            uint8_t calibration_complete = 0;
-            for (uint8_t i = 0; i < LH2_BASESTATION_COUNT; i++) {
-                if (_dotbot_vars.lh2.lh2_calibration_complete[i]) {
-                    calibration_complete |= (1 << i);
-                }
-            }
-            size_t                  length    = db_protocol_dotbot_advertizement_to_buffer(_dotbot_vars.radio_buffer, DB_GATEWAY_ADDRESS, calibration_complete);
-            int16_t                 direction = 0xFFFF;
-            protocol_lh2_location_t position  = {
-                 .x = 0xffffffff,
-                 .y = 0xffffffff,
-            };
-            if (calibration_complete) {
-                direction  = _control_vars.direction;
-                position.x = _control_vars.pos_x;
-                position.y = _control_vars.pos_y;
-            }
-            memcpy(&_dotbot_vars.radio_buffer[length], &direction, sizeof(int16_t));
-            length += sizeof(int16_t);
-            memcpy(&_dotbot_vars.radio_buffer[length], &position, sizeof(protocol_lh2_location_t));
-            length += sizeof(protocol_lh2_location_t);
-            uint16_t battery_level_mv = db_battery_level_read();
-            memcpy(&_dotbot_vars.radio_buffer[length], &battery_level_mv, sizeof(uint16_t));
-            length += sizeof(uint16_t);
-            memcpy(&_dotbot_vars.radio_buffer[length++], &_control_vars.pwm_left, sizeof(int8_t));
-            memcpy(&_dotbot_vars.radio_buffer[length++], &_control_vars.pwm_right, sizeof(int8_t));
-            memcpy(&_dotbot_vars.radio_buffer[length++], &_dotbot_vars.control_mode, sizeof(uint8_t));
-            memcpy(&_dotbot_vars.radio_buffer[length], &_control_vars.encoder_left, sizeof(int32_t));
-            length += sizeof(int32_t);
-            memcpy(&_dotbot_vars.radio_buffer[length], &_control_vars.encoder_right, sizeof(int32_t));
-            length += sizeof(int32_t);
-            memcpy(&_dotbot_vars.radio_buffer[length], &_control_vars.waypoint_x, sizeof(uint32_t));
-            length += sizeof(uint32_t);
-            memcpy(&_dotbot_vars.radio_buffer[length], &_control_vars.waypoint_y, sizeof(uint32_t));
-            length += sizeof(uint32_t);
-            memcpy(&_dotbot_vars.radio_buffer[length++], &_control_vars.waypoint_idx, sizeof(uint8_t));
-            db_radio_disable();
-            db_radio_tx(_dotbot_vars.radio_buffer, length);
-            db_radio_rx();
-            _dotbot_vars.advertize = false;
-        }
+        _dotbot_vars.tick_serviced = now;
+        _service_tick(elapsed);
     }
 }
 
 //=========================== private functions ================================
 
-static void _update_control_loop(void) {
-    _control_vars.encoder_left  = db_qdec_read_and_clear(QDEC_LEFT);
-    _control_vars.encoder_right = db_qdec_read_and_clear(QDEC_RIGHT);
-    update_control(&_control_vars, _control_ctx);
-    db_motors_set_pwm(_control_vars.pwm_left, _control_vars.pwm_right);
+/// One step of everything periodic; elapsed is more than 1 if ticks were missed
+static void _service_tick(uint32_t elapsed) {
+    _rx_process();
 
-    if (_control_vars.all_done) {
-        _dotbot_vars.control_mode   = ControlManual;
-        _control_vars.encoder_left  = 0;
-        _control_vars.encoder_right = 0;
+    // Encoder counts since the previous step; the read clears the counter
+    uint32_t dbl_left;
+    uint32_t dbl_right;
+    int32_t  left  = db_wheel_control_counts(db_qdec_read_and_clear_dbl(QDEC_LEFT, &dbl_left), dbl_left);
+    int32_t  right = db_wheel_control_counts(db_qdec_read_and_clear_dbl(QDEC_RIGHT, &dbl_right), dbl_right);
+    _dotbot_vars.encoder_left += left;
+    _dotbot_vars.encoder_right += right;
+
+    uint32_t tick = _dotbot_vars.tick_serviced;
+    if (tick - _dotbot_vars.tick_command > DEADMAN_TICKS) {
+        _set_speed(0, 0);
+    }
+
+    if (_dotbot_vars.drive_mode == DRIVE_SPEED) {
+        int8_t pwm_left  = db_wheel_control_step(&_dotbot_vars.wheel_left, left, elapsed);
+        int8_t pwm_right = db_wheel_control_step(&_dotbot_vars.wheel_right, right, elapsed);
+        _write_motors(pwm_left, pwm_right, _dotbot_vars.wheel_left.brake, _dotbot_vars.wheel_right.brake);
+    }
+
+    if (tick - _dotbot_vars.tick_advertisement >= ADVERTISEMENT_TICKS) {
+        _dotbot_vars.tick_advertisement = tick;
+        _advertise();
     }
 }
 
-static void _timeout_check(void) {
-    uint32_t ticks = db_timer_ticks(TIMER_DEV);
-    if (_dotbot_vars.control_mode != ControlAuto && ticks > _dotbot_vars.ts_last_packet_received + TIMEOUT_CHECK_DELAY_TICKS) {
-        db_motors_set_pwm(0, 0);
+static void _rx_process(void) {
+    if (!_dotbot_vars.rx_pending) {
+        return;
     }
+    // Masked so the radio interrupt cannot replace the command mid-copy
+    uint8_t command[BUFFER_MAX_BYTES];
+    __disable_irq();
+    size_t length = _dotbot_vars.rx_length;
+    memcpy(command, _dotbot_vars.rx_buffer, length);
+    _dotbot_vars.rx_pending = false;
+    __enable_irq();
+
+    _apply_command(command, length);
 }
 
+/// command is the type byte followed by its payload; every command applied
+/// here is a driving one, so it restarts the deadman
+static void _apply_command(const uint8_t *command, size_t length) {
+    const uint8_t *payload = &command[1];
+    switch (command[0]) {
+        case DB_PROTOCOL_CMD_WHEEL_VELOCITY:
+        {
+            protocol_wheel_velocity_command_t speed;
+            if (length < 1 + sizeof(speed)) {
+                return;
+            }
+            memcpy(&speed, payload, sizeof(speed));
+            _set_speed(speed.left_mm_s, speed.right_mm_s);
+        } break;
+        case DB_PROTOCOL_CMD_MOVE_RAW:
+        {
+            protocol_move_raw_command_t raw;
+            if (length < 1 + sizeof(raw)) {
+                return;
+            }
+            memcpy(&raw, payload, sizeof(raw));
+            // Joystick axes, -127 to 127, to duty, -100 to 100
+            _set_raw((int8_t)(100 * raw.left_y / INT8_MAX), (int8_t)(100 * raw.right_y / INT8_MAX));
+        } break;
+        case DB_PROTOCOL_CONTROL_MODE:
+            _set_speed(0, 0);
+            break;
+        default:
+            return;
+    }
+    _dotbot_vars.tick_command = _dotbot_vars.tick_serviced;
+}
+
+/// command is the type byte followed by its payload
+static void _set_led(const uint8_t *command, size_t length) {
+#ifdef DB_RGB_LED_PWM_RED_PORT
+    protocol_rgbled_command_t color;
+    if (length < 1 + sizeof(color)) {
+        return;
+    }
+    memcpy(&color, &command[1], sizeof(color));
+    db_rgbled_pwm_set_color(color.r, color.g, color.b);
+#else
+    (void)command;
+    (void)length;
+#endif
+}
+
+static int16_t _clamp_speed(int16_t mm_s) {
+    if (mm_s > SPEED_MAX_MM_S) {
+        return SPEED_MAX_MM_S;
+    }
+    if (mm_s < -SPEED_MAX_MM_S) {
+        return -SPEED_MAX_MM_S;
+    }
+    return mm_s;
+}
+
+/// Hand the motors to the speed loop, toward these wheel speeds
+static void _set_speed(int16_t left_mm_s, int16_t right_mm_s) {
+    if (_dotbot_vars.drive_mode != DRIVE_SPEED) {
+        // Start from zero rather than from what the loop had before MOVE_RAW
+        db_wheel_control_reset(&_dotbot_vars.wheel_left);
+        db_wheel_control_reset(&_dotbot_vars.wheel_right);
+        _dotbot_vars.drive_mode = DRIVE_SPEED;
+    }
+    db_wheel_control_set_setpoint(&_dotbot_vars.wheel_left, _clamp_speed(left_mm_s));
+    db_wheel_control_set_setpoint(&_dotbot_vars.wheel_right, _clamp_speed(right_mm_s));
+}
+
+/// Take the motors from the speed loop and write this duty
+static void _set_raw(int8_t left, int8_t right) {
+    _dotbot_vars.drive_mode = DRIVE_RAW;
+    _write_motors(left, right, false, false);
+}
+
+static void _write_motors(int8_t left, int8_t right, bool brake_left, bool brake_right) {
+    db_motors_set_pwm_brake(left, right, brake_left, brake_right);
+    _dotbot_vars.pwm_left  = brake_left ? 0 : left;
+    _dotbot_vars.pwm_right = brake_right ? 0 : right;
+}
+
+/// The standard DotBot advertisement; the fields this app has no value for
+/// (calibration, position, heading, waypoint) carry their unknown-value sentinels
 static void _advertise(void) {
-    _dotbot_vars.advertize = true;
-}
+    uint8_t *buffer = _dotbot_vars.tx_buffer;
+    size_t   length = db_protocol_dotbot_advertizement_to_buffer(buffer, DB_GATEWAY_ADDRESS, CALIBRATION_UNKNOWN);
 
-static void _update_lh2(void) {
-    _dotbot_vars.update_lh2 = true;
+    advertisement_t advertisement = {
+        .direction      = DIRECTION_NONE,
+        .position       = { .x = POSITION_NONE, .y = POSITION_NONE },
+        .battery        = db_battery_level_read(),
+        .pwm_left       = _dotbot_vars.pwm_left,
+        .pwm_right      = _dotbot_vars.pwm_right,
+        .mode           = ControlManual,
+        .encoder_left   = _dotbot_vars.encoder_left,
+        .encoder_right  = _dotbot_vars.encoder_right,
+        .waypoint       = { .x = 0, .y = 0 },
+        .waypoint_index = 0,
+    };
+    memcpy(&buffer[length], &advertisement, sizeof(advertisement));
+    length += sizeof(advertisement);
+    _dotbot_vars.encoder_left  = 0;
+    _dotbot_vars.encoder_right = 0;
+
+    db_radio_disable();
+    db_radio_tx(buffer, (uint8_t)length);
+    db_radio_rx();
 }

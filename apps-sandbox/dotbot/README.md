@@ -1,14 +1,20 @@
 # DotBot control application
 
-The DotBot app that runs in the SwarmIT sandbox, built up one layer at a time
-rather than edited in place from the app it replaced. It stays joined, polls the
-position the secure side solves, samples the wheel encoders, runs a per-wheel
-speed loop and a pose estimator, steers along a batch of waypoints
-(`drv/steering` in DotBot-libs), advertises in the standard DotBot format plus a
-waypoint report, and accepts direct motor commands and wheel velocity commands.
+The DotBot app that runs in the SwarmIT sandbox. The control itself lives in
+DotBot-libs' `drv/dotbot_control`, a hardware-free core that ties together the
+per-wheel speed loop (`drv/wheel_control`), the pose estimator
+(`drv/pose_estimator`) and the steering along a batch of waypoints
+(`drv/steering`). The same core runs, compiled to WebAssembly, in PyDotBot's
+simulator.
 
-Each layer was added only once the layers below it were measured, so the app
-doubles as the instrument for measuring the plant and the position source.
+This app is the hardware around that core. It owns the 10 ms tick, the command
+mailbox, the wheel encoders, the LH2 fix it reads from the secure side and the
+keepalive that produces it, the motors, the advertisement and the RGB LED. On
+every tick it passes the encoder counts and, when due, the newest fix to
+`db_control_tick()`, and writes the motors and advertises when the core asks.
+
+The bare app (`apps/dotbot`) only drives wheel speeds and raw duty. Waypoints,
+the max speed and localization are this app's.
 
 ## Estimator
 
@@ -20,7 +26,7 @@ consistent solves once the robot has moved, so nothing has to drive a calibratio
 manoeuvre first. A robot moved by hand with its wheels still is recognised within
 three fixes: the estimator drops its pose, the advertisement falls back to the
 last solve with the unknown heading, and the heading comes back once the robot
-moves. Its constants are provisional until measured on the floor.
+moves. Its constants are in `drv/pose_estimator.h`.
 
 ## Driving
 
@@ -41,7 +47,8 @@ records carry its duty as `-127`. The ±700 mm/s clamp keeps a count longer than
 the QDEC's 128 us sample period.
 
 Commands arrive in the IPC interrupt and are applied on the next tick; a newer
-command replaces one not yet applied. Only `CMD_MOVE_RAW`, `CMD_WHEEL_VELOCITY`
+command replaces one not yet applied. `CMD_RGB_LED` is the exception: the
+interrupt sets the LED at once. Only `CMD_MOVE_RAW`, `CMD_WHEEL_VELOCITY`
 and `LH2_WAYPOINTS` refresh the command timeout, so a host that keeps sending
 other packets still stops a raw or velocity drive by going quiet on drive
 commands. A waypoint batch is not under the command timeout: it needs no
@@ -49,11 +56,47 @@ resending, and the steering stops it on arrival, on losing its heading and on
 its own turn, progress, hold and settle timeouts. An empty batch,
 `CONTROL_MODE`, or a raw or velocity command stops it.
 
+## Waypoint batches
+
+`LH2_WAYPOINTS` carries a threshold in mm, a count and up to 16 points, each a
+position for the wheel-axle midpoint. An optional trailer follows the points: a
+batch id, a heading tolerance, a pass radius and one heading per point, in
+centidegrees, 0 facing +y and clockwise positive, or `0x7FFF` for none. A point
+with a heading is a pose: the robot turns to the heading once there. The robot
+passes an intermediate point within the pass radius (20 mm by default), and
+reaches the last point and every pose within the threshold. A zero tolerance or pass radius
+takes the firmware default.
+
+A batch with a non-zero id that repeats the id of the batch the robot already
+has is ignored, so a host can resend a batch until the advertisement confirms
+it. A new batch replaces the one being driven; an empty batch stops it.
+
+The advertisement's waypoint report says how the last batch stands:
+
+| Status | Meaning | Reason |
+|---|---|---|
+| `NONE` | no batch since boot | |
+| `IN_PROGRESS` | driving, turning, or holding for a lost pose | |
+| `ARRIVED` | stopped at the last point, latched until the next batch | |
+| `FAILED` | gave up | `NO_HEADING`, `TURN`, `PROGRESS`, `HEADING_LOST`, `HOLD` or `SETTLE` |
+| `ABORTED` | stopped by a command | `STOP` (an empty batch), `DIRECT` (a raw or velocity command), `CONTROL_MODE` |
+
+It also carries the id of the last batch accepted, the max speed in force in
+units of 10 mm/s and the estimated axle midpoint (`0xFFFF` without a heading).
+The enums are in `drv/protocol.h`.
+
+## Max speed
+
+`CMD_MAX_SPEED` sets the cruise speed waypoint moves use, clamped to 20 to
+700 mm/s, until the next such command or a reset; 0 restores the default of
+300 mm/s. It does not limit `CMD_WHEEL_VELOCITY`, which has its own ±700 mm/s
+clamp.
+
 ## Structure
 
-**One periodic tick.** `TICK_MS` (10 ms) drives a single RTC0 channel and every
-slower activity divides it down: the wheel loop and the estimator's predict run
-every tick, position at 100 ms, command timeout at 200 ms. The advertisement
+**One periodic tick.** `DB_CONTROL_TICK_MS` (10 ms) drives a single RTC0
+channel and the core divides it down: the wheel loop and the estimator's predict
+run every tick, position and steering at 100 ms, command timeout at 200 ms. The advertisement
 period follows the node's minimum TX interval, between 100 and 1000 ms, and is
 500 ms while not joined. The alternative, one channel per period, uses all three
 usable RTC0 channels and leaves nothing for the encoder sampling rate a velocity
@@ -63,7 +106,8 @@ loop needs.
 what runs the lighthouse solve and republishes it to shared data, so the rate that
 call is made at *is* the position rate, and reading the position without having
 just called it returns the previous solve. The two are deliberately adjacent in
-`_position_poll()` and must stay that way. It also feeds the watchdog, so its
+`_position_read()`, which runs only when `db_control_fix_due()` says the next
+tick reads the fix, and must stay that way. It also feeds the watchdog, so its
 cadence is bounded above by the watchdog timeout as well.
 
 **Freshness comes from a sequence, not from the coordinates.**
@@ -76,13 +120,18 @@ one measurement. `swarmit_localization_get_position()`
 still exists and still has its original signature; this application does not call
 it.
 
+The IPC interrupt copies a command into a one-slot mailbox and the main loop
+hands it to `db_control_rx()`, so the main loop is the only caller of the core.
+The RGB LED command never enters the mailbox: the interrupt sets the LED
+itself, since the core has no LED and nothing else writes it.
+
 The tick callback only increments a counter. The main loop compares it against
 what it has serviced, drops any backlog rather than replaying it, and records the
 worst backlog seen. A late tick is more useful reported than replayed, and on a
 bench instrument that number is data.
 
 **Advertisement** fields are those of the standard DotBot advertisement, so
-host-side parsing is unchanged. Heading and position are the estimator's while
+host-side parsing is unchanged; `db_control_advertisement()` encodes them. Heading and position are the estimator's while
 it tracks; otherwise heading is the unknown-value sentinel `-1000` and position is
 the last solve. The calibration bitmask is unknown (`0xff`). Control mode is
 automatic while a batch is active, and the waypoint fields give the point being
@@ -123,7 +172,7 @@ is recorded here so the next rewrite does not have to rediscover them.
 |---|---|
 | The command timeout covers every host-driven mode | In the previous sandbox app it was skipped in automatic mode, so an autonomously driving robot had no deadman at all. Here only a waypoint batch is exempt, and it has a replacement: the steering ends the batch on its own timeouts and on losing its heading. |
 | Timeout arithmetic uses a masked difference | `db_timer_ticks()` returns a 24-bit counter that wraps every 512 s. A plain `now > then + delay` comparison is false for the entire pass after a wrap, so a robot whose last command arrived just before the rollover keeps its last commanded speed. |
-| No displacement gate on incoming fixes | The gate in the previous sandbox app (and still in `apps/dotbot`) is anchored on the last accepted fix and only an accepted fix moves the anchor, so once the anchor is stale by more than the threshold, every fix that could correct it is rejected. Rejecting outliers belongs where the uncertainty is tracked, not against a self-referential anchor. |
+| No displacement gate on incoming fixes | The gate in the previous sandbox app is anchored on the last accepted fix and only an accepted fix moves the anchor, so once the anchor is stale by more than the threshold, every fix that could correct it is rejected. Rejecting outliers belongs where the uncertainty is tracked, not against a self-referential anchor. |
 | Freshness read from a sequence, not from the coordinates | The previous sandbox app could only compare coordinate values, which reads a stationary robot as having no new fix and a re-read of one solve as a measurement in its own right. |
 | The device id is not read | It was retrieved at startup and never used. |
 
