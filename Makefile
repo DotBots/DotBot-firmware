@@ -31,7 +31,6 @@ ifeq (nrf5340dk-app,$(BUILD_TARGET))
     dotbot \
     dotbot_gateway \
     dotbot_gateway_lr \
-    lh2_calibration \
     log_dump \
     sailbot \
     lh2_mini_mote_app \
@@ -59,11 +58,13 @@ else ifneq (,$(filter xgo%,$(BUILD_TARGET)))
   # Bootloader not supported on xgo
 else ifneq (,$(filter sandbox-%,$(BUILD_TARGET)))
   # Sandbox (TrustZone non-secure) targets build the apps under apps-sandbox/
-  PROJECTS ?= $(shell find apps-sandbox/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/apps-sandbox// | sort)
-  # Release every sandbox app (CI gates the artifact upload to dotbot-v3)
+  PROJECTS ?= $(shell sed -n 's/.*<project Name="\([^"]*\)".*/\1/p' apps-sandbox/applications.emProject | sort)
+  # Release every sandbox app
   ARTIFACT_PROJECTS := $(PROJECTS)
 else
-  PROJECTS ?= $(shell find apps/ -maxdepth 1 -mindepth 1 -type d | tr -d "/" | sed -e s/apps// | sort)
+  # lh2_calibration is the legacy cabled calibration app: kept in the tree,
+  # left out of the default builds (PROJECTS=lh2_calibration still builds it)
+  PROJECTS ?= $(filter-out lh2_calibration,$(shell sed -n 's/.*<project Name="\([^"]*\)".*/\1/p' apps/apps-*.emProject | sort))
 endif
 
 # remove incompatible apps (nrf5340, sailbot gateway) for dotbot (v1, v2) builds
@@ -74,7 +75,7 @@ endif
 
 ifneq (,$(filter dotbot-v2 dotbot-v3,$(BUILD_TARGET)))
   PROJECTS := $(filter-out dotbot_gateway dotbot_gateway_lr sailbot xgo nrf5340_net freebot lh2_mini_mote%,$(PROJECTS))
-  ARTIFACT_PROJECTS := dotbot lh2_calibration
+  ARTIFACT_PROJECTS := dotbot
 endif
 
 # remove incompatible apps (nrf5340, sailbot, gateway, dotbot) for lh2-mini-mote builds
