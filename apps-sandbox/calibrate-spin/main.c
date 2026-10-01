@@ -38,10 +38,12 @@
 #define KEEP_ALIVE_TICKS       (20U)      ///< 200 ms, under the ~1 s watchdog
 #define COUNTDOWN_TICKS        (300U)     ///< 3 s of fast blinks before the robot moves
 #define SETTLE_TICKS           (50U)      ///< 500 ms standing before the reads go out
+#define SPIN_TIMEOUT_TICKS     (1500U)    ///< 15 s: a spin still turning by then is cut short
 #define SPIN_DEG               (-720.0f)  ///< Two turns, negative is counter clockwise
 #define SPIN_MM_S              (60.0f)    ///< Wheel speed of the spin
 #define RECORD_SPACING_MS      (30U)      ///< Least between two kept reads of one station
 #define STATIONS_MAX           (4U)
+#define DRAIN_MAX              (16U)       ///< The bootloader's LH2_BASESTATION_COUNT
 #define READS_MAX              (320U)      ///< Per station: 9.6 s at RECORD_SPACING_MS
 #define COUNT_MAX              (1U << 17)  ///< Counts are indexes into a 17-bit LFSR sequence
 #define COPIES                 (2U)        ///< Each read is sent this many times
@@ -56,12 +58,13 @@
 #define BLINK_FAST_TICKS       (10U)
 #define BLINK_SLOW_TICKS       (50U)
 
-// A log event is [SPIN_TAG][run][chunk][chunks][records]: run tells two spins of
-// one robot apart, chunk is the index and chunks the total. Records are the
-// reads of the first station in the order they were taken, then the next
-// station's. PyDotBot's dotbot/calibration/spin.py decodes this layout; change
-// both together.
-_Static_assert(STATIONS_MAX *READS_MAX / CHUNK_RECORDS < 255, "chunk count must fit a byte");
+#define CHUNKS_MAX ((STATIONS_MAX * READS_MAX + CHUNK_RECORDS - 1U) / CHUNK_RECORDS)
+
+// A log event is [SPIN_TAG][run][chunk][chunks][records]: run is random per
+// spin, chunk is the index and chunks the total. Records are the reads of the
+// first station in the order they were taken, then the next station's. The
+// PyDotBot host decodes this layout; change both together.
+_Static_assert(CHUNKS_MAX <= UINT8_MAX, "chunk count must fit a byte");
 
 typedef struct {
     uint32_t count1;
@@ -87,6 +90,8 @@ typedef enum {
 typedef void (*ipc_isr_cb_t)(const uint8_t *, size_t);
 
 void     swarmit_keep_alive(void);
+void     swarmit_init_rng(void);
+void     swarmit_read_rng(uint8_t *value);
 void     swarmit_ipc_isr(ipc_isr_cb_t cb);
 void     swarmit_log_data(uint8_t *data, size_t length);
 uint32_t swarmit_get_min_tx_interval_us(void);
@@ -130,7 +135,6 @@ static struct {
     db_wheel_control_t wheel_right;
     db_wheel_goal_t    goal;
     uint8_t            run;
-    bool               run_set;
     uint8_t            station_count;
     uint8_t            stations[STATIONS_MAX];
     uint16_t           reads[STATIONS_MAX];
@@ -141,7 +145,7 @@ static struct {
     uint32_t           next_send_tick;
 } _app;
 
-static lh2_raw_sample_t _drain[16];
+static lh2_raw_sample_t _drain[DRAIN_MAX];
 static uint8_t          _log[LOG_SIZE_MAX] __attribute__((aligned(4)));
 
 //=========================== private ==========================================
@@ -178,17 +182,12 @@ static int _station_slot(uint8_t lh_index) {
     return _app.station_count++;
 }
 
-/// Takes the newest read of each station; the bootloader keeps one per station, not a queue
+/// Takes the newest read of each station
 static void _record(void) {
-    uint8_t n = swarmit_localization_get_raw_counts(_drain, sizeof(_drain) / sizeof(_drain[0]));
+    uint8_t n = swarmit_localization_get_raw_counts(_drain, DRAIN_MAX);
     for (uint8_t i = 0; i < n; i++) {
         if (!_valid(&_drain[i])) {
             continue;
-        }
-        if (!_app.run_set) {
-            // Any byte that differs between two spins of one robot will do
-            _app.run     = (uint8_t)_drain[i].count1;
-            _app.run_set = true;
         }
         int slot = _station_slot(_drain[i].lh_index);
         if (slot < 0 || _app.reads[slot] >= READS_MAX) {
@@ -202,18 +201,14 @@ static void _record(void) {
     }
 }
 
-/// The solve inside keep_alive consumes a read, so the app takes its own first
-static void _keep_alive(bool recording) {
-    if (recording) {
-        _record();
-    }
+static void _keep_alive(void) {
     swarmit_keep_alive();
     _app.keep_alive_tick = _tick_count;
 }
 
-static void _keep_alive_if_due(bool recording) {
+static void _keep_alive_if_due(void) {
     if (_tick_count - _app.keep_alive_tick >= KEEP_ALIVE_TICKS) {
-        _keep_alive(recording);
+        _keep_alive();
     }
 }
 
@@ -278,9 +273,12 @@ static void _send_chunk(uint8_t chunk) {
     _log[length++]  = _chunk_count();
     for (uint16_t k = first; k < last; k++) {
         const lh2_raw_sample_t *sample = _record_at(k);
-        _log[length++]                 = sample->lh_index;
-        length                         = _put_u32_le(_log, length, sample->count1);
-        length                         = _put_u32_le(_log, length, sample->count2);
+        if (sample == NULL) {
+            break;
+        }
+        _log[length++] = sample->lh_index;
+        length         = _put_u32_le(_log, length, sample->count1);
+        length         = _put_u32_le(_log, length, sample->count2);
     }
     swarmit_log_data(_log, length);
 }
@@ -304,22 +302,26 @@ static void _blink(uint32_t period_ticks) {
 static void _service(uint32_t elapsed) {
     switch (_app.state) {
         case STATE_COUNTDOWN:
-            _keep_alive_if_due(false);
+            _keep_alive_if_due();
             _blink(BLINK_FAST_TICKS);
             if (_in_state() >= COUNTDOWN_TICKS) {
                 db_gpio_set(&db_led1);
+                uint32_t dbl;
+                db_qdec_read_and_clear_dbl(QDEC_LEFT, &dbl);
+                db_qdec_read_and_clear_dbl(QDEC_RIGHT, &dbl);
                 db_wheel_goal_turn(&_app.goal, SPIN_DEG, SPIN_MM_S);
                 _enter(STATE_SPIN);
             }
             break;
         case STATE_SPIN:
-            _keep_alive_if_due(true);
-            if (_drive(elapsed)) {
+            _keep_alive_if_due();
+            if (_drive(elapsed) || _in_state() >= SPIN_TIMEOUT_TICKS) {
+                db_wheel_goal_start(&_app.goal, 0, 0, 0);
                 _enter(STATE_SETTLE);
             }
             break;
         case STATE_SETTLE:
-            _keep_alive_if_due(false);
+            _keep_alive_if_due();
             _drive(elapsed);
             if (_in_state() >= SETTLE_TICKS) {
                 db_motors_coast();
@@ -330,7 +332,7 @@ static void _service(uint32_t elapsed) {
             }
             break;
         case STATE_SEND:
-            _keep_alive_if_due(false);
+            _keep_alive_if_due();
             _blink(BLINK_FAST_TICKS);
             if ((int32_t)(_tick_count - _app.next_send_tick) < 0) {
                 break;
@@ -345,7 +347,7 @@ static void _service(uint32_t elapsed) {
             }
             break;
         case STATE_DONE:
-            _keep_alive_if_due(false);
+            _keep_alive_if_due();
             _blink(BLINK_SLOW_TICKS);
             break;
     }
@@ -360,7 +362,9 @@ static void _rx(const uint8_t *pkt, size_t len) {
 
 int main(void) {
     db_board_init();
-    swarmit_keep_alive();
+    _keep_alive();
+    swarmit_init_rng();
+    swarmit_read_rng(&_app.run);
 
     db_gpio_init(&db_led1, DB_GPIO_OUT);
     db_motors_init();
