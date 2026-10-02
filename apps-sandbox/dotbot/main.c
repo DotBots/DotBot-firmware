@@ -73,6 +73,7 @@ void     swarmit_keep_alive(void);
 void     swarmit_send_raw_data(const uint8_t *packet, uint8_t length);
 void     swarmit_ipc_isr(ipc_isr_cb_t cb);
 uint32_t swarmit_localization_get_fix(position_2d_t *position);
+uint8_t  swarmit_localization_get_lines(db_lh2_floor_line_t *lines, uint8_t max);
 void     swarmit_get_battery_level(uint16_t *battery_level);
 void     swarmit_localization_handle_isr(void);
 uint32_t swarmit_get_min_tx_interval_us(void);
@@ -428,7 +429,8 @@ static void _encoders_read(int32_t *left, int32_t *right) {
 #endif
 }
 
-/// swarmit_keep_alive() runs the solve; call it immediately before reading the fix.
+/// swarmit_keep_alive() runs the solve; call it immediately before reading
+/// the fix and the floor lines of the same sweeps, which the next tick fuses.
 static void _position_read(db_control_input_t *in) {
     swarmit_keep_alive();
 
@@ -436,6 +438,9 @@ static void _position_read(db_control_input_t *in) {
     in->fix_sequence    = swarmit_localization_get_fix(&solve);
     in->fix_x           = solve.x;
     in->fix_y           = solve.y;
+
+    db_lh2_floor_line_t lines[DB_CONTROL_LINES_MAX];
+    db_control_lines(&_control, lines, swarmit_localization_get_lines(lines, DB_CONTROL_LINES_MAX));
 
 #if defined(DB_BENCH_TRACE) || defined(DB_BENCH_TELEMETRY)
     // An unchanged sequence is the previous solve read a second time
