@@ -49,7 +49,7 @@
 #define SPEED_MAX_MM_S      (700)                       ///< Largest wheel speed a command may set
 #define DIRECTION_NONE      (-1000)                     ///< Heading in the advertisement: this app has none
 #define POSITION_NONE       (0xFFFFFFFF)                ///< Position in the advertisement: this app has none
-#define CALIBRATION_UNKNOWN (0xFF)                      ///< LH2 calibration bitmask in the advertisement: not applicable
+#define CALIBRATION_UNKNOWN (0xFFFF)                    ///< LH2 calibration bitmask in the advertisement: not applicable
 #define BUFFER_MAX_BYTES    (255U)
 
 /// Who writes the motors
