@@ -10,6 +10,7 @@
  * @copyright Inria, 2026
  */
 
+#include <math.h>
 #include <nrf.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -48,6 +49,16 @@ _Static_assert(DB_CONTROL_ADVERTISEMENT_BYTES <= DB_BUFFER_MAX_BYTES, "the adver
 #define DB_PROTOCOL_BENCH_TELEMETRY (13)
 #define TELEMETRY_STEPS             (24U)  ///< Steps one frame carries, the newest kept
 #define TELEMETRY_FIXES             (4U)   ///< New solves one frame carries, the newest kept
+#endif
+
+#if defined(DB_BENCH_FUSION)
+/// Bench-only frame type, kept out of protocol_data_type_t as DB_PROTOCOL_BENCH_TELEMETRY is;
+/// far above the enum, whose 14 is the calibration and whose 16 the host reads as raw data
+#define DB_PROTOCOL_BENCH_FUSION (0xB1)
+#define FUSION_RECORDS           (16U)   ///< New fixes held between frames, the newest kept
+#define FUSION_FRAME_MAX_BYTES   (220U)  ///< Under the radio payload once the link layer's header is added
+#define FUSION_INVALID_U16       (UINT16_MAX)
+#define FUSION_INVALID_I8        (INT8_MIN)
 #endif
 
 typedef struct {
@@ -164,6 +175,36 @@ static uint32_t         _telemetry_fix_count = 0;  ///< Solves recorded; the rin
 static uint32_t         _telemetry_fix_sent  = 0;  ///< Solve count at the last frame
 #endif
 
+#if defined(DB_BENCH_FUSION)
+/// One new fix and what the control core did with it, as the frame carries it before its lines
+typedef struct __attribute__((packed)) {
+    uint8_t  tick;                          ///< Low 8 bits of the serviced tick the solve was read on
+    uint8_t  sequence;                      ///< Low 8 bits of the fix sequence
+    uint8_t  flags;                         ///< bit 0 fix from the lines, bit 1 fix valid, bits 2-3 estimator status, bits 4-7 lines
+    uint16_t solve_x;                       ///< Secure side's solve, mm, saturated
+    uint16_t solve_y;                       ///< Secure side's solve, mm, saturated
+    int8_t   fix_dx;                        ///< The core's fix minus the solve, 0.25 mm, saturated at +-127, FUSION_INVALID_I8 when invalid
+    int8_t   fix_dy;                        ///< The core's fix minus the solve, 0.25 mm, saturated at +-127, FUSION_INVALID_I8 when invalid
+    uint16_t pose_x;                        ///< Estimated photodiode after the tick, 0.1 mm, FUSION_INVALID_U16 when not tracking
+    uint16_t pose_y;                        ///< Estimated photodiode after the tick, 0.1 mm, FUSION_INVALID_U16 when not tracking
+    int16_t  heading_cdeg;                  ///< Estimated heading after the tick, 0.01 deg
+} fusion_head_t;
+_Static_assert(sizeof(fusion_head_t) == 15, "the frame's record layout");
+
+typedef struct {
+    fusion_head_t head;
+    uint8_t       line[DB_CONTROL_LINES_MAX];        ///< station << 4 | sweep << 3 | db_pose_estimator_result_t
+    int8_t        innovation[DB_CONTROL_LINES_MAX];  ///< 0.25 mm, saturated at +-127, FUSION_INVALID_I8 when not gated
+} fusion_record_t;
+
+static fusion_record_t _fusion[FUSION_RECORDS];
+static uint32_t        _fusion_count  = 0;      ///< Records written; the ring index is this modulo the length
+static uint32_t        _fusion_sent   = 0;      ///< Record count at the last frame
+static bool            _fusion_due    = false;  ///< This tick read a new solve
+static uint8_t         _fusion_lines  = 0;      ///< Floor lines staged with it
+static position_2d_t   _fusion_solve;           ///< That solve
+#endif
+
 #ifdef DB_RGB_LED_PWM_RED_PORT
 static const db_rgbled_pwm_conf_t _rgbled_pwm_conf = {
     .pwm  = 1,
@@ -200,6 +241,9 @@ static void _advert_period_update(void);
 static void _advertise(void);
 #if defined(DB_BENCH_TELEMETRY) || defined(DB_BENCH_TRACE)
 static void _bench_record_step(uint32_t tick, uint32_t elapsed, const db_control_input_t *in);
+#endif
+#if defined(DB_BENCH_FUSION)
+static void _fusion_record(uint32_t tick);
 #endif
 
 //=========================== callbacks ========================================
@@ -282,7 +326,11 @@ static void _service_tick(uint32_t tick, uint32_t elapsed) {
     }
 #if defined(DB_BENCH_TELEMETRY) || defined(DB_BENCH_TRACE)
     _bench_record_step(tick, elapsed, &in);
-#else
+#endif
+#if defined(DB_BENCH_FUSION)
+    _fusion_record(tick);
+#endif
+#if !defined(DB_BENCH_TELEMETRY) && !defined(DB_BENCH_TRACE) && !defined(DB_BENCH_FUSION)
     (void)tick;
 #endif
     if (out.advertise) {
@@ -400,10 +448,15 @@ static void _bench_record_step(uint32_t tick, uint32_t elapsed, const db_control
 /// the rate within one period
 static void _advert_period_update(void) {
     db_control_set_min_tx_interval(&_control, swarmit_get_min_tx_interval_us());
+    // Each bench frame is sent behind the advert, so the period stretches by one advert per frame
+    uint32_t frames = 1U;
 #if defined(DB_BENCH_TELEMETRY)
-    // Each advert is two frames
-    _control.advert_period_ticks *= 2;
+    frames++;
 #endif
+#if defined(DB_BENCH_FUSION)
+    frames++;
+#endif
+    _control.advert_period_ticks *= frames;
 }
 
 static void _encoders_init(void) {
@@ -440,7 +493,13 @@ static void _position_read(db_control_input_t *in) {
     in->fix_y           = solve.y;
 
     db_lh2_floor_line_t lines[DB_CONTROL_LINES_MAX];
-    db_control_lines(&_control, lines, swarmit_localization_get_lines(lines, DB_CONTROL_LINES_MAX));
+    uint8_t             line_count = swarmit_localization_get_lines(lines, DB_CONTROL_LINES_MAX);
+    db_control_lines(&_control, lines, line_count);
+#if defined(DB_BENCH_FUSION)
+    _fusion_due   = in->fix_sequence != _control.fix_sequence;
+    _fusion_lines = line_count;
+    _fusion_solve = solve;
+#endif
 
 #if defined(DB_BENCH_TRACE) || defined(DB_BENCH_TELEMETRY)
     // An unchanged sequence is the previous solve read a second time
@@ -468,7 +527,7 @@ static void _position_read(db_control_input_t *in) {
 #endif
 }
 
-#if defined(DB_BENCH_TELEMETRY)
+#if defined(DB_BENCH_TELEMETRY) || defined(DB_BENCH_FUSION)
 static void _put(uint8_t *buf, size_t *length, const void *value, size_t size) {
     memcpy(&buf[*length], value, size);
     *length += size;
@@ -478,6 +537,9 @@ static inline uint8_t _saturate_u8(uint32_t value) {
     return (value > UINT8_MAX) ? UINT8_MAX : (uint8_t)value;
 }
 
+#endif
+
+#if defined(DB_BENCH_TELEMETRY)
 /// Every step and every new solve since the previous frame, newest kept when
 /// there are more than a frame holds; resets the worst tick backlog it reports.
 /// Layout: type, newest step tick (u32), steps carried, steps dropped, backlog,
@@ -532,6 +594,106 @@ static void _send_bench_telemetry(void) {
 }
 #endif
 
+#if defined(DB_BENCH_FUSION)
+static inline uint16_t _fusion_u16(float value) {
+    return (value >= 0 && value < (float)FUSION_INVALID_U16) ? (uint16_t)lroundf(value) : FUSION_INVALID_U16;
+}
+
+/// Saturated to [-127, 127]; FUSION_INVALID_I8 only for NaN
+static inline int8_t _fusion_i8(float value) {
+    if (isnan(value)) {
+        return FUSION_INVALID_I8;
+    }
+    return (value >= (float)INT8_MAX) ? INT8_MAX : ((value <= -(float)INT8_MAX) ? -INT8_MAX : (int8_t)lroundf(value));
+}
+
+/// After the tick that read a new solve: the solve, the core's fix and lines, the pose they left
+static void _fusion_record(uint32_t tick) {
+    if (!_fusion_due) {
+        return;
+    }
+    _fusion_due = false;
+
+    const db_control_fusion_record_t *core   = &_control.last_fusion;
+    const db_pose_estimator_t        *est    = &_control.estimator;
+    fusion_record_t                  *record = &_fusion[_fusion_count % FUSION_RECORDS];
+    uint8_t                           lines  = (_fusion_lines > 0) ? core->count : 0;
+    bool                              valid  = (lines > 0) ? core->fix_valid : (_fusion_solve.x <= 100000U && _fusion_solve.y <= 100000U);
+    bool                              from_lines = (lines > 0) && core->fix_from_lines;
+    float                             fix_x      = (lines > 0) ? core->fix_x : (float)_fusion_solve.x;
+    float                             fix_y      = (lines > 0) ? core->fix_y : (float)_fusion_solve.y;
+
+    record->head.tick     = (uint8_t)tick;
+    record->head.sequence = (uint8_t)_control.fix_sequence;
+    record->head.flags    = (uint8_t)((from_lines ? 1U : 0U) | (valid ? 2U : 0U) | ((uint8_t)est->status << 2) | (lines << 4));
+    record->head.solve_x  = (_fusion_solve.x > UINT16_MAX) ? UINT16_MAX : (uint16_t)_fusion_solve.x;
+    record->head.solve_y  = (_fusion_solve.y > UINT16_MAX) ? UINT16_MAX : (uint16_t)_fusion_solve.y;
+    record->head.fix_dx   = valid ? _fusion_i8(4.0f * (fix_x - (float)_fusion_solve.x)) : FUSION_INVALID_I8;
+    record->head.fix_dy   = valid ? _fusion_i8(4.0f * (fix_y - (float)_fusion_solve.y)) : FUSION_INVALID_I8;
+
+    float sensor_x = -1.0f;
+    float sensor_y = -1.0f;
+    if (est->status != DB_POSE_ESTIMATOR_TRACKING || !db_pose_estimator_sensor(est, &sensor_x, &sensor_y)) {
+        sensor_x = -1.0f;
+        sensor_y = -1.0f;
+    }
+    record->head.pose_x       = _fusion_u16(10.0f * sensor_x);
+    record->head.pose_y       = _fusion_u16(10.0f * sensor_y);
+    record->head.heading_cdeg = (int16_t)lroundf(est->theta * 18000.0f / (float)M_PI);
+    for (uint8_t i = 0; i < lines; i++) {
+        record->line[i]       = (uint8_t)(((core->station_sweep[i] >> 1) << 4) | ((core->station_sweep[i] & 1U) << 3) | (core->result[i] & 7U));
+        record->innovation[i] = _fusion_i8(4.0f * core->innovation_mm[i]);
+    }
+    _fusion_count++;
+}
+
+/// Every new fix since the previous frame that fits, the newest kept.
+/// Layout: type, serviced tick at sending (u32), records carried, records dropped,
+/// then the records oldest first, each 15 bytes then 2 per line (line byte,
+/// innovation): tick (u8), sequence (u8), flags, solve x and y (u16 mm),
+/// fix minus solve (i8 x 2, 0.25 mm), photodiode x and y (u16 0.1 mm),
+/// heading (i16 0.01 deg).
+static void _send_bench_fusion(uint32_t tick) {
+    uint8_t *buf    = _vars.radio_buffer;
+    size_t   length = 0;
+
+    uint32_t pending = _fusion_count - _fusion_sent;
+    if (pending == 0) {
+        return;
+    }
+    if (pending > FUSION_RECORDS) {
+        pending = FUSION_RECORDS;
+    }
+    // From the newest back, as many as fit
+    size_t   bytes = 7;
+    uint32_t out   = 0;
+    while (out < pending) {
+        const fusion_record_t *r    = &_fusion[(_fusion_count - 1U - out) % FUSION_RECORDS];
+        size_t                 size = sizeof(fusion_head_t) + 2U * (r->head.flags >> 4);
+        if (bytes + size > FUSION_FRAME_MAX_BYTES) {
+            break;
+        }
+        bytes += size;
+        out++;
+    }
+
+    buf[length++] = DB_PROTOCOL_BENCH_FUSION;
+    _put(buf, &length, &tick, sizeof(tick));
+    buf[length++] = (uint8_t)out;
+    buf[length++] = _saturate_u8(_fusion_count - _fusion_sent - out);
+    for (uint32_t i = _fusion_count - out; i != _fusion_count; i++) {
+        const fusion_record_t *r = &_fusion[i % FUSION_RECORDS];
+        _put(buf, &length, &r->head, sizeof(r->head));
+        for (uint8_t l = 0; l < (r->head.flags >> 4); l++) {
+            buf[length++] = r->line[l];
+            buf[length++] = (uint8_t)r->innovation[l];
+        }
+    }
+    _fusion_sent = _fusion_count;
+    swarmit_send_raw_data(buf, (uint8_t)length);
+}
+#endif
+
 /// command is the type byte followed by its payload
 static void _set_led(const uint8_t *command, size_t length) {
 #ifdef DB_RGB_LED_PWM_RED_PORT
@@ -558,6 +720,9 @@ static void _advertise(void) {
 
 #if defined(DB_BENCH_TELEMETRY)
     _send_bench_telemetry();
+#endif
+#if defined(DB_BENCH_FUSION)
+    _send_bench_fusion(_tick_serviced);
 #endif
 }
 
