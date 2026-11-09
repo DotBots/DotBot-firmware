@@ -178,16 +178,16 @@ static uint32_t         _telemetry_fix_sent  = 0;  ///< Solve count at the last 
 #if defined(DB_BENCH_FUSION)
 /// One new fix and what the control core did with it, as the frame carries it before its lines
 typedef struct __attribute__((packed)) {
-    uint8_t  tick;                          ///< Low 8 bits of the serviced tick the solve was read on
-    uint8_t  sequence;                      ///< Low 8 bits of the fix sequence
-    uint8_t  flags;                         ///< bit 0 fix from the lines, bit 1 fix valid, bits 2-3 estimator status, bits 4-7 lines
-    uint16_t solve_x;                       ///< Secure side's solve, mm, saturated
-    uint16_t solve_y;                       ///< Secure side's solve, mm, saturated
-    int8_t   fix_dx;                        ///< The core's fix minus the solve, 0.25 mm, saturated at +-127, FUSION_INVALID_I8 when invalid
-    int8_t   fix_dy;                        ///< The core's fix minus the solve, 0.25 mm, saturated at +-127, FUSION_INVALID_I8 when invalid
-    uint16_t pose_x;                        ///< Estimated photodiode after the tick, 0.1 mm, FUSION_INVALID_U16 when not tracking
-    uint16_t pose_y;                        ///< Estimated photodiode after the tick, 0.1 mm, FUSION_INVALID_U16 when not tracking
-    int16_t  heading_cdeg;                  ///< Estimated heading after the tick, 0.01 deg
+    uint8_t  tick;          ///< Low 8 bits of the serviced tick the solve was read on
+    uint8_t  sequence;      ///< Low 8 bits of the fix sequence
+    uint8_t  flags;         ///< bit 0 fix from the lines, bit 1 fix valid, bits 2-3 estimator status, bits 4-7 lines
+    uint16_t solve_x;       ///< Secure side's solve, mm, saturated
+    uint16_t solve_y;       ///< Secure side's solve, mm, saturated
+    int8_t   fix_dx;        ///< The core's fix minus the solve, 0.25 mm, saturated at +-127, FUSION_INVALID_I8 when invalid
+    int8_t   fix_dy;        ///< The core's fix minus the solve, 0.25 mm, saturated at +-127, FUSION_INVALID_I8 when invalid
+    uint16_t pose_x;        ///< Estimated photodiode after the tick, 0.1 mm, FUSION_INVALID_U16 when not tracking
+    uint16_t pose_y;        ///< Estimated photodiode after the tick, 0.1 mm, FUSION_INVALID_U16 when not tracking
+    int16_t  heading_cdeg;  ///< Estimated heading after the tick, 0.01 deg
 } fusion_head_t;
 _Static_assert(sizeof(fusion_head_t) == 15, "the frame's record layout");
 
@@ -198,11 +198,11 @@ typedef struct {
 } fusion_record_t;
 
 static fusion_record_t _fusion[FUSION_RECORDS];
-static uint32_t        _fusion_count  = 0;      ///< Records written; the ring index is this modulo the length
-static uint32_t        _fusion_sent   = 0;      ///< Record count at the last frame
-static bool            _fusion_due    = false;  ///< This tick read a new solve
-static uint8_t         _fusion_lines  = 0;      ///< Floor lines staged with it
-static position_2d_t   _fusion_solve;           ///< That solve
+static uint32_t        _fusion_count = 0;      ///< Records written; the ring index is this modulo the length
+static uint32_t        _fusion_sent  = 0;      ///< Record count at the last frame
+static bool            _fusion_due   = false;  ///< This tick read a new solve
+static uint8_t         _fusion_lines = 0;      ///< Floor lines staged with it
+static position_2d_t   _fusion_solve;          ///< That solve
 #endif
 
 #ifdef DB_RGB_LED_PWM_RED_PORT
@@ -614,11 +614,11 @@ static void _fusion_record(uint32_t tick) {
     }
     _fusion_due = false;
 
-    const db_control_fusion_record_t *core   = &_control.last_fusion;
-    const db_pose_estimator_t        *est    = &_control.estimator;
-    fusion_record_t                  *record = &_fusion[_fusion_count % FUSION_RECORDS];
-    uint8_t                           lines  = (_fusion_lines > 0) ? core->count : 0;
-    bool                              valid  = (lines > 0) ? core->fix_valid : (_fusion_solve.x <= 100000U && _fusion_solve.y <= 100000U);
+    const db_control_fusion_record_t *core       = &_control.last_fusion;
+    const db_pose_estimator_t        *est        = &_control.estimator;
+    fusion_record_t                  *record     = &_fusion[_fusion_count % FUSION_RECORDS];
+    uint8_t                           lines      = (_fusion_lines > 0) ? core->count : 0;
+    bool                              valid      = (lines > 0) ? core->fix_valid : (_fusion_solve.x <= 100000U && _fusion_solve.y <= 100000U);
     bool                              from_lines = (lines > 0) && core->fix_from_lines;
     float                             fix_x      = (lines > 0) ? core->fix_x : (float)_fusion_solve.x;
     float                             fix_y      = (lines > 0) ? core->fix_y : (float)_fusion_solve.y;
