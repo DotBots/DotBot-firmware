@@ -34,11 +34,3 @@ jobs:
           submodules: 'true'
       - name: Build sandbox apps
         run: BUILD_TARGET=${{ matrix.target }} BUILD_CONFIG=${{ matrix.config }} make docker
-
-  style:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-      - name: Check style
-        run: make check-format

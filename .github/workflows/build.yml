@@ -4,18 +4,37 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - 'apps-sandbox/**'
-      - 'sandbox-*.emProject'
+  # No path filter on the trigger: style, build-success and doc are required
+  # checks, so they must report on every PR. The `changes` job below decides
+  # whether the bare build runs.
   pull_request:
-    # Sandbox-only changes are covered by build-sandbox.yml; skip the bare
-    # build for them. Shared infra (Makefile, dotbot-libs, ...) still runs both.
-    paths-ignore:
-      - 'apps-sandbox/**'
-      - 'sandbox-*.emProject'
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      bare: ${{ steps.filter.outputs.bare }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      # Sandbox-only changes are covered by build-sandbox.yml; skip the bare
+      # build for them. Shared infra (Makefile, dotbot-libs, ...) still runs both.
+      - name: Detect changes outside the sandbox
+        id: filter
+        uses: dorny/paths-filter@v4.0.3
+        with:
+          predicate-quantifier: 'every'
+          filters: |
+            bare:
+              - '!apps-sandbox/**'
+              - '!sandbox-*.emProject'
+
   build:
+    needs: changes
+    if: needs.changes.outputs.bare == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -34,12 +53,23 @@ jobs:
         run: BUILD_TARGET=${{ matrix.target }} BUILD_CONFIG=${{ matrix.config }} make docker
 
   build-success:
-    # this is only run if all builds succeeded
-    needs: build
+    # Passes when every build succeeded, or when `changes` found nothing
+    # outside the sandbox and the build was skipped for that reason.
+    needs: [changes, build]
+    if: always()
     runs-on: ubuntu-latest
     steps:
     - name: build succeeded
-      run: exit 0
+      env:
+        CHANGES: ${{ needs.changes.result }}
+        BARE: ${{ needs.changes.outputs.bare }}
+        BUILD: ${{ needs.build.result }}
+      run: |
+        echo "changes=$CHANGES bare=$BARE build=$BUILD"
+        if [ "$CHANGES" != "success" ]; then exit 1; fi
+        if [ "$BARE" = "true" ] && [ "$BUILD" = "success" ]; then exit 0; fi
+        if [ "$BARE" = "false" ] && [ "$BUILD" = "skipped" ]; then exit 0; fi
+        exit 1
 
   style:
     runs-on: ubuntu-latest
