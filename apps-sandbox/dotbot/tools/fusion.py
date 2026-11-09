@@ -12,7 +12,7 @@ its host time and bytes, and needs paho-mqtt. `decode` needs nothing beyond the
 standard library: it prints a count per robot and, given OUT, writes the fusion
 records, adverts and status frames of every robot.
 
-Frame (payload type 0xB1, next_proto 0x11; layout in ../main.c,
+Frame (payload type 0xB1, next_proto 0x11; layout in ../bench.c,
 _send_bench_fusion): type, tick at sending (u32, 10 ms), records, dropped, then
 records oldest first: tick u8, seq u8, flags (b0 fix from lines, b1 fix valid,
 b2-3 estimator status, b4-7 lines), solve x y (u16 mm), fix - solve (i8 x2,
