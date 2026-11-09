@@ -22,6 +22,7 @@
 #include "board_config.h"
 #include "device.h"
 #include "lh2.h"
+#include "lh2_decoder.h"
 #include "protocol.h"
 #include "radio.h"
 #include "rgbled_pwm.h"
@@ -37,11 +38,11 @@
 #define DB_BUFFER_MAX_BYTES       (255U)     ///< Max bytes in UART receive buffer
 
 typedef struct {
-    uint32_t ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
-    db_lh2_t lh2;                                ///< LH2 device descriptor
-    uint8_t  radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
-    uint64_t device_id;                          ///< Device ID of the LH2 mini mote
-    bool     advertise;                          ///< Whether an advertize packet should be sent
+    uint32_t         ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
+    db_lh2_decoder_t lh2;                                ///< LH2 device descriptor
+    uint8_t          radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
+    uint64_t         device_id;                          ///< Device ID of the LH2 mini mote
+    bool             advertise;                          ///< Whether an advertize packet should be sent
 } dotbot_vars_t;
 
 //=========================== variables ========================================
@@ -74,19 +75,23 @@ int main(void) {
     // Setup up timer interrupts
     db_timer_hf_init(TIMER_DEV);
     db_timer_hf_set_periodic_us(TIMER_DEV, 1, DB_ADVERTISEMENT_DELAY_US, &_advertise);
-    db_lh2_init(&_dotbot_vars.lh2, &db_lh2_d, &db_lh2_e);
-    db_lh2_start();
+    db_lh2_decoder_init(&_dotbot_vars.lh2);
+    db_lh2_capture_init(&db_lh2_d, &db_lh2_e);
+    db_lh2_capture_start();
 
     while (1) {
         __WFE();
 
         // Process available lighthouse data
-        db_lh2_process_location(&_dotbot_vars.lh2);
+        db_lh2_capture_t capture;
+        if (db_lh2_capture_pop(&capture)) {
+            db_lh2_decoder_feed(&_dotbot_vars.lh2, &capture, db_lh2_capture_now_us());
+        }
 
         // Check if data is ready to send
         for (size_t basestation = 0; basestation < 2; basestation++) {
             for (size_t sweep = 0; sweep < 2; sweep++) {
-                if (_dotbot_vars.lh2.data_ready[sweep][basestation] == DB_LH2_PROCESSED_DATA_AVAILABLE) {
+                if (_dotbot_vars.lh2.slot[sweep][basestation].ready) {
 
                     db_gpio_clear(&_r_led_pin);
                     db_timer_hf_set_oneshot_us(TIMER_DEV, 0, 3000, &_turn_off_led);
@@ -96,9 +101,9 @@ int main(void) {
 
                     // Package data into a variable
                     protocol_lh2_processed_packet_t lh2_packet;
-                    lh2_packet.selected_polynomial = _dotbot_vars.lh2.locations[sweep][basestation].selected_polynomial;
-                    lh2_packet.lfsr_counts         = _dotbot_vars.lh2.locations[sweep][basestation].lfsr_counts;
-                    lh2_packet.timestamp_us        = _dotbot_vars.lh2.timestamps[sweep][basestation];
+                    lh2_packet.selected_polynomial = _dotbot_vars.lh2.slot[sweep][basestation].polynomial;
+                    lh2_packet.lfsr_counts         = _dotbot_vars.lh2.slot[sweep][basestation].count;
+                    lh2_packet.timestamp_us        = _dotbot_vars.lh2.slot[sweep][basestation].t_us;
 
                     // Add the LH2 sweep
                     _dotbot_vars.radio_buffer[length++] = DB_PROTOCOL_LH2_PROCESSED_DATA;
@@ -111,7 +116,7 @@ int main(void) {
                     db_radio_rx();
 
                     // Mark the data as already sent
-                    _dotbot_vars.lh2.data_ready[sweep][basestation] = DB_LH2_NO_NEW_DATA;
+                    _dotbot_vars.lh2.slot[sweep][basestation].ready = false;
                 }
             }
         }

@@ -43,7 +43,7 @@
 #define SPIN_MM_S              (60.0f)    ///< Wheel speed of the spin
 #define RECORD_SPACING_MS      (30U)      ///< Least between two kept reads of one station
 #define STATIONS_MAX           (4U)
-#define DRAIN_MAX              (16U)       ///< The bootloader's LH2_BASESTATION_COUNT
+#define DRAIN_MAX              (16U)       ///< The bootloader's station count, DB_LH2_STATIONS
 #define READS_MAX              (320U)      ///< Per station: 9.6 s at RECORD_SPACING_MS
 #define COUNT_MAX              (1U << 17)  ///< Counts are indexes into a 17-bit LFSR sequence
 #define COPIES                 (2U)        ///< Each read is sent this many times
