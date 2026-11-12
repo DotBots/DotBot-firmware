@@ -24,6 +24,7 @@
 #include "board_config.h"
 #include "device.h"
 #include "lh2.h"
+#include "lh2_decoder.h"
 #include "protocol.h"
 #include "rgbled_pwm.h"
 #include "timer_hf.h"
@@ -49,13 +50,13 @@ typedef enum {
 } led_color_t;
 
 typedef struct {
-    uint32_t    ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
-    db_lh2_t    lh2;                                ///< LH2 device descriptor
-    uint8_t     radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
-    bool        update_color_flag;                  ///< Flag - Time to read the IMU and update the color of the LED
-    uint64_t    device_id;                          ///< Device ID of the DotBot
-    led_color_t color;                              ///< current color of the RBG defined by the IMU
-    bool        advertise;                          ///< Whether an advertize packet should be sent
+    uint32_t         ts_last_packet_received;            ///< Last timestamp in microseconds a control packet was received
+    db_lh2_decoder_t lh2;                                ///< LH2 device descriptor
+    uint8_t          radio_buffer[DB_BUFFER_MAX_BYTES];  ///< Internal buffer that contains the command to send (from buttons)
+    bool             update_color_flag;                  ///< Flag - Time to read the IMU and update the color of the LED
+    uint64_t         device_id;                          ///< Device ID of the DotBot
+    led_color_t      color;                              ///< current color of the RBG defined by the IMU
+    bool             advertise;                          ///< Whether an advertize packet should be sent
 } dotbot_vars_t;
 
 //=========================== variables ========================================
@@ -100,19 +101,23 @@ int main(void) {
     db_ism330_init(&db_sda, &db_scl);
 
     // Init the LH2
-    db_lh2_init(&_dotbot_vars.lh2, &db_lh2_d, &db_lh2_e);
-    db_lh2_start();
+    db_lh2_decoder_init(&_dotbot_vars.lh2);
+    db_lh2_capture_init(&db_lh2_d, &db_lh2_e);
+    db_lh2_capture_start();
 
     while (1) {
         __WFE();
 
         // Process available lighthouse data
-        db_lh2_process_location(&_dotbot_vars.lh2);
+        db_lh2_capture_t capture;
+        if (db_lh2_capture_pop(&capture)) {
+            db_lh2_decoder_feed(&_dotbot_vars.lh2, &capture, db_lh2_capture_now_us());
+        }
 
         // Check if data is ready to send
         for (size_t basestation = 0; basestation < 2; basestation++) {
             for (size_t sweep = 0; sweep < 2; sweep++) {
-                if (_dotbot_vars.lh2.data_ready[sweep][basestation] == DB_LH2_PROCESSED_DATA_AVAILABLE) {
+                if (_dotbot_vars.lh2.slot[sweep][basestation].ready) {
 
                     db_gpio_clear(&_r_led_pin);
                     db_gpio_clear(&_b_led_pin);
@@ -124,9 +129,9 @@ int main(void) {
 
                     // Package data into a variable
                     protocol_lh2_processed_packet_t lh2_packet;
-                    lh2_packet.selected_polynomial = _dotbot_vars.lh2.locations[sweep][basestation].selected_polynomial;
-                    lh2_packet.lfsr_counts         = _dotbot_vars.lh2.locations[sweep][basestation].lfsr_counts;
-                    lh2_packet.timestamp_us        = _dotbot_vars.lh2.timestamps[sweep][basestation];
+                    lh2_packet.selected_polynomial = _dotbot_vars.lh2.slot[sweep][basestation].polynomial;
+                    lh2_packet.lfsr_counts         = _dotbot_vars.lh2.slot[sweep][basestation].count;
+                    lh2_packet.timestamp_us        = _dotbot_vars.lh2.slot[sweep][basestation].t_us;
 
                     // Add the LH2 sweep
                     _dotbot_vars.radio_buffer[length++] = DB_PROTOCOL_LH2_PROCESSED_DATA;
@@ -139,7 +144,7 @@ int main(void) {
                     db_radio_rx();
 
                     // Mark the data as already sent
-                    _dotbot_vars.lh2.data_ready[sweep][basestation] = DB_LH2_NO_NEW_DATA;
+                    _dotbot_vars.lh2.slot[sweep][basestation].ready = false;
                 }
             }
         }
